@@ -143,13 +143,6 @@
 
         .center-icon {
             font-size: clamp(2rem, 6vw, 3rem);
-            margin-bottom: 8px;
-        }
-
-        .center-time {
-            font-size: clamp(0.7rem, 2vw, 0.9rem);
-            opacity: 0.6;
-            letter-spacing: 0.15em;
         }
 
         .suggestions {
@@ -201,7 +194,6 @@
             <svg class="wheel-svg" viewBox="0 0 200 200" id="wheel"></svg>
             <div class="wheel-center">
                 <div class="center-icon" id="centerIcon"></div>
-                <div class="center-time" id="centerTime"></div>
             </div>
         </div>
 
@@ -321,10 +313,6 @@
             return { period: periods[0], index: 0 };
         }
 
-        function getNextPeriod(currentIndex) {
-            return periods[(currentIndex + 1) % periods.length];
-        }
-
         function getSkyGradient(hour) {
             if (hour >= 0 && hour < 4) return 'linear-gradient(to bottom, #0d1b2a 0%, #1b263b 100%)';
             if (hour >= 4 && hour < 5.5) return 'linear-gradient(to bottom, #1b263b 0%, #415a77 50%, #778da9 100%)';
@@ -386,22 +374,11 @@
             const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
 
             const { period, index } = getCurrentPeriod(hour);
-            const nextPeriod = getNextPeriod(index);
 
             // Update text
             document.getElementById('periodName').textContent = period.name;
             document.getElementById('periodDescription').textContent = period.desc;
             document.getElementById('centerIcon').textContent = period.icon;
-
-            // Time until next period
-            let minutesUntilNext = Math.round((period.end - hour) * 60);
-            if (minutesUntilNext < 0) minutesUntilNext += 24 * 60;
-            const hoursUntil = Math.floor(minutesUntilNext / 60);
-            const minsUntil = minutesUntilNext % 60;
-            const timeStr = hoursUntil > 0
-                ? `${hoursUntil}h ${minsUntil}m until ${nextPeriod.name.toLowerCase()}`
-                : `${minsUntil}m until ${nextPeriod.name.toLowerCase()}`;
-            document.getElementById('centerTime').textContent = timeStr;
 
             // Update suggestions
             const suggestionsEl = document.getElementById('suggestions');
