@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polar Clock</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --ring-bg: rgba(255, 255, 255, 0.05);
+            --hours: #ff6b6b;
+            --minutes: #4ecdc4;
+            --seconds: #ffe66d;
+            --text: #8b949e;
+            --text-bright: #c9d1d9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            padding: 24px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .clock-container {
+            position: relative;
+            width: clamp(280px, 70vw, 420px);
+            height: clamp(280px, 70vw, 420px);
+        }
+
+        .clock {
+            width: 100%;
+            height: 100%;
+        }
+
+        .center-time {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .center-time .time {
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            font-weight: 300;
+            color: var(--text-bright);
+            letter-spacing: 0.1em;
+        }
+
+        .center-time .date {
+            font-size: clamp(0.6rem, 1.8vw, 0.8rem);
+            color: var(--text);
+            margin-top: 8px;
+            letter-spacing: 0.05em;
+        }
+
+        .legend {
+            display: flex;
+            gap: clamp(16px, 4vw, 32px);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-color.hours { background: var(--hours); }
+        .legend-color.minutes { background: var(--minutes); }
+        .legend-color.seconds { background: var(--seconds); }
+
+        .legend-text {
+            font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .info {
+            font-size: clamp(0.55rem, 1.3vw, 0.7rem);
+            color: var(--text);
+            text-align: center;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="clock-container">
+            <svg class="clock" viewBox="0 0 400 400" id="clock">
+                <defs>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+
+                <!-- Background rings -->
+                <circle cx="200" cy="200" r="180" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="24"/>
+                <circle cx="200" cy="200" r="140" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="24"/>
+                <circle cx="200" cy="200" r="100" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="24"/>
+
+                <!-- Hour ring -->
+                <circle
+                    id="hour-ring"
+                    cx="200" cy="200" r="180"
+                    fill="none"
+                    stroke="#ff6b6b"
+                    stroke-width="24"
+                    stroke-linecap="round"
+                    stroke-dasharray="0 1131"
+                    transform="rotate(-90 200 200)"
+                    filter="url(#glow)"
+                    opacity="0.9"
+                />
+
+                <!-- Minute ring -->
+                <circle
+                    id="minute-ring"
+                    cx="200" cy="200" r="140"
+                    fill="none"
+                    stroke="#4ecdc4"
+                    stroke-width="24"
+                    stroke-linecap="round"
+                    stroke-dasharray="0 880"
+                    transform="rotate(-90 200 200)"
+                    filter="url(#glow)"
+                    opacity="0.9"
+                />
+
+                <!-- Second ring -->
+                <circle
+                    id="second-ring"
+                    cx="200" cy="200" r="100"
+                    fill="none"
+                    stroke="#ffe66d"
+                    stroke-width="24"
+                    stroke-linecap="round"
+                    stroke-dasharray="0 628"
+                    transform="rotate(-90 200 200)"
+                    filter="url(#glow)"
+                    opacity="0.9"
+                />
+
+                <!-- Tick marks for hours -->
+                <g id="hour-ticks" stroke="rgba(255,255,255,0.15)" stroke-width="1"></g>
+            </svg>
+
+            <div class="center-time">
+                <div class="time" id="time"></div>
+                <div class="date" id="date"></div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color hours"></div>
+                <span class="legend-text">Hours</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color minutes"></div>
+                <span class="legend-text">Minutes</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color seconds"></div>
+                <span class="legend-text">Seconds</span>
+            </div>
+        </div>
+
+        <div class="info">
+            Arcs fill as time progresses through each unit
+        </div>
+    </div>
+
+    <script>
+        const hourRing = document.getElementById('hour-ring');
+        const minuteRing = document.getElementById('minute-ring');
+        const secondRing = document.getElementById('second-ring');
+        const timeDisplay = document.getElementById('time');
+        const dateDisplay = document.getElementById('date');
+
+        // Create hour tick marks
+        const tickGroup = document.getElementById('hour-ticks');
+        for (let i = 0; i < 12; i++) {
+            const angle = (i * 30 - 90) * Math.PI / 180;
+            const x1 = 200 + 192 * Math.cos(angle);
+            const y1 = 200 + 192 * Math.sin(angle);
+            const x2 = 200 + 168 * Math.cos(angle);
+            const y2 = 200 + 168 * Math.sin(angle);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            tickGroup.appendChild(line);
+        }
+
+        // Circumferences
+        const hourCircumference = 2 * Math.PI * 180;   // ~1131
+        const minuteCircumference = 2 * Math.PI * 140; // ~880
+        const secondCircumference = 2 * Math.PI * 100; // ~628
+
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours() % 12;
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const milliseconds = now.getMilliseconds();
+
+            // Smooth progress
+            const smoothSeconds = seconds + milliseconds / 1000;
+            const smoothMinutes = minutes + smoothSeconds / 60;
+            const smoothHours = hours + smoothMinutes / 60;
+
+            // Calculate arc lengths
+            const hourProgress = smoothHours / 12;
+            const minuteProgress = smoothMinutes / 60;
+            const secondProgress = smoothSeconds / 60;
+
+            const hourDash = hourProgress * hourCircumference;
+            const minuteDash = minuteProgress * minuteCircumference;
+            const secondDash = secondProgress * secondCircumference;
+
+            hourRing.style.strokeDasharray = `${hourDash} ${hourCircumference}`;
+            minuteRing.style.strokeDasharray = `${minuteDash} ${minuteCircumference}`;
+            secondRing.style.strokeDasharray = `${secondDash} ${secondCircumference}`;
+
+            // Update digital time
+            const timeStr = [now.getHours(), minutes, seconds]
+                .map(n => n.toString().padStart(2, '0'))
+                .join(':');
+            timeDisplay.textContent = timeStr;
+
+            // Update date
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            dateDisplay.textContent = `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

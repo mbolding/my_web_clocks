@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .date {
+            position: fixed;
+            bottom: 32px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="date" id="date"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, particles = [];
+        let currentTimeStr = '';
+        let targetPositions = [];
+
+        const digitPatterns = {
+            '0': [
+                '  ###  ',
+                ' #   # ',
+                '#     #',
+                '#     #',
+                '#     #',
+                ' #   # ',
+                '  ###  '
+            ],
+            '1': [
+                '   #   ',
+                '  ##   ',
+                '   #   ',
+                '   #   ',
+                '   #   ',
+                '   #   ',
+                '  ###  '
+            ],
+            '2': [
+                ' ##### ',
+                '#     #',
+                '      #',
+                ' ##### ',
+                '#      ',
+                '#      ',
+                '#######'
+            ],
+            '3': [
+                ' ##### ',
+                '#     #',
+                '      #',
+                '  #### ',
+                '      #',
+                '#     #',
+                ' ##### '
+            ],
+            '4': [
+                '#     #',
+                '#     #',
+                '#     #',
+                '#######',
+                '      #',
+                '      #',
+                '      #'
+            ],
+            '5': [
+                '#######',
+                '#      ',
+                '#      ',
+                '###### ',
+                '      #',
+                '#     #',
+                ' ##### '
+            ],
+            '6': [
+                ' ##### ',
+                '#      ',
+                '#      ',
+                '###### ',
+                '#     #',
+                '#     #',
+                ' ##### '
+            ],
+            '7': [
+                '#######',
+                '     # ',
+                '    #  ',
+                '   #   ',
+                '  #    ',
+                '  #    ',
+                '  #    '
+            ],
+            '8': [
+                ' ##### ',
+                '#     #',
+                '#     #',
+                ' ##### ',
+                '#     #',
+                '#     #',
+                ' ##### '
+            ],
+            '9': [
+                ' ##### ',
+                '#     #',
+                '#     #',
+                ' ######',
+                '      #',
+                '      #',
+                ' ##### '
+            ],
+            ':': [
+                '       ',
+                '  ##   ',
+                '  ##   ',
+                '       ',
+                '  ##   ',
+                '  ##   ',
+                '       '
+            ]
+        };
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = 3;
+                this.baseHue = 200 + Math.random() * 60;
+                this.hue = this.baseHue;
+                this.brightness = 50 + Math.random() * 30;
+                this.active = false;
+            }
+
+            update() {
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // Spring physics
+                const springStrength = 0.08;
+                const damping = 0.85;
+
+                this.vx += dx * springStrength;
+                this.vy += dy * springStrength;
+                this.vx *= damping;
+                this.vy *= damping;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Color transition based on movement
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                this.hue = this.baseHue + speed * 10;
+                this.brightness = 50 + Math.min(speed * 20, 40);
+            }
+
+            draw() {
+                const alpha = this.active ? 1 : 0.15;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${this.hue}, 80%, ${this.brightness}%, ${alpha})`;
+                ctx.fill();
+
+                if (this.active) {
+                    // Glow effect
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${this.hue}, 80%, ${this.brightness}%, 0.2)`;
+                    ctx.fill();
+                }
+            }
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initParticles();
+        }
+
+        function initParticles() {
+            particles = [];
+            const gridSpacing = 12;
+            const cols = Math.ceil(width / gridSpacing);
+            const rows = Math.ceil(height / gridSpacing);
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    particles.push(new Particle(
+                        x * gridSpacing + gridSpacing / 2,
+                        y * gridSpacing + gridSpacing / 2
+                    ));
+                }
+            }
+        }
+
+        function getTimePositions(timeStr) {
+            const positions = [];
+            const charWidth = 7;
+            const charHeight = 7;
+            const scale = Math.min(width / (timeStr.length * charWidth * 14), height / (charHeight * 16));
+            const pixelSize = 12 * scale;
+
+            const totalWidth = timeStr.length * charWidth * pixelSize;
+            const totalHeight = charHeight * pixelSize;
+            const startX = (width - totalWidth) / 2;
+            const startY = (height - totalHeight) / 2;
+
+            for (let i = 0; i < timeStr.length; i++) {
+                const char = timeStr[i];
+                const pattern = digitPatterns[char];
+                if (!pattern) continue;
+
+                const charOffsetX = i * charWidth * pixelSize;
+
+                for (let row = 0; row < pattern.length; row++) {
+                    for (let col = 0; col < pattern[row].length; col++) {
+                        if (pattern[row][col] === '#') {
+                            positions.push({
+                                x: startX + charOffsetX + col * pixelSize,
+                                y: startY + row * pixelSize
+                            });
+                        }
+                    }
+                }
+            }
+
+            return positions;
+        }
+
+        function updateParticleTargets() {
+            const now = new Date();
+            const newTimeStr = [now.getHours(), now.getMinutes(), now.getSeconds()]
+                .map(n => n.toString().padStart(2, '0'))
+                .join(':');
+
+            if (newTimeStr !== currentTimeStr) {
+                currentTimeStr = newTimeStr;
+                targetPositions = getTimePositions(currentTimeStr);
+            }
+
+            // Reset all particles
+            particles.forEach(p => p.active = false);
+
+            // Assign target positions to nearest particles
+            const used = new Set();
+            targetPositions.forEach(target => {
+                let minDist = Infinity;
+                let nearest = null;
+                let nearestIdx = -1;
+
+                particles.forEach((p, idx) => {
+                    if (used.has(idx)) return;
+                    const dx = p.x - target.x;
+                    const dy = p.y - target.y;
+                    const dist = dx * dx + dy * dy;
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = p;
+                        nearestIdx = idx;
+                    }
+                });
+
+                if (nearest && minDist < 10000) {
+                    used.add(nearestIdx);
+                    nearest.targetX = target.x;
+                    nearest.targetY = target.y;
+                    nearest.active = true;
+                }
+            });
+
+            // Update date
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            document.getElementById('date').textContent =
+                `${days[now.getDay()]} ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(26, 26, 46, 0.3)';
+            ctx.fillRect(0, 0, width, height);
+
+            updateParticleTargets();
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+    </script>
+</body>
+</html>
