@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGateways '26</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --ink: #111111;
+            --ink-light: #454545;
+            --ink-faint: #a0a0a0;
+            --accent: #8b0000;
+        }
+
+        .dark {
+            --bg: #1a1a1a;
+            --ink: #e8e4d9;
+            --ink-light: #b0a898;
+            --ink-faint: #5a5548;
+            --accent: #c45c5c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            font-family: 'Source Serif 4', Georgia, serif;
+            padding: 24px;
+            transition: background 0.3s ease;
+        }
+
+        .container {
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 48px;
+        }
+
+        .title {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: clamp(1.8rem, 6vw, 2.8rem);
+            font-weight: 300;
+            color: var(--ink);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .year {
+            font-style: italic;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            text-transform: none;
+        }
+
+        .dates {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            color: var(--ink-light);
+            margin-top: 8px;
+            font-weight: 300;
+            letter-spacing: 0.08em;
+        }
+
+        .countdown {
+            margin-bottom: 48px;
+        }
+
+        .countdown-label {
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            color: var(--ink-light);
+            font-style: italic;
+            margin-bottom: 20px;
+            letter-spacing: 0.05em;
+        }
+
+        .countdown-units {
+            display: flex;
+            justify-content: center;
+            gap: clamp(24px, 6vw, 48px);
+        }
+
+        .countdown-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .countdown-value {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: clamp(2.2rem, 8vw, 3.5rem);
+            font-weight: 400;
+            color: var(--ink);
+            line-height: 1;
+        }
+
+        .countdown-name {
+            font-size: clamp(0.65rem, 1.8vw, 0.75rem);
+            color: var(--ink-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-top: 8px;
+        }
+
+        .event-passed {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-style: italic;
+            color: var(--ink-light);
+        }
+
+        .current-date {
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            color: var(--ink-faint);
+            font-style: italic;
+            font-weight: 300;
+            padding-top: 24px;
+            border-top: 1px solid var(--ink-faint);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">NeuroGateways <span class="year">'26</span></h1>
+            <p class="dates">April 9–10, 2026</p>
+        </header>
+
+        <div class="countdown">
+            <p class="countdown-label">Time until the conference</p>
+            <div class="countdown-units" id="countdownUnits"></div>
+        </div>
+
+        <p class="current-date" id="currentDate"></p>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            event.matches ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
+        });
+
+        // Countdown timer
+        const eventDate = new Date('2026-04-09T00:00:00');
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = eventDate - now;
+            const container = document.getElementById('countdownUnits');
+
+            // Update date display
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+            document.getElementById('currentDate').textContent = dateStr;
+
+            if (diff <= 0) {
+                container.innerHTML = '<span class="event-passed">The conference has begun</span>';
+                return;
+            }
+
+            const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            container.innerHTML = `
+                <div class="countdown-unit">
+                    <span class="countdown-value">${daysLeft}</span>
+                    <span class="countdown-name">Days</span>
+                </div>
+                <div class="countdown-unit">
+                    <span class="countdown-value">${hours.toString().padStart(2, '0')}</span>
+                    <span class="countdown-name">Hours</span>
+                </div>
+                <div class="countdown-unit">
+                    <span class="countdown-value">${minutes.toString().padStart(2, '0')}</span>
+                    <span class="countdown-name">Min</span>
+                </div>
+                <div class="countdown-unit">
+                    <span class="countdown-value">${seconds.toString().padStart(2, '0')}</span>
+                    <span class="countdown-name">Sec</span>
+                </div>
+            `;
+        }
+
+        // Initialize
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+
+</html>
