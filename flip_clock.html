@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip Clock</title>
+    <style>
+        :root {
+            --card-bg: #1a1a1a;
+            --card-front: #2d2d2d;
+            --text: #f0f0f0;
+            --divider: #0a0a0a;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            padding: 24px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .clock {
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 2vw, 16px);
+        }
+
+        .flip-group {
+            display: flex;
+            gap: clamp(4px, 1vw, 8px);
+        }
+
+        .flip-card {
+            position: relative;
+            width: clamp(50px, 12vw, 100px);
+            height: clamp(70px, 16vw, 140px);
+            perspective: 1000px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            backface-visibility: hidden;
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(2.5rem, 8vw, 5.5rem);
+            font-weight: 700;
+            color: var(--text);
+            background: var(--card-front);
+            border-radius: 8px;
+        }
+
+        .card.top {
+            top: 0;
+            border-radius: 8px 8px 0 0;
+            z-index: 1;
+        }
+
+        .card.top .card-face {
+            top: 0;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .card.bottom {
+            bottom: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .card.bottom .card-face {
+            bottom: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Flip animation cards */
+        .flip-card .flip-top,
+        .flip-card .flip-bottom {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            backface-visibility: hidden;
+        }
+
+        .flip-card .flip-top {
+            top: 0;
+            transform-origin: bottom center;
+            z-index: 10;
+        }
+
+        .flip-card .flip-bottom {
+            bottom: 0;
+            transform-origin: top center;
+            z-index: 10;
+        }
+
+        .flip-card .flip-top .card-face {
+            top: 0;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .flip-card .flip-bottom .card-face {
+            bottom: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Divider line */
+        .flip-card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--divider);
+            transform: translateY(-50%);
+            z-index: 100;
+        }
+
+        /* Shadow on bottom half */
+        .card.bottom::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 30%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .separator {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 3vw, 24px);
+            padding: 0 clamp(4px, 1vw, 8px);
+        }
+
+        .separator-dot {
+            width: clamp(10px, 2.5vw, 18px);
+            height: clamp(10px, 2.5vw, 18px);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .labels {
+            display: flex;
+            gap: clamp(8px, 2vw, 16px);
+            justify-content: center;
+        }
+
+        .label-group {
+            display: flex;
+            gap: clamp(4px, 1vw, 8px);
+            width: calc(clamp(50px, 12vw, 100px) * 2 + clamp(4px, 1vw, 8px));
+            justify-content: center;
+        }
+
+        .label {
+            font-size: clamp(0.6rem, 1.5vw, 0.85rem);
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            text-align: center;
+        }
+
+        .date {
+            font-size: clamp(0.8rem, 2vw, 1.1rem);
+            color: rgba(255, 255, 255, 0.8);
+            letter-spacing: 0.1em;
+        }
+
+        /* Flip animation */
+        @keyframes flip-top {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(-90deg); }
+        }
+
+        @keyframes flip-bottom {
+            0% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        .flipping .flip-top {
+            animation: flip-top 0.3s ease-in forwards;
+        }
+
+        .flipping .flip-bottom {
+            animation: flip-bottom 0.3s ease-out 0.3s forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="clock">
+            <div class="flip-group" id="hours"></div>
+            <div class="separator">
+                <div class="separator-dot"></div>
+                <div class="separator-dot"></div>
+            </div>
+            <div class="flip-group" id="minutes"></div>
+            <div class="separator">
+                <div class="separator-dot"></div>
+                <div class="separator-dot"></div>
+            </div>
+            <div class="flip-group" id="seconds"></div>
+        </div>
+
+        <div class="labels">
+            <div class="label-group"><span class="label">Hours</span></div>
+            <div class="label-group"><span class="label">Minutes</span></div>
+            <div class="label-group"><span class="label">Seconds</span></div>
+        </div>
+
+        <div class="date" id="date"></div>
+    </div>
+
+    <script>
+        class FlipCard {
+            constructor(container) {
+                this.container = container;
+                this.currentValue = '';
+                this.element = document.createElement('div');
+                this.element.className = 'flip-card';
+                this.element.innerHTML = `
+                    <div class="flip-card-inner">
+                        <div class="card top">
+                            <div class="card-face" data-current></div>
+                        </div>
+                        <div class="card bottom">
+                            <div class="card-face" data-current></div>
+                        </div>
+                        <div class="flip-top card">
+                            <div class="card-face" data-flip-top></div>
+                        </div>
+                        <div class="flip-bottom card">
+                            <div class="card-face" data-flip-bottom></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(this.element);
+
+                this.topCard = this.element.querySelector('.card.top .card-face');
+                this.bottomCard = this.element.querySelector('.card.bottom .card-face');
+                this.flipTop = this.element.querySelector('.flip-top');
+                this.flipTopFace = this.element.querySelector('[data-flip-top]');
+                this.flipBottom = this.element.querySelector('.flip-bottom');
+                this.flipBottomFace = this.element.querySelector('[data-flip-bottom]');
+
+                // Hide flip elements initially
+                this.flipTop.style.display = 'none';
+                this.flipBottom.style.display = 'none';
+            }
+
+            setValue(value) {
+                if (value === this.currentValue) return;
+
+                const previousValue = this.currentValue;
+                this.currentValue = value;
+
+                if (previousValue === '') {
+                    // Initial set, no animation
+                    this.topCard.textContent = value;
+                    this.bottomCard.textContent = value;
+                    return;
+                }
+
+                // Set up flip animation
+                this.flipTopFace.textContent = previousValue;
+                this.flipBottomFace.textContent = value;
+
+                // Show flip elements
+                this.flipTop.style.display = 'block';
+                this.flipBottom.style.display = 'block';
+                this.flipTop.style.transform = 'rotateX(0deg)';
+                this.flipBottom.style.transform = 'rotateX(90deg)';
+
+                // Update the static cards
+                this.bottomCard.textContent = value;
+
+                // Trigger animation
+                this.element.classList.add('flipping');
+
+                // Update top card halfway through
+                setTimeout(() => {
+                    this.topCard.textContent = value;
+                }, 300);
+
+                // Clean up after animation
+                setTimeout(() => {
+                    this.element.classList.remove('flipping');
+                    this.flipTop.style.display = 'none';
+                    this.flipBottom.style.display = 'none';
+                }, 600);
+            }
+        }
+
+        // Create flip cards
+        const hoursContainer = document.getElementById('hours');
+        const minutesContainer = document.getElementById('minutes');
+        const secondsContainer = document.getElementById('seconds');
+
+        const hourCards = [new FlipCard(hoursContainer), new FlipCard(hoursContainer)];
+        const minuteCards = [new FlipCard(minutesContainer), new FlipCard(minutesContainer)];
+        const secondCards = [new FlipCard(secondsContainer), new FlipCard(secondsContainer)];
+
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+
+            hourCards[0].setValue(hours[0]);
+            hourCards[1].setValue(hours[1]);
+            minuteCards[0].setValue(minutes[0]);
+            minuteCards[1].setValue(minutes[1]);
+            secondCards[0].setValue(seconds[0]);
+            secondCards[1].setValue(seconds[1]);
+
+            // Update date
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('date').textContent =
+                `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

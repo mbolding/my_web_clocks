@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Clock</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --text-dim: #333;
+            --text-active: #fff;
+            --accent: #ff6b35;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .clock {
+            background: #111;
+            border-radius: 12px;
+            padding: clamp(24px, 6vw, 48px);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            gap: clamp(4px, 1.2vw, 10px);
+            font-size: clamp(0.9rem, 3vw, 1.6rem);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .letter {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            transition: all 0.4s ease;
+            text-shadow: none;
+        }
+
+        .letter.active {
+            color: var(--text-active);
+            text-shadow:
+                0 0 10px rgba(255, 255, 255, 0.5),
+                0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .letter.accent {
+            color: var(--accent);
+            text-shadow:
+                0 0 10px rgba(255, 107, 53, 0.5),
+                0 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .digital {
+            text-align: center;
+            margin-top: 32px;
+            font-size: clamp(0.75rem, 2vw, 1rem);
+            color: #555;
+            letter-spacing: 0.2em;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            color: #444;
+            font-size: clamp(0.65rem, 1.5vw, 0.8rem);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="clock">
+            <div class="grid" id="grid"></div>
+        </div>
+        <div class="digital" id="digital"></div>
+        <div class="footer">Time in words</div>
+    </div>
+
+    <script>
+        // Word clock grid layout
+        const gridLayout = [
+            'ITLISASAMPM',
+            'ACQUARTERDC',
+            'TWENTYFIVEX',
+            'HALFBTENFTO',
+            'PASTERUNINE',
+            'ONESIXTHREE',
+            'FOURFIVETWO',
+            'EIGHTELEVEN',
+            'SEVENTWELVE',
+            'TLOTENSDOCL',
+            'OCKAMPMTIME'
+        ];
+
+        // Word positions [row, startCol, endCol]
+        const words = {
+            'IT': [0, 0, 1],
+            'IS': [0, 3, 4],
+            'A': [0, 6, 6],
+            'AM': [0, 7, 8],
+            'PM': [0, 9, 10],
+            'QUARTER': [1, 2, 8],
+            'TWENTY': [2, 0, 5],
+            'FIVE_MIN': [2, 6, 9],
+            'HALF': [3, 0, 3],
+            'TEN_MIN': [3, 5, 7],
+            'TO': [3, 9, 10],
+            'PAST': [4, 0, 3],
+            'NINE': [4, 7, 10],
+            'ONE': [5, 0, 2],
+            'SIX': [5, 3, 5],
+            'THREE': [5, 6, 10],
+            'FOUR': [6, 0, 3],
+            'FIVE': [6, 4, 7],
+            'TWO': [6, 8, 10],
+            'EIGHT': [7, 0, 4],
+            'ELEVEN': [7, 5, 10],
+            'SEVEN': [8, 0, 4],
+            'TWELVE': [8, 5, 10],
+            'TEN': [9, 3, 5],
+            'OCLOCK': [9, 7, 10, 10, 0, 2]
+        };
+
+        const grid = document.getElementById('grid');
+
+        // Create grid
+        gridLayout.forEach((row, rowIndex) => {
+            [...row].forEach((letter, colIndex) => {
+                const span = document.createElement('span');
+                span.className = 'letter';
+                span.textContent = letter;
+                span.dataset.row = rowIndex;
+                span.dataset.col = colIndex;
+                grid.appendChild(span);
+            });
+        });
+
+        function highlightWord(wordKey, accent = false) {
+            const pos = words[wordKey];
+            if (!pos) return;
+
+            // Handle "OCLOCK" which spans two rows
+            if (wordKey === 'OCLOCK') {
+                // "O" at position [9, 7]
+                activateLetter(9, 7, accent);
+                // "CLOCK" at positions [10, 0-4]
+                for (let col = 0; col <= 4; col++) {
+                    activateLetter(10, col, accent);
+                }
+            } else {
+                const [row, startCol, endCol] = pos;
+                for (let col = startCol; col <= endCol; col++) {
+                    activateLetter(row, col, accent);
+                }
+            }
+        }
+
+        function activateLetter(row, col, accent) {
+            const letter = grid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            if (letter) {
+                letter.classList.add('active');
+                if (accent) letter.classList.add('accent');
+            }
+        }
+
+        function clearHighlights() {
+            grid.querySelectorAll('.letter').forEach(l => {
+                l.classList.remove('active', 'accent');
+            });
+        }
+
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const isPM = hours >= 12;
+
+            clearHighlights();
+
+            // Always show "IT IS"
+            highlightWord('IT');
+            highlightWord('IS');
+
+            // Determine minute phrase
+            const roundedMinutes = Math.round(minutes / 5) * 5;
+            let displayHour = hours;
+            let useTo = false;
+
+            if (roundedMinutes > 30) {
+                useTo = true;
+                displayHour = (hours + 1) % 24;
+            }
+
+            // Minute words
+            switch (roundedMinutes) {
+                case 0:
+                case 60:
+                    highlightWord('OCLOCK');
+                    break;
+                case 5:
+                case 55:
+                    highlightWord('FIVE_MIN');
+                    break;
+                case 10:
+                case 50:
+                    highlightWord('TEN_MIN');
+                    break;
+                case 15:
+                case 45:
+                    highlightWord('A');
+                    highlightWord('QUARTER');
+                    break;
+                case 20:
+                case 40:
+                    highlightWord('TWENTY');
+                    break;
+                case 25:
+                case 35:
+                    highlightWord('TWENTY');
+                    highlightWord('FIVE_MIN');
+                    break;
+                case 30:
+                    highlightWord('HALF');
+                    break;
+            }
+
+            // Past or To
+            if (roundedMinutes !== 0 && roundedMinutes !== 60) {
+                if (useTo) {
+                    highlightWord('TO');
+                } else {
+                    highlightWord('PAST');
+                }
+            }
+
+            // Hour
+            const hourDisplay = displayHour % 12 || 12;
+            const hourWords = {
+                1: 'ONE', 2: 'TWO', 3: 'THREE', 4: 'FOUR', 5: 'FIVE',
+                6: 'SIX', 7: 'SEVEN', 8: 'EIGHT', 9: 'NINE', 10: 'TEN',
+                11: 'ELEVEN', 12: 'TWELVE'
+            };
+            highlightWord(hourWords[hourDisplay], true);
+
+            // AM/PM
+            const displayIsPM = useTo ? (displayHour >= 12 && displayHour < 24) : isPM;
+            if (displayIsPM) {
+                highlightWord('PM');
+            } else {
+                highlightWord('AM');
+            }
+
+            // Digital display
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            document.getElementById('digital').textContent = timeStr;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

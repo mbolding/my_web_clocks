@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Clock</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --led-off: #1a1a2e;
+            --led-on: #00ff88;
+            --led-glow: rgba(0, 255, 136, 0.6);
+            --text: #4a4a6a;
+            --text-bright: #8a8aaa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            font-family: 'Courier New', monospace;
+            padding: 24px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .title {
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            color: var(--text);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .clock {
+            display: flex;
+            gap: clamp(20px, 5vw, 40px);
+        }
+
+        .time-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .group-label {
+            font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+            color: var(--text);
+            letter-spacing: 0.2em;
+        }
+
+        .columns {
+            display: flex;
+            gap: clamp(8px, 2vw, 16px);
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(6px, 1.5vw, 10px);
+        }
+
+        .led {
+            width: clamp(16px, 4vw, 28px);
+            height: clamp(16px, 4vw, 28px);
+            border-radius: 4px;
+            background: var(--led-off);
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .led.on {
+            background: var(--led-on);
+            box-shadow:
+                0 0 10px var(--led-glow),
+                0 0 20px var(--led-glow),
+                0 0 30px var(--led-glow),
+                inset 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .led::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 50%;
+            bottom: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+            border-radius: 2px 0 0 0;
+        }
+
+        .bit-labels {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(6px, 1.5vw, 10px);
+            margin-right: clamp(8px, 2vw, 16px);
+            justify-content: flex-end;
+        }
+
+        .bit-label {
+            height: clamp(16px, 4vw, 28px);
+            display: flex;
+            align-items: center;
+            font-size: clamp(0.5rem, 1.2vw, 0.65rem);
+            color: var(--text);
+        }
+
+        .separator {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 clamp(4px, 1vw, 10px);
+        }
+
+        .separator-dot {
+            width: clamp(8px, 2vw, 12px);
+            height: clamp(8px, 2vw, 12px);
+            border-radius: 50%;
+            background: var(--led-on);
+            box-shadow: 0 0 10px var(--led-glow);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .digital-display {
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            color: var(--led-on);
+            text-shadow: 0 0 10px var(--led-glow);
+            font-weight: bold;
+            letter-spacing: 0.1em;
+        }
+
+        .date-display {
+            font-size: clamp(0.7rem, 1.8vw, 0.9rem);
+            color: var(--text-bright);
+            letter-spacing: 0.1em;
+        }
+
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: clamp(0.55rem, 1.2vw, 0.7rem);
+            color: var(--text);
+        }
+
+        .legend-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-led.off {
+            background: var(--led-off);
+        }
+
+        .legend-led.on {
+            background: var(--led-on);
+            box-shadow: 0 0 5px var(--led-glow);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Binary Clock</h1>
+
+        <div class="clock">
+            <div class="bit-labels">
+                <div class="bit-label">8</div>
+                <div class="bit-label">4</div>
+                <div class="bit-label">2</div>
+                <div class="bit-label">1</div>
+            </div>
+
+            <div class="time-group">
+                <div class="group-label">HOURS</div>
+                <div class="columns">
+                    <div class="column" id="hour-tens"></div>
+                    <div class="column" id="hour-ones"></div>
+                </div>
+            </div>
+
+            <div class="separator">
+                <div class="separator-dot"></div>
+                <div class="separator-dot"></div>
+            </div>
+
+            <div class="time-group">
+                <div class="group-label">MINUTES</div>
+                <div class="columns">
+                    <div class="column" id="min-tens"></div>
+                    <div class="column" id="min-ones"></div>
+                </div>
+            </div>
+
+            <div class="separator">
+                <div class="separator-dot"></div>
+                <div class="separator-dot"></div>
+            </div>
+
+            <div class="time-group">
+                <div class="group-label">SECONDS</div>
+                <div class="columns">
+                    <div class="column" id="sec-tens"></div>
+                    <div class="column" id="sec-ones"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="digital-display" id="digitalTime"></div>
+        <div class="date-display" id="dateDisplay"></div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-led off"></div>
+                <span>0 (OFF)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-led on"></div>
+                <span>1 (ON)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createColumn(id, bits) {
+            const column = document.getElementById(id);
+            column.innerHTML = '';
+            for (let i = bits - 1; i >= 0; i--) {
+                const led = document.createElement('div');
+                led.className = 'led';
+                led.dataset.bit = i;
+                column.appendChild(led);
+            }
+        }
+
+        function setBinary(columnId, value, bits) {
+            const column = document.getElementById(columnId);
+            const leds = column.querySelectorAll('.led');
+            leds.forEach((led, index) => {
+                const bitPosition = bits - 1 - index;
+                const bitValue = (value >> bitPosition) & 1;
+                led.classList.toggle('on', bitValue === 1);
+            });
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+
+            setBinary('hour-tens', Math.floor(hours / 10), 4);
+            setBinary('hour-ones', hours % 10, 4);
+            setBinary('min-tens', Math.floor(minutes / 10), 4);
+            setBinary('min-ones', minutes % 10, 4);
+            setBinary('sec-tens', Math.floor(seconds / 10), 4);
+            setBinary('sec-ones', seconds % 10, 4);
+
+            const timeStr = [hours, minutes, seconds]
+                .map(n => n.toString().padStart(2, '0'))
+                .join(':');
+            document.getElementById('digitalTime').textContent = timeStr;
+
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+            document.getElementById('dateDisplay').textContent = dateStr;
+        }
+
+        // Initialize columns
+        createColumn('hour-tens', 4);
+        createColumn('hour-ones', 4);
+        createColumn('min-tens', 4);
+        createColumn('min-ones', 4);
+        createColumn('sec-tens', 4);
+        createColumn('sec-ones', 4);
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>
