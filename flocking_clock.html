@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flocking Clock</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: sans-serif;
+            text-align: center;
+        }
+        canvas {
+            display: block;
+        }
+        #digitalTime {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="flockingCanvas"></canvas>
+    <div id="digitalTime"></div>
+    <script>
+        const canvas = document.getElementById('flockingCanvas');
+        const ctx = canvas.getContext('2d');
+        const digitalTimeElement = document.getElementById('digitalTime');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Vector {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+            add(v) { this.x += v.x; this.y += v.y; return this; }
+            sub(v) { this.x -= v.x; this.y -= v.y; return this; }
+            mult(s) { this.x *= s; this.y *= s; return this; }
+            div(s) { this.x /= s; this.y /= s; return this; }
+            mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+            normalize() { const mag = this.mag(); if (mag > 0) this.div(mag); return this; }
+            limit(max) { if (this.mag() > max) this.normalize().mult(max); return this; }
+            static sub(v1, v2) { return new Vector(v1.x - v2.x, v1.y - v2.y); }
+        }
+
+        class Boid {
+            constructor() {
+                this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
+                this.velocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1);
+                this.acceleration = new Vector(0, 0);
+            }
+
+            applyForce(force) {
+                this.acceleration.add(force);
+            }
+
+            flock(boids, cohesionFactor, maxSpeed) {
+                let separation = new Vector(0, 0);
+                let alignment = new Vector(0, 0);
+                let cohesion = new Vector(0, 0);
+                let perceptionRadius = 50;
+                let separationRadius = 25;
+                let total = 0;
+
+                for (let other of boids) {
+                    if (other !== this) {
+                        let d = Vector.sub(this.position, other.position).mag();
+                        if (d < perceptionRadius) {
+                            alignment.add(other.velocity);
+                            cohesion.add(other.position);
+                            if (d < separationRadius) {
+                                let diff = Vector.sub(this.position, other.position);
+                                diff.div(d * d); // Weight by distance
+                                separation.add(diff);
+                            }
+                            total++;
+                        }
+                    }
+                }
+
+                if (total > 0) {
+                    alignment.div(total).normalize().mult(maxSpeed);
+                    alignment.sub(this.velocity).limit(0.2);
+
+                    cohesion.div(total);
+                    cohesion.sub(this.position).normalize().mult(maxSpeed);
+                    cohesion.sub(this.velocity).limit(0.1 * cohesionFactor);
+                    
+                    separation.div(total).normalize().mult(maxSpeed);
+                    separation.sub(this.velocity).limit(0.3);
+                }
+                
+                this.applyForce(separation);
+                this.applyForce(alignment);
+                this.applyForce(cohesion);
+            }
+
+            seek(target) {
+                let desired = Vector.sub(target, this.position).normalize().mult(5);
+                let steer = Vector.sub(desired, this.velocity).limit(0.05);
+                this.applyForce(steer);
+            }
+
+            update(maxSpeed) {
+                this.velocity.add(this.acceleration);
+                this.velocity.limit(maxSpeed);
+                this.position.add(this.velocity);
+                this.acceleration.mult(0); // Reset acceleration
+                this.edges();
+            }
+
+            edges() {
+                if (this.position.x > canvas.width) this.position.x = 0;
+                else if (this.position.x < 0) this.position.x = canvas.width;
+                if (this.position.y > canvas.height) this.position.y = 0;
+                else if (this.position.y < 0) this.position.y = canvas.height;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.position.x, this.position.y);
+                ctx.rotate(Math.atan2(this.velocity.y, this.velocity.x));
+                ctx.beginPath();
+                ctx.moveTo(10, 0);
+                ctx.lineTo(-5, -5);
+                ctx.lineTo(-5, 5);
+                ctx.closePath();
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const flock = [];
+        for (let i = 0; i < 150; i++) {
+            flock.push(new Boid());
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+            const ms = now.getMilliseconds();
+
+            // Time-dependent parameters
+            const hourAngle = ((h % 12) + m / 60) / 12 * 2 * Math.PI - Math.PI / 2;
+            const target = new Vector(
+                canvas.width / 2 + (canvas.width * 0.4) * Math.cos(hourAngle),
+                canvas.height / 2 + (canvas.height * 0.4) * Math.sin(hourAngle)
+            );
+            const cohesionFactor = (m + s/60) / 60; // 0 to 1 over the hour
+            const maxSpeed = 2 + 2 * Math.sin((s + ms/1000) * 2 * Math.PI / 10);
+
+            // Draw hour target
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, 20, 0, 2*Math.PI);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fill();
+
+            flock.forEach(boid => {
+                boid.flock(flock, cohesionFactor, maxSpeed);
+                boid.seek(target);
+                boid.update(maxSpeed);
+                boid.draw();
+            });
+            
+            digitalTimeElement.textContent = now.toLocaleTimeString();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

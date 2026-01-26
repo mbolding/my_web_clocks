@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODE Clock</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            background-color: #fff;
+            border: 1px solid #ccc;
+        }
+
+        #digitalTime {
+            position: absolute;
+            bottom: 20px;
+            font-family: sans-serif;
+            font-size: 1.5rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="odeCanvas"></canvas>
+    <div id="digitalTime"></div>
+    <script>
+        const canvas = document.getElementById('odeCanvas');
+        const ctx = canvas.getContext('2d');
+        const digitalTimeElement = document.getElementById('digitalTime');
+
+        const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
+        canvas.width = size;
+        canvas.height = size;
+
+        const gridSpacing = 30;
+        const numCols = Math.floor(size / gridSpacing);
+        const numRows = Math.floor(size / gridSpacing);
+        const dt = 0.1;
+        const maxParticles = 100;
+
+        class Particle {
+            constructor(x, y, color, trailLength = 50) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.history = [];
+                this.trailLength = trailLength;
+            }
+
+            update(a, b) {
+                let canvasX = this.x - size / 2;
+                let canvasY = this.y - size / 2;
+
+                const dx = a * canvasX - b * canvasY;
+                const dy = b * canvasX + a * canvasY;
+
+                this.x += dx * dt;
+                this.y += dy * dt;
+
+                this.history.push([this.x, this.y]);
+                if (this.history.length > this.trailLength) {
+                    this.history.shift();
+                }
+
+                if (this.x > size || this.x < 0 || this.y > size || this.y < 0) {
+                    this.x = Math.random() * size;
+                    this.y = Math.random() * size;
+                    this.history = [];
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                if (this.history.length > 1) {
+                    ctx.moveTo(this.history[0][0], this.history[0][1]);
+                    for (let i = 1; i < this.history.length; i++) {
+                        ctx.lineTo(this.history[i][0], this.history[i][1]);
+                    }
+                }
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        const particles = [];
+
+        function spawnParticle() {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const hue = Math.random() * 360;
+            const color = `hsla(${hue}, 80%, 50%, 0.8)`;
+            particles.push(new Particle(x, y, color));
+        }
+
+        function drawVectorField(a, b) {
+            ctx.strokeStyle = `rgba(0, 0, 0, 0.1)`;
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < numCols; i++) {
+                for (let j = 0; j < numRows; j++) {
+                    const x = i * gridSpacing + gridSpacing / 2;
+                    const y = j * gridSpacing + gridSpacing / 2;
+                    
+                    let canvasX = x - size / 2;
+                    let canvasY = y - size / 2;
+
+                    const dx = a * canvasX - b * canvasY;
+                    const dy = b * canvasX + a * canvasY;
+                    
+                    const angle = Math.atan2(dy, dx);
+                    
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(gridSpacing / 4, 0);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(0, 0, size, size);
+
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+            const ms = now.getMilliseconds();
+
+            const a = Math.sin((s + ms/1000) * 2 * Math.PI / 60) * 0.05;
+            const b = (m + s/60) / 60 * 0.3 + 0.1;
+
+            drawVectorField(a, b);
+
+            if (particles.length < maxParticles && Math.random() < 0.5) {
+                spawnParticle();
+            }
+
+            particles.forEach(p => {
+                p.update(a, b);
+                p.draw();
+            });
+
+            digitalTimeElement.textContent = now.toLocaleTimeString();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Source Serif Pro', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .paper {
+            background-color: #ffffff;
+            width: 80vw;
+            max-width: 800px;
+            height: 80vh;
+            padding: 50px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .author {
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        .date {
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .content {
+            text-align: center;
+        }
+
+        .section {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .time-display {
+            font-size: 4rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="paper">
+        <div class="header">
+            <div class="title">Current Time</div>
+            <div class="author">Gemini</div>
+            <div id="date" class="date"></div>
+        </div>
+        <div class="content">
+            <div class="section">Time</div>
+            <div id="time" class="time-display"></div>
+        </div>
+    </div>
+    <script>
+        const timeElement = document.getElementById('time');
+        const dateElement = document.getElementById('date');
+
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function formatDate(date) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            timeElement.textContent = formatTime(now);
+            dateElement.textContent = formatDate(now);
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call to display clock immediately
+    </script>
+</body>
+</html>

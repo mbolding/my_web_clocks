@@ -7,13 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f0f1e;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --card-hover: rgba(255, 255, 255, 0.1);
-            --text: #e8e8f0;
-            --text-muted: #a0a0b8;
-            --accent: #6366f1;
-            --border: rgba(255, 255, 255, 0.1);
+            --bg: #ffffff;
+            --text: #000000;
+            --text-muted: #888888;
+            --border: #eeeeee;
         }
 
         * {
@@ -45,16 +42,6 @@
             font-size: clamp(2rem, 5vw, 3.5rem);
             font-weight: 600;
             margin-bottom: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .subtitle {
-            font-size: clamp(1rem, 2vw, 1.2rem);
-            color: var(--text-muted);
-            font-weight: 300;
         }
 
         .clock-grid {
@@ -65,11 +52,8 @@
         }
 
         .clock-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 32px;
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0;
             transition: all 0.3s ease;
             cursor: pointer;
             text-decoration: none;
@@ -80,10 +64,7 @@
         }
 
         .clock-card:hover {
-            background: var(--card-hover);
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
-            border-color: var(--accent);
+            opacity: 0.6;
         }
 
         .clock-icon {
@@ -103,19 +84,6 @@
             line-height: 1.6;
         }
 
-        .tag {
-            display: inline-block;
-            padding: 4px 12px;
-            background: rgba(99, 102, 241, 0.2);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 12px;
-            font-size: 0.75rem;
-            color: var(--accent);
-            margin-top: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
         footer {
             text-align: center;
             padding-top: 48px;
@@ -124,12 +92,12 @@
         }
 
         footer a {
-            color: var(--accent);
-            text-decoration: none;
+            color: var(--text);
+            text-decoration: underline;
         }
 
         footer a:hover {
-            text-decoration: underline;
+            opacity: 0.6;
         }
 
         @media (max-width: 600px) {
@@ -142,88 +110,345 @@
 <body>
     <div class="container">
         <header>
-            <h1>Creative Web Clocks</h1>
-            <p class="subtitle">A collection of unique, self-contained time displays</p>
+            <h1>Web Clocks</h1>
+
         </header>
 
         <div class="clock-grid">
             <a href="ng26_clock.html" class="clock-card">
-                <div class="clock-icon">🕰️</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">NeuroGateways '26</div>
-                <div class="clock-description">Traditional analog clock with Tufte-inspired design, countdown timer, and minute tick sounds.</div>
-                <div class="tag">Analog</div>
+                <div class="clock-description">A traditional analog clock with a countdown timer.</div>
+
+
             </a>
 
             <a href="hsv_clock.html" class="clock-card">
-                <div class="clock-icon">🎨</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">HSV Clock</div>
-                <div class="clock-description">Time mapped to HSV color model. Hours control hue, seconds control saturation, minutes control value.</div>
-                <div class="tag">Color</div>
+                <div class="clock-description">A clock that maps the time to the HSV color model.</div>
+
+
+
             </a>
 
             <a href="circadian_clock.html" class="clock-card">
-                <div class="clock-icon">🌅</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">Circadian Clock</div>
-                <div class="clock-description">20 natural time periods with dynamic backgrounds, celestial bodies, and contextual suggestions.</div>
-                <div class="tag">Natural</div>
+                <div class="clock-description">A clock that shows 20 defined circadian periods throughout the day.</div>
+
             </a>
 
             <a href="binary_clock.html" class="clock-card">
-                <div class="clock-icon">💾</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">Binary Clock</div>
-                <div class="clock-description">LED-style binary display with glowing effects. Time shown in 4-bit binary format.</div>
-                <div class="tag">Binary</div>
+                <div class="clock-description">A clock that displays the time in binary format.</div>
+
             </a>
 
             <a href="flip_clock.html" class="clock-card">
-                <div class="clock-icon">🔄</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">Flip Clock</div>
-                <div class="clock-description">Mechanical flip card animation with split-flap display effect and smooth transitions.</div>
-                <div class="tag">Animated</div>
+                <div class="clock-description">A clock that simulates a mechanical flip clock.</div>
+
             </a>
 
             <a href="particle_clock.html" class="clock-card">
-                <div class="clock-icon">✨</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">Particle Clock</div>
-                <div class="clock-description">Canvas-based particle system with spring physics and color transitions based on velocity.</div>
-                <div class="tag">Physics</div>
+                <div class="clock-description">A clock that uses a particle system to display the time.</div>
+
             </a>
 
             <a href="polar_clock.html" class="clock-card">
-                <div class="clock-icon">⭕</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">Polar Clock</div>
-                <div class="clock-description">Concentric circles representing hours, minutes, and seconds with smooth arc animations.</div>
-                <div class="tag">Circular</div>
+                <div class="clock-description">A clock that uses concentric circles to represent hours, minutes, and seconds.</div>
+
             </a>
 
             <a href="word_clock.html" class="clock-card">
-                <div class="clock-icon">📝</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">Word Clock</div>
-                <div class="clock-description">Natural language time display with smooth word transitions and conversational formatting.</div>
-                <div class="tag">Text</div>
+                <div class="clock-description">A clock that displays the time in written English.</div>
+
             </a>
 
             <a href="spectrum_clock.html" class="clock-card">
-                <div class="clock-icon">🌈</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">Spectrum Clock</div>
-                <div class="clock-description">Color spectrum visualization with vertical bars and dynamic gradient backgrounds.</div>
-                <div class="tag">Color</div>
+                <div class="clock-description">A clock that represents the time as colors on a spectrum.</div>
+
             </a>
 
             <a href="ng26_countdown.html" class="clock-card">
-                <div class="clock-icon">⏱️</div>
+                <div class="clock-icon"></div>
                 <div class="clock-name">NeuroGateways Countdown</div>
-                <div class="clock-description">Event countdown timer with days, hours, minutes, and seconds display.</div>
-                <div class="tag">Countdown</div>
+                <div class="clock-description">A countdown timer.</div>
+
             </a>
 
-            <a href="sundial_clock.html" class="clock-card">
-                <div class="clock-icon">☀️</div>
-                <div class="clock-name">Sundial Clock</div>
-                <div class="clock-description">3D sundial with real-time sun positioning and shadow casting using Three.js.</div>
-                <div class="tag">3D</div>
-            </a>
-        </div>
+                        <a href="sundial_clock.html" class="clock-card">
+
+                            <div class="clock-icon"></div>
+
+                            <div class="clock-name">Sundial Clock</div>
+
+                            <div class="clock-description">A 3D sundial that uses Three.js.</div>
+
+                        </a>
+
+            
+
+                                    <a href="arcade_clock.html" class="clock-card">
+
+            
+
+                                        <div class="clock-icon"></div>
+
+            
+
+                                        <div class="clock-name">Arcade Clock</div>
+
+            
+
+                                        <div class="clock-description">A clock inspired by classic arcade games.</div>
+
+            
+
+                                    </a>
+
+            
+
+                        
+
+            
+
+                                                <a href="latex_clock.html" class="clock-card">
+
+            
+
+                        
+
+            
+
+                                                    <div class="clock-icon"></div>
+
+            
+
+                        
+
+            
+
+                                                    <div class="clock-name">LaTeX Clock</div>
+
+            
+
+                        
+
+            
+
+                                                    <div class="clock-description">A clock inspired by the LaTeX typesetting system.</div>
+
+            
+
+                        
+
+            
+
+                                                </a>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                            <a href="ode_clock.html" class="clock-card">
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                                <div class="clock-icon"></div>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                                <div class="clock-name">ODE Clock</div>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                                <div class="clock-description">A clock inspired by ordinary differential equations.</div>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                            </a>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                            <a href="flocking_clock.html" class="clock-card">
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                                <div class="clock-icon"></div>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                                <div class="clock-name">Flocking Clock</div>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                                <div class="clock-description">A clock with flocking behavior dependent on the time.</div>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                            </a>
+
+            
+
+                        
+
+            
+
+                                    
+
+            
+
+                        
+
+            
+
+                                                        </div>
 
         <footer>
             <p>All clocks are self-contained HTML files with no dependencies.</p>
