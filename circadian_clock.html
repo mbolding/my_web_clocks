@@ -178,6 +178,14 @@
             opacity: 0.6;
             letter-spacing: 0.1em;
         }
+
+        .location-display {
+            font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+            opacity: 0.4;
+            letter-spacing: 0.05em;
+            margin-top: 8px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -199,72 +207,195 @@
 
         <div class="suggestions" id="suggestions"></div>
         <div class="date-display" id="dateDisplay"></div>
+        <div class="location-display" id="locationDisplay">Detecting location...</div>
     </div>
 
     <script>
-        // Define circadian periods
-        const periods = [
-            { name: 'The Small Hours', start: 0, end: 4, icon: '🌑', color: '#1a237e',
-              desc: 'The world sleeps. Dreams drift through the darkness.',
-              suggestions: ['Deep sleep', 'Dreamtime', 'Rest'] },
-            { name: 'First Light', start: 4, end: 5.5, icon: '🌅', color: '#4a148c',
-              desc: 'The horizon whispers of the coming day.',
-              suggestions: ['Early rising', 'Meditation', 'Quiet reflection'] },
-            { name: 'Dawn', start: 5.5, end: 7, icon: '🌄', color: '#ff6f00',
-              desc: 'The sun stretches above the earth. Birds announce the morning.',
-              suggestions: ['Wake gently', 'Morning stretch', 'Watch sunrise'] },
-            { name: 'Early Morning', start: 7, end: 8, icon: '☀️', color: '#ffab00',
-              desc: 'Fresh beginnings. The day unfolds its possibilities.',
-              suggestions: ['Breakfast', 'Morning walk', 'Plan your day'] },
-            { name: 'Breakfast Time', start: 8, end: 9, icon: '🍳', color: '#ffd54f',
-              desc: 'Nourish yourself for the journey ahead.',
-              suggestions: ['Eat mindfully', 'Morning coffee', 'Read the news'] },
-            { name: 'Mid-Morning', start: 9, end: 10.5, icon: '🌞', color: '#ffeb3b',
-              desc: 'Energy rises. The mind is sharp and ready.',
-              suggestions: ['Deep work', 'Important tasks', 'Creative thinking'] },
-            { name: 'Elevenses', start: 10.5, end: 11, icon: '☕', color: '#fff176',
-              desc: 'A brief pause. A warm cup and a moment of calm.',
-              suggestions: ['Tea break', 'Light snack', 'Stretch'] },
-            { name: 'Late Morning', start: 11, end: 12, icon: '⏳', color: '#fff59d',
-              desc: 'The morning matures. Tasks approach completion.',
-              suggestions: ['Finish morning work', 'Prepare for lunch', 'Check in'] },
-            { name: 'High Noon', start: 12, end: 12.5, icon: '🌤️', color: '#fff9c4',
-              desc: 'The sun reaches its zenith. A moment of pause.',
-              suggestions: ['Midday break', 'Step outside', 'Breathe'] },
-            { name: 'Lunch Time', start: 12.5, end: 14, icon: '🍽️', color: '#ffe082',
-              desc: 'Replenish. Share a meal. Rest the working mind.',
-              suggestions: ['Eat well', 'Take a walk', 'Good conversation'] },
-            { name: 'Early Afternoon', start: 14, end: 15, icon: '🌻', color: '#ffca28',
-              desc: 'The gentle lull after eating. Ease back into motion.',
-              suggestions: ['Light tasks', 'Meetings', 'Collaboration'] },
-            { name: 'Afternoon', start: 15, end: 16, icon: '📚', color: '#ffc107',
-              desc: 'Steady progress. The day deepens.',
-              suggestions: ['Focused work', 'Reading', 'Learning'] },
-            { name: 'Tea Time', start: 16, end: 17, icon: '🫖', color: '#ffb300',
-              desc: 'The civilized pause. Refresh before the evening.',
-              suggestions: ['Afternoon tea', 'Sweet treat', 'Reflect on the day'] },
-            { name: 'Late Afternoon', start: 17, end: 18, icon: '🌇', color: '#ff8f00',
-              desc: 'Golden light stretches long. The day begins to soften.',
-              suggestions: ['Wind down work', 'Evening plans', 'Transition'] },
-            { name: 'Golden Hour', start: 18, end: 19, icon: '✨', color: '#ff6f00',
-              desc: 'Everything glows amber. Magic light bathes the world.',
-              suggestions: ['Be outside', 'Photography', 'Appreciate beauty'] },
-            { name: 'Dusk', start: 19, end: 20, icon: '🌆', color: '#e65100',
-              desc: 'Day and night embrace. Colors deepen into violet.',
-              suggestions: ['Watch sunset', 'Evening walk', 'Gratitude'] },
-            { name: 'Dinner Time', start: 20, end: 21, icon: '🍷', color: '#bf360c',
-              desc: 'Gather around the table. Share stories and sustenance.',
-              suggestions: ['Enjoy dinner', 'Family time', 'Good food'] },
-            { name: 'Evening', start: 21, end: 22, icon: '🌙', color: '#4e342e',
-              desc: 'The night settles in. Warmth and quiet companionship.',
-              suggestions: ['Relax', 'Read', 'Quality time'] },
-            { name: 'Night', start: 22, end: 23, icon: '🌃', color: '#3e2723',
-              desc: 'Stars emerge. The world grows hushed.',
-              suggestions: ['Wind down', 'Gentle activities', 'Prepare for rest'] },
-            { name: 'Bedtime', start: 23, end: 24, icon: '😴', color: '#1a237e',
-              desc: 'The body calls for rest. Let sleep come.',
-              suggestions: ['Sleep ritual', 'Dim lights', 'Let go of the day'] }
-        ];
+        // Solar calculation functions
+        let userLatitude = 40; // Default fallback
+        let userLongitude = -74;
+        let userLocation = 'Unknown Location';
+
+        function calculateSunriseSunset(lat, lon, date) {
+            try {
+                const julianDate = date.getTime() / 86400000 + 2440587.5;
+                const n = julianDate - 2451545.0 + 0.0008;
+                const meanAnomaly = (357.5291 + 0.98560028 * n) % 360;
+                const center = 1.9148 * Math.sin(meanAnomaly * Math.PI / 180) +
+                              0.0200 * Math.sin(2 * meanAnomaly * Math.PI / 180) +
+                              0.0003 * Math.sin(3 * meanAnomaly * Math.PI / 180);
+                const eclipticLon = (meanAnomaly + center + 180 + 102.9372) % 360;
+
+                const solarNoon = n - lon / 360;
+                const declination = Math.asin(Math.sin(eclipticLon * Math.PI / 180) *
+                                   Math.sin(23.44 * Math.PI / 180)) * 180 / Math.PI;
+
+                const hourAngle = Math.acos((Math.sin(-0.83 * Math.PI / 180) -
+                                 Math.sin(lat * Math.PI / 180) * Math.sin(declination * Math.PI / 180)) /
+                                 (Math.cos(lat * Math.PI / 180) * Math.cos(declination * Math.PI / 180))) * 180 / Math.PI;
+
+                let sunrise = (solarNoon - hourAngle / 360) * 24;
+                let sunset = (solarNoon + hourAngle / 360) * 24;
+
+                // Ensure values are within valid range
+                if (isNaN(sunrise) || sunrise < 0) sunrise = 6;
+                if (isNaN(sunset) || sunset > 24) sunset = 18;
+                if (sunrise >= sunset) {
+                    sunrise = 6;
+                    sunset = 18;
+                }
+
+                return { sunrise, sunset };
+            } catch (error) {
+                console.error('Error calculating sunrise/sunset:', error);
+                // Fallback to reasonable defaults
+                return { sunrise: 6, sunset: 18 };
+            }
+        }
+
+        function getDynamicPeriods() {
+            try {
+                const now = new Date();
+                const { sunrise, sunset } = calculateSunriseSunset(userLatitude, userLongitude, now);
+
+                const solarNoon = (sunrise + sunset) / 2;
+
+                // Periods aligned with user's schedule
+                const periods = [
+                    { name: 'Deep Sleep', start: 0, end: 6, icon: '🌑', color: '#1a237e',
+                      desc: 'The world sleeps. Dreams drift through the darkness.',
+                      suggestions: ['Deep sleep', 'Rest', 'Dreamtime'] },
+                    { name: 'Wake Up', start: 6, end: 6.5, icon: '🌅', color: '#4a148c',
+                      desc: 'A new day begins. Time to rise.',
+                      suggestions: ['Wake gently', 'Morning stretch', 'Hydrate'] },
+                    { name: 'Morning Coffee', start: 6.5, end: 7.5, icon: '☕', color: '#ff6f00',
+                      desc: 'First coffee of the day. Energy awakens.',
+                      suggestions: ['Coffee', 'Breakfast', 'Morning routine'] },
+                    { name: 'Commute', start: 7.5, end: 8, icon: '🚗', color: '#ffab00',
+                      desc: 'Journey to work begins.',
+                      suggestions: ['Podcast', 'Music', 'Plan your day'] },
+                    { name: 'Work Morning', start: 8, end: 12, icon: '💼', color: '#ffd54f',
+                      desc: 'Focus and productivity. Deep work hours.',
+                      suggestions: ['Important tasks', 'Meetings', 'Creative work'] },
+                    { name: 'Lunch Break', start: 12, end: 13, icon: '🍽️', color: '#fff9c4',
+                      desc: 'Midday pause. Nourish and recharge.',
+                      suggestions: ['Eat well', 'Walk outside', 'Rest mind'] },
+                    { name: 'Work Afternoon', start: 13, end: 17, icon: '📊', color: '#ffe082',
+                      desc: 'Steady progress through the afternoon.',
+                      suggestions: ['Collaboration', 'Focused work', 'Wrap up tasks'] },
+                    { name: 'End of Work', start: 17, end: 17.5, icon: '🎯', color: '#ffc107',
+                      desc: 'Workday complete. Transition to evening.',
+                      suggestions: ['Finish up', 'Plan tomorrow', 'Decompress'] },
+                    { name: 'Evening Commute', start: 17.5, end: 18, icon: '🏠', color: '#ffb300',
+                      desc: 'Journey home. The day winds down.',
+                      suggestions: ['Music', 'Audiobook', 'Unwind'] },
+                    { name: 'Golden Hour', start: Math.max(18, sunset - 1), end: Math.min(19, sunset + 0.5), icon: '✨', color: '#ff8f00',
+                      desc: 'Evening light. Time to relax before dinner.',
+                      suggestions: ['Be outside', 'Walk', 'Appreciate beauty'] },
+                    { name: 'Dinner Time', start: 19, end: 20, icon: '🍷', color: '#ff6f00',
+                      desc: 'Evening meal. Gather and share.',
+                      suggestions: ['Good food', 'Conversation', 'Family time'] },
+                    { name: 'Evening', start: 20, end: 21, icon: '🌙', color: '#e65100',
+                      desc: 'The night settles in. Time to unwind.',
+                      suggestions: ['Relax', 'Read', 'TV', 'Hobbies'] },
+                    { name: 'Bedtime', start: 21, end: 23, icon: '😴', color: '#4e342e',
+                      desc: 'Time for rest. Wind down and prepare for sleep.',
+                      suggestions: ['Sleep ritual', 'Dim lights', 'Prepare for bed'] },
+                    { name: 'Sleep', start: 23, end: 24, icon: '🌑', color: '#1a237e',
+                      desc: 'Falling asleep. The world grows quiet.',
+                      suggestions: ['Deep rest', 'Dream', 'Sleep'] }
+                ];
+
+                // Filter out invalid periods (where start >= end)
+                const validPeriods = periods.filter(p => p.start < p.end);
+
+                if (validPeriods.length === 0) {
+                    throw new Error('No valid periods generated');
+                }
+
+                return validPeriods;
+            } catch (error) {
+                console.error('Error in getDynamicPeriods:', error);
+                // Fallback to simple fixed periods
+                return [
+                    { name: 'Night', start: 0, end: 6, icon: '🌑', color: '#1a237e',
+                      desc: 'The world sleeps.', suggestions: ['Rest'] },
+                    { name: 'Morning', start: 6, end: 12, icon: '☀️', color: '#ffab00',
+                      desc: 'A new day begins.', suggestions: ['Wake up'] },
+                    { name: 'Afternoon', start: 12, end: 18, icon: '🌤️', color: '#fff9c4',
+                      desc: 'The day continues.', suggestions: ['Work'] },
+                    { name: 'Evening', start: 18, end: 24, icon: '🌙', color: '#4e342e',
+                      desc: 'The day winds down.', suggestions: ['Relax'] }
+                ];
+            }
+        }
+
+        // Get user location
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLatitude = position.coords.latitude;
+                        userLongitude = position.coords.longitude;
+
+                        // Reverse geocode to get location name
+                        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLatitude}&lon=${userLongitude}&format=json`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const city = data.address.city || data.address.town || data.address.village || '';
+                                const state = data.address.state || '';
+                                const country = data.address.country || '';
+                                userLocation = [city, state, country].filter(x => x).join(', ');
+                                document.getElementById('locationDisplay').textContent = userLocation;
+                                recreateWheel();
+                            })
+                            .catch(() => {
+                                userLocation = `${userLatitude.toFixed(2)}°, ${userLongitude.toFixed(2)}°`;
+                                document.getElementById('locationDisplay').textContent = userLocation;
+                                recreateWheel();
+                            });
+                    },
+                    (error) => {
+                        document.getElementById('locationDisplay').textContent = 'Location unavailable (using default)';
+                        recreateWheel();
+                    }
+                );
+            } else {
+                document.getElementById('locationDisplay').textContent = 'Geolocation not supported';
+                recreateWheel();
+            }
+        }
+
+        function recreateWheel() {
+            try {
+                const wheel = document.getElementById('wheel');
+                wheel.innerHTML = '';
+                const periods = getDynamicPeriods();
+                const radius = 86;
+                const circumference = 2 * Math.PI * radius;
+
+                periods.forEach((period, index) => {
+                    const startAngle = (period.start / 24) * 360;
+                    const endAngle = (period.end / 24) * 360;
+                    const arcLength = ((period.end - period.start) / 24) * circumference;
+                    const dashOffset = circumference - (period.start / 24) * circumference;
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', '100');
+                    circle.setAttribute('cy', '100');
+                    circle.setAttribute('r', radius);
+                    circle.setAttribute('class', 'wheel-segment');
+                    circle.setAttribute('stroke', period.color);
+                    circle.setAttribute('stroke-dasharray', `${arcLength} ${circumference}`);
+                    circle.setAttribute('stroke-dashoffset', dashOffset);
+                    circle.dataset.index = index;
+                    wheel.appendChild(circle);
+                });
+            } catch (error) {
+                console.error('Error in recreateWheel:', error);
+            }
+        }
+
 
         // Create stars
         const starsContainer = document.getElementById('stars');
@@ -279,55 +410,71 @@
             starsContainer.appendChild(star);
         }
 
-        // Create wheel segments
-        const wheel = document.getElementById('wheel');
-        const radius = 86;
-        const circumference = 2 * Math.PI * radius;
-
-        periods.forEach((period, index) => {
-            const startAngle = (period.start / 24) * 360;
-            const endAngle = (period.end / 24) * 360;
-            const arcLength = ((period.end - period.start) / 24) * circumference;
-            const dashOffset = circumference - (period.start / 24) * circumference;
-
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', '100');
-            circle.setAttribute('cy', '100');
-            circle.setAttribute('r', radius);
-            circle.setAttribute('class', 'wheel-segment');
-            circle.setAttribute('stroke', period.color);
-            circle.setAttribute('stroke-dasharray', `${arcLength} ${circumference}`);
-            circle.setAttribute('stroke-dashoffset', dashOffset);
-            circle.dataset.index = index;
-            wheel.appendChild(circle);
-        });
-
         function getCurrentPeriod(hour) {
-            const decimalHour = hour;
-            for (let i = 0; i < periods.length; i++) {
-                const period = periods[i];
-                if (decimalHour >= period.start && decimalHour < period.end) {
-                    return { period, index: i };
+            try {
+                const periods = getDynamicPeriods();
+                const decimalHour = hour;
+
+                // Find the period that contains this hour
+                for (let i = 0; i < periods.length; i++) {
+                    const period = periods[i];
+                    if (decimalHour >= period.start && decimalHour < period.end) {
+                        return { period, index: i };
+                    }
                 }
+
+                // Handle edge case for hour 24 (midnight)
+                if (decimalHour >= 23.999) {
+                    return { period: periods[periods.length - 1], index: periods.length - 1 };
+                }
+
+                // If no exact match, find the closest period (handles edge cases)
+                let closestIndex = 0;
+                let closestDistance = Math.abs(decimalHour - periods[0].start);
+
+                for (let i = 1; i < periods.length; i++) {
+                    const distance = Math.min(
+                        Math.abs(decimalHour - periods[i].start),
+                        Math.abs(decimalHour - periods[i].end)
+                    );
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestIndex = i;
+                    }
+                }
+
+                return { period: periods[closestIndex], index: closestIndex };
+            } catch (error) {
+                console.error('Error in getCurrentPeriod:', error);
+                // Emergency fallback
+                return {
+                    period: { name: 'Day', start: 0, end: 24, icon: '🌍', color: '#87ceeb',
+                              desc: 'Time flows onward.', suggestions: ['Live'] },
+                    index: 0
+                };
             }
-            return { period: periods[0], index: 0 };
         }
 
         function getSkyGradient(hour) {
-            if (hour >= 0 && hour < 4) return 'linear-gradient(to bottom, #0d1b2a 0%, #1b263b 100%)';
-            if (hour >= 4 && hour < 5.5) return 'linear-gradient(to bottom, #1b263b 0%, #415a77 50%, #778da9 100%)';
-            if (hour >= 5.5 && hour < 7) return 'linear-gradient(to bottom, #ff7b00 0%, #ff9500 30%, #87ceeb 100%)';
-            if (hour >= 7 && hour < 9) return 'linear-gradient(to bottom, #87ceeb 0%, #98d1f7 50%, #b8e0f9 100%)';
-            if (hour >= 9 && hour < 16) return 'linear-gradient(to bottom, #56ccf2 0%, #87ceeb 50%, #b8e0f9 100%)';
-            if (hour >= 16 && hour < 18) return 'linear-gradient(to bottom, #87ceeb 0%, #f6d365 50%, #fda085 100%)';
-            if (hour >= 18 && hour < 19) return 'linear-gradient(to bottom, #fda085 0%, #f093fb 50%, #f5576c 100%)';
-            if (hour >= 19 && hour < 20) return 'linear-gradient(to bottom, #c471ed 0%, #812990 50%, #1b263b 100%)';
-            if (hour >= 20 && hour < 22) return 'linear-gradient(to bottom, #2c3e50 0%, #1b263b 50%, #0d1b2a 100%)';
+            const now = new Date();
+            const { sunrise, sunset } = calculateSunriseSunset(userLatitude, userLongitude, now);
+
+            if (hour < sunrise - 2) return 'linear-gradient(to bottom, #0d1b2a 0%, #1b263b 100%)';
+            if (hour >= sunrise - 2 && hour < sunrise - 0.5) return 'linear-gradient(to bottom, #1b263b 0%, #415a77 50%, #778da9 100%)';
+            if (hour >= sunrise - 0.5 && hour < sunrise + 0.5) return 'linear-gradient(to bottom, #ff7b00 0%, #ff9500 30%, #87ceeb 100%)';
+            if (hour >= sunrise + 0.5 && hour < sunrise + 2) return 'linear-gradient(to bottom, #87ceeb 0%, #98d1f7 50%, #b8e0f9 100%)';
+            if (hour >= sunrise + 2 && hour < sunset - 2) return 'linear-gradient(to bottom, #56ccf2 0%, #87ceeb 50%, #b8e0f9 100%)';
+            if (hour >= sunset - 2 && hour < sunset - 0.5) return 'linear-gradient(to bottom, #87ceeb 0%, #f6d365 50%, #fda085 100%)';
+            if (hour >= sunset - 0.5 && hour < sunset + 0.5) return 'linear-gradient(to bottom, #fda085 0%, #f093fb 50%, #f5576c 100%)';
+            if (hour >= sunset + 0.5 && hour < sunset + 1.5) return 'linear-gradient(to bottom, #c471ed 0%, #812990 50%, #1b263b 100%)';
+            if (hour >= sunset + 1.5 && hour < 23) return 'linear-gradient(to bottom, #2c3e50 0%, #1b263b 50%, #0d1b2a 100%)';
             return 'linear-gradient(to bottom, #0d1b2a 0%, #1b263b 100%)';
         }
 
         function getTextColor(hour) {
-            if (hour >= 7 && hour < 19) return '#2c3e50';
+            const now = new Date();
+            const { sunrise, sunset } = calculateSunriseSunset(userLatitude, userLongitude, now);
+            if (hour >= sunrise + 0.5 && hour < sunset + 0.5) return '#2c3e50';
             return '#e8e4d9';
         }
 
@@ -336,28 +483,39 @@
             const moon = document.getElementById('moon');
             const stars = document.getElementById('stars');
 
-            // Sun arc: rises at 6, peaks at 12, sets at 18
-            const sunProgress = (hour - 6) / 12; // 0 at 6am, 1 at 6pm
+            const now = new Date();
+            const { sunrise, sunset } = calculateSunriseSunset(userLatitude, userLongitude, now);
+            const dayLength = sunset - sunrise;
+
+            // Sun arc: rises at sunrise, peaks at solar noon, sets at sunset
+            const solarNoon = (sunrise + sunset) / 2;
+            const sunProgress = (hour - sunrise) / dayLength;
             const sunAngle = sunProgress * Math.PI;
             const sunX = 50 + 40 * Math.cos(Math.PI - sunAngle);
             const sunY = 80 - 60 * Math.sin(sunAngle);
 
-            if (hour >= 5 && hour <= 20) {
-                sun.style.opacity = hour >= 6 && hour <= 19 ? '1' : '0.5';
+            if (hour >= sunrise - 1 && hour <= sunset + 1) {
+                sun.style.opacity = hour >= sunrise && hour <= sunset ? '1' : '0.5';
                 sun.style.left = sunX + '%';
                 sun.style.top = sunY + '%';
             } else {
                 sun.style.opacity = '0';
             }
 
-            // Moon arc: rises at 19, peaks at 0, sets at 7
-            let moonHour = hour < 12 ? hour + 24 : hour;
-            const moonProgress = (moonHour - 19) / 12;
+            // Moon arc: opposite of sun
+            const nightStart = sunset + 1;
+            const nightEnd = sunrise - 1;
+            const nightMiddle = nightStart + 12; // Approximate midnight
+
+            let moonHour = hour;
+            if (hour < sunrise) moonHour = hour + 24;
+
+            const moonProgress = (moonHour - nightStart) / 12;
             const moonAngle = moonProgress * Math.PI;
             const moonX = 50 + 40 * Math.cos(Math.PI - moonAngle);
             const moonY = 80 - 60 * Math.sin(moonAngle);
 
-            if (hour >= 19 || hour <= 6) {
+            if (hour >= sunset || hour <= sunrise) {
                 moon.style.opacity = '1';
                 moon.style.left = moonX + '%';
                 moon.style.top = moonY + '%';
@@ -366,19 +524,25 @@
             }
 
             // Stars visibility
-            stars.style.opacity = (hour >= 20 || hour <= 5) ? '1' : '0';
+            stars.style.opacity = (hour >= sunset + 1 || hour <= sunrise - 1) ? '1' : '0';
         }
 
         function updateClock() {
-            const now = new Date();
-            const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+            try {
+                const now = new Date();
+                const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
 
-            const { period, index } = getCurrentPeriod(hour);
+                const { period, index } = getCurrentPeriod(hour);
 
-            // Update text
-            document.getElementById('periodName').textContent = period.name;
-            document.getElementById('periodDescription').textContent = period.desc;
-            document.getElementById('centerIcon').textContent = period.icon;
+                if (!period) {
+                    console.error('No period found for hour:', hour);
+                    return;
+                }
+
+                // Update text
+                document.getElementById('periodName').textContent = period.name;
+                document.getElementById('periodDescription').textContent = period.desc;
+                document.getElementById('centerIcon').textContent = period.icon;
 
             // Update suggestions
             const suggestionsEl = document.getElementById('suggestions');
@@ -403,14 +567,21 @@
             // Update celestial bodies
             updateCelestialBodies(hour);
 
-            // Date display
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'];
-            document.getElementById('dateDisplay').textContent =
-                `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+                // Date display
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+                document.getElementById('dateDisplay').textContent =
+                    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+            } catch (error) {
+                console.error('Error in updateClock:', error);
+                document.getElementById('periodName').textContent = 'Error loading';
+            }
         }
 
+        // Initialize
+        recreateWheel(); // Create initial wheel with default location
+        getLocation(); // Then update with actual location
         updateClock();
         setInterval(updateClock, 1000);
     </script>

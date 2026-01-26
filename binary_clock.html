@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Binary Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #0a0a0f;
-            --led-off: #1a1a2e;
-            --led-on: #00ff88;
-            --led-glow: rgba(0, 255, 136, 0.6);
+            --led-off: #1a0a0a;
+            --led-on: #ff3030;
+            --led-glow: rgba(255, 48, 48, 0.6);
             --text: #4a4a6a;
             --text-bright: #8a8aaa;
         }
@@ -26,8 +27,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: var(--bg);
-            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            font-family: 'VT323', 'Courier New', monospace;
             padding: 24px;
         }
 
@@ -39,7 +40,7 @@
         }
 
         .title {
-            font-size: clamp(0.8rem, 2vw, 1rem);
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
             color: var(--text);
             letter-spacing: 0.3em;
             text-transform: uppercase;
@@ -58,7 +59,7 @@
         }
 
         .group-label {
-            font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+            font-size: clamp(0.8rem, 2vw, 1rem);
             color: var(--text);
             letter-spacing: 0.2em;
         }
@@ -115,7 +116,7 @@
             height: clamp(16px, 4vw, 28px);
             display: flex;
             align-items: center;
-            font-size: clamp(0.5rem, 1.2vw, 0.65rem);
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
             color: var(--text);
         }
 
@@ -142,47 +143,20 @@
         }
 
         .digital-display {
-            font-size: clamp(1.5rem, 5vw, 2.5rem);
-            color: var(--led-on);
-            text-shadow: 0 0 10px var(--led-glow);
-            font-weight: bold;
-            letter-spacing: 0.1em;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            color: var(--text-bright);
+            text-shadow: none;
+            font-weight: normal;
+            letter-spacing: 0.05em;
+            opacity: 0.4;
         }
 
         .date-display {
-            font-size: clamp(0.7rem, 1.8vw, 0.9rem);
+            font-size: clamp(0.9rem, 2.2vw, 1.2rem);
             color: var(--text-bright);
-            letter-spacing: 0.1em;
+            letter-spacing: 0.05em;
         }
 
-        .legend {
-            display: flex;
-            gap: 24px;
-            margin-top: 20px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: clamp(0.55rem, 1.2vw, 0.7rem);
-            color: var(--text);
-        }
-
-        .legend-led {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-        }
-
-        .legend-led.off {
-            background: var(--led-off);
-        }
-
-        .legend-led.on {
-            background: var(--led-on);
-            box-shadow: 0 0 5px var(--led-glow);
-        }
     </style>
 </head>
 <body>
@@ -234,17 +208,6 @@
 
         <div class="digital-display" id="digitalTime"></div>
         <div class="date-display" id="dateDisplay"></div>
-
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-led off"></div>
-                <span>0 (OFF)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-led on"></div>
-                <span>1 (ON)</span>
-            </div>
-        </div>
     </div>
 
     <script>

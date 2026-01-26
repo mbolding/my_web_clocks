@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectrum Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            transition: background 2s ease;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 48px;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0.9;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .spectrum-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .color-bars {
+            display: flex;
+            gap: clamp(12px, 3vw, 24px);
+            align-items: flex-end;
+        }
+
+        .color-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .bar {
+            width: clamp(60px, 15vw, 120px);
+            height: clamp(200px, 40vh, 320px);
+            border-radius: 12px;
+            position: relative;
+            box-shadow:
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 2px 10px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .bar:hover {
+            transform: translateY(-8px);
+        }
+
+        .bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .bar-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+        }
+
+        .bar-value {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 600;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+            min-width: clamp(60px, 15vw, 120px);
+            text-align: center;
+        }
+
+        .bar-label {
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            opacity: 0.8;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .spectrum-strip {
+            width: 100%;
+            max-width: 600px;
+            height: clamp(60px, 12vw, 100px);
+            border-radius: 50px;
+            position: relative;
+            box-shadow:
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 2px 10px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .spectrum-gradient {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                hsl(0, 100%, 50%) 0%,
+                hsl(60, 100%, 50%) 16.666%,
+                hsl(120, 100%, 50%) 33.333%,
+                hsl(180, 100%, 50%) 50%,
+                hsl(240, 100%, 50%) 66.666%,
+                hsl(300, 100%, 50%) 83.333%,
+                hsl(360, 100%, 50%) 100%
+            );
+        }
+
+        .spectrum-indicator {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow:
+                0 0 10px rgba(255, 255, 255, 0.8),
+                0 0 20px rgba(255, 255, 255, 0.4);
+            transition: left 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .color-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .color-values {
+            display: flex;
+            gap: clamp(16px, 4vw, 32px);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-value {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .value-label {
+            font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .value-number {
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .date-display {
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            opacity: 0.8;
+            text-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .time-period {
+            font-size: clamp(0.75rem, 1.8vw, 0.95rem);
+            font-style: italic;
+            opacity: 0.7;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .color-bars {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title" id="title">Spectrum Clock</h1>
+
+        <div class="spectrum-display">
+            <div class="color-bars">
+                <div class="color-bar">
+                    <div class="bar" id="hourBar">
+                        <div class="bar-fill" id="hourFill"></div>
+                    </div>
+                    <div class="bar-value" id="hourValue">00</div>
+                    <div class="bar-label">Hours</div>
+                </div>
+
+                <div class="color-bar">
+                    <div class="bar" id="minBar">
+                        <div class="bar-fill" id="minFill"></div>
+                    </div>
+                    <div class="bar-value" id="minValue">00</div>
+                    <div class="bar-label">Minutes</div>
+                </div>
+
+                <div class="color-bar">
+                    <div class="bar" id="secBar">
+                        <div class="bar-fill" id="secFill"></div>
+                    </div>
+                    <div class="bar-value" id="secValue">00</div>
+                    <div class="bar-label">Seconds</div>
+                </div>
+            </div>
+
+            <div class="spectrum-strip">
+                <div class="spectrum-gradient"></div>
+                <div class="spectrum-indicator" id="spectrumIndicator"></div>
+            </div>
+        </div>
+
+        <div class="color-info">
+            <div class="color-values">
+                <div class="color-value">
+                    <div class="value-label">Hue</div>
+                    <div class="value-number" id="hueValue">0°</div>
+                </div>
+                <div class="color-value">
+                    <div class="value-label">RGB</div>
+                    <div class="value-number" id="rgbValue">0, 0, 0</div>
+                </div>
+                <div class="color-value">
+                    <div class="value-label">Hex</div>
+                    <div class="value-number" id="hexValue">#000000</div>
+                </div>
+            </div>
+            <div class="time-period" id="timePeriod">Morning</div>
+            <div class="date-display" id="dateDisplay"></div>
+        </div>
+    </div>
+
+    <script>
+        function hslToRgb(h, s, l) {
+            s /= 100;
+            l /= 100;
+            const k = n => (n + h / 30) % 12;
+            const a = s * Math.min(l, 1 - l);
+            const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+            return [
+                Math.round(255 * f(0)),
+                Math.round(255 * f(8)),
+                Math.round(255 * f(4))
+            ];
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        function getTimePeriod(hour) {
+            if (hour >= 5 && hour < 12) return 'Morning';
+            if (hour >= 12 && hour < 17) return 'Afternoon';
+            if (hour >= 17 && hour < 21) return 'Evening';
+            return 'Night';
+        }
+
+        function getTextColor(brightness) {
+            return brightness > 50 ? '#1a1a1a' : '#ffffff';
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+
+            // Calculate percentages
+            const hourPercent = (hours / 24) * 100;
+            const minPercent = (minutes / 60) * 100;
+            const secPercent = (seconds / 60) * 100;
+
+            // Calculate hue based on time of day (0-360 degrees over 24 hours)
+            const dayProgress = (hours * 3600 + minutes * 60 + seconds) / 86400;
+            const hue = Math.round(dayProgress * 360);
+
+            // Hour color: 0-23 hours mapped to hue
+            const hourHue = (hours / 24) * 360;
+            const hourColor = `hsl(${hourHue}, 70%, 60%)`;
+
+            // Minute color: 0-59 minutes mapped to hue
+            const minHue = (minutes / 60) * 360;
+            const minColor = `hsl(${minHue}, 75%, 55%)`;
+
+            // Second color: 0-59 seconds mapped to hue
+            const secHue = (seconds / 60) * 360;
+            const secColor = `hsl(${secHue}, 80%, 50%)`;
+
+            // Update bars
+            document.getElementById('hourFill').style.height = hourPercent + '%';
+            document.getElementById('hourFill').style.background = hourColor;
+            document.getElementById('hourValue').textContent = hours.toString().padStart(2, '0');
+
+            document.getElementById('minFill').style.height = minPercent + '%';
+            document.getElementById('minFill').style.background = minColor;
+            document.getElementById('minValue').textContent = minutes.toString().padStart(2, '0');
+
+            document.getElementById('secFill').style.height = secPercent + '%';
+            document.getElementById('secFill').style.background = secColor;
+            document.getElementById('secValue').textContent = seconds.toString().padStart(2, '0');
+
+            // Update spectrum indicator
+            document.getElementById('spectrumIndicator').style.left = (dayProgress * 100) + '%';
+
+            // Calculate background gradient based on time
+            const bgHue1 = hue;
+            const bgHue2 = (hue + 60) % 360;
+            const bgGradient = `linear-gradient(135deg, hsl(${bgHue1}, 50%, 30%) 0%, hsl(${bgHue2}, 60%, 20%) 100%)`;
+            document.body.style.background = bgGradient;
+
+            // Update color info
+            const [r, g, b] = hslToRgb(hue, 70, 50);
+            document.getElementById('hueValue').textContent = hue + '°';
+            document.getElementById('rgbValue').textContent = `${r}, ${g}, ${b}`;
+            document.getElementById('hexValue').textContent = rgbToHex(r, g, b);
+
+            // Determine text color based on background brightness
+            const avgBrightness = 25; // Since we're using dark backgrounds
+            const textColor = '#ffffff';
+            document.body.style.color = textColor;
+
+            // Update time period
+            document.getElementById('timePeriod').textContent = getTimePeriod(hours);
+
+            // Update date
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('dateDisplay').textContent =
+                `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

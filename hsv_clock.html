@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSV Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.5s ease;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 48px;
+            padding: 24px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .title {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0.95;
+            text-align: center;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch:hover {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            left: 32px;
+        }
+
+        .controls-grid.hidden,
+        .color-info.hidden,
+        .explanation.hidden,
+        .date-display.hidden,
+        .title.hidden {
+            display: none;
+        }
+
+        .color-display {
+            width: clamp(250px, 60vw, 400px);
+            height: clamp(250px, 60vw, 400px);
+            border-radius: 50%;
+            position: relative;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                0 0 100px rgba(255, 255, 255, 0.1),
+                inset 0 0 40px rgba(255, 255, 255, 0.2);
+            transition: background-color 1s ease;
+        }
+
+        .time-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+        }
+
+        .clock-face {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+
+        .center-point {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            z-index: 100;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            background: currentColor;
+            border-radius: 2px;
+        }
+
+        .hour-hand {
+            width: 3px;
+            height: 25%;
+            margin-left: -1.5px;
+            z-index: 30;
+            opacity: 0.8;
+        }
+
+        .minute-hand {
+            width: 2px;
+            height: 35%;
+            margin-left: -1px;
+            z-index: 40;
+            opacity: 0.9;
+        }
+
+        .second-hand {
+            width: 1px;
+            height: 40%;
+            margin-left: -0.5px;
+            z-index: 50;
+            background: currentColor;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .control-label {
+            font-size: clamp(0.7rem, 1.5vw, 0.85rem);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            opacity: 0.8;
+        }
+
+        .control-value {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 700;
+        }
+
+        .control-description {
+            font-size: clamp(0.65rem, 1.3vw, 0.75rem);
+            opacity: 0.6;
+            line-height: 1.4;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .color-info {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .color-values {
+            display: flex;
+            justify-content: center;
+            gap: clamp(16px, 4vw, 32px);
+            flex-wrap: wrap;
+        }
+
+        .color-value {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 120px;
+        }
+
+        .value-label {
+            font-size: clamp(0.6rem, 1.2vw, 0.7rem);
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .value-number {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+            font-weight: 700;
+        }
+
+        .date-display {
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        .explanation {
+            text-align: center;
+            font-size: clamp(0.7rem, 1.5vw, 0.85rem);
+            opacity: 0.6;
+            max-width: 600px;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title hidden" id="title">HSV Clock</h1>
+
+        <div class="color-display" id="colorDisplay">
+            <div class="time-display">
+                <div class="clock-face" id="clockFace">
+                    <div class="hand hour-hand" id="hourHand"></div>
+                    <div class="hand minute-hand" id="minuteHand"></div>
+                    <div class="hand second-hand" id="secondHand"></div>
+                    <div class="center-point"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toggle-switch" id="toggleSwitch" onclick="toggleControls()">
+            <div class="toggle-slider"></div>
+        </div>
+
+        <div class="controls-grid hidden" id="controlsGrid">
+            <div class="control-panel">
+                <div class="control-header">
+                    <div class="control-label">Hue (H)</div>
+                    <div class="control-value" id="hueValue">0°</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="hueProgress" style="background: linear-gradient(90deg, hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%));"></div>
+                </div>
+                <div class="control-description">Controlled by Hours (0-23)</div>
+            </div>
+
+            <div class="control-panel">
+                <div class="control-header">
+                    <div class="control-label">Saturation (S)</div>
+                    <div class="control-value" id="satValue">0%</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="satProgress"></div>
+                </div>
+                <div class="control-description">Controlled by Seconds (0-59)</div>
+            </div>
+
+            <div class="control-panel">
+                <div class="control-header">
+                    <div class="control-label">Value (V)</div>
+                    <div class="control-value" id="valValue">0%</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="valProgress"></div>
+                </div>
+                <div class="control-description">Controlled by Minutes (0-59)</div>
+            </div>
+        </div>
+
+        <div class="color-info hidden" id="colorInfo">
+            <div class="color-values">
+                <div class="color-value">
+                    <div class="value-label">HSV</div>
+                    <div class="value-number" id="hsvValue">0, 0, 0</div>
+                </div>
+                <div class="color-value">
+                    <div class="value-label">RGB</div>
+                    <div class="value-number" id="rgbValue">0, 0, 0</div>
+                </div>
+                <div class="color-value">
+                    <div class="value-label">Hex</div>
+                    <div class="value-number" id="hexValue">#000000</div>
+                </div>
+            </div>
+        </div>
+
+        <p class="explanation hidden" id="explanation">
+            Every second creates a unique color. The hue cycles twice daily,
+            saturation pulses every minute, and brightness follows the hour hand.
+        </p>
+
+        <div class="date-display hidden" id="dateDisplay"></div>
+    </div>
+
+    <script>
+        function toggleControls() {
+            const elements = [
+                document.getElementById('controlsGrid'),
+                document.getElementById('colorInfo'),
+                document.getElementById('explanation'),
+                document.getElementById('dateDisplay'),
+                document.getElementById('title')
+            ];
+            const toggleSwitch = document.getElementById('toggleSwitch');
+
+            const isHidden = elements[0].classList.contains('hidden');
+
+            elements.forEach(el => {
+                if (isHidden) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            if (isHidden) {
+                toggleSwitch.classList.add('active');
+            } else {
+                toggleSwitch.classList.remove('active');
+            }
+        }
+
+        function hsvToRgb(h, s, v) {
+            s /= 100;
+            v /= 100;
+            const k = (n) => (n + h / 60) % 6;
+            const f = (n) => v * (1 - s * Math.max(0, Math.min(k(n), 4 - k(n), 1)));
+            return [
+                Math.round(f(5) * 255),
+                Math.round(f(3) * 255),
+                Math.round(f(1) * 255)
+            ];
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        function getContrastColor(r, g, b) {
+            // Calculate relative luminance
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return luminance > 0.5 ? '#000000' : '#ffffff';
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+
+            // Map time to HSV
+            // Hours (0-23) → Hue (0-360°) - full spectrum twice per day
+            const hue = Math.round((hours / 23) * 360);
+
+            // Seconds (0-59) → Saturation (0-100%)
+            const saturation = Math.round((seconds / 59) * 100);
+
+            // Minutes (0-59) → Value/Brightness (0-100%)
+            const value = Math.round((minutes / 59) * 100);
+
+            // Convert to RGB
+            const [r, g, b] = hsvToRgb(hue, saturation, value);
+            const hex = rgbToHex(r, g, b);
+
+            // Update color display
+            const colorDisplay = document.getElementById('colorDisplay');
+            colorDisplay.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${value}%)`;
+
+            // Update clock hands
+            const secondDeg = seconds * 6;
+            const minuteDeg = minutes * 6 + seconds * 0.1;
+            const hourDeg = (hours % 12) * 30 + minutes * 0.5;
+
+            document.getElementById('secondHand').style.transform = `rotate(${secondDeg}deg)`;
+            document.getElementById('minuteHand').style.transform = `rotate(${minuteDeg}deg)`;
+            document.getElementById('hourHand').style.transform = `rotate(${hourDeg}deg)`;
+
+            // Set clock hands and ticks color for contrast
+            const textColor = getContrastColor(r, g, b);
+            document.getElementById('clockFace').style.color = textColor;
+
+            // Update control values
+            document.getElementById('hueValue').textContent = hue + '°';
+            document.getElementById('satValue').textContent = saturation + '%';
+            document.getElementById('valValue').textContent = value + '%';
+
+            // Update progress bars
+            document.getElementById('hueProgress').style.width = ((hours / 23) * 100) + '%';
+            document.getElementById('satProgress').style.width = ((seconds / 59) * 100) + '%';
+            document.getElementById('satProgress').style.background = `linear-gradient(90deg, hsl(${hue}, 0%, 50%), hsl(${hue}, 100%, 50%))`;
+            document.getElementById('valProgress').style.width = ((minutes / 59) * 100) + '%';
+            document.getElementById('valProgress').style.background = `linear-gradient(90deg, hsl(${hue}, ${saturation}%, 0%), hsl(${hue}, ${saturation}%, 100%))`;
+
+            // Update color info
+            document.getElementById('hsvValue').textContent = `${hue}, ${saturation}, ${value}`;
+            document.getElementById('rgbValue').textContent = `${r}, ${g}, ${b}`;
+            document.getElementById('hexValue').textContent = hex;
+
+            // Update body background (darker version of current color)
+            const bgSat = Math.min(saturation + 20, 100);
+            const bgVal = Math.max(value - 40, 15);
+            document.body.style.backgroundColor = `hsl(${hue}, ${bgSat}%, ${bgVal}%)`;
+
+            // Set text color for body based on background
+            const [bgR, bgG, bgB] = hsvToRgb(hue, bgSat, bgVal);
+            const bodyTextColor = getContrastColor(bgR, bgG, bgB);
+            document.body.style.color = bodyTextColor;
+
+            // Update date
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('dateDisplay').textContent =
+                `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

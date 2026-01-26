@@ -309,15 +309,15 @@
                 this.flipTop.style.transform = 'rotateX(0deg)';
                 this.flipBottom.style.transform = 'rotateX(90deg)';
 
-                // Update the static cards
-                this.bottomCard.textContent = value;
+                // Trigger animation immediately
+                requestAnimationFrame(() => {
+                    this.element.classList.add('flipping');
+                });
 
-                // Trigger animation
-                this.element.classList.add('flipping');
-
-                // Update top card halfway through
+                // Update both cards halfway through when flip-top finishes and flip-bottom starts
                 setTimeout(() => {
                     this.topCard.textContent = value;
+                    this.bottomCard.textContent = value;
                 }, 300);
 
                 // Clean up after animation

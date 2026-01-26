@@ -1,30 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroGateways '26</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&display=swap"
-        rel="stylesheet">
+    <title>Creative Web Clocks</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #ffffff;
-            --ink: #111111;
-            --ink-light: #454545;
-            --ink-faint: #a0a0a0;
-            --accent: #8b0000;
-            --paper-shadow: rgba(0, 0, 0, 0.04);
-        }
-
-        .dark {
-            --bg: #1a1a1a;
-            --ink: #e8e4d9;
-            --ink-light: #b0a898;
-            --ink-faint: #5a5548;
-            --accent: #c45c5c;
-            --paper-shadow: rgba(0, 0, 0, 0.3);
+            --bg: #0f0f1e;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-hover: rgba(255, 255, 255, 0.1);
+            --text: #e8e8f0;
+            --text-muted: #a0a0b8;
+            --accent: #6366f1;
+            --border: rgba(255, 255, 255, 0.1);
         }
 
         * {
@@ -35,521 +24,220 @@
 
         body {
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             background: var(--bg);
-            font-family: 'Source Serif 4', Georgia, serif;
-            padding: 24px;
-            transition: background 0.3s ease;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            padding: 48px 24px;
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 420px;
-            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .header {
+        header {
             text-align: center;
-            margin-bottom: 32px;
-            border-bottom: 1px solid var(--ink-faint);
-            padding-bottom: 16px;
+            margin-bottom: 64px;
         }
 
-        .title {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(1.6rem, 5vw, 2.2rem);
-            font-weight: 300;
-            color: var(--ink);
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 600;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .year {
-            font-style: italic;
-            font-weight: 300;
-            letter-spacing: 0.05em;
-            text-transform: none;
-        }
-
-        .dates {
-            font-size: clamp(0.85rem, 2.5vw, 1rem);
-            color: var(--ink-light);
-            margin-top: 6px;
-            font-weight: 300;
-            letter-spacing: 0.08em;
-        }
-
-        .clock-wrapper {
-            position: relative;
-            display: flex;
-            justify-content: center;
-        }
-
-        .clock {
-            width: clamp(260px, 65vw, 340px);
-            height: clamp(260px, 65vw, 340px);
-            position: relative;
-            background: var(--bg);
-        }
-
-        .clock-face {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Outer circle - thin and elegant */
-        .clock::before {
-            content: '';
-            position: absolute;
-            top: 2%;
-            left: 2%;
-            right: 2%;
-            bottom: 2%;
-            border: 1px solid var(--ink-faint);
-            border-radius: 50%;
-        }
-
-        .tick {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform-origin: center center;
-            background: var(--ink);
-        }
-
-        .tick.major {
-            width: 1px;
-            height: 12px;
-            margin-left: -0.5px;
-        }
-
-        .tick.minor {
-            width: 1px;
-            height: 6px;
-            margin-left: -0.5px;
-            background: var(--ink-faint);
-        }
-
-        .hour-numeral {
-            position: absolute;
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(1rem, 3vw, 1.25rem);
-            font-weight: 400;
-            color: var(--ink);
-            transform: translate(-50%, -50%);
-        }
-
-        .center-point {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 6px;
-            height: 6px;
-            background: var(--ink);
-            border-radius: 50%;
-            z-index: 100;
-        }
-
-        .hand {
-            position: absolute;
-            bottom: 50%;
-            left: 50%;
-            transform-origin: bottom center;
-            background: var(--ink);
-        }
-
-        .hour-hand {
-            width: 2.5px;
-            height: 22%;
-            margin-left: -1.25px;
-            border-radius: 1px;
-            z-index: 30;
-        }
-
-        .minute-hand {
-            width: 1.5px;
-            height: 32%;
-            margin-left: -0.75px;
-            border-radius: 1px;
-            z-index: 40;
-        }
-
-        .second-hand {
-            width: 0;
-            height: 38%;
-            margin-left: 0;
-            background: transparent;
-            z-index: 50;
-        }
-
-        .second-hand::after {
-            content: '';
-            position: absolute;
-            top: -4px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 6px;
-            height: 6px;
-            background: var(--accent);
-            border-radius: 50%;
-        }
-
-        .second-trail {
-            position: absolute;
-            bottom: 50%;
-            left: 50%;
-            width: 0;
-            height: 38%;
-            transform-origin: bottom center;
-            z-index: 49;
-            pointer-events: none;
-        }
-
-        .second-trail::after {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 3px;
-            height: 3px;
-            background: var(--accent);
-            border-radius: 50%;
-            opacity: 0;
-            animation: trail-fade 2.5s linear forwards;
-        }
-
-        @keyframes trail-fade {
-            0% {
-                opacity: 0.4;
-            }
-
-            100% {
-                opacity: 0;
-            }
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 32px;
-            border-top: 1px solid var(--ink-faint);
-            padding-top: 16px;
-        }
-
-        .current-date {
-            font-size: clamp(0.75rem, 2vw, 0.85rem);
-            color: var(--ink-light);
-            font-style: italic;
+        .subtitle {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--text-muted);
             font-weight: 300;
         }
 
-        .marginal-note {
-            position: absolute;
-            right: -140px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 120px;
-            font-size: 0.75rem;
-            color: var(--ink-light);
-            font-style: italic;
-            line-height: 1.5;
-            text-align: left;
+        .clock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
         }
 
-        @media (max-width: 700px) {
-            .marginal-note {
-                display: none;
-            }
-        }
-
-        .countdown {
-            margin-top: 24px;
-            text-align: center;
-        }
-
-        .countdown-label {
-            font-size: clamp(0.7rem, 2vw, 0.8rem);
-            color: var(--ink-light);
-            font-style: italic;
-            margin-bottom: 8px;
-            letter-spacing: 0.05em;
-        }
-
-        .countdown-units {
-            display: flex;
-            justify-content: center;
-            gap: clamp(16px, 4vw, 32px);
-        }
-
-        .countdown-unit {
+        .clock-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            gap: 12px;
         }
 
-        .countdown-value {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(1.4rem, 5vw, 2rem);
-            font-weight: 400;
-            color: var(--ink);
-            line-height: 1;
+        .clock-card:hover {
+            background: var(--card-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
+            border-color: var(--accent);
         }
 
-        .countdown-name {
-            font-size: clamp(0.6rem, 1.5vw, 0.7rem);
-            color: var(--ink-faint);
+        .clock-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .clock-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .clock-description {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: var(--accent);
+            margin-top: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-top: 4px;
+            letter-spacing: 0.05em;
         }
 
-        .countdown-separator {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(1.2rem, 4vw, 1.6rem);
-            color: var(--ink-faint);
-            align-self: flex-start;
-            margin-top: 2px;
+        footer {
+            text-align: center;
+            padding-top: 48px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
-        .event-passed {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-size: clamp(1rem, 3vw, 1.2rem);
-            font-style: italic;
-            color: var(--ink-light);
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .clock-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <header class="header">
-            <h1 class="title">NeuroGateways <span class="year">'26</span></h1>
-            <p class="dates">April 9–10, 2026</p>
+        <header>
+            <h1>Creative Web Clocks</h1>
+            <p class="subtitle">A collection of unique, self-contained time displays</p>
         </header>
 
-        <div class="clock-wrapper">
-            <div class="clock" id="clock">
-                <div class="clock-face" id="clockFace"></div>
-                <div class="hand hour-hand" id="hourHand"></div>
-                <div class="hand minute-hand" id="minuteHand"></div>
-                <div class="hand second-hand" id="secondHand"></div>
-                <div class="center-point"></div>
-            </div>
-            <aside class="marginal-note">
-                The conference spans two days of discourse on neural interfaces and cognitive architectures.
-            </aside>
+        <div class="clock-grid">
+            <a href="ng26_clock.html" class="clock-card">
+                <div class="clock-icon">🕰️</div>
+                <div class="clock-name">NeuroGateways '26</div>
+                <div class="clock-description">Traditional analog clock with Tufte-inspired design, countdown timer, and minute tick sounds.</div>
+                <div class="tag">Analog</div>
+            </a>
+
+            <a href="hsv_clock.html" class="clock-card">
+                <div class="clock-icon">🎨</div>
+                <div class="clock-name">HSV Clock</div>
+                <div class="clock-description">Time mapped to HSV color model. Hours control hue, seconds control saturation, minutes control value.</div>
+                <div class="tag">Color</div>
+            </a>
+
+            <a href="circadian_clock.html" class="clock-card">
+                <div class="clock-icon">🌅</div>
+                <div class="clock-name">Circadian Clock</div>
+                <div class="clock-description">20 natural time periods with dynamic backgrounds, celestial bodies, and contextual suggestions.</div>
+                <div class="tag">Natural</div>
+            </a>
+
+            <a href="binary_clock.html" class="clock-card">
+                <div class="clock-icon">💾</div>
+                <div class="clock-name">Binary Clock</div>
+                <div class="clock-description">LED-style binary display with glowing effects. Time shown in 4-bit binary format.</div>
+                <div class="tag">Binary</div>
+            </a>
+
+            <a href="flip_clock.html" class="clock-card">
+                <div class="clock-icon">🔄</div>
+                <div class="clock-name">Flip Clock</div>
+                <div class="clock-description">Mechanical flip card animation with split-flap display effect and smooth transitions.</div>
+                <div class="tag">Animated</div>
+            </a>
+
+            <a href="particle_clock.html" class="clock-card">
+                <div class="clock-icon">✨</div>
+                <div class="clock-name">Particle Clock</div>
+                <div class="clock-description">Canvas-based particle system with spring physics and color transitions based on velocity.</div>
+                <div class="tag">Physics</div>
+            </a>
+
+            <a href="polar_clock.html" class="clock-card">
+                <div class="clock-icon">⭕</div>
+                <div class="clock-name">Polar Clock</div>
+                <div class="clock-description">Concentric circles representing hours, minutes, and seconds with smooth arc animations.</div>
+                <div class="tag">Circular</div>
+            </a>
+
+            <a href="word_clock.html" class="clock-card">
+                <div class="clock-icon">📝</div>
+                <div class="clock-name">Word Clock</div>
+                <div class="clock-description">Natural language time display with smooth word transitions and conversational formatting.</div>
+                <div class="tag">Text</div>
+            </a>
+
+            <a href="spectrum_clock.html" class="clock-card">
+                <div class="clock-icon">🌈</div>
+                <div class="clock-name">Spectrum Clock</div>
+                <div class="clock-description">Color spectrum visualization with vertical bars and dynamic gradient backgrounds.</div>
+                <div class="tag">Color</div>
+            </a>
+
+            <a href="ng26_countdown.html" class="clock-card">
+                <div class="clock-icon">⏱️</div>
+                <div class="clock-name">NeuroGateways Countdown</div>
+                <div class="clock-description">Event countdown timer with days, hours, minutes, and seconds display.</div>
+                <div class="tag">Countdown</div>
+            </a>
         </div>
 
-        <footer class="footer">
-            <p class="current-date" id="currentDate"></p>
-
-            <div class="countdown" id="countdown">
-                <p class="countdown-label">Time until NeuroGateways '26</p>
-                <div class="countdown-units" id="countdownUnits"></div>
-            </div>
+        <footer>
+            <p>All clocks are self-contained HTML files with no dependencies.</p>
+            <p>Open any clock directly in your browser to view.</p>
         </footer>
     </div>
 
     <script>
-        // Dark mode detection
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            event.matches ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
-        });
-
-        // Web Audio for minute tick
-        let audioContext = null;
-        let lastMinute = -1;
-
-        function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
-
-        function playTick() {
-            if (!audioContext) return;
-
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            // Soft, wooden tick sound
-            oscillator.frequency.setValueAtTime(1800, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.03);
-            oscillator.type = 'sine';
-
-            gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.08);
-        }
-
-        // Initialize audio on first user interaction
-        document.addEventListener('click', initAudio, { once: true });
-        document.addEventListener('touchstart', initAudio, { once: true });
-
-        function createClockFace() {
-            const face = document.getElementById('clockFace');
-            const clockEl = document.getElementById('clock');
-            const size = clockEl.offsetWidth;
-            const center = size / 2;
-            const outerRadius = size * 0.46;
-            const tickOuterRadius = size * 0.44;
-            const numeralRadius = size * 0.35;
-
-            // Create ticks - all outer edges aligned to same radius
-            for (let i = 0; i < 60; i++) {
-                const isMajor = i % 5 === 0;
-
-                const tick = document.createElement('div');
-                tick.className = 'tick ' + (isMajor ? 'major' : 'minor');
-
-                // All ticks have their outer edge at tickOuterRadius
-                tick.style.transform = `rotate(${i * 6}deg) translateY(-${tickOuterRadius}px)`;
-                face.appendChild(tick);
-            }
-
-            // Create hour numerals
-            const numerals = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-            numerals.forEach((num, i) => {
-                const angle = (i * 30 - 90) * (Math.PI / 180);
-                const x = center + numeralRadius * Math.cos(angle);
-                const y = center + numeralRadius * Math.sin(angle);
-
-                const numeral = document.createElement('div');
-                numeral.className = 'hour-numeral';
-                numeral.textContent = num;
-                numeral.style.left = x + 'px';
-                numeral.style.top = y + 'px';
-                face.appendChild(numeral);
+        // Add subtle animation on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.clock-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 50);
             });
-        }
-
-        // Trail management
-        const trailContainer = document.getElementById('clock');
-        let lastTrailTime = 0;
-        const trailInterval = 100; // Create trail dot every 100ms
-
-        function createTrailDot(rotation) {
-            const trail = document.createElement('div');
-            trail.className = 'second-trail';
-            trail.style.transform = `rotate(${rotation}deg)`;
-            trailContainer.appendChild(trail);
-
-            // Remove after animation completes
-            setTimeout(() => {
-                trail.remove();
-            }, 2500);
-        }
-
-        function updateClock() {
-            const now = new Date();
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const seconds = now.getSeconds();
-            const milliseconds = now.getMilliseconds();
-
-            // Smooth movement
-            const smoothSeconds = seconds + milliseconds / 1000;
-            const secondDeg = smoothSeconds * 6;
-            const minuteDeg = minutes * 6 + seconds * 0.1;
-            const hourDeg = (hours % 12) * 30 + minutes * 0.5;
-
-            document.getElementById('secondHand').style.transform = `rotate(${secondDeg}deg)`;
-            document.getElementById('minuteHand').style.transform = `rotate(${minuteDeg}deg)`;
-            document.getElementById('hourHand').style.transform = `rotate(${hourDeg}deg)`;
-
-            // Create trail dots
-            const currentTime = Date.now();
-            if (currentTime - lastTrailTime >= trailInterval) {
-                createTrailDot(secondDeg);
-                lastTrailTime = currentTime;
-            }
-
-            // Play tick on minute change
-            if (lastMinute !== -1 && minutes !== lastMinute) {
-                playTick();
-            }
-            lastMinute = minutes;
-
-            // Update date with Tufte-style formatting
-            const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'];
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
-            document.getElementById('currentDate').textContent = dateStr;
-
-            requestAnimationFrame(updateClock);
-        }
-
-        // Countdown timer
-        const eventDate = new Date('2026-04-09T00:00:00');
-
-        function updateCountdown() {
-            const now = new Date();
-            const diff = eventDate - now;
-            const container = document.getElementById('countdownUnits');
-
-            if (diff <= 0) {
-                container.innerHTML = '<span class="event-passed">The conference has begun</span>';
-                return;
-            }
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            container.innerHTML = `
-                <div class="countdown-unit">
-                    <span class="countdown-value">${days}</span>
-                    <span class="countdown-name">Days</span>
-                </div>
-                <div class="countdown-unit">
-                    <span class="countdown-value">${hours.toString().padStart(2, '0')}</span>
-                    <span class="countdown-name">Hours</span>
-                </div>
-                <div class="countdown-unit">
-                    <span class="countdown-value">${minutes.toString().padStart(2, '0')}</span>
-                    <span class="countdown-name">Min</span>
-                </div>
-                <div class="countdown-unit">
-                    <span class="countdown-value">${seconds.toString().padStart(2, '0')}</span>
-                    <span class="countdown-name">Sec</span>
-                </div>
-            `;
-        }
-
-        // Initialize
-        createClockFace();
-        updateClock();
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
-
-        // Recreate on resize for proper positioning
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                const face = document.getElementById('clockFace');
-                face.innerHTML = '';
-                createClockFace();
-            }, 200);
         });
     </script>
 </body>
-
 </html>
