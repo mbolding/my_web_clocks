@@ -12,7 +12,8 @@ This is a collection of creative, self-contained web clock implementations. Each
 Each clock (`*.html`) is completely standalone:
 - All styles in `<style>` tags
 - All JavaScript in `<script>` tags
-- No external dependencies or imports
+- No build process required
+- External libraries loaded from CDN when needed (e.g., Three.js for 3D graphics)
 - Responsive design using CSS clamp() for flexible sizing
 - Dark mode support where appropriate (prefers-color-scheme media query)
 
@@ -84,6 +85,15 @@ Each clock (`*.html`) is completely standalone:
 - Displays color in HSV, RGB, and Hex formats
 - Dynamic text color adjustment for readability based on background luminance
 - Creates unique color every second (86,400 unique colors per day)
+
+**sundial_clock.html** - 3D Sundial Clock
+- Full 3D sundial built with Three.js
+- Real-time sun positioning based on actual time of day
+- Dynamic shadow casting from gnomon onto sundial face
+- Hour markers (6 AM - 6 PM) with Roman numerals
+- Interactive camera controls (drag to rotate, scroll to zoom)
+- Physically accurate sun arc across the sky
+- Responsive touch controls for mobile devices
 
 ## Development Workflow
 
@@ -169,6 +179,7 @@ For CSS-based animations:
 ├── word_clock.html         # Natural language time
 ├── spectrum_clock.html     # Color spectrum visualization
 ├── hsv_clock.html          # HSV color model clock
+├── sundial_clock.html      # 3D sundial with Three.js
 └── ng26_countdown.html     # Event countdown timer
 ```
 
