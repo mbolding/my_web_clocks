@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,8 +12,16 @@
             --text: #000000;
             --text-muted: #888888;
             --border: #eeeeee;
+            --shadow: rgba(0, 0, 0, 0.08);
+            --shadow-hover: rgba(0, 0, 0, 0.12);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             min-height: 100vh;
             background: var(--bg);
@@ -21,32 +30,99 @@
             padding: 48px 24px;
             line-height: 1.6;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
-        header { text-align: center; margin-bottom: 64px; }
-        h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 600; margin-bottom: 16px; }
-        .clock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-bottom: 48px; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .clock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
         .clock-card {
-            border-bottom: 1px solid var(--border);
-            padding: 24px 0;
-            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
             cursor: pointer;
             text-decoration: none;
             color: inherit;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            background: var(--bg);
+            height: 100%;
         }
-        .clock-card:hover { opacity: 0.6; }
-        .clock-name { font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; }
-        .clock-description { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
+
+        .clock-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px var(--shadow-hover);
+            border-color: transparent;
+        }
+
+        .clock-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .clock-description {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>Web Clocks</h1>
         </header>
         <div class="clock-grid">
+            <a href="glitch_clock.html" class="clock-card">
+                <div class="clock-name">Glitch Clock</div>
+                <div class="clock-description">A Cyberpunk digital clock with visual distortion.</div>
+            </a>
+            <a href="gravity_clock.html" class="clock-card">
+                <div class="clock-name">Gravity Clock</div>
+                <div class="clock-description">A physics-based clock where time falls.</div>
+            </a>
+            <a href="sun_moon_clock.html" class="clock-card">
+                <div class="clock-name">Sun & Moon Clock</div>
+                <div class="clock-description">Real-time sky position based on your location.</div>
+            </a>
+            <a href="random_pomodoro_clock.html" class="clock-card">
+                <div class="clock-name">Random Pomodoro</div>
+                <div class="clock-description">Focus timer with randomized intervals.</div>
+            </a>
+            <a href="conference_clock.html" class="clock-card">
+                <div class="clock-name">Conference Clock</div>
+                <div class="clock-description">Speaker timer with schedule visualization.</div>
+            </a>
+            <a href="mealtime_clock.html" class="clock-card">
+                <div class="clock-name">The Mealtime Clock</div>
+                <div class="clock-description">Tells time by Second Breakfast, Elevenses, and more.</div>
+            </a>
+            <a href="ascii_clock.html" class="clock-card">
+                <div class="clock-name">ASCII Clock</div>
+                <div class="clock-description">A retro terminal clock in ASCII art.</div>
+            </a>
             <a href="perlin_clock.html" class="clock-card">
                 <div class="clock-name">Perlin Clock</div>
                 <div class="clock-description">A flocking simulation guided by a noise field.</div>
@@ -55,7 +131,7 @@
                 <div class="clock-name">Predator-Prey Clock</div>
                 <div class="clock-description">A flocking simulation where a predator chases the flock.</div>
             </a>
-        </div>
+
             <a href="obstacle_clock.html" class="clock-card">
                 <div class="clock-name">Obstacle Clock</div>
                 <div class="clock-description">A flocking simulation with moving obstacles.</div>
@@ -127,4 +203,5 @@
         </div>
     </div>
 </body>
+
 </html>

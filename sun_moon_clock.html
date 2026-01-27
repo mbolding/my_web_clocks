@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sun & Moon Clock</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Cinzel', serif;
+        }
+
+        #sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #020111 0%, #191621 100%);
+            transition: background 1s ease;
+        }
+
+        /* Stars */
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(1px 1px at 10% 20%, white, transparent),
+                radial-gradient(1px 1px at 30% 60%, white, transparent),
+                radial-gradient(2px 2px at 50% 30%, white, transparent),
+                radial-gradient(1px 1px at 70% 80%, white, transparent),
+                radial-gradient(1.5px 1.5px at 90% 10%, white, transparent),
+                radial-gradient(1px 1px at 20% 90%, white, transparent);
+            opacity: 0.8;
+        }
+
+        /* Celestial Bodies */
+        .celestial-body {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            /* Coordinates will be set by JS via CSS variables or direct transform */
+            transition: all 0.5s ease;
+        }
+
+        #sun {
+            width: clamp(50px, 10vw, 150px);
+            height: clamp(50px, 10vw, 150px);
+            background: radial-gradient(circle, #fff7e6 0%, #ffcc33 60%, #ff9900 100%);
+            box-shadow: 0 0 40px #ffcc33, 0 0 80px #ff9900;
+            z-index: 10;
+        }
+
+        #moon {
+            width: clamp(40px, 8vw, 120px);
+            height: clamp(40px, 8vw, 120px);
+            background: radial-gradient(circle, #f0f0f0 0%, #d9d9d9 100%);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            z-index: 9;
+            /* Simple phase simulation using box-shadow is hard, better to just show a full moon or simple disc for now */
+        }
+
+        .moon-shadow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            /* This would be adjusted to simulate phases */
+            transform: scaleX(0);
+        }
+
+        /* Horizon */
+        .horizon {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20%;
+            background: #000;
+            clip-path: polygon(0% 100%, 0% 20%, 15% 30%, 30% 10%, 45% 25%, 60% 15%, 75% 35%, 100% 20%, 100% 100%);
+            z-index: 20;
+        }
+
+        /* Info Display */
+        .info {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            z-index: 30;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+
+
+        #location-status {
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sky">
+        <div class="stars"></div>
+        <div id="sun" class="celestial-body"></div>
+        <div id="moon" class="celestial-body">
+            <div class="moon-shadow" id="moonShadow"></div>
+        </div>
+        <div class="horizon"></div>
+        <div class="info">
+
+            <div id="location-status">Locating...</div>
+        </div>
+    </div>
+
+    <script>
+        // Default location (Null Island-ish / Equator for generic view or London)
+        let lat = 51.5074;
+        let lng = -0.1278;
+        let hasLocation = false;
+
+        const sunEl = document.getElementById('sun');
+        const moonEl = document.getElementById('moon');
+        const skyEl = document.getElementById('sky');
+
+        const locStatusEl = document.getElementById('location-status');
+
+        // Location request
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    lat = position.coords.latitude;
+                    lng = position.coords.longitude;
+                    hasLocation = true;
+                    locStatusEl.innerText = `Pos: ${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+                    updateCelestialBodies();
+                },
+                (error) => {
+                    locStatusEl.innerText = "Location Denied - Using Default (London)";
+                    console.warn("Geolocation error:", error);
+                }
+            );
+        } else {
+            locStatusEl.innerText = "Geolocation Not Supported";
+        }
+
+
+
+        function getSkyColor(altitude) {
+            // Altitude is in radians. 
+            // -Pi/2 (down) to Pi/2 (up). 0 is horizon.
+            const deg = altitude * (180 / Math.PI);
+
+            if (deg > 6) {
+                // Day
+                return 'linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%)';
+            } else if (deg > -6) {
+                // Twilight / Golden Hour
+                return 'linear-gradient(to bottom, #2c3e50 0%, #fd746c 100%)';
+            } else if (deg > -18) {
+                // Nautical Twilight
+                return 'linear-gradient(to bottom, #0f2027 0%, #203a43 50%, #2c5364 100%)';
+            } else {
+                // Night
+                return 'linear-gradient(to bottom, #000000 0%, #0f0c29 100%)';
+            }
+        }
+
+        function updateCelestialBodies() {
+            const now = new Date();
+
+            // Get positions using SunCalc
+            const sunPos = SunCalc.getPosition(now, lat, lng);
+            const moonPos = SunCalc.getMoonPosition(now, lat, lng);
+            const moonIllum = SunCalc.getMoonIllumination(now);
+
+            // Convert Azimuth/Altitude to X/Y on screen
+            // This is a "planetarium" view looking South (in Northern Hemisphere) roughly
+            // Azimuth: 0 is South, Pi is North.
+            // Altitude: 0 is horizon, Pi/2 is zenith.
+
+            // We'll map Azimuth -PI to PI to X 0% to 100%
+            // But usually we can see about 180 degrees field of view?
+            // Let's simlulate a wide lens.
+
+            function mapPosition(azimuth, altitude) {
+                // Azimuth in SunCalc is: 0 = South, Math.PI * 3/4 = Northwest
+                // Standard: 0 South, increasing westwards?
+                // Docs: "azimuth: 0 is south and Math.PI * 3/4 is northwest"
+
+                // Let's center South for simplicity or map 0-360
+                // Simple projection:
+                // X depends on Azimuth
+
+                // normalize azimuth to -PI to PI
+                let az = azimuth;
+
+                // Map screen X: Center is South (0). Left is East? Right is West?
+                // Sun rises in East (-PI/2 roughly) sets in West (PI/2 roughly).
+                // If 0 is South, then -PI/2 is East (Left), PI/2 is West (Right).
+
+                const xPct = 50 + (az * (180 / Math.PI) / 180) * 100; // Stretch 180 degrees to full screen width?
+
+                // Y depends on Altitude
+                // 90 deg (PI/2) is top (0%), 0 deg is horizon (80%?), -90 is bottom
+                const yPct = 80 - (altitude * (180 / Math.PI) / 90) * 80;
+
+                return { x: xPct, y: yPct };
+            }
+
+            const sunCoords = mapPosition(sunPos.azimuth, sunPos.altitude);
+            const moonCoords = mapPosition(moonPos.azimuth, moonPos.altitude);
+
+            // Apply positions
+            sunEl.style.left = `${sunCoords.x}%`;
+            sunEl.style.top = `${sunCoords.y}%`;
+
+            moonEl.style.left = `${moonCoords.x}%`;
+            moonEl.style.top = `${moonCoords.y}%`;
+
+            // Sky Color based on Sun
+            skyEl.style.background = getSkyColor(sunPos.altitude);
+
+            // Moon Phase (simple opacity/shadow hack)
+            // Phase: 0 New Moon, 0.5 Full Moon, 1 New Moon
+            // We can just print the phase name or percentage for now in console or title
+        }
+
+        setInterval(() => {
+
+            updateCelestialBodies();
+        }, 1000);
+
+
+        updateCelestialBodies();
+
+    </script>
+</body>
+
+</html>

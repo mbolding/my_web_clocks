@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conference Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f5f7;
+            --clock-face: #ffffff;
+            --text-main: #1d1d1f;
+            --text-sub: #86868b;
+            --arc-talk: #007aff;
+            --arc-qa: #34c759;
+            --arc-break: #ffcc00;
+            --hand-color: #1d1d1f;
+            --second-hand: #ff3b30;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: var(--bg);
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-main);
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px;
+        }
+
+        .clock-wrapper {
+            position: relative;
+            width: clamp(300px, 40vw, 600px);
+            height: clamp(300px, 40vw, 600px);
+        }
+
+        .info-panel {
+            width: 300px;
+            padding: 24px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .info-panel {
+                width: 100%;
+                max-width: 400px;
+            }
+        }
+
+        /* Clock */
+        svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .clock-face-bg {
+            fill: var(--clock-face);
+            filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.1));
+        }
+
+        .tick {
+            stroke: #e5e5e5;
+            stroke-width: 2;
+        }
+
+        .tick.major {
+            stroke-width: 4;
+            stroke: #d1d1d1;
+        }
+
+        .schedule-arc {
+            fill: none;
+            stroke-width: 40;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .schedule-arc.active {
+            opacity: 1;
+            stroke-width: 45;
+        }
+
+        .hand {
+            stroke-linecap: round;
+            transform-origin: center;
+            transition: transform 0.1s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+        }
+
+        .hour-hand {
+            stroke: var(--hand-color);
+            stroke-width: 8;
+        }
+
+        .minute-hand {
+            stroke: var(--hand-color);
+            stroke-width: 6;
+        }
+
+        .second-hand {
+            stroke: var(--second-hand);
+            stroke-width: 2;
+            transition: transform 0.05s linear;
+        }
+
+        .center-dot {
+            fill: var(--hand-color);
+        }
+
+        /* Info */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            align-self: flex-start;
+        }
+
+        .current-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .speaker-name {
+            font-size: 1.1rem;
+            color: var(--text-sub);
+            margin: 0;
+        }
+
+        .countdown {
+            font-size: 3rem;
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+            margin-top: auto;
+        }
+
+        .next-up {
+            border-top: 1px solid #eee;
+            padding-top: 16px;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="clock-wrapper">
+            <svg viewBox="0 0 400 400" id="clock">
+                <circle class="clock-face-bg" cx="200" cy="200" r="190" />
+                <g id="ticks"></g>
+                <g id="schedule-arcs"></g>
+
+                <!-- Numbers -->
+                <!-- Ideally rendered by JS optionally, omitted for clean look -->
+
+                <!-- Hands -->
+                <line id="h-hand" class="hand hour-hand" x1="200" y1="200" x2="200" y2="100" />
+                <line id="m-hand" class="hand minute-hand" x1="200" y1="200" x2="200" y2="60" />
+                <line id="s-hand" class="hand second-hand" x1="200" y1="200" x2="200" y2="50" />
+                <circle class="center-dot" cx="200" cy="200" r="8" />
+            </svg>
+        </div>
+
+        <div class="info-panel">
+            <div id="status-badge" class="status-badge" style="background: #eee;">Waiting</div>
+            <div>
+                <h2 class="current-title" id="current-title">Conference Schedule</h2>
+                <p class="speaker-name" id="speaker-name">Today's Session</p>
+            </div>
+            <div class="countdown" id="countdown">00:00</div>
+            <div class="next-up" id="next-up">Next: ...</div>
+        </div>
+    </div>
+
+    <script>
+        // Sample Schedule Generator
+        // Generates a schedule starting from current hour for demo purposes
+        function generateSchedule() {
+            const now = new Date();
+            const startHour = now.getHours();
+
+            // Generate some sessions for the next few hours
+            return [
+                { type: 'talk', duration: 30, title: "Keynote: The Future of Time", speaker: "Dr. Alice Chronos" },
+                { type: 'qa', duration: 10, title: "Q&A: Keynote", speaker: "Dr. Alice Chronos" },
+                { type: 'break', duration: 20, title: "Coffee Break", speaker: "-" },
+                { type: 'talk', duration: 45, title: "Design Systems in 2026", speaker: "Bob Builder" },
+                { type: 'qa', duration: 15, title: "Q&A: Design Systems", speaker: "Bob Builder" },
+                { type: 'talk', duration: 30, title: "Advanced CSS Clocks", speaker: "Charlie Clock" },
+                { type: 'qa', duration: 10, title: "Q&A: CSS Clocks", speaker: "Charlie Clock" },
+                { type: 'break', duration: 20, title: "Lunch Break", speaker: "-" }
+            ];
+        }
+
+        // Initialize Schedule with strict timestamps based on "Conerence Start"
+        // For this demo, let's pretend the conference started at the top of the CURRENT hour.
+        const now = new Date();
+        const baseTime = new Date(now);
+        baseTime.setMinutes(0, 0, 0); // Start of current hour
+
+        const rawSchedule = generateSchedule();
+        const schedule = [];
+
+        let currentTimePointer = new Date(baseTime);
+        for (let item of rawSchedule) {
+            const start = new Date(currentTimePointer);
+            const end = new Date(start.getTime() + item.duration * 60000);
+
+            schedule.push({
+                ...item,
+                start: start,
+                end: end
+            });
+
+            currentTimePointer = end;
+        }
+
+        // DOM
+        const svg = document.getElementById('clock');
+        const arcsGroup = document.getElementById('schedule-arcs');
+        const hHand = document.getElementById('h-hand');
+        const mHand = document.getElementById('m-hand');
+        const sHand = document.getElementById('s-hand');
+
+        // Setup Ticks
+        const ticksGroup = document.getElementById('ticks');
+        for (let i = 0; i < 60; i++) {
+            const rot = i * 6;
+            const isMajor = i % 5 === 0;
+            const y1 = isMajor ? 30 : 35;
+            const y2 = isMajor ? 50 : 40;
+
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", "200");
+            line.setAttribute("y1", y1); // Relative to unrotated, top is 0? No, standard SVG coords.
+            // Wait, we will rotate the group or the tick?
+            // Easier to do simple trig or rotate transform.
+
+            // Center is 200, 200. Radius ~190.
+            // Let's use transform.
+            // Note: SVG rotation origin is top-left by default unless specified.
+            line.setAttribute("x1", 200);
+            line.setAttribute("y1", 200 - 180);
+            line.setAttribute("x2", 200);
+            line.setAttribute("y2", 200 - (180 - (isMajor ? 12 : 6)));
+            line.setAttribute("class", isMajor ? "tick major" : "tick");
+            line.setAttribute("transform", `rotate(${rot} 200 200)`);
+            ticksGroup.appendChild(line);
+        }
+
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            var angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+            return {
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
+            };
+        }
+
+        function describeArc(x, y, radius, startAngle, endAngle) {
+            var start = polarToCartesian(x, y, radius, endAngle);
+            var end = polarToCartesian(x, y, radius, startAngle);
+            var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+            var d = [
+                "M", start.x, start.y,
+                "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+            ].join(" ");
+            return d;
+        }
+
+        function getColor(type) {
+            if (type === 'talk') return 'var(--arc-talk)';
+            if (type === 'qa') return 'var(--arc-qa)';
+            return 'var(--arc-break)';
+        }
+
+        // Render Arcs
+        // Problem: Analog clock wraps every 12 hours. We only want to show relevant items?
+        // Let's only render items that are within the current 12-hour window?
+        // Or simpler: Just render everything mod 12 hours, but that overlaps.
+        // For a conference clock, maybe we only care about the current hour and next few?
+        // Let's render items that start/end within the current 12h cycle.
+
+        function renderArcs() {
+            arcsGroup.innerHTML = '';
+
+            schedule.forEach((item, index) => {
+                // Convert time to 360 degrees (12 hour clock? or 1 hour clock?)
+                // A "Conference Timer" usually tracks the specific minutes in an hour if short sessions?
+                // But if sessions are long (45m), they wrap hours.
+                // Standard analog clock is 12 hours = 360 deg. 1 hour = 30 deg.
+                // This makes it hard to see 45 minute durations clearly if they are just 22.5 degrees.
+
+                // ALTERNATIVE: The "Dial" represented 1 HOUR (60 minutes).
+                // Then it wraps. This is common for "minute-based timers".
+                // But then we lose longer context.
+
+                // Let's stick to standard 12H clock mapping for positions.
+                // 1 min = 0.5 degrees.
+
+                // Check if item is in valid range (e.g., today)
+                // Map start/end to clock degrees
+                const startMins = item.start.getHours() * 60 + item.start.getMinutes();
+                const endMins = item.end.getHours() * 60 + item.end.getMinutes();
+
+                // Modulo 12h (720 minutes)
+                const startDeg = (startMins % 720) * 0.5;
+                const endDeg = (endMins % 720) * 0.5;
+
+                // Handle 12h wrap (e.g. 11:50 to 12:10)
+                let diff = endDeg - startDeg;
+                if (diff < 0) diff += 360;
+
+                // Draw arc
+                // Radius - padding
+                const radius = 160;
+
+                const arcPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                arcPath.setAttribute("d", describeArc(200, 200, radius, startDeg, startDeg + diff));
+                arcPath.setAttribute("class", "schedule-arc");
+                arcPath.setAttribute("stroke", getColor(item.type));
+                arcPath.id = `arc-${index}`;
+                arcsGroup.appendChild(arcPath);
+            });
+        }
+
+        renderArcs();
+
+        function update() {
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+            const ms = now.getMilliseconds();
+
+            // Hands
+            const sDeg = (s + ms / 1000) * 6;
+            const mDeg = (m + s / 60) * 6;
+            const hDeg = ((h % 12) + m / 60) * 30;
+
+            sHand.setAttribute("transform", `rotate(${sDeg} 200 200)`);
+            mHand.setAttribute("transform", `rotate(${mDeg} 200 200)`);
+            hHand.setAttribute("transform", `rotate(${hDeg} 200 200)`);
+
+            // Active Item
+            let currentItem = null;
+            let nextItem = null;
+
+            schedule.forEach((item, index) => {
+                const el = document.getElementById(`arc-${index}`);
+                if (now >= item.start && now < item.end) {
+                    currentItem = item;
+                    if (el) el.classList.add('active');
+                } else {
+                    if (el) el.classList.remove('active');
+                }
+
+                if (!nextItem && item.start > now) {
+                    nextItem = item;
+                }
+            });
+
+            // Update Info
+            const badge = document.getElementById('status-badge');
+            const title = document.getElementById('current-title');
+            const speaker = document.getElementById('speaker-name');
+            const countdown = document.getElementById('countdown');
+            const nextUp = document.getElementById('next-up');
+
+            if (currentItem) {
+                badge.innerText = currentItem.type === 'talk' ? 'Now Speaking' : currentItem.type === 'qa' ? 'Q & A' : 'Break';
+                badge.style.background = getColor(currentItem.type);
+                badge.style.color = '#fff';
+
+                title.innerText = currentItem.title;
+                speaker.innerText = currentItem.speaker;
+
+                const diff = currentItem.end - now;
+                const mLeft = Math.floor(diff / 60000);
+                const sLeft = Math.floor((diff % 60000) / 1000);
+                countdown.innerText = `${String(mLeft).padStart(2, 0)}:${String(sLeft).padStart(2, 0)}`;
+                countdown.style.color = mLeft < 2 && currentItem.type !== 'break' ? '#ff3b30' : 'var(--text-main)';
+
+            } else {
+                badge.innerText = "No Session";
+                badge.style.background = "#eee";
+                badge.style.color = "#888";
+                title.innerText = "Conference Paused";
+                speaker.innerText = "-";
+                countdown.innerText = "--:--";
+            }
+
+            if (nextItem) {
+                const nextTime = nextItem.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                nextUp.innerText = `Next: ${nextItem.title} at ${nextTime}`;
+            } else {
+                nextUp.innerText = "End of Day";
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        update();
+
+    </script>
+</body>
+
+</html>

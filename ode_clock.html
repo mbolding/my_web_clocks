@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,6 +29,7 @@
         }
     </style>
 </head>
+
 <body>
     <canvas id="odeCanvas"></canvas>
     <div id="digitalTime"></div>
@@ -43,8 +45,8 @@
         const gridSpacing = 30;
         const numCols = Math.floor(size / gridSpacing);
         const numRows = Math.floor(size / gridSpacing);
-        const dt = 0.1;
-        const maxParticles = 100;
+        const dt = 0.02;
+        const maxParticles = 30;
 
         class Particle {
             constructor(x, y, color, trailLength = 50) {
@@ -55,13 +57,35 @@
                 this.trailLength = trailLength;
             }
 
-            update(a, b) {
-                let canvasX = this.x - size / 2;
-                let canvasY = this.y - size / 2;
+            update(curl, sources) {
+                // Current pos relative to center
+                let px = this.x - size / 2;
+                let py = this.y - size / 2;
 
-                const dx = a * canvasX - b * canvasY;
-                const dy = b * canvasX + a * canvasY;
+                let dx = 0;
+                let dy = 0;
 
+                // 1. Central Curl (Rotational Field)
+                // V = (-y, x) * strength
+                dx += -py * curl;
+                dy += px * curl;
+
+                // 2. Sources and Sinks
+                for (let src of sources) {
+                    let rx = this.x - src.x;
+                    let ry = this.y - src.y;
+                    let d2 = rx * rx + ry * ry + 100; // +100 to avoid singularity
+                    let d = Math.sqrt(d2);
+
+                    // V = (rx, ry) / d * strength (falloff 1/r or 1/r^2?)
+                    // Let's use 1/r falloff for long-range effect: V ~ 1/d * unit_vec = 1/d * (r/d) = r/d^2
+                    let strength = src.strength / d2 * 2000;
+
+                    dx += rx * strength;
+                    dy += ry * strength;
+                }
+
+                // Apply
                 this.x += dx * dt;
                 this.y += dy * dt;
 
@@ -70,7 +94,8 @@
                     this.history.shift();
                 }
 
-                if (this.x > size || this.x < 0 || this.y > size || this.y < 0) {
+                // Bounds: Reset if too far or NaN
+                if (this.x < 0 || this.x > size || this.y < 0 || this.y > size || isNaN(this.x)) {
                     this.x = Math.random() * size;
                     this.y = Math.random() * size;
                     this.history = [];
@@ -101,28 +126,42 @@
             particles.push(new Particle(x, y, color));
         }
 
-        function drawVectorField(a, b) {
+        function drawVectorField(curl, sources) {
             ctx.strokeStyle = `rgba(0, 0, 0, 0.1)`;
             ctx.lineWidth = 0.5;
             for (let i = 0; i < numCols; i++) {
                 for (let j = 0; j < numRows; j++) {
                     const x = i * gridSpacing + gridSpacing / 2;
                     const y = j * gridSpacing + gridSpacing / 2;
-                    
-                    let canvasX = x - size / 2;
-                    let canvasY = y - size / 2;
 
-                    const dx = a * canvasX - b * canvasY;
-                    const dy = b * canvasX + a * canvasY;
-                    
-                    const angle = Math.atan2(dy, dx);
-                    
+                    // Calculate vector at this point
+                    let px = x - size / 2;
+                    let py = y - size / 2;
+
+                    let vx = -py * curl;
+                    let vy = px * curl;
+
+                    for (let src of sources) {
+                        let rx = x - src.x;
+                        let ry = y - src.y;
+                        let d2 = rx * rx + ry * ry + 100;
+                        let strength = src.strength / d2 * 2000;
+                        vx += rx * strength;
+                        vy += ry * strength;
+                    }
+
+                    const angle = Math.atan2(vy, vx);
+
                     ctx.save();
                     ctx.translate(x, y);
                     ctx.rotate(angle);
                     ctx.beginPath();
-                    ctx.moveTo(0, 0);
+                    ctx.moveTo(-gridSpacing / 4, 0); // Center the line
                     ctx.lineTo(gridSpacing / 4, 0);
+                    // Arrowhead
+                    ctx.lineTo(gridSpacing / 4 - 3, -2);
+                    ctx.moveTo(gridSpacing / 4, 0);
+                    ctx.lineTo(gridSpacing / 4 - 3, 2);
                     ctx.stroke();
                     ctx.restore();
                 }
@@ -139,17 +178,48 @@
             const s = now.getSeconds();
             const ms = now.getMilliseconds();
 
-            const a = Math.sin((s + ms/1000) * 2 * Math.PI / 60) * 0.05;
-            const b = (m + s/60) / 60 * 0.3 + 0.1;
+            // Parameters
+            // Curl: Seconds
+            const curl = Math.sin((s + ms / 1000) * 2 * Math.PI / 60) * 2.0;
 
-            drawVectorField(a, b);
+            // Sources/Sinks
+            const center = size / 2;
+            const radius = size * 0.35;
+
+            // Minute Source (Repeller)
+            const minAngle = (m + s / 60) * 2 * Math.PI / 60 - Math.PI / 2;
+            const minX = center + Math.cos(minAngle) * radius;
+            const minY = center + Math.sin(minAngle) * radius;
+
+            // Hour Sink (Attractor)
+            const hrAngle = ((h % 12) + m / 60) * 2 * Math.PI / 12 - Math.PI / 2;
+            const hrX = center + Math.cos(hrAngle) * (radius * 0.6); // Slightly closer in
+            const hrY = center + Math.sin(hrAngle) * (radius * 0.6);
+
+            const sources = [
+                { x: minX, y: minY, strength: 1.5, type: 'source' }, // Minute Source
+                { x: hrX, y: hrY, strength: -1.5, type: 'sink' }     // Hour Sink
+            ];
+
+            drawVectorField(curl, sources);
+
+            // Draw Source/Sink Indicators
+            ctx.beginPath();
+            ctx.arc(minX, minY, 10, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // Red Source
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(hrX, hrY, 15, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.5)'; // Blue Sink
+            ctx.fill();
 
             if (particles.length < maxParticles && Math.random() < 0.5) {
                 spawnParticle();
             }
 
             particles.forEach(p => {
-                p.update(a, b);
+                p.update(curl, sources);
                 p.draw();
             });
 
@@ -161,4 +231,5 @@
         animate();
     </script>
 </body>
+
 </html>

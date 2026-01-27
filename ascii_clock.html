@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Clock</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+            border: 2px solid #0f0;
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 20px #0f0;
+        }
+
+        pre {
+            font-size: clamp(0.5rem, 1vw, 1.2rem);
+            line-height: 1;
+            margin: 0;
+            font-weight: bold;
+            text-shadow: 0 0 5px #0f0;
+            white-space: pre;
+        }
+
+        .date {
+            margin-top: 1rem;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix-bg"></canvas>
+
+    <div class="container">
+        <pre id="clock"></pre>
+        <div class="date" id="date"></div>
+    </div>
+
+    <script>
+        // Matrix Rain
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const cols = Math.floor(width / 20) + 1;
+        const ypos = Array(cols).fill(0);
+
+        function matrix() {
+            ctx.fillStyle = '#0001';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#0f0';
+            ctx.font = '15pt monospace';
+
+            ypos.forEach((y, ind) => {
+                const text = String.fromCharCode(Math.random() * 128);
+                const x = ind * 20;
+                ctx.fillText(text, x, y);
+
+                if (y > 100 + Math.random() * 10000) ypos[ind] = 0;
+                else ypos[ind] = y + 20;
+            });
+        }
+
+        setInterval(matrix, 50);
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // ASCII Clock
+        const digits = {
+            '0': [
+                "  ###  ",
+                " #   # ",
+                "#     #",
+                "#     #",
+                "#     #",
+                " #   # ",
+                "  ###  "
+            ],
+            '1': [
+                "   #   ",
+                "  ##   ",
+                "   #   ",
+                "   #   ",
+                "   #   ",
+                "   #   ",
+                "  ###  "
+            ],
+            '2': [
+                " ##### ",
+                "#     #",
+                "      #",
+                " ##### ",
+                "#      ",
+                "#      ",
+                "#######"
+            ],
+            '3': [
+                " ##### ",
+                "#     #",
+                "      #",
+                " ##### ",
+                "      #",
+                "#     #",
+                " ##### "
+            ],
+            '4': [
+                "#      ",
+                "#    # ",
+                "#    # ",
+                "#######",
+                "     # ",
+                "     # ",
+                "     # "
+            ],
+            '5': [
+                "#######",
+                "#      ",
+                "#      ",
+                "#####  ",
+                "     # ",
+                "#    # ",
+                " ####  "
+            ],
+            '6': [
+                " ##### ",
+                "#      ",
+                "#      ",
+                "###### ",
+                "#     #",
+                "#     #",
+                " ##### "
+            ],
+            '7': [
+                "#######",
+                "#    # ",
+                "    #  ",
+                "   #   ",
+                "  #    ",
+                "  #    ",
+                "  #    "
+            ],
+            '8': [
+                " ##### ",
+                "#     #",
+                " ##### ",
+                "#     #",
+                "#     #",
+                "#     #",
+                " ##### "
+            ],
+            '9': [
+                " ##### ",
+                "#     #",
+                "#     #",
+                " ######",
+                "      #",
+                "      #",
+                " ####  "
+            ],
+            ':': [
+                "       ",
+                "   #   ",
+                "   #   ",
+                "       ",
+                "   #   ",
+                "   #   ",
+                "       "
+            ]
+        };
+
+        function getAsciiTime() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+
+            const timeStr = `${h}:${m}:${s}`;
+            let output = ["", "", "", "", "", "", ""];
+
+            for (let char of timeStr) {
+                const art = digits[char];
+                for (let i = 0; i < 7; i++) {
+                    output[i] += art[i] + "  ";
+                }
+            }
+
+            return output.join('\n');
+        }
+
+        function updateClock() {
+            document.getElementById('clock').textContent = getAsciiTime();
+            document.getElementById('date').textContent = new Date().toLocaleDateString();
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Pomodoro</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-work: #e76f51;
+            /* Salmon */
+            --bg-break: #2a9d8f;
+            /* Teal */
+            --text-color: #ffffff;
+            --bg-current: var(--bg-work);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: var(--bg-current);
+            color: var(--text-color);
+            font-family: 'JetBrains Mono', monospace;
+            transition: background-color 0.5s ease;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .status {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            opacity: 0.9;
+        }
+
+        .timer {
+            font-size: clamp(4rem, 15vw, 12rem);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 12px 32px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .info {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Progress ring */
+        .progress-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: clamp(280px, 80vw, 600px);
+            height: clamp(280px, 80vw, 600px);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 4;
+        }
+
+        #progress {
+            stroke: rgba(255, 255, 255, 0.4);
+            stroke-dasharray: 100;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+            transform: rotate(-90deg);
+            transform-origin: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <svg class="progress-container" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" />
+        <circle id="progress" cx="50" cy="50" r="48" pathLength="100" />
+    </svg>
+
+    <div class="container">
+        <div class="status" id="status">Focus</div>
+        <div class="timer" id="timer">00:00</div>
+
+        <div class="controls">
+            <button id="toggleBtn">Start</button>
+            <button id="skipBtn">Skip</button>
+        </div>
+
+        <div class="info" id="next-info">Next: ?</div>
+    </div>
+
+    <script>
+        // Constants (in minutes)
+        const WORK_MIN = 5;
+        const WORK_MAX = 45;
+        const BREAK_MIN = 5;
+        const BREAK_MAX = 15;
+
+        // State
+        let isWork = true;
+        let isRunning = false;
+        let timeLeft = 0; // in seconds
+        let totalDuration = 0; // in seconds
+        let timerInterval = null;
+        let audioContext = null;
+
+        // Elements
+        const timerEl = document.getElementById('timer');
+        const statusEl = document.getElementById('status');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        const progressEl = document.getElementById('progress');
+        const nextInfoEl = document.getElementById('next-info');
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function playSound() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
+            oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.5);
+
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timerEl.innerText = formatTime(timeLeft);
+
+            // Update progress circle
+            const percent = (timeLeft / totalDuration) * 100;
+            // Stroke-dashoffset: 100 starts full, 0 ends empty?
+            // Actually usually we want it to shrink.
+            // pathLength=100. offset 0 = full, offset 100 = empty.
+            progressEl.style.strokeDashoffset = 100 - percent;
+
+            document.title = `${formatTime(timeLeft)} - ${isWork ? 'Focus' : 'Break'}`;
+        }
+
+        function generateNextPhase() {
+            // Generate duration for CURRENT phase
+            const min = isWork ? WORK_MIN : BREAK_MIN;
+            const max = isWork ? WORK_MAX : BREAK_MAX;
+            const minutes = getRandomInt(min, max);
+
+            timeLeft = minutes * 60;
+            totalDuration = timeLeft;
+
+            // Visuals
+            statusEl.innerText = isWork ? 'Focus' : 'Break';
+            document.documentElement.style.setProperty('--bg-current', isWork ? 'var(--bg-work)' : 'var(--bg-break)');
+
+            updateDisplay();
+            updateNextInfo();
+        }
+
+        function updateNextInfo() {
+            // Hint at what the range for the NEXT phase will be
+            const nextType = !isWork ? 'Focus' : 'Break';
+            const min = !isWork ? WORK_MIN : BREAK_MIN;
+            const max = !isWork ? WORK_MAX : BREAK_MAX;
+            nextInfoEl.innerText = `Up next: ${nextType} (${min}-${max} min)`;
+        }
+
+        function switchPhase() {
+            isWork = !isWork;
+            generateNextPhase();
+            playSound();
+        }
+
+        function tick() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                updateDisplay();
+            } else {
+                switchPhase();
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                toggleBtn.innerText = "Start";
+                isRunning = false;
+            } else {
+                // Initialize audio context on user gesture
+                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                timerInterval = setInterval(tick, 1000);
+                toggleBtn.innerText = "Pause";
+                isRunning = true;
+            }
+        }
+
+        function skip() {
+            // Initialize audio on skip too
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            switchPhase();
+            // If it was running, it keeps running
+        }
+
+        // Listeners
+        toggleBtn.addEventListener('click', toggleTimer);
+        skipBtn.addEventListener('click', skip);
+
+        // Init
+        generateNextPhase(); // Start with work
+    </script>
+</body>
+
+</html>
