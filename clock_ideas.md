@@ -9,7 +9,7 @@
 - [x] a clock that just tells times by mealtimes, tea time, coffee time, and bed time
 - [x] a clock that times speakers at a conference. speaking time is marked on the dial and the clock shows who is speaking and how much time is left and time for questions and answers. 
 - [x] an ocilloscope clock
-- [ ] a clock with a classic mac os 5 or 6 look
+- [x] a clock with a classic mac os 5 or 6 look
 - [ ] a clock with a classic windows 95 look
 - [ ] a nextstep clock
 - [x] put clock hands on a .png of a clock like big ben

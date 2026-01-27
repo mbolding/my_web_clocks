@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Mac Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body {
+            /* Full Desktop Background */
+            background: url('os6.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #777;
+            /* Fallback */
+            image-rendering: pixelated;
+
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        /* The Clock Container */
+        .clock-screen {
+            background: #ffffff;
+            border: 3px solid #000;
+            padding: 40px 60px;
+            font-family: 'VT323', monospace;
+            color: #000000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.5);
+            /* Hard shadow */
+            position: relative;
+        }
+
+        /* Inner bezel detail */
+        .clock-screen::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 1px solid #000;
+            pointer-events: none;
+        }
+
+        .time-display {
+            font-size: 15vw;
+            /* Large and responsive */
+            line-height: 0.9;
+        }
+
+        .date-display {
+            font-size: 5vw;
+            margin-top: 10px;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+
+        @media (min-width: 800px) {
+            .time-display {
+                font-size: 120px;
+            }
+
+            .date-display {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="clock-screen" id="clockScreen">
+        <div class="time-display" id="timeDisplay">00:00:00</div>
+        <div class="date-display" id="dateDisplay">JAN 01 1984</div>
+    </div>
+
+    <script>
+        const timeDisplay = document.getElementById('timeDisplay');
+        const dateDisplay = document.getElementById('dateDisplay');
+
+        // Clock Logic
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+
+            timeDisplay.textContent = `${h}:${m}:${s}`;
+
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            dateDisplay.textContent = now.toLocaleDateString('en-US', options).toUpperCase();
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+
+    </script>
+</body>
+
+</html>
