@@ -14,6 +14,7 @@
             --border: #eeeeee;
             --shadow: rgba(0, 0, 0, 0.08);
             --shadow-hover: rgba(0, 0, 0, 0.12);
+            --accent: #000;
         }
 
         * {
@@ -38,7 +39,7 @@
 
         header {
             text-align: center;
-            margin-bottom: 64px;
+            margin-bottom: 48px;
         }
 
         h1 {
@@ -47,6 +48,39 @@
             margin-bottom: 16px;
         }
 
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 48px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .tab-btn.active {
+            color: var(--bg);
+            background: var(--text);
+            font-weight: 500;
+        }
+
+        /* Grid */
         .clock-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -58,7 +92,7 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.3s ease;
             cursor: pointer;
             text-decoration: none;
             color: inherit;
@@ -75,6 +109,10 @@
             border-color: transparent;
         }
 
+        .clock-card.hidden {
+            display: none;
+        }
+
         .clock-name {
             font-size: 1.4rem;
             font-weight: 600;
@@ -86,6 +124,15 @@
             color: var(--text-muted);
             line-height: 1.6;
         }
+
+        .clock-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            opacity: 0.6;
+            margin-top: auto;
+        }
     </style>
 </head>
 
@@ -94,114 +141,202 @@
         <header>
             <h1>Web Clocks</h1>
         </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-filter="all">All</button>
+            <button class="tab-btn" data-filter="simulation">Simulation</button>
+            <button class="tab-btn" data-filter="retro">Retro</button>
+            <button class="tab-btn" data-filter="art">Art</button>
+            <button class="tab-btn" data-filter="nature">Nature</button>
+            <button class="tab-btn" data-filter="utility">Utility</button>
+        </nav>
+
         <div class="clock-grid">
-            <a href="glitch_clock.html" class="clock-card">
+            <!-- Retro -->
+            <a href="glitch_clock.html" class="clock-card" data-category="retro">
                 <div class="clock-name">Glitch Clock</div>
                 <div class="clock-description">A Cyberpunk digital clock with visual distortion.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="gravity_clock.html" class="clock-card">
-                <div class="clock-name">Gravity Clock</div>
-                <div class="clock-description">A physics-based clock where time falls.</div>
-            </a>
-            <a href="sun_moon_clock.html" class="clock-card">
-                <div class="clock-name">Sun & Moon Clock</div>
-                <div class="clock-description">Real-time sky position based on your location.</div>
-            </a>
-            <a href="random_pomodoro_clock.html" class="clock-card">
-                <div class="clock-name">Random Pomodoro</div>
-                <div class="clock-description">Focus timer with randomized intervals.</div>
-            </a>
-            <a href="conference_clock.html" class="clock-card">
-                <div class="clock-name">Conference Clock</div>
-                <div class="clock-description">Speaker timer with schedule visualization.</div>
-            </a>
-            <a href="mealtime_clock.html" class="clock-card">
-                <div class="clock-name">The Mealtime Clock</div>
-                <div class="clock-description">Tells time by Second Breakfast, Elevenses, and more.</div>
-            </a>
-            <a href="ascii_clock.html" class="clock-card">
+            <a href="ascii_clock.html" class="clock-card" data-category="retro">
                 <div class="clock-name">ASCII Clock</div>
                 <div class="clock-description">A retro terminal clock in ASCII art.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="perlin_clock.html" class="clock-card">
-                <div class="clock-name">Perlin Clock</div>
-                <div class="clock-description">A flocking simulation guided by a noise field.</div>
-            </a>
-            <a href="predator_clock.html" class="clock-card">
-                <div class="clock-name">Predator-Prey Clock</div>
-                <div class="clock-description">A flocking simulation where a predator chases the flock.</div>
-            </a>
-
-            <a href="obstacle_clock.html" class="clock-card">
-                <div class="clock-name">Obstacle Clock</div>
-                <div class="clock-description">A flocking simulation with moving obstacles.</div>
-            </a>
-            <a href="xyz_clock.html" class="clock-card">
-                <div class="clock-name">XYZ Clock</div>
-                <div class="clock-description">Time mapped to X, Y, Z coordinates.</div>
-            </a>
-            <a href="flocking_clock.html" class="clock-card">
-                <div class="clock-name">Flocking Clock</div>
-                <div class="clock-description">A simulation of flocking behavior.</div>
-            </a>
-            <a href="ode_clock.html" class="clock-card">
-                <div class="clock-name">ODE Clock</div>
-                <div class="clock-description">A clock based on ordinary differential equations.</div>
-            </a>
-            <a href="latex_clock.html" class="clock-card">
-                <div class="clock-name">LaTeX Clock</div>
-                <div class="clock-description">A clock inspired by the LaTeX typesetting system.</div>
-            </a>
-            <a href="arcade_clock.html" class="clock-card">
+            <a href="arcade_clock.html" class="clock-card" data-category="retro">
                 <div class="clock-name">Arcade Clock</div>
                 <div class="clock-description">A clock inspired by classic arcade games.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="sundial_clock.html" class="clock-card">
-                <div class="clock-name">Sundial Clock</div>
-                <div class="clock-description">A 3D sundial using Three.js.</div>
+            <a href="asteroids_clock.html" class="clock-card" data-category="retro">
+                <div class="clock-name">Asteroids Clock</div>
+                <div class="clock-description">A vector monitor tribute to the arcade classic.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="binary_clock.html" class="clock-card">
-                <div class="clock-name">Binary Clock</div>
-                <div class="clock-description">Time displayed in binary format.</div>
-            </a>
-            <a href="flip_clock.html" class="clock-card">
+            <a href="flip_clock.html" class="clock-card" data-category="retro">
                 <div class="clock-name">Flip Clock</div>
                 <div class="clock-description">A mechanical flip-style clock.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="circadian_clock.html" class="clock-card">
-                <div class="clock-name">Circadian Clock</div>
-                <div class="clock-description">A clock based on natural circadian rhythms.</div>
+            <a href="binary_clock.html" class="clock-card" data-category="retro">
+                <div class="clock-name">Binary Clock</div>
+                <div class="clock-description">Time displayed in binary format.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="hsv_clock.html" class="clock-card">
-                <div class="clock-name">HSV Clock</div>
-                <div class="clock-description">Time mapped to the HSV color model.</div>
+            <a href="latex_clock.html" class="clock-card" data-category="retro">
+                <div class="clock-name">LaTeX Clock</div>
+                <div class="clock-description">A clock inspired by the LaTeX typesetting system.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="spectrum_clock.html" class="clock-card">
-                <div class="clock-name">Spectrum Clock</div>
-                <div class="clock-description">Time represented as a color spectrum.</div>
+            <a href="vintage_clock.html" class="clock-card" data-category="retro">
+                <div class="clock-name">Vintage Clock</div>
+                <div class="clock-description">A photo-realistic clock face with overlaid dynamic hands.</div>
+                <div class="clock-tag">Retro</div>
             </a>
-            <a href="word_clock.html" class="clock-card">
-                <div class="clock-name">Word Clock</div>
-                <div class="clock-description">Time displayed in written English.</div>
+
+            <!-- Simulation -->
+            <a href="gravity_clock.html" class="clock-card" data-category="simulation">
+                <div class="clock-name">Gravity Clock</div>
+                <div class="clock-description">A physics-based clock where time falls.</div>
+                <div class="clock-tag">Simulation</div>
             </a>
-            <a href="polar_clock.html" class="clock-card">
-                <div class="clock-name">Polar Clock</div>
-                <div class="clock-description">Time shown on a polar coordinate system.</div>
+            <a href="perlin_clock.html" class="clock-card" data-category="simulation">
+                <div class="clock-name">Perlin Clock</div>
+                <div class="clock-description">A flocking simulation guided by a noise field.</div>
+                <div class="clock-tag">Simulation</div>
             </a>
-            <a href="particle_clock.html" class="clock-card">
+            <a href="predator_clock.html" class="clock-card" data-category="simulation">
+                <div class="clock-name">Predator-Prey Clock</div>
+                <div class="clock-description">A flocking simulation where a predator chases the flock.</div>
+                <div class="clock-tag">Simulation</div>
+            </a>
+            <a href="obstacle_clock.html" class="clock-card" data-category="simulation">
+                <div class="clock-name">Obstacle Clock</div>
+                <div class="clock-description">A flocking simulation with moving obstacles.</div>
+                <div class="clock-tag">Simulation</div>
+            </a>
+            <a href="flocking_clock.html" class="clock-card" data-category="simulation">
+                <div class="clock-name">Flocking Clock</div>
+                <div class="clock-description">A simulation of flocking behavior.</div>
+                <div class="clock-tag">Simulation</div>
+            </a>
+            <a href="oscilloscope_clock.html" class="clock-card" data-category="simulation">
+                <div class="clock-name">Oscilloscope Clock</div>
+                <div class="clock-description">An analog XY-mode oscilloscope simulation.</div>
+                <div class="clock-tag">Simulation</div>
+            </a>
+            <a href="ode_clock.html" class="clock-card" data-category="simulation">
+                <div class="clock-name">ODE Clock</div>
+                <div class="clock-description">A clock based on ordinary differential equations.</div>
+                <div class="clock-tag">Simulation</div>
+            </a>
+            <a href="particle_clock.html" class="clock-card" data-category="simulation">
                 <div class="clock-name">Particle Clock</div>
                 <div class="clock-description">A particle system based clock.</div>
+                <div class="clock-tag">Simulation</div>
             </a>
-            <a href="ng26_countdown.html" class="clock-card">
+
+            <!-- Nature -->
+            <a href="sun_moon_clock.html" class="clock-card" data-category="nature">
+                <div class="clock-name">Sun & Moon Clock</div>
+                <div class="clock-description">Real-time sky position based on your location.</div>
+                <div class="clock-tag">Nature</div>
+            </a>
+            <a href="mealtime_clock.html" class="clock-card" data-category="nature">
+                <div class="clock-name">The Mealtime Clock</div>
+                <div class="clock-description">Tells time by Second Breakfast, Elevenses, and more.</div>
+                <div class="clock-tag">Nature</div>
+            </a>
+            <a href="sundial_clock.html" class="clock-card" data-category="nature">
+                <div class="clock-name">Sundial Clock</div>
+                <div class="clock-description">A 3D sundial using Three.js.</div>
+                <div class="clock-tag">Nature</div>
+            </a>
+            <a href="circadian_clock.html" class="clock-card" data-category="nature">
+                <div class="clock-name">Circadian Clock</div>
+                <div class="clock-description">A clock based on natural circadian rhythms.</div>
+                <div class="clock-tag">Nature</div>
+            </a>
+
+            <!-- Art -->
+            <a href="xyz_clock.html" class="clock-card" data-category="art">
+                <div class="clock-name">XYZ Clock</div>
+                <div class="clock-description">Time mapped to X, Y, Z coordinates.</div>
+                <div class="clock-tag">Art</div>
+            </a>
+            <a href="hsv_clock.html" class="clock-card" data-category="art">
+                <div class="clock-name">HSV Clock</div>
+                <div class="clock-description">Time mapped to the HSV color model.</div>
+                <div class="clock-tag">Art</div>
+            </a>
+            <a href="spectrum_clock.html" class="clock-card" data-category="art">
+                <div class="clock-name">Spectrum Clock</div>
+                <div class="clock-description">Time represented as a color spectrum.</div>
+                <div class="clock-tag">Art</div>
+            </a>
+            <a href="word_clock.html" class="clock-card" data-category="art">
+                <div class="clock-name">Word Clock</div>
+                <div class="clock-description">Time displayed in written English.</div>
+                <div class="clock-tag">Art</div>
+            </a>
+            <a href="polar_clock.html" class="clock-card" data-category="art">
+                <div class="clock-name">Polar Clock</div>
+                <div class="clock-description">Time shown on a polar coordinate system.</div>
+                <div class="clock-tag">Art</div>
+            </a>
+
+            <!-- Utility -->
+            <a href="random_pomodoro_clock.html" class="clock-card" data-category="utility">
+                <div class="clock-name">Random Pomodoro</div>
+                <div class="clock-description">Focus timer with randomized intervals.</div>
+                <div class="clock-tag">Utility</div>
+            </a>
+            <a href="conference_clock.html" class="clock-card" data-category="utility">
+                <div class="clock-name">Conference Clock</div>
+                <div class="clock-description">Speaker timer with schedule visualization.</div>
+                <div class="clock-tag">Utility</div>
+            </a>
+            <a href="ng26_countdown.html" class="clock-card" data-category="utility">
                 <div class="clock-name">NG26 Countdown</div>
                 <div class="clock-description">A countdown timer.</div>
+                <div class="clock-tag">Utility</div>
             </a>
-            <a href="ng26_clock.html" class="clock-card">
+            <a href="ng26_clock.html" class="clock-card" data-category="utility">
                 <div class="clock-name">NG26 Clock</div>
                 <div class="clock-description">A traditional analog clock.</div>
+                <div class="clock-tag">Utility</div>
             </a>
         </div>
     </div>
+
+    <script>
+        const tabs = document.querySelectorAll('.tab-btn');
+        const cards = document.querySelectorAll('.clock-card');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Add active to clicked
+                tab.classList.add('active');
+
+                const filter = tab.getAttribute('data-filter');
+
+                cards.forEach(card => {
+                    const category = card.getAttribute('data-category');
+
+                    if (filter === 'all' || category === filter) {
+                        card.classList.remove('hidden');
+                        // Small animation reset
+                        card.style.opacity = '0';
+                        setTimeout(() => card.style.opacity = '1', 10);
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

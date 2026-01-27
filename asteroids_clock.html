@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroids Clock</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --vector-color: #ffffff;
+            --glow-color: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: var(--vector-color);
+            font-family: monospace;
+        }
+
+        canvas {
+            display: block;
+            /* box-shadow: 0 0 20px rgba(255, 255, 255, 0.1); */
+        }
+
+        /* CRT Effect Overlay */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.1) 50%,
+                    rgba(0, 0, 0, 0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            opacity: 0.8;
+            font-size: 1.2rem;
+            text-shadow: 0 0 5px var(--glow-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="scanlines"></div>
+    <div id="ui">SCORE: <span id="score">00</span></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+
+        let width, height;
+        let score = 0;
+
+        // -----------------
+        // VECTOR FONT (Grid 4x6)
+        // -----------------
+        const VECTOR_FONT = {
+            '0': [[0, 0, 4, 0], [4, 0, 4, 6], [4, 6, 0, 6], [0, 6, 0, 0], [0, 6, 4, 0]], // 0 with slash
+            '1': [[1, 0, 2, 0], [2, 0, 2, 6], [1, 6, 3, 6]], // Centered 1
+            '2': [[0, 1, 1, 0], [1, 0, 3, 0], [3, 0, 4, 1], [4, 1, 4, 2], [4, 2, 0, 6], [0, 6, 4, 6]],
+            '3': [[0, 0, 4, 0], [4, 0, 2, 2], [2, 2, 4, 4], [4, 4, 0, 6], [0, 6, 0, 6]], // Simplified 3
+            '4': [[3, 6, 3, 0], [3, 0, 0, 4], [0, 4, 4, 4]],
+            '5': [[4, 0, 0, 0], [0, 0, 0, 3], [0, 3, 3, 3], [3, 3, 4, 4], [4, 4, 4, 5], [4, 5, 3, 6], [3, 6, 0, 6]],
+            '6': [[4, 0, 1, 0], [1, 0, 0, 1], [0, 1, 0, 5], [0, 5, 1, 6], [1, 6, 3, 6], [3, 6, 4, 5], [4, 5, 4, 3], [4, 3, 0, 3]],
+            '7': [[0, 0, 4, 0], [4, 0, 2, 6]],
+            '8': [[1, 0, 3, 0], [3, 0, 4, 1], [4, 1, 4, 2], [4, 2, 3, 3], [3, 3, 1, 3], [1, 3, 0, 2], [0, 2, 0, 1], [0, 1, 1, 0],
+            [3, 3, 4, 4], [4, 4, 4, 5], [4, 5, 3, 6], [3, 6, 1, 6], [1, 6, 0, 5], [0, 5, 0, 4], [0, 4, 1, 3]],
+            '9': [[4, 3, 0, 3], [0, 3, 0, 1], [0, 1, 1, 0], [1, 0, 3, 0], [3, 0, 4, 1], [4, 1, 4, 5], [4, 5, 3, 6], [3, 6, 0, 6]],
+            ':': [[2, 2, 2, 2], [2, 5, 2, 5]] // Dots are handled as tiny lines or rectified later
+        };
+
+        const DIGIT_SCALE = 12;
+        const DIGIT_SPACING = 6 * DIGIT_SCALE;
+        const COLON_SPACING = 3 * DIGIT_SCALE;
+
+        // -----------------
+        // GAME STATE
+        // -----------------
+        const entities = {
+            particles: [],
+            bullets: [],
+            asteroids: [],
+            ufo: null,
+            ship: {
+                x: 0, y: 0,
+                angle: 0,
+                dx: 0, dy: 0,
+                thrusting: false,
+                cooldown: 0,
+                targetId: -1 // Id of digit to aim at
+            }
+        };
+
+        let lastTimeStr = "";
+        let timeDigits = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            // Re-center ship if off-screen or first run
+            if (entities.ship.x === 0 || entities.ship.x > width) entities.ship.x = width / 2;
+            if (entities.ship.y === 0 || entities.ship.y > height) entities.ship.y = height / 2 + 150;
+
+            // Recalculate digit positions
+            if (lastTimeStr) updateDigitLayout();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // -----------------
+        // CLASSES
+        // -----------------
+
+        class Particle {
+            constructor(x, y, dx, dy, life) {
+                this.x = x;
+                this.y = y;
+                this.dx = dx;
+                this.dy = dy;
+                this.life = life;
+                this.maxLife = life;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                // Drag
+                this.dx *= 0.98;
+                this.dy *= 0.98;
+                this.life--;
+            }
+            draw(ctx) {
+                const alpha = Math.max(0, this.life / this.maxLife);
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(this.x, this.y, 1.5, 1.5);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        class Bullet {
+            constructor(x, y, angle) {
+                this.x = x;
+                this.y = y;
+                this.dx = Math.cos(angle) * 12;
+                this.dy = Math.sin(angle) * 12;
+                this.life = 50;
+                this.dead = false;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                // Wrap
+                if (this.x < 0) this.x = width;
+                else if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                else if (this.y > height) this.y = 0;
+
+                this.life--;
+                if (this.life <= 0) this.dead = true;
+            }
+            draw(ctx) {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(this.x - 1.5, this.y - 1.5, 3, 3);
+            }
+        }
+
+        class Asteroid {
+            constructor(x, y, size) {
+                this.x = x !== undefined ? x : (Math.random() < 0.5 ? 0 : width);
+                this.y = y !== undefined ? y : Math.random() * height;
+
+                // If random spawn, ensure not too close to center digits
+                if (x === undefined) {
+                    if (Math.random() < 0.5) {
+                        this.x = Math.random() < 0.5 ? -20 : width + 20;
+                        this.y = Math.random() * height;
+                    } else {
+                        this.x = Math.random() * width;
+                        this.y = Math.random() < 0.5 ? -20 : height + 20;
+                    }
+                }
+
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 0.5 + Math.random() * 1.0;
+                this.dx = Math.cos(angle) * speed;
+                this.dy = Math.sin(angle) * speed;
+                this.size = size || (25 + Math.random() * 25);
+
+                // Generate shape
+                this.points = [];
+                const vertices = 8 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < vertices; i++) {
+                    const a = (i / vertices) * Math.PI * 2;
+                    const r = this.size * (0.8 + Math.random() * 0.4);
+                    this.points.push({
+                        x: Math.cos(a) * r,
+                        y: Math.sin(a) * r
+                    });
+                }
+
+                this.dead = false;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+
+                // Wrap with buffer
+                const buffer = this.size + 10;
+                if (this.x < -buffer) this.x = width + buffer;
+                else if (this.x > width + buffer) this.x = -buffer;
+                if (this.y < -buffer) this.y = height + buffer;
+                else if (this.y > height + buffer) this.y = -buffer;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.beginPath();
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                ctx.restore();
+            }
+            break() {
+                this.dead = true;
+                // Create debris
+                for (let i = 0; i < 6; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 2;
+                    entities.particles.push(new Particle(
+                        this.x, this.y,
+                        Math.cos(angle) * speed, Math.sin(angle) * speed,
+                        40
+                    ));
+                }
+                // Split?
+                if (this.size > 20) {
+                    entities.asteroids.push(new Asteroid(this.x, this.y, this.size / 2));
+                    entities.asteroids.push(new Asteroid(this.x, this.y, this.size / 2));
+                }
+            }
+        }
+
+        class UFO {
+            constructor() {
+                this.y = Math.random() * height * 0.8 + height * 0.1;
+                this.leftToRight = Math.random() < 0.5;
+                this.x = this.leftToRight ? -30 : width + 30;
+                this.dx = this.leftToRight ? 3 : -3;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.dead = false;
+
+                // Sound logic could go here
+                this.fireTimer = 0;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                if ((this.leftToRight && this.x > width + 50) || (!this.leftToRight && this.x < -50)) {
+                    this.dead = true;
+                }
+
+                // Occasionally change Y direction
+                if (Math.random() < 0.02) this.dy = -this.dy;
+
+                // Fire at ship?
+                this.fireTimer++;
+                if (this.fireTimer > 100) {
+                    this.fireTimer = 0;
+                    // Fire!
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                const s = 1.5;
+                ctx.beginPath();
+                // Saucer shape
+                ctx.moveTo(-10 * s, 0);
+                ctx.lineTo(-5 * s, -3 * s);
+                ctx.lineTo(5 * s, -3 * s);
+                ctx.lineTo(10 * s, 0);
+                ctx.lineTo(5 * s, 3 * s);
+                ctx.lineTo(-5 * s, 3 * s);
+                ctx.closePath();
+                // Middle line
+                ctx.moveTo(-10 * s, 0);
+                ctx.lineTo(10 * s, 0);
+                // Dome
+                ctx.moveTo(-4 * s, -3 * s);
+                ctx.lineTo(-3 * s, -6 * s);
+                ctx.lineTo(3 * s, -6 * s);
+                ctx.lineTo(4 * s, -3 * s);
+
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // -----------------
+        // LOGIC & UTILS
+        // -----------------
+
+        function getTimeString() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function initClock() {
+            const str = getTimeString();
+            lastTimeStr = str;
+            createDigits(str);
+        }
+
+        function createDigits(str) {
+            timeDigits = [];
+            for (let i = 0; i < str.length; i++) {
+                timeDigits.push({
+                    char: str[i],
+                    nextChar: null,
+                    x: 0, y: 0, w: 0,
+                    state: 'idle', // idle, exploding, drawing
+                    animTimer: 0
+                });
+            }
+            updateDigitLayout();
+        }
+
+        function updateDigitLayout() {
+            const charWidth = 4 * DIGIT_SCALE;
+            const gap = DIGIT_SCALE * 2;
+            const colonWidth = 2 * DIGIT_SCALE;
+
+            // Total width
+            let totalW = 0;
+            timeDigits.forEach(d => {
+                const w = (d.char === ':') ? colonWidth : charWidth;
+                d.w = w;
+                totalW += w + gap;
+            });
+            totalW -= gap; // remove last gap
+
+            let currentX = (width - totalW) / 2;
+            const y = height / 2 - (3 * DIGIT_SCALE);
+
+            timeDigits.forEach(d => {
+                d.x = currentX;
+                d.y = y;
+                currentX += d.w + gap;
+            });
+        }
+
+        function explodeDigit(idx) {
+            const digit = timeDigits[idx];
+            digit.state = 'exploding';
+            digit.animTimer = 20; // 20 frames to clear
+
+            // Particles
+            const segments = VECTOR_FONT[digit.char];
+            if (segments) {
+                segments.forEach(seg => {
+                    const x1 = digit.x + seg[0] * DIGIT_SCALE;
+                    const y1 = digit.y + seg[1] * DIGIT_SCALE;
+                    const x2 = digit.x + seg[2] * DIGIT_SCALE;
+                    const y2 = digit.y + seg[3] * DIGIT_SCALE;
+
+                    const dist = Math.hypot(x2 - x1, y2 - y1);
+                    const steps = Math.max(2, Math.floor(dist / 8));
+
+                    for (let i = 0; i <= steps; i++) {
+                        const t = i / steps;
+                        const px = x1 + (x2 - x1) * t;
+                        const py = y1 + (y2 - y1) * t;
+
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = 1 + Math.random() * 4;
+                        entities.particles.push(new Particle(
+                            px, py,
+                            Math.cos(angle) * speed, Math.sin(angle) * speed,
+                            40 + Math.random() * 20
+                        ));
+                    }
+                });
+            }
+
+            // Score
+            score += 10;
+            scoreEl.innerText = String(score).padStart(2, '0');
+        }
+
+        // -----------------
+        // LOOP
+        // -----------------
+
+        function loop() {
+            // 1. Time Check
+            const newTimeStr = getTimeString();
+            if (newTimeStr !== lastTimeStr) {
+                // Find changed digits
+                for (let i = 0; i < newTimeStr.length; i++) {
+                    if (newTimeStr[i] !== lastTimeStr[i]) {
+                        const digit = timeDigits[i];
+                        if (digit.state === 'idle') {
+                            // If it's a digit change, initiate explosion sequence
+                            // But wait! We want the ship to shoot it first visually if possible.
+                            // For responsiveness, we behave as if the "bullet" hit it now.
+                            explodeDigit(i);
+                            digit.nextChar = newTimeStr[i];
+
+                            // Ship tries to shoot at it
+                            fireShipAt(digit.x + digit.w / 2, digit.y + 3 * DIGIT_SCALE);
+                        }
+                    }
+                }
+                lastTimeStr = newTimeStr;
+            }
+
+            // 2. Logic Update
+            // Ship
+            updateShip();
+
+            // Asteroids
+            while (entities.asteroids.length < 4) {
+                entities.asteroids.push(new Asteroid());
+            }
+            entities.asteroids.forEach(a => a.update());
+
+            // UFO
+            if (!entities.ufo && Math.random() < 0.002) entities.ufo = new UFO();
+            if (entities.ufo) {
+                entities.ufo.update();
+                if (entities.ufo.dead) entities.ufo = null;
+            }
+
+            // Bullets
+            for (let i = entities.bullets.length - 1; i >= 0; i--) {
+                const b = entities.bullets[i];
+                b.update();
+
+                // Collisions (Screen Wrap handled in update)
+                // Check vs Asteroids
+                let hit = false;
+                for (let j = entities.asteroids.length - 1; j >= 0; j--) {
+                    const a = entities.asteroids[j];
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    if (dx * dx + dy * dy < a.size * a.size) {
+                        a.break();
+                        entities.asteroids.splice(j, 1);
+                        hit = true;
+                        score += 50;
+                        break;
+                    }
+                }
+                if (hit) {
+                    b.dead = true;
+                }
+
+                if (b.dead) entities.bullets.splice(i, 1);
+            }
+
+            // Particles
+            for (let i = entities.particles.length - 1; i >= 0; i--) {
+                entities.particles[i].update();
+                if (entities.particles[i].life <= 0) entities.particles.splice(i, 1);
+            }
+
+            // Digit Animation States
+            timeDigits.forEach(d => {
+                if (d.state === 'exploding') {
+                    d.animTimer--;
+                    if (d.animTimer <= 0) {
+                        d.state = 'drawing';
+                        d.char = d.nextChar;
+                        d.animTimer = 0;
+                    }
+                } else if (d.state === 'drawing') {
+                    d.animTimer++; // Use as progress
+                    if (d.animTimer > 20) d.state = 'idle';
+                }
+            });
+
+            // 3. Draw
+            draw();
+
+            requestAnimationFrame(loop);
+        }
+
+        function draw() {
+            // Clear
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            // Vector Glow Styles
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#ffffff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+
+            // Draw Digits
+            timeDigits.forEach(d => {
+                if (d.state === 'idle') {
+                    drawChar(d.char, d.x, d.y);
+                } else if (d.state === 'drawing') {
+                    // Draw with progress
+                    drawChar(d.char, d.x, d.y, d.animTimer / 20);
+                }
+            });
+
+            // Entities
+            entities.asteroids.forEach(a => a.draw(ctx));
+
+            if (entities.ufo) entities.ufo.draw(ctx);
+
+            drawShip(ctx);
+
+            entities.bullets.forEach(b => b.draw(ctx));
+            entities.particles.forEach(p => p.draw(ctx));
+        }
+
+        function drawChar(char, x, y, progress = 1.0) {
+            const segments = VECTOR_FONT[char];
+            if (!segments) return;
+
+            ctx.beginPath();
+
+            // If progress < 1, we only draw some segments or partial segments
+            // Simple approach: Draw N segments based on progress
+            const count = Math.ceil(segments.length * progress);
+
+            for (let i = 0; i < count; i++) {
+                const seg = segments[i];
+                ctx.moveTo(x + seg[0] * DIGIT_SCALE, y + seg[1] * DIGIT_SCALE);
+                ctx.lineTo(x + seg[2] * DIGIT_SCALE, y + seg[3] * DIGIT_SCALE);
+            }
+            ctx.stroke();
+        }
+
+        function updateShip() {
+            const ship = entities.ship;
+            // Behavior: 
+            // 1. If cooldown is 0 and a digit is about to change (not predicted here easily), 
+            //    or just randomly, turn and thrust.
+            // 2. Avoid asteroids (simple repulsion).
+
+            // Move
+            ship.x += ship.dx;
+            ship.y += ship.dy;
+
+            // Friction
+            ship.dx *= 0.99;
+            ship.dy *= 0.99;
+
+            // Wrap
+            if (ship.x < 0) ship.x = width;
+            if (ship.x > width) ship.x = 0;
+            if (ship.y < 0) ship.y = height;
+            if (ship.y > height) ship.y = 0;
+
+            // AI
+            ship.cooldown--;
+
+            // Find target (random asteroid or center)
+            if (entities.asteroids.length > 0 && Math.random() < 0.05) {
+                // Look at nearest asteroid
+                let nearest = null;
+                let minDist = 9999;
+                entities.asteroids.forEach(a => {
+                    const d = Math.hypot(a.x - ship.x, a.y - ship.y);
+                    if (d < minDist) { minDist = d; nearest = a; }
+                });
+
+                if (nearest) {
+                    const angle = Math.atan2(nearest.y - ship.y, nearest.x - ship.x);
+                    // Smooth turn
+                    const diff = angle - ship.angle;
+                    ship.angle += diff * 0.1;
+
+                    if (minDist > 200) ship.thrusting = true;
+                    else ship.thrusting = false;
+                }
+            } else {
+                ship.thrusting = Math.random() < 0.1;
+                ship.angle += (Math.random() - 0.5) * 0.2;
+            }
+
+            if (ship.thrusting) {
+                ship.dx += Math.cos(ship.angle) * 0.1;
+                ship.dy += Math.sin(ship.angle) * 0.1;
+            }
+        }
+
+        function fireShipAt(tx, ty) {
+            const ship = entities.ship;
+            // Snap aim to target (super reflex)
+            ship.angle = Math.atan2(ty - ship.y, tx - ship.x);
+
+            // Shoot
+            entities.bullets.push(new Bullet(ship.x, ship.y, ship.angle));
+            ship.cooldown = 15;
+
+            // Recoil
+            ship.dx -= Math.cos(ship.angle) * 0.5;
+            ship.dy -= Math.sin(ship.angle) * 0.5;
+        }
+
+        function drawShip(ctx) {
+            const ship = entities.ship;
+            ctx.save();
+            ctx.translate(ship.x, ship.y);
+            ctx.rotate(ship.angle);
+
+            ctx.beginPath();
+            // Classic A shape
+            ctx.moveTo(10, 0);
+            ctx.lineTo(-8, 7);
+            ctx.lineTo(-5, 0);
+            ctx.lineTo(-8, -7);
+            ctx.closePath();
+            ctx.stroke();
+
+            if (ship.thrusting) {
+                ctx.beginPath();
+                ctx.moveTo(-6, 0);
+                ctx.lineTo(-12, 0); // Flame
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // Start
+        initClock();
+        loop();
+
+    </script>
+</body>
+
+</html>

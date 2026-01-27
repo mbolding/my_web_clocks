@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscilloscope Clock</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --grid: #003300;
+            --phosphor: #00ff00;
+            /* P31 Green */
+            --phosphor-dim: #004400;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: monospace;
+        }
+
+        .scope-casing {
+            position: relative;
+            width: 90vmin;
+            height: 90vmin;
+            background: #000;
+            border-radius: 40px;
+            /* Rounded CRT corners */
+            box-shadow:
+                inset 0 0 100px rgba(0, 0, 0, 0.9),
+                0 0 0 20px #111,
+                0 20px 50px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        /* The Grid / Graticule */
+        .graticule {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 10% 10%;
+            /* 10 Major divisions */
+            background-position: center;
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 2;
+            border-radius: 40px;
+        }
+
+        /* Center crosshairs */
+        .graticule::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--grid);
+            box-shadow: 0 0 2px var(--grid);
+        }
+
+        .graticule::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background: var(--grid);
+            box-shadow: 0 0 2px var(--grid);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 40px;
+            position: relative;
+            z-index: 1;
+            filter: blur(0.5px) contrast(1.2) brightness(1.2);
+        }
+
+        /* Glass reflection overlay */
+        .reflection {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.05), transparent 40%);
+            z-index: 10;
+            border-radius: 40px;
+            pointer-events: none;
+        }
+
+        .knobs {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #444;
+            font-size: 10px;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="scope-casing">
+        <div class="graticule"></div>
+        <canvas id="scopeCanvas"></canvas>
+        <div class="reflection"></div>
+    </div>
+
+
+
+    <script>
+        const canvas = document.getElementById('scopeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+
+        // Configuration
+        const BEAM_SPEED = 0.3; // How fast the beam simulation moves (0-1)
+        const PHOSPHOR_DECAY = 0.15; // fade amount per frame
+        const NOISE_AMOUNT = 0.5; // Jitter magnitude
+
+        // Vector Font: Continuous paths for 0-9
+        // Normalized 0-1 coordinate space for each digit
+        // We will scale them up. 
+        // Note: For oscilloscope look, we want open paths mainly.
+        const VECTORS = {
+            '0': [[0.2, 0], [0.8, 0], [1, 0.2], [1, 0.8], [0.8, 1], [0.2, 1], [0, 0.8], [0, 0.2], [0.2, 0], [0.8, 1]], // 0 with slash
+            '1': [[0.2, 0.2], [0.5, 0], [0.5, 1], [0.3, 1], [0.7, 1]], // Serif 1
+            '2': [[0, 0.2], [0.2, 0], [0.8, 0], [1, 0.2], [1, 0.4], [0, 1], [1, 1]],
+            '3': [[0, 0], [0.8, 0], [1, 0.2], [0.5, 0.4], [1, 0.6], [1, 0.8], [0.8, 1], [0, 1]],
+            '4': [[0.8, 1], [0.8, 0], [0, 0.6], [1, 0.6]],
+            '5': [[1, 0], [0, 0], [0, 0.4], [0.8, 0.4], [1, 0.6], [1, 0.8], [0.8, 1], [0, 1]],
+            '6': [[1, 0], [0.2, 0], [0, 0.2], [0, 0.8], [0.2, 1], [0.8, 1], [1, 0.8], [1, 0.6], [0, 0.6]],
+            '7': [[0, 0], [1, 0], [0.4, 1]],
+            '8': [[0.5, 0.4], [0.2, 0.2], [0.2, 0], [0.8, 0], [0.8, 0.2], [0.5, 0.4], [0.8, 0.6], [0.8, 1], [0.2, 1], [0.2, 0.6], [0.5, 0.4]],
+            '9': [[0, 1], [0.8, 1], [1, 0.8], [1, 0.2], [0.8, 0], [0.2, 0], [0, 0.2], [0, 0.4], [1, 0.4]],
+            ':': [[0.5, 0.2], [0.5, 0.3], [0.5, 0.7], [0.5, 0.8]] // Simple dots
+        };
+
+        // Beam State
+        let beamX = 0;
+        let beamY = 0;
+        let targetX = 0;
+        let targetY = 0;
+        let intensity = 1;
+
+        // We will build a "Display List" of points to visit every frame refresh
+        // This is how real vector monitors work (refresh cycle)
+        let displayList = [];
+
+        function resize() {
+            width = canvas.offsetWidth;
+            height = canvas.offsetHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function getTimeString() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            // Include millis for smooth sub-second animations or just standard seconds?
+            // Standard seconds is fine.
+            return `${h}:${m}:${s}`;
+        }
+
+        function buildDisplayList() {
+            displayList = [];
+            const timeStr = getTimeString();
+
+            // Layout settings
+            const digitW = width * 0.08;
+            const digitH = height * 0.15;
+            const gap = width * 0.02;
+            const startX = (width - (timeStr.length * (digitW + gap))) / 2 + gap / 2;
+            const startY = (height - digitH) / 2;
+
+            let cx = startX;
+            for (let i = 0; i < timeStr.length; i++) {
+                const char = timeStr[i];
+                const vec = VECTORS[char];
+                if (vec) {
+                    for (let j = 0; j < vec.length; j++) {
+                        displayList.push({
+                            x: cx + vec[j][0] * digitW,
+                            y: startY + vec[j][1] * digitH,
+                            pen: j === 0 ? 0 : 1 // 0 = move (pen up), 1 = line (pen down)
+                        });
+                    }
+                }
+                cx += digitW + gap;
+                // Add a "travel" point to next char start
+                // Not strictly needed as the loop handles the gap as a line unless we explicit pen-up
+                // To simulate XY mode, the beam drags between chars.
+                // We'll let it drag.
+            }
+
+        }
+
+        function draw() {
+            // Phosphor Decay
+            ctx.fillStyle = `rgba(0, 20, 0, ${PHOSPHOR_DECAY})`; // Very dark green fade
+            ctx.fillRect(0, 0, width, height);
+
+            buildDisplayList();
+
+            if (displayList.length === 0) return;
+
+            // Styles
+            ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#00ff00';
+            ctx.strokeStyle = '#33ff33';
+
+            // Draw the beam path
+            ctx.beginPath();
+
+            // Start at first point
+            ctx.moveTo(displayList[0].x, displayList[0].y);
+
+            for (let i = 1; i < displayList.length; i++) {
+                const p = displayList[i];
+                const prev = displayList[i - 1];
+
+                // Add some noise to beam position
+                const nx = (Math.random() - 0.5) * NOISE_AMOUNT;
+                const ny = (Math.random() - 0.5) * NOISE_AMOUNT;
+
+                // If the jump is huge (e.g. from end of digits to Lissajous), 
+                // we should draw it faintly (travel line) or just draw it.
+                // In real scope, it's faint because of speed.
+
+                // Here we just draw everything as one continuous line for now
+                if (p.pen === 0) {
+                    // Move without drawing? No, XY mode draws everything. 
+                    // But intensity varies by speed.
+                    // We'll simulate "pen up" as a very faint line.
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.strokeStyle = '#004400'; // Dim travel
+                    ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                    ctx.strokeStyle = '#33ff33';
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                } else {
+                    ctx.lineTo(p.x + nx, p.y + ny);
+                }
+            }
+            ctx.stroke();
+
+            requestAnimationFrame(draw);
+        }
+
+        // Start
+        draw();
+
+    </script>
+</body>
+
+</html>

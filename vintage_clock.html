@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Clock</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --hand-color: #222;
+            --second-hand-color: #8b0000;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        .clock-container {
+            position: relative;
+            max-width: 90vmin;
+            max-height: 90vmin;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            /* Optional: assumes round clock */
+        }
+
+        .clock-face {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 50%;
+        }
+
+        /* Center Point Container */
+        .hands-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 4px;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        /* Hand Styles */
+        .hour {
+            width: 6px;
+            height: 14vmin;
+            /* Adjust length based on image visual size, vmin is a safe bet for responsiveness */
+            background-color: var(--hand-color);
+            margin-left: -3px;
+            z-index: 2;
+        }
+
+        /* Ornate shape using pseudo-elements could be added here */
+        .hour::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: -3px;
+            width: 12px;
+            height: 12px;
+            background: var(--hand-color);
+            transform: rotate(45deg);
+        }
+
+        .minute {
+            width: 4px;
+            height: 22vmin;
+            background-color: var(--hand-color);
+            margin-left: -2px;
+            z-index: 3;
+        }
+
+        .second {
+            width: 2px;
+            height: 24vmin;
+            background-color: var(--second-hand-color);
+            margin-left: -1px;
+            z-index: 4;
+            /* Tail */
+        }
+
+        .second::after {
+            content: '';
+            position: absolute;
+            bottom: -5vmin;
+            left: 50%;
+            width: 4px;
+            height: 5vmin;
+            background: var(--second-hand-color);
+            transform: translateX(-50%);
+        }
+
+        .center-nut {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #cd7f32;
+            /* Bronze/Gold */
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Config Controls */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            color: #fff;
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        body:hover .controls {
+            opacity: 1;
+        }
+
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="clock-container">
+        <!-- Using the user provided image -->
+        <img src="old_clock_face.jpg" alt="Vintage Clock Face" class="clock-face">
+
+        <!-- Hands Container - relative to center of image -->
+        <div class="hands-container" id="handsContainer">
+            <div class="hand hour" id="hourHand"></div>
+            <div class="hand minute" id="minuteHand"></div>
+            <div class="hand second" id="secondHand"></div>
+            <div class="center-nut"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <label>Adjust Center:</label>
+        <button onclick="adjustCenter(0, -1)">▲</button>
+        <button onclick="adjustCenter(0, 1)">▼</button>
+        <button onclick="adjustCenter(-1, 0)">◀</button>
+        <button onclick="adjustCenter(1, 0)">▶</button>
+        <label>Scale Hands:</label>
+        <button onclick="adjustScale(1.1)">+</button>
+        <button onclick="adjustScale(0.9)">-</button>
+    </div>
+
+    <script>
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const secondHand = document.getElementById('secondHand');
+        const handsContainer = document.getElementById('handsContainer');
+        const hands = document.querySelectorAll('.hand');
+
+        let offsetX = 50;
+        let offsetY = 50;
+        let scale = 1.0;
+
+        function updateClock() {
+            const now = new Date();
+            const seconds = now.getSeconds();
+            const minutes = now.getMinutes();
+            const hours = now.getHours();
+
+            const secondsDeg = (seconds / 60) * 360;
+            const minutesDeg = ((minutes * 60 + seconds) / 3600) * 360;
+            const hoursDeg = ((hours % 12) / 12) * 360 + (minutes / 60) * 30;
+
+            secondHand.style.transform = `translateX(-50%) rotate(${secondsDeg}deg)`;
+            minuteHand.style.transform = `translateX(-50%) rotate(${minutesDeg}deg)`;
+            hourHand.style.transform = `translateX(-50%) rotate(${hoursDeg}deg)`; // Translate needed because of left:50%
+
+            requestAnimationFrame(updateClock);
+        }
+
+        // Configuration functions
+        function adjustCenter(dx, dy) {
+            offsetX += dx;
+            offsetY += dy;
+            handsContainer.style.top = `${offsetY}%`;
+            handsContainer.style.left = `${offsetX}%`;
+        }
+
+        function adjustScale(factor) {
+            scale *= factor;
+            // Apply scale to length (height) of hands
+            // We can do this by scaling the font-size of container if using sizing based on em/rem/px, 
+            // but here we used vmin. Let's just scale the container wrapper? No that scales everything.
+            // Let's modify the specific hands.
+
+            document.documentElement.style.setProperty('--scale', scale);
+
+            // Simple approach: modify css text
+            hourHand.style.height = (14 * scale) + 'vmin';
+            minuteHand.style.height = (22 * scale) + 'vmin';
+            secondHand.style.height = (24 * scale) + 'vmin';
+        }
+
+        updateClock();
+    </script>
+</body>
+
+</html>
