@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f7f5f0;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            user-select: none;
+        }
+
+        .clock-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+        }
+
+        /* Clock face */
+        .clock {
+            position: relative;
+            width: clamp(320px, 70vh, 600px);
+            height: clamp(320px, 70vh, 600px);
+        }
+
+        canvas#face {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Date & time text */
+        .date-line {
+            font-size: clamp(1rem, 2.2vw, 1.4rem);
+            font-weight: 300;
+            color: #5a5040;
+            letter-spacing: 0.12em;
+            text-align: center;
+        }
+
+        .time-digital {
+            font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+            font-weight: 400;
+            color: #2a2215;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
+
+        /* Chime indicator */
+        .chime-indicator {
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            font-style: italic;
+            color: #b0a080;
+            letter-spacing: 0.1em;
+            height: 1.2em;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .chime-indicator.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="clock-wrap">
+    <div class="clock">
+        <canvas id="face"></canvas>
+    </div>
+    <div class="time-digital" id="timeDigital"></div>
+    <div class="date-line" id="dateLine"></div>
+    <div class="chime-indicator" id="chimeIndicator">chiming…</div>
+</div>
+
+<script>
+// ─── Canvas clock ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById('face');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+    const size = canvas.parentElement.offsetWidth;
+    canvas.width = size * devicePixelRatio;
+    canvas.height = size * devicePixelRatio;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
+
+function drawClock() {
+    const size = canvas.parentElement.offsetWidth;
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Outer bezel — soft warm circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.97, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#d8cfc0';
+    ctx.lineWidth = r * 0.012;
+    ctx.stroke();
+
+    // Inner ring — faint
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.88, 0, Math.PI * 2);
+    ctx.strokeStyle = '#e8e0d0';
+    ctx.lineWidth = r * 0.005;
+    ctx.stroke();
+
+    // Hour ticks
+    for (let i = 0; i < 12; i++) {
+        const angle = (i * 30 - 90) * Math.PI / 180;
+        const inner = r * 0.82;
+        const outer = r * 0.88;
+        ctx.beginPath();
+        ctx.moveTo(cx + inner * Math.cos(angle), cy + inner * Math.sin(angle));
+        ctx.lineTo(cx + outer * Math.cos(angle), cy + outer * Math.sin(angle));
+        ctx.strokeStyle = '#8a7a60';
+        ctx.lineWidth = r * 0.012;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+
+    // Minute ticks
+    for (let i = 0; i < 60; i++) {
+        if (i % 5 === 0) continue;
+        const angle = (i * 6 - 90) * Math.PI / 180;
+        const inner = r * 0.85;
+        const outer = r * 0.88;
+        ctx.beginPath();
+        ctx.moveTo(cx + inner * Math.cos(angle), cy + inner * Math.sin(angle));
+        ctx.lineTo(cx + outer * Math.cos(angle), cy + outer * Math.sin(angle));
+        ctx.strokeStyle = '#cdc0a8';
+        ctx.lineWidth = r * 0.005;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+
+    // Hour numerals
+    ctx.font = `300 ${r * 0.11}px 'Cormorant Garamond', Georgia, serif`;
+    ctx.fillStyle = '#3a3020';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const numeralR = r * 0.70;
+    [12,1,2,3,4,5,6,7,8,9,10,11].forEach((n, i) => {
+        const angle = (i * 30 - 90) * Math.PI / 180;
+        ctx.fillText(n, cx + numeralR * Math.cos(angle), cy + numeralR * Math.sin(angle));
+    });
+
+    // Time
+    const now = new Date();
+    const h = now.getHours() % 12;
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    const ms = now.getMilliseconds();
+
+    const sDeg = (s + ms / 1000) * 6 - 90;
+    const mDeg = (m + (s + ms / 1000) / 60) * 6 - 90;
+    const hDeg = (h + m / 60) * 30 - 90;
+
+    // Minute hand
+    drawHand(ctx, cx, cy, mDeg, r * 0.62, r * 0.04, r * 0.008, '#2a2215');
+
+    // Hour hand
+    drawHand(ctx, cx, cy, hDeg, r * 0.44, r * 0.05, r * 0.013, '#2a2215');
+
+    // Second hand — thin, red-amber
+    const sAngle = sDeg * Math.PI / 180;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(
+        cx - Math.cos(sAngle) * r * 0.18,
+        cy - Math.sin(sAngle) * r * 0.18
+    );
+    ctx.lineTo(
+        cx + Math.cos(sAngle) * r * 0.68,
+        cy + Math.sin(sAngle) * r * 0.68
+    );
+    ctx.strokeStyle = '#b05020';
+    ctx.lineWidth = r * 0.005;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.restore();
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.018, 0, Math.PI * 2);
+    ctx.fillStyle = '#2a2215';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.009, 0, Math.PI * 2);
+    ctx.fillStyle = '#b05020';
+    ctx.fill();
+}
+
+function drawHand(ctx, cx, cy, deg, length, tailLen, width, color) {
+    const angle = deg * Math.PI / 180;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(
+        cx - Math.cos(angle) * tailLen,
+        cy - Math.sin(angle) * tailLen
+    );
+    ctx.lineTo(
+        cx + Math.cos(angle) * length,
+        cy + Math.sin(angle) * length
+    );
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.restore();
+}
+
+// ─── Digital readout ──────────────────────────────────────────────────────────
+const timeEl = document.getElementById('timeDigital');
+const dateEl = document.getElementById('dateLine');
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+function updateText() {
+    const now = new Date();
+    let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    timeEl.textContent = `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ampm}`;
+    dateEl.textContent = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+
+// ─── Chimes ───────────────────────────────────────────────────────────────────
+let audioCtx = null;
+let lastHour = -1;
+let chimeQueue = null;
+
+function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+// Soft bell: three harmonics, long decay
+function playBell(time) {
+    const ac = audioCtx;
+    const gain = ac.createGain();
+    gain.connect(ac.destination);
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(0.10, time + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 3.5);
+
+    // Partial frequencies for a warm bell tone
+    [220, 440, 660, 880].forEach((freq, i) => {
+        const osc = ac.createOscillator();
+        const partialGain = ac.createGain();
+        osc.connect(partialGain);
+        partialGain.connect(gain);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        // Each harmonic fades at its own rate
+        partialGain.gain.setValueAtTime(1 / (i + 1), time);
+        partialGain.gain.exponentialRampToValueAtTime(0.001, time + 3.5 / (i * 0.4 + 1));
+        osc.start(time);
+        osc.stop(time + 4);
+    });
+}
+
+function chimeHour(count) {
+    if (!audioCtx) return;
+    const ac = audioCtx;
+    const now = ac.currentTime + 0.1;
+    const interval = 1.8; // seconds between chimes
+    for (let i = 0; i < count; i++) {
+        playBell(now + i * interval);
+    }
+    // Show indicator for duration of chimes
+    const indicator = document.getElementById('chimeIndicator');
+    indicator.classList.add('visible');
+    const total = (count * interval + 3.5) * 1000;
+    setTimeout(() => indicator.classList.remove('visible'), total);
+}
+
+document.addEventListener('click', () => {
+    ensureAudio();
+    // Resume if suspended (browser policy)
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}, { once: true });
+
+// ─── Main loop ────────────────────────────────────────────────────────────────
+function tick() {
+    const now = new Date();
+    const hour = now.getHours();
+    const min = now.getMinutes();
+    const sec = now.getSeconds();
+
+    drawClock();
+    updateText();
+
+    // Trigger chime at top of each hour (minute=0, second=0)
+    if (min === 0 && sec === 0 && hour !== lastHour) {
+        lastHour = hour;
+        const chimeCount = hour % 12 || 12;
+        if (audioCtx) {
+            chimeHour(chimeCount);
+        } else {
+            // Queue it — will play after first click
+            chimeQueue = chimeCount;
+        }
+    }
+
+    requestAnimationFrame(tick);
+}
+
+// If user hasn't clicked yet but there's a queued chime, play it on first click
+document.addEventListener('click', () => {
+    ensureAudio();
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().then(() => {
+            if (chimeQueue !== null) { chimeHour(chimeQueue); chimeQueue = null; }
+        });
+    } else if (chimeQueue !== null && audioCtx) {
+        chimeHour(chimeQueue);
+        chimeQueue = null;
+    }
+});
+
+tick();
+</script>
+</body>
+</html>
