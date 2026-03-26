@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunrise & Sunset Clock</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --text: #e6edf3;
+            --text-dim: #8b949e;
+            --sunrise: #ff9f43;
+            --sunset: #ee5a24;
+            --day: rgba(255, 200, 80, 0.18);
+            --night: rgba(30, 50, 120, 0.35);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        #location-info {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 32px;
+            min-height: 1.2em;
+        }
+
+        #clock-svg {
+            width: clamp(320px, 80vw, 580px);
+            height: clamp(320px, 80vw, 580px);
+            display: block;
+        }
+
+        .info-row {
+            display: flex;
+            gap: clamp(24px, 6vw, 64px);
+            margin-top: 32px;
+        }
+
+        .sun-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sun-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .sun-time {
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+
+        .sun-time.rise { color: var(--sunrise); }
+        .sun-time.set  { color: var(--sunset); }
+
+        .daylight-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        #date-display {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            letter-spacing: 0.08em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Solar Clock</h1>
+    <div id="location-info">locating…</div>
+
+    <svg id="clock-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <radialGradient id="faceGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#1e2a3a"/>
+                <stop offset="100%" stop-color="#0d1117"/>
+            </radialGradient>
+            <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="softglow">
+                <feGaussianBlur stdDeviation="6" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+        </defs>
+
+        <!-- Clock face -->
+        <circle cx="250" cy="250" r="240" fill="url(#faceGrad)" stroke="#2d3748" stroke-width="1"/>
+
+        <!-- Day/night arc layer (drawn by JS) -->
+        <g id="solar-arcs"/>
+
+        <!-- Tick marks -->
+        <g id="ticks"/>
+
+        <!-- Hour numerals -->
+        <g id="numerals"/>
+
+        <!-- Sunrise/sunset markers (drawn by JS) -->
+        <g id="solar-markers"/>
+
+        <!-- Hands -->
+        <line id="hour-hand"   x1="250" y1="250" x2="250" y2="250" stroke="#e6edf3" stroke-width="6"  stroke-linecap="round"/>
+        <line id="minute-hand" x1="250" y1="250" x2="250" y2="250" stroke="#e6edf3" stroke-width="3.5" stroke-linecap="round"/>
+        <line id="second-hand" x1="250" y1="250" x2="250" y2="250" stroke="#ff9f43" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Second hand tail -->
+        <line id="second-tail" x1="250" y1="250" x2="250" y2="250" stroke="#ff9f43" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+
+        <!-- Center cap -->
+        <circle cx="250" cy="250" r="6" fill="#e6edf3"/>
+        <circle cx="250" cy="250" r="3" fill="#ff9f43"/>
+    </svg>
+
+    <div class="info-row">
+        <div class="sun-info">
+            <span class="sun-label">Sunrise</span>
+            <span class="sun-time rise" id="rise-time">--:--</span>
+            <span class="daylight-label" id="rise-az"></span>
+        </div>
+        <div class="sun-info">
+            <span class="sun-label">Daylight</span>
+            <span class="sun-time" id="daylight-dur" style="color:#c9a84c">--h --m</span>
+        </div>
+        <div class="sun-info">
+            <span class="sun-label">Sunset</span>
+            <span class="sun-time set" id="set-time">--:--</span>
+            <span class="daylight-label" id="set-az"></span>
+        </div>
+    </div>
+
+    <div id="date-display"></div>
+
+    <script>
+    // ─── Solar calculations (NOAA algorithm) ────────────────────────────────────
+    function toRad(d) { return d * Math.PI / 180; }
+    function toDeg(r) { return r * 180 / Math.PI; }
+
+    function calcSunTimes(date, lat, lon) {
+        const JD = date.getTime() / 86400000 + 2440587.5;
+        const n = JD - 2451545.0;
+        const L = (280.46 + 0.9856474 * n) % 360;
+        const g = toRad((357.528 + 0.9856003 * n) % 360);
+        const lambda = toRad(L + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g));
+        const epsilon = toRad(23.439 - 0.0000004 * n);
+        const sinDec = Math.sin(epsilon) * Math.sin(lambda);
+        const dec = Math.asin(sinDec);
+
+        const cosHA = (Math.cos(toRad(90.833)) - sinDec * Math.sin(toRad(lat)))
+                    / (Math.cos(dec) * Math.cos(toRad(lat)));
+
+        if (cosHA < -1) return { sunrise: null, sunset: null, polar: 'day' };
+        if (cosHA >  1) return { sunrise: null, sunset: null, polar: 'night' };
+
+        const HA = toDeg(Math.acos(cosHA));
+
+        // Equation of time
+        const B = toRad(360 / 365 * (n - 81));
+        const EoT = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+        const solarNoon = 720 - 4 * lon - EoT; // minutes from midnight UTC
+
+        const tzOffset = -date.getTimezoneOffset(); // minutes
+        const noonLocal = solarNoon + tzOffset;
+
+        const sunriseMin = noonLocal - 4 * HA;
+        const sunsetMin  = noonLocal + 4 * HA;
+
+        return {
+            sunrise: sunriseMin,  // minutes from midnight local
+            sunset:  sunsetMin,
+            polar: null
+        };
+    }
+
+    function fmtTime(minutes) {
+        if (minutes == null) return '--:--';
+        const h = Math.floor(minutes / 60) % 24;
+        const m = Math.floor(minutes % 60);
+        const ampm = h >= 12 ? 'pm' : 'am';
+        const h12 = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    }
+
+    function minutesToAngle(minutes) {
+        // Map minutes-from-midnight onto the 12-hour clock face (degrees from 12)
+        const h12 = (minutes / 60) % 12;
+        return h12 * 30; // degrees, 0 = 12 o'clock
+    }
+
+    // ─── SVG helpers ─────────────────────────────────────────────────────────────
+    const CX = 250, CY = 250;
+    const OUTER = 238, INNER_ARC = 205, ARC_W = 22;
+    const TICK_OUTER = 232, MAJOR_LEN = 18, MINOR_LEN = 10;
+    const NUMERAL_R = 178;
+
+    function polarXY(angleDeg, r) {
+        const a = toRad(angleDeg - 90);
+        return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
+    }
+
+    function arcPath(r, startDeg, endDeg) {
+        // Sweep around the clock from startDeg to endDeg (both 0–360 from 12 o'clock)
+        let sweep = endDeg - startDeg;
+        if (sweep < 0) sweep += 360;
+        if (sweep === 0) return '';
+        const large = sweep > 180 ? 1 : 0;
+        const s = polarXY(startDeg, r);
+        const e = polarXY(endDeg, r);
+        return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+    }
+
+    function svgEl(tag, attrs) {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+        return el;
+    }
+
+    // ─── Build static clock face ─────────────────────────────────────────────────
+    function buildFace() {
+        const ticks = document.getElementById('ticks');
+        const numerals = document.getElementById('numerals');
+
+        for (let i = 0; i < 60; i++) {
+            const ang = i * 6;
+            const isMajor = i % 5 === 0;
+            const len = isMajor ? MAJOR_LEN : MINOR_LEN;
+            const outerPt = polarXY(ang, TICK_OUTER);
+            const innerPt = polarXY(ang, TICK_OUTER - len);
+            ticks.appendChild(svgEl('line', {
+                x1: outerPt.x, y1: outerPt.y,
+                x2: innerPt.x, y2: innerPt.y,
+                stroke: isMajor ? '#8b949e' : '#3d4b5c',
+                'stroke-width': isMajor ? 1.5 : 1,
+                'stroke-linecap': 'round'
+            }));
+        }
+
+        const nums = [12,1,2,3,4,5,6,7,8,9,10,11];
+        nums.forEach((n, i) => {
+            const p = polarXY(i * 30, NUMERAL_R);
+            const t = svgEl('text', {
+                x: p.x, y: p.y,
+                'text-anchor': 'middle',
+                'dominant-baseline': 'central',
+                fill: '#8b949e',
+                'font-size': '22',
+                'font-family': 'system-ui, sans-serif',
+                'font-weight': '300'
+            });
+            t.textContent = n;
+            numerals.appendChild(t);
+        });
+    }
+
+    // ─── Draw solar arcs & markers ───────────────────────────────────────────────
+    function drawSolar(sunriseMin, sunsetMin) {
+        const arcs = document.getElementById('solar-arcs');
+        const markers = document.getElementById('solar-markers');
+        arcs.innerHTML = '';
+        markers.innerHTML = '';
+
+        if (sunriseMin == null || sunsetMin == null) return;
+
+        const riseAng = minutesToAngle(sunriseMin);
+        const setAng  = minutesToAngle(sunsetMin);
+
+        // ── Day arc (AM portion: sunrise to noon) ──
+        // Sunrise is in AM (0–12h range), sunset is in PM (12–24h range).
+        // On a 12-hour clock both map into the same visual space.
+        // We show a filled arc for "daytime" in the outer band.
+
+        const r = INNER_ARC + ARC_W / 2;
+
+        // Night arc (full ring first, then day arc on top)
+        const nightPath = arcPath(r, 0, 360);
+        const nightArc = svgEl('path', {
+            d: nightPath,
+            fill: 'none',
+            stroke: 'rgba(20,40,100,0.5)',
+            'stroke-width': ARC_W,
+            'stroke-linecap': 'butt'
+        });
+        arcs.appendChild(nightArc);
+
+        // Day arc: from sunrise angle to sunset angle
+        // Sunrise ~6am → 180° (on 12h clock face, 6am is at 6*30=180°)
+        // Sunset ~6pm → 180° too (6pm mod 12 = 6 → 180°)
+        // So sunset angle = (sunsetMin/60 % 12) * 30
+        // The arc goes from riseAng clockwise to setAng, but crosses through 180° (6 o'clock)
+        const dayPath = arcPath(r, riseAng, setAng);
+        if (dayPath) {
+            // Gradient: orange at rise end, golden in middle, red-orange at set
+            const gradId = 'dayGrad';
+            const defs = document.querySelector('defs');
+            // Remove old grad if exists
+            const old = document.getElementById(gradId);
+            if (old) old.remove();
+
+            const grad = svgEl('linearGradient', { id: gradId, gradientUnits: 'userSpaceOnUse',
+                x1: polarXY(riseAng, r).x, y1: polarXY(riseAng, r).y,
+                x2: polarXY(setAng, r).x,  y2: polarXY(setAng, r).y });
+            grad.appendChild(Object.assign(svgEl('stop', {}), {})  );
+            const s0 = svgEl('stop', { offset: '0%',   'stop-color': '#ff9f43' });
+            const s1 = svgEl('stop', { offset: '50%',  'stop-color': '#ffd700' });
+            const s2 = svgEl('stop', { offset: '100%', 'stop-color': '#ee5a24' });
+            grad.appendChild(s0); grad.appendChild(s1); grad.appendChild(s2);
+            defs.appendChild(grad);
+
+            const dayArc = svgEl('path', {
+                d: dayPath,
+                fill: 'none',
+                stroke: `url(#${gradId})`,
+                'stroke-width': ARC_W,
+                'stroke-linecap': 'round',
+                opacity: '0.85'
+            });
+            arcs.appendChild(dayArc);
+
+            // Soft glow on day arc
+            const glowArc = svgEl('path', {
+                d: dayPath,
+                fill: 'none',
+                stroke: '#ffd700',
+                'stroke-width': ARC_W + 8,
+                'stroke-linecap': 'round',
+                opacity: '0.12',
+                filter: 'url(#softglow)'
+            });
+            arcs.insertBefore(glowArc, dayArc);
+        }
+
+        // ── Sun marker at sunrise ──
+        drawSunMarker(markers, riseAng, sunriseMin, true);
+        drawSunMarker(markers, setAng,  sunsetMin,  false);
+    }
+
+    function drawSunMarker(parent, angleDeg, minutes, isRise) {
+        const markerR = INNER_ARC + ARC_W / 2;
+        const pt = polarXY(angleDeg, markerR);
+        const color = isRise ? '#ff9f43' : '#ee5a24';
+
+        // Circle marker
+        parent.appendChild(svgEl('circle', {
+            cx: pt.x, cy: pt.y, r: 10,
+            fill: color, opacity: '0.95',
+            filter: 'url(#glow)'
+        }));
+        // Inner highlight
+        parent.appendChild(svgEl('circle', {
+            cx: pt.x - 2, cy: pt.y - 2, r: 3,
+            fill: 'rgba(255,255,255,0.6)'
+        }));
+
+        // Ray lines
+        const rayLengths = [5, 4, 5, 4, 5, 4, 5, 4];
+        for (let i = 0; i < 8; i++) {
+            const rayAng = angleDeg + i * 45;
+            const r1 = 13, r2 = 13 + rayLengths[i];
+            const p1 = polarXY(rayAng, markerR); // wrong — rays need local coords
+            // Actually draw rays around pt
+            const ra = toRad(i * 45);
+            const rx1 = pt.x + r1 * Math.cos(ra), ry1 = pt.y + r1 * Math.sin(ra);
+            const rx2 = pt.x + r2 * Math.cos(ra), ry2 = pt.y + r2 * Math.sin(ra);
+            parent.appendChild(svgEl('line', {
+                x1: rx1, y1: ry1, x2: rx2, y2: ry2,
+                stroke: color, 'stroke-width': 1.5, 'stroke-linecap': 'round', opacity: '0.7'
+            }));
+        }
+
+        // Label line and time
+        const labelR = INNER_ARC - 28;
+        const labelPt = polarXY(angleDeg, labelR);
+
+        // Line from marker inward
+        const lineInner = polarXY(angleDeg, INNER_ARC - 4);
+        parent.appendChild(svgEl('line', {
+            x1: pt.x, y1: pt.y, x2: lineInner.x, y2: lineInner.y,
+            stroke: color, 'stroke-width': 1, opacity: '0.5'
+        }));
+
+        // Time text
+        const hh = Math.floor(minutes / 60) % 24;
+        const mm = Math.floor(minutes % 60);
+        const ampm = hh >= 12 ? 'pm' : 'am';
+        const h12 = hh % 12 || 12;
+        const timeStr = `${h12}:${String(mm).padStart(2,'0')}`;
+
+        // Adjust anchor based on which side of the clock the marker is on
+        const normalized = ((angleDeg % 360) + 360) % 360;
+        const isLeft = normalized > 180;
+        const anchor = isLeft ? 'end' : 'start';
+        const dx = isLeft ? -14 : 14;
+
+        const tLabel = svgEl('text', {
+            x: labelPt.x + dx, y: labelPt.y - 6,
+            'text-anchor': anchor,
+            'dominant-baseline': 'central',
+            fill: color,
+            'font-size': '13',
+            'font-family': 'system-ui, sans-serif',
+            'font-weight': '500',
+            opacity: '0.9'
+        });
+        tLabel.textContent = timeStr;
+        parent.appendChild(tLabel);
+
+        const tAMPM = svgEl('text', {
+            x: labelPt.x + dx, y: labelPt.y + 9,
+            'text-anchor': anchor,
+            'dominant-baseline': 'central',
+            fill: color,
+            'font-size': '10',
+            'font-family': 'system-ui, sans-serif',
+            'font-weight': '300',
+            opacity: '0.7'
+        });
+        tAMPM.textContent = `${isRise ? 'sunrise' : 'sunset'} ${ampm}`;
+        parent.appendChild(tAMPM);
+    }
+
+    // ─── Hands ───────────────────────────────────────────────────────────────────
+    const HOUR_LEN = 115, MIN_LEN = 158, SEC_LEN = 170, SEC_TAIL = 40;
+
+    function setHand(id, angleDeg, len, tail) {
+        const a = toRad(angleDeg - 90);
+        const tipX = CX + len * Math.cos(a);
+        const tipY = CY + len * Math.sin(a);
+        const el = document.getElementById(id);
+        el.setAttribute('x2', tipX);
+        el.setAttribute('y2', tipY);
+        if (tail != null) {
+            const tailEl = document.getElementById('second-tail');
+            tailEl.setAttribute('x2', CX - tail * Math.cos(a));
+            tailEl.setAttribute('y2', CY - tail * Math.sin(a));
+        }
+    }
+
+    function updateClock() {
+        const now = new Date();
+        const h = now.getHours(), m = now.getMinutes(),
+              s = now.getSeconds(), ms = now.getMilliseconds();
+
+        const ss = s + ms / 1000;
+        const secDeg  = ss * 6;
+        const minDeg  = m * 6 + s * 0.1;
+        const hourDeg = (h % 12) * 30 + m * 0.5 + s * (0.5/60);
+
+        setHand('hour-hand',   hourDeg, HOUR_LEN);
+        setHand('minute-hand', minDeg,  MIN_LEN);
+        setHand('second-hand', secDeg,  SEC_LEN, SEC_TAIL);
+
+        requestAnimationFrame(updateClock);
+    }
+
+    // ─── Date display ─────────────────────────────────────────────────────────────
+    function updateDate() {
+        const now = new Date();
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const months = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+        document.getElementById('date-display').textContent =
+            `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    }
+
+    // ─── Info panel ──────────────────────────────────────────────────────────────
+    function updateInfoPanel(sunriseMin, sunsetMin) {
+        document.getElementById('rise-time').textContent = fmtTime(sunriseMin);
+        document.getElementById('set-time').textContent  = fmtTime(sunsetMin);
+
+        if (sunriseMin != null && sunsetMin != null) {
+            const dur = sunsetMin - sunriseMin;
+            const dh = Math.floor(dur / 60), dm = Math.floor(dur % 60);
+            document.getElementById('daylight-dur').textContent = `${dh}h ${dm}m`;
+        }
+    }
+
+    // ─── Geolocation & init ──────────────────────────────────────────────────────
+    function initWithCoords(lat, lon, locName) {
+        document.getElementById('location-info').textContent = locName;
+        const today = new Date();
+        const { sunrise, sunset, polar } = calcSunTimes(today, lat, lon);
+
+        if (polar) {
+            document.getElementById('location-info').textContent =
+                locName + (polar === 'day' ? ' — polar day' : ' — polar night');
+            drawSolar(null, null);
+        } else {
+            drawSolar(sunrise, sunset);
+            updateInfoPanel(sunrise, sunset);
+        }
+
+        // Redraw solar markers daily at midnight
+        setInterval(() => {
+            const d = new Date();
+            const { sunrise: sr, sunset: ss } = calcSunTimes(d, lat, lon);
+            drawSolar(sr, ss);
+            updateInfoPanel(sr, ss);
+        }, 60 * 60 * 1000); // check hourly (markers won't visibly move much)
+    }
+
+    buildFace();
+    updateClock();
+    updateDate();
+    setInterval(updateDate, 30000);
+
+    // Try geolocation
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const { latitude: lat, longitude: lon } = pos.coords;
+                const locStr = `${Math.abs(lat).toFixed(1)}°${lat>=0?'N':'S'}, ${Math.abs(lon).toFixed(1)}°${lon>=0?'E':'W'}`;
+                initWithCoords(lat, lon, locStr);
+            },
+            () => {
+                // Fallback: New York City
+                initWithCoords(40.7128, -74.0060, 'New York City (default)');
+            },
+            { timeout: 8000 }
+        );
+    } else {
+        initWithCoords(40.7128, -74.0060, 'New York City (default)');
+    }
+    </script>
+</body>
+</html>
