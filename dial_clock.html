@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dial Clock</title>
+    <style>
+        :root {
+            --bg: #f0f1f6;
+            --surface: #ffffff;
+            --surface2: #e8eaf2;
+            --border: #cdd2e8;
+            --text: #1a1c2e;
+            --text-dim: #5e6888;
+            --text-faint: #b5bbd0;
+            --accent: #c85e18;
+            --green: #1a9e5a;
+            --red: #cc3838;
+            --yellow: #b07000;
+            --shadow: rgba(0,0,0,0.07);
+            --radius: 14px;
+        }
+        .dark {
+            --bg: #0e1018;
+            --surface: #181b28;
+            --surface2: #1f2235;
+            --border: #292e48;
+            --text: #e5e8f2;
+            --text-dim: #7880a0;
+            --text-faint: #363c58;
+            --shadow: rgba(0,0,0,0.4);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px 48px;
+            user-select: none;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        /* ── Top bar ─────────────────────────────────── */
+        .top-bar {
+            width: min(440px, 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
+        .icon-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-dim);
+            cursor: pointer; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .icon-btn:hover { color: var(--text); }
+
+        /* ── Clock canvas ────────────────────────────── */
+        .clock-outer {
+            position: relative;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 6px 24px rgba(0,0,0,0.2));
+        }
+        #dial {
+            display: block;
+            border-radius: 50%;
+            width: clamp(260px, 70vw, 360px);
+            height: clamp(260px, 70vw, 360px);
+        }
+        /* floating hover label */
+        #hoverLabel {
+            position: absolute;
+            background: rgba(20, 22, 38, 0.92);
+            color: #e5e8f2;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+            pointer-events: none;
+            display: none;
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+        }
+
+        /* ── Mode toggle ─────────────────────────────── */
+        .mode-row {
+            display: flex;
+            width: min(440px, 100%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 4px var(--shadow);
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 11px;
+            border: none; background: none;
+            color: var(--text-dim);
+            font-size: 0.82rem; font-weight: 500; letter-spacing: 0.04em;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .mode-btn.active { background: var(--accent); color: #fff; }
+        .mode-btn:not(.active):hover { color: var(--text); }
+
+        /* ── Popover ─────────────────────────────────── */
+        .popover {
+            position: fixed;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+            z-index: 300;
+            min-width: 210px;
+            display: none;
+        }
+        .popover.open { display: block; animation: popIn 0.15s ease; }
+        @keyframes popIn { from { opacity:0; transform:scale(0.94); } to { opacity:1; transform:scale(1); } }
+
+        .pop-title {
+            font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.14em; text-transform: uppercase;
+            color: var(--text-dim); margin-bottom: 14px;
+        }
+        .pop-time-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 4px; margin-bottom: 12px;
+        }
+        .pop-num {
+            width: 60px; padding: 8px 4px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            color: var(--text);
+            font-size: 1.6rem; font-weight: 300;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            outline: none;
+            -moz-appearance: textfield;
+            transition: border-color 0.15s;
+        }
+        .pop-num:focus { border-color: var(--accent); }
+        .pop-num::-webkit-inner-spin-button,
+        .pop-num::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .pop-sep { font-size: 1.6rem; font-weight: 200; color: var(--text-faint); }
+        .pop-unit { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+
+        .seg-row { display: flex; justify-content: center; margin-bottom: 4px; }
+        .seg-group {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 8px; overflow: hidden;
+        }
+        .seg-btn {
+            padding: 6px 16px;
+            border: none; background: none;
+            font-size: 0.8rem; font-weight: 500;
+            color: var(--text-dim); cursor: pointer;
+            transition: all 0.12s;
+        }
+        .seg-btn.active { background: var(--accent); color: #fff; }
+
+        .pop-btns { display: flex; gap: 8px; margin-top: 16px; }
+        .btn {
+            flex: 1; padding: 9px 14px;
+            border-radius: 8px; border: none;
+            font-size: 0.82rem; font-weight: 500;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-secondary {
+            background: var(--surface2); color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { color: var(--text); }
+
+        /* ── Items panel ─────────────────────────────── */
+        .items-panel {
+            width: min(440px, 100%);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+        .items-empty {
+            text-align: center;
+            color: var(--text-faint);
+            font-size: 0.84rem;
+            padding: 26px 16px;
+            line-height: 1.6;
+        }
+        .item-row {
+            display: flex; align-items: center;
+            padding: 12px 14px; gap: 10px;
+            border-bottom: 1px solid var(--surface2);
+        }
+        .item-row:last-child { border-bottom: none; }
+        .item-icon { font-size: 1rem; flex-shrink: 0; width: 22px; text-align: center; }
+        .item-info { flex: 1; min-width: 0; }
+        .item-main { font-size: 1rem; font-variant-numeric: tabular-nums; }
+        .item-sub { font-size: 0.71rem; color: var(--text-dim); margin-top: 2px; }
+        .badge {
+            font-size: 0.68rem; font-weight: 700;
+            padding: 2px 9px; border-radius: 20px;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .badge-alarm {
+            background: rgba(200,94,24,0.1); color: var(--accent);
+            border: 1px solid rgba(200,94,24,0.25);
+        }
+        .badge-timer {
+            background: rgba(26,158,90,0.1); color: var(--green);
+            border: 1px solid rgba(26,158,90,0.2);
+        }
+        .badge-done {
+            background: rgba(100,100,120,0.1); color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+        .badge-running { animation: blink 1s ease-in-out infinite alternate; }
+        @keyframes blink { from{opacity:1} to{opacity:0.45} }
+
+        /* Toggle */
+        .toggle { position:relative; width:38px; height:22px; flex-shrink:0; }
+        .toggle input { opacity:0; width:0; height:0; }
+        .track {
+            position:absolute; inset:0;
+            background: var(--border); border-radius:11px;
+            cursor:pointer; transition:background 0.2s;
+        }
+        .track::after {
+            content:''; position:absolute;
+            top:3px; left:3px; width:16px; height:16px;
+            background:#fff; border-radius:50%;
+            transition:transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .toggle input:checked + .track { background: var(--accent); }
+        .toggle input:checked + .track::after { transform: translateX(16px); }
+
+        .del-btn {
+            width:26px; height:26px; border-radius:6px;
+            border:none; background:none;
+            color: var(--text-faint); cursor:pointer;
+            font-size:0.85rem;
+            display:flex; align-items:center; justify-content:center;
+            transition: all 0.12s; flex-shrink:0;
+        }
+        .del-btn:hover { color: var(--red); background: rgba(204,56,56,0.08); }
+
+        /* ── Alarm banner ────────────────────────────── */
+        .alarm-banner {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 14px 20px;
+            display: none; gap: 14px; align-items: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 400; white-space: nowrap;
+        }
+        .alarm-banner.visible { display: flex; animation: slideUp 0.25s ease; }
+        @keyframes slideUp {
+            from { opacity:0; transform:translateX(-50%) translateY(10px); }
+            to   { opacity:1; transform:translateX(-50%) translateY(0); }
+        }
+        .banner-text { font-size: 0.88rem; }
+        .banner-name { font-weight: 600; color: var(--accent); margin-left: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <h1>Dial Clock</h1>
+    <button class="icon-btn" id="themeBtn">☀️</button>
+</div>
+
+<!-- Clock -->
+<div class="clock-outer">
+    <canvas id="dial"></canvas>
+    <div id="hoverLabel"></div>
+</div>
+
+<!-- Mode toggle -->
+<div class="mode-row">
+    <button class="mode-btn active" data-mode="alarm">Set Alarm</button>
+    <button class="mode-btn" data-mode="timer">Set Timer</button>
+</div>
+
+<!-- Popover (shared alarm/timer) -->
+<div class="popover" id="popover">
+    <div class="pop-title" id="popTitle">Set Alarm</div>
+
+    <!-- Alarm fields -->
+    <div id="alarmFields">
+        <div class="pop-time-row">
+            <div>
+                <input class="pop-num" type="number" id="popH" min="1" max="12" value="12">
+                <div class="pop-unit" style="text-align:center">hr</div>
+            </div>
+            <span class="pop-sep">:</span>
+            <div>
+                <input class="pop-num" type="number" id="popM" min="0" max="59" value="0">
+                <div class="pop-unit" style="text-align:center">min</div>
+            </div>
+        </div>
+        <div class="seg-row">
+            <div class="seg-group">
+                <button class="seg-btn active" data-ap="AM">AM</button>
+                <button class="seg-btn" data-ap="PM">PM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer fields -->
+    <div id="timerFields" style="display:none">
+        <div class="pop-time-row">
+            <div>
+                <input class="pop-num" type="number" id="popTH" min="0" max="23" value="0">
+                <div class="pop-unit" style="text-align:center">hr</div>
+            </div>
+            <span class="pop-sep" style="font-size:1.2rem; margin-bottom:18px">:</span>
+            <div>
+                <input class="pop-num" type="number" id="popTM" min="0" max="59" value="15">
+                <div class="pop-unit" style="text-align:center">min</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pop-btns">
+        <button class="btn btn-secondary" id="popCancel">Cancel</button>
+        <button class="btn btn-primary" id="popSet">Set Alarm</button>
+    </div>
+</div>
+
+<!-- Items list -->
+<div class="items-panel" id="itemsPanel">
+    <div class="items-empty" id="itemsEmpty">
+        Click anywhere on the clock face<br>to set an alarm or timer
+    </div>
+</div>
+
+<!-- Alarm/timer banner -->
+<div class="alarm-banner" id="alarmBanner">
+    <span class="banner-text">⏰<span class="banner-name" id="bannerName"></span></span>
+    <button class="btn btn-secondary" id="snoozeBtn">Snooze 5m</button>
+    <button class="btn btn-primary" id="dismissBtn">Dismiss</button>
+</div>
+
+<script>
+window.addEventListener('load', function () {
+
+// ── Theme ─────────────────────────────────────────────────
+let dark = false;
+document.getElementById('themeBtn').addEventListener('click', function () {
+    dark = !dark;
+    document.documentElement.classList.toggle('dark', dark);
+    this.textContent = dark ? '🌙' : '☀️';
+});
+
+// ── Audio ─────────────────────────────────────────────────
+let ac = null;
+function audio() {
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+    if (ac && ac.state === 'suspended') ac.resume();
+    return ac;
+}
+function tone(freq, dur, vol) {
+    const a = audio(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.3, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+    o.start(); o.stop(a.currentTime + dur + 0.02);
+}
+function chime(seq) { seq.forEach(function(s){ setTimeout(function(){ tone(s[0],s[2],0.3); }, s[1]); }); }
+function timerChime() { chime([[880,0,0.14],[1047,200,0.14],[1319,400,0.22]]); }
+function alarmChime() {
+    chime([[880,0,0.1],[880,150,0.1],[880,300,0.1],[1047,460,0.18],
+           [880,660,0.1],[880,810,0.1],[880,960,0.1],[1047,1120,0.22]]);
+}
+function clickTone() { tone(660, 0.08, 0.22); }
+
+// ── Canvas setup ──────────────────────────────────────────
+const canvas = document.getElementById('dial');
+const dpr = window.devicePixelRatio || 1;
+
+function resize() {
+    const s = canvas.offsetWidth;
+    if (!s) return;
+    canvas.width  = s * dpr;
+    canvas.height = s * dpr;
+}
+resize();
+window.addEventListener('resize', function() { resize(); });
+
+// ── State ─────────────────────────────────────────────────
+let mode = 'alarm';          // 'alarm' | 'timer'
+let hover = null;            // { angle, label } during hover
+let items = [];              // alarms + timers
+let uid = 0;
+let ringingId = null;
+let alarmLoop = null;
+let lastAlarmMinute = -1;
+let lastRender = 0;
+
+// ── Clock drawing ─────────────────────────────────────────
+function drawClock() {
+    if (!canvas.width) return;
+    const c = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const cx = W / 2, cy = H / 2;
+    const R = Math.min(cx, cy) - 2 * dpr;
+
+    c.clearRect(0, 0, W, H);
+
+    // Face
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2);
+    c.fillStyle = '#1b1e30'; c.fill();
+
+    const grad = c.createRadialGradient(cx, cy * 0.55, 0, cx, cy, R);
+    grad.addColorStop(0, 'rgba(255,255,255,0.05)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.18)');
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2);
+    c.fillStyle = grad; c.fill();
+
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2);
+    c.strokeStyle = '#282d48'; c.lineWidth = 1.5 * dpr; c.stroke();
+
+    // Running timer arc
+    const runTimer = items.find(function(i){ return i.type==='timer' && i.running; });
+    if (runTimer) {
+        const rem = Math.max(0, runTimer.endTime - Date.now());
+        const frac = rem / runTimer.totalMs;
+        c.beginPath();
+        c.arc(cx, cy, R - 5 * dpr, -Math.PI / 2, -Math.PI / 2 + frac * 2 * Math.PI);
+        c.strokeStyle = 'rgba(26,158,90,0.55)';
+        c.lineWidth = 6 * dpr; c.stroke();
+    }
+
+    // Minute ticks (non-hour)
+    for (let i = 0; i < 60; i++) {
+        if (i % 5 === 0) continue;
+        const a = (i / 60) * Math.PI * 2 - Math.PI / 2;
+        c.beginPath();
+        c.moveTo(cx + Math.cos(a) * R * 0.885, cy + Math.sin(a) * R * 0.885);
+        c.lineTo(cx + Math.cos(a) * R * 0.92,  cy + Math.sin(a) * R * 0.92);
+        c.strokeStyle = '#2b3050'; c.lineWidth = dpr; c.stroke();
+    }
+
+    // Hour ticks + numbers
+    for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+        // Tick
+        c.beginPath();
+        c.moveTo(cx + Math.cos(a) * R * 0.80, cy + Math.sin(a) * R * 0.80);
+        c.lineTo(cx + Math.cos(a) * R * 0.92, cy + Math.sin(a) * R * 0.92);
+        c.strokeStyle = '#454c72'; c.lineWidth = 2.5 * dpr; c.stroke();
+        // Number
+        const label = i === 0 ? '12' : String(i);
+        c.fillStyle = '#7880a0';
+        c.font = Math.round(13 * dpr) + 'px -apple-system,system-ui,sans-serif';
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(label, cx + Math.cos(a) * R * 0.62, cy + Math.sin(a) * R * 0.62);
+    }
+
+    // Alarm marker dots
+    items.filter(function(i){ return i.type==='alarm' && i.on; }).forEach(function(alarm) {
+        const fracOfDay = (alarm.h % 12 * 60 + alarm.m) / 720;
+        const a = fracOfDay * 2 * Math.PI - Math.PI / 2;
+        c.beginPath();
+        c.arc(cx + Math.cos(a) * R * 0.94, cy + Math.sin(a) * R * 0.94, 3.5 * dpr, 0, Math.PI * 2);
+        c.fillStyle = '#c85e18'; c.fill();
+    });
+
+    // Ghost hand (hover preview)
+    if (hover) {
+        const a = hover.angle;
+        // Sweep arc from 12 o'clock to hover position
+        c.beginPath();
+        c.arc(cx, cy, R * 0.91, -Math.PI / 2, a, a < -Math.PI / 2);
+        c.strokeStyle = 'rgba(200,94,24,0.15)';
+        c.lineWidth = 3 * dpr; c.stroke();
+
+        // Ghost hand line
+        c.beginPath();
+        c.moveTo(cx, cy);
+        c.lineTo(cx + Math.cos(a) * R * 0.78, cy + Math.sin(a) * R * 0.78);
+        c.strokeStyle = 'rgba(200,94,24,0.55)';
+        c.lineWidth = 2.5 * dpr; c.lineCap = 'round'; c.stroke();
+
+        // Dot at tip
+        c.beginPath();
+        c.arc(cx + Math.cos(a) * R * 0.78, cy + Math.sin(a) * R * 0.78, 5 * dpr, 0, Math.PI * 2);
+        c.fillStyle = 'rgba(200,94,24,0.75)'; c.fill();
+
+        // Highlight tick mark
+        c.beginPath();
+        c.moveTo(cx + Math.cos(a) * R * 0.77, cy + Math.sin(a) * R * 0.77);
+        c.lineTo(cx + Math.cos(a) * R * 0.94, cy + Math.sin(a) * R * 0.94);
+        c.strokeStyle = 'rgba(200,94,24,0.6)';
+        c.lineWidth = 3 * dpr; c.lineCap = 'round'; c.stroke();
+    }
+
+    // Current time
+    const now = new Date();
+    const hr = now.getHours() % 12, mn = now.getMinutes(),
+          sc = now.getSeconds(), ms = now.getMilliseconds();
+
+    const hAng = ((hr * 60 + mn + (sc + ms/1000) / 60) / 720) * Math.PI * 2 - Math.PI / 2;
+    const mAng = ((mn + (sc + ms/1000) / 60) / 60)            * Math.PI * 2 - Math.PI / 2;
+    const sAng = ((sc + ms/1000) / 60)                         * Math.PI * 2 - Math.PI / 2;
+
+    function hand(angle, len, w, color) {
+        c.beginPath(); c.moveTo(cx, cy);
+        c.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len);
+        c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.stroke();
+    }
+
+    hand(hAng, R * 0.48, 5 * dpr, '#cdd0e5');
+    hand(mAng, R * 0.68, 3.5 * dpr, '#cdd0e5');
+    hand(sAng, R * 0.78, 1.5 * dpr, '#c85e18');
+    // Counterweight
+    c.beginPath(); c.moveTo(cx, cy);
+    c.lineTo(cx + Math.cos(sAng + Math.PI) * R * 0.14, cy + Math.sin(sAng + Math.PI) * R * 0.14);
+    c.strokeStyle = '#c85e18'; c.lineWidth = 1.5 * dpr; c.stroke();
+
+    // Center cap
+    c.beginPath(); c.arc(cx, cy, 5 * dpr, 0, Math.PI * 2); c.fillStyle = '#c85e18'; c.fill();
+    c.beginPath(); c.arc(cx, cy, 2.5 * dpr, 0, Math.PI * 2); c.fillStyle = '#1b1e30'; c.fill();
+}
+
+// ── Main loop ─────────────────────────────────────────────
+function tick() {
+    drawClock();
+    const now = Date.now();
+    if (now - lastRender > 400) {
+        lastRender = now;
+        renderItems();
+        const d = new Date();
+        if (d.getSeconds() < 1 && d.getMinutes() !== lastAlarmMinute) {
+            lastAlarmMinute = d.getMinutes();
+            checkAlarms(d);
+        }
+    }
+    // Check timer finish every frame (low cost)
+    items.forEach(function(i) {
+        if (i.type === 'timer' && i.running && !i.done && Date.now() >= i.endTime) finishTimer(i);
+    });
+    requestAnimationFrame(tick);
+}
+tick();
+
+// ── Coordinate helpers ────────────────────────────────────
+function getOffsetFromEvent(e) {
+    if (e.touches) {
+        const rect = canvas.getBoundingClientRect();
+        const t = e.changedTouches[0];
+        return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+    return { x: e.offsetX, y: e.offsetY };
+}
+
+function hitsDialZone(offsetX, offsetY) {
+    const css = canvas.offsetWidth;
+    const cx = css / 2, cy = css / 2;
+    const R = Math.min(cx, cy) - 2;
+    const dx = offsetX - cx, dy = offsetY - cy;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    return d >= R * 0.14 && d <= R * 1.02;
+}
+
+function angleFromOffset(offsetX, offsetY) {
+    const css = canvas.offsetWidth;
+    const cx = css / 2, cy = css / 2;
+    const dx = offsetX - cx, dy = offsetY - cy;
+    return (Math.atan2(dy, dx) + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+}
+
+// Snap raw angle to nearest 5-minute increment; returns {angle, label, ...}
+function snap(rawAngle) {
+    if (mode === 'alarm') {
+        // 1 revolution = 12 hours = 720 minutes
+        const totalMin = (rawAngle / (2 * Math.PI)) * 720;
+        const snappedMin = Math.round(totalMin / 5) * 5 % 720;
+        const h12 = Math.floor(snappedMin / 60) % 12; // 0–11
+        const m   = snappedMin % 60;
+        const display = (h12 === 0 ? 12 : h12) + ':' + String(m).padStart(2, '0');
+        return {
+            angle: (snappedMin / 720) * 2 * Math.PI - Math.PI / 2,
+            h12, m, display,
+            label: display
+        };
+    } else {
+        // 1 revolution = 60 minutes
+        const rawMin = (rawAngle / (2 * Math.PI)) * 60;
+        const snapped = Math.round(rawMin / 5) * 5 % 60;
+        const mins = snapped === 0 ? 60 : snapped; // wrap 0 → 60
+        const label = mins < 60 ? mins + ' min' : '1 hr';
+        return {
+            angle: (snapped / 60) * 2 * Math.PI - Math.PI / 2,
+            mins, label
+        };
+    }
+}
+
+// ── Hover ─────────────────────────────────────────────────
+const hoverLabel = document.getElementById('hoverLabel');
+
+canvas.addEventListener('mousemove', function(e) {
+    const { x, y } = getOffsetFromEvent(e);
+    if (!hitsDialZone(x, y)) {
+        hover = null;
+        canvas.style.cursor = 'default';
+        hoverLabel.style.display = 'none';
+        return;
+    }
+    canvas.style.cursor = 'pointer';
+    hover = snap(angleFromOffset(x, y));
+    hoverLabel.textContent = mode === 'alarm' ? '⏰ ' + hover.label : '⏱ ' + hover.label;
+    hoverLabel.style.display = 'block';
+
+    // Position label near cursor, staying inside clock-outer bounds
+    const outerRect = canvas.parentElement.getBoundingClientRect();
+    let lx = e.clientX - outerRect.left + 14;
+    let ly = e.clientY - outerRect.top  - 34;
+    if (lx + 90 > outerRect.width)  lx = e.clientX - outerRect.left - 100;
+    if (ly < 0) ly = e.clientY - outerRect.top + 14;
+    hoverLabel.style.left = lx + 'px';
+    hoverLabel.style.top  = ly + 'px';
+});
+
+canvas.addEventListener('mouseleave', function() {
+    hover = null;
+    canvas.style.cursor = 'default';
+    hoverLabel.style.display = 'none';
+});
+
+// ── Click / tap ───────────────────────────────────────────
+canvas.addEventListener('click', function(e) {
+    const { x, y } = getOffsetFromEvent(e);
+    if (!hitsDialZone(x, y)) return;
+    audio();
+    openPopover(snap(angleFromOffset(x, y)), e.clientX, e.clientY);
+});
+
+canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    const { x, y } = getOffsetFromEvent(e);
+    if (!hitsDialZone(x, y)) return;
+    audio();
+    const t = e.changedTouches[0];
+    openPopover(snap(angleFromOffset(x, y)), t.clientX, t.clientY);
+}, { passive: false });
+
+// ── Mode buttons ──────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        mode = this.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(function(b) {
+            b.classList.toggle('active', b === btn);
+        });
+        closePopover();
+    });
+});
+
+// ── Popover ───────────────────────────────────────────────
+const popover = document.getElementById('popover');
+let apChoice = 'AM';
+
+function openPopover(snapped, clientX, clientY) {
+    closePopover();
+    document.getElementById('popTitle').textContent = mode === 'alarm' ? 'Set Alarm' : 'Set Timer';
+    document.getElementById('popSet').textContent   = mode === 'alarm' ? 'Set Alarm' : 'Set Timer';
+
+    if (mode === 'alarm') {
+        document.getElementById('alarmFields').style.display = 'block';
+        document.getElementById('timerFields').style.display = 'none';
+        document.getElementById('popH').value = snapped.h12 === 0 ? 12 : snapped.h12;
+        document.getElementById('popM').value = String(snapped.m).padStart(2, '0');
+        // Guess AM/PM from current time
+        apChoice = new Date().getHours() >= 12 ? 'PM' : 'AM';
+        syncAP();
+    } else {
+        document.getElementById('alarmFields').style.display = 'none';
+        document.getElementById('timerFields').style.display = 'block';
+        const totalMins = snapped.mins; // 1–60
+        document.getElementById('popTH').value = Math.floor(totalMins / 60);
+        document.getElementById('popTM').value = totalMins % 60;
+    }
+
+    popover.classList.add('open');
+    positionPopover(clientX, clientY);
+    popover._snapped = snapped;
+}
+
+function closePopover() { popover.classList.remove('open'); }
+
+function positionPopover(clientX, clientY) {
+    const pw = 220, ph = 200;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = clientX + 18, y = clientY - ph / 2;
+    if (x + pw > vw - 12) x = clientX - pw - 18;
+    y = Math.max(12, Math.min(y, vh - ph - 12));
+    popover.style.left = x + 'px';
+    popover.style.top  = y + 'px';
+}
+
+function syncAP() {
+    document.querySelectorAll('[data-ap]').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.ap === apChoice);
+    });
+}
+
+document.querySelectorAll('[data-ap]').forEach(function(b) {
+    b.addEventListener('click', function() { apChoice = this.dataset.ap; syncAP(); });
+});
+
+document.getElementById('popCancel').addEventListener('click', closePopover);
+
+document.addEventListener('mousedown', function(e) {
+    if (!popover.contains(e.target) && e.target !== canvas) closePopover();
+});
+
+document.getElementById('popSet').addEventListener('click', function() {
+    audio();
+    if (mode === 'alarm') {
+        let h = parseInt(document.getElementById('popH').value) || 12;
+        let m = parseInt(document.getElementById('popM').value) || 0;
+        h = h % 12;
+        if (apChoice === 'PM') h += 12;
+        m = Math.max(0, Math.min(59, m));
+        const label = fmtAlarm(h, m);
+        items.push({ id: ++uid, type: 'alarm', h, m, on: true, label });
+    } else {
+        let th = parseInt(document.getElementById('popTH').value) || 0;
+        let tm = parseInt(document.getElementById('popTM').value) || 0;
+        const totalMs = (th * 3600 + tm * 60) * 1000;
+        if (totalMs <= 0) { closePopover(); return; }
+        const label = fmtDur(th, tm);
+        items.push({ id: ++uid, type: 'timer', totalMs, endTime: Date.now() + totalMs, running: true, done: false, label });
+    }
+    closePopover();
+    clickTone();
+    renderItems();
+});
+
+// ── Formatting ────────────────────────────────────────────
+function fmtAlarm(h, m) {
+    const ap = h >= 12 ? 'PM' : 'AM';
+    return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + ap;
+}
+function fmtDur(h, m) {
+    if (h === 0) return m + 'm';
+    if (m === 0) return h + 'h';
+    return h + 'h ' + m + 'm';
+}
+function fmtCountdown(ms) {
+    const s = Math.ceil(ms / 1000);
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+    const pad = function(n){ return String(n).padStart(2,'0'); };
+    return h > 0 ? h + ':' + pad(m) + ':' + pad(ss) : m + ':' + pad(ss);
+}
+
+// ── Render items ──────────────────────────────────────────
+function renderItems() {
+    const panel = document.getElementById('itemsPanel');
+    if (items.length === 0) {
+        panel.innerHTML = '<div class="items-empty">Click anywhere on the clock face<br>to set an alarm or timer</div>';
+        return;
+    }
+    panel.innerHTML = items.map(function(item) {
+        if (item.type === 'alarm') {
+            return '<div class="item-row">' +
+                '<span class="item-icon">⏰</span>' +
+                '<div class="item-info">' +
+                  '<div class="item-main">' + item.label + '</div>' +
+                  '<div class="item-sub">' + (item.on ? 'Active' : 'Off') + '</div>' +
+                '</div>' +
+                '<span class="badge badge-alarm">Alarm</span>' +
+                '<label class="toggle">' +
+                  '<input type="checkbox"' + (item.on ? ' checked' : '') + ' onchange="toggleAlarm(' + item.id + ')">' +
+                  '<span class="track"></span>' +
+                '</label>' +
+                '<button class="del-btn" onclick="removeItem(' + item.id + ')">✕</button>' +
+                '</div>';
+        } else {
+            const remaining = Math.max(0, item.endTime - Date.now());
+            const sub = item.done ? 'Done' : (item.running ? fmtCountdown(remaining) : 'Paused');
+            const badgeExtra = item.running && !item.done ? ' badge-running' : '';
+            const badgeLabel = item.done ? 'Done' : (item.running ? 'Running' : 'Paused');
+            const badgeClass = item.done ? 'badge-done' : 'badge-timer';
+            return '<div class="item-row">' +
+                '<span class="item-icon">⏱</span>' +
+                '<div class="item-info">' +
+                  '<div class="item-main">' + item.label + '</div>' +
+                  '<div class="item-sub">' + sub + '</div>' +
+                '</div>' +
+                '<span class="badge ' + badgeClass + badgeExtra + '">' + badgeLabel + '</span>' +
+                '<button class="del-btn" onclick="removeItem(' + item.id + ')">✕</button>' +
+                '</div>';
+        }
+    }).join('');
+}
+
+function toggleAlarm(id) {
+    const item = items.find(function(i){ return i.id === id; });
+    if (item) item.on = !item.on;
+    renderItems();
+}
+
+function removeItem(id) {
+    if (ringingId === id) dismissAlarm();
+    items = items.filter(function(i){ return i.id !== id; });
+    renderItems();
+}
+
+// expose for inline handlers
+window.toggleAlarm = toggleAlarm;
+window.removeItem = removeItem;
+
+// ── Alarm check ───────────────────────────────────────────
+function checkAlarms(now) {
+    const h = now.getHours(), m = now.getMinutes();
+    items.forEach(function(item) {
+        if (item.type === 'alarm' && item.on && item.h === h && item.m === m) triggerItem(item);
+    });
+}
+
+function triggerItem(item) {
+    if (ringingId !== null) return;
+    ringingId = item.id;
+    document.getElementById('bannerName').textContent = item.label;
+    // Show snooze only for alarms
+    document.getElementById('snoozeBtn').style.display = item.type === 'alarm' ? '' : 'none';
+    document.getElementById('alarmBanner').classList.add('visible');
+    if (item.type === 'timer') { timerChime(); setTimeout(dismissAlarm, 8000); }
+    else { alarmChime(); alarmLoop = setInterval(alarmChime, 2600); }
+}
+
+function finishTimer(item) {
+    item.running = false;
+    item.done = true;
+    triggerItem(item);
+}
+
+function dismissAlarm() {
+    clearInterval(alarmLoop); alarmLoop = null;
+    ringingId = null;
+    document.getElementById('alarmBanner').classList.remove('visible');
+    renderItems();
+}
+
+function snoozeAlarm() {
+    const id = ringingId;
+    dismissAlarm();
+    const item = items.find(function(i){ return i.id === id; });
+    if (item && item.type === 'alarm') {
+        const d = new Date(Date.now() + 5 * 60000);
+        item.h = d.getHours(); item.m = d.getMinutes();
+        item.label = fmtAlarm(item.h, item.m);
+        renderItems();
+    }
+}
+
+document.getElementById('dismissBtn').addEventListener('click', dismissAlarm);
+document.getElementById('snoozeBtn').addEventListener('click', snoozeAlarm);
+
+renderItems();
+
+}); // end load
+</script>
+</body>
+</html>
