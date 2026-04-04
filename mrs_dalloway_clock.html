@@ -96,8 +96,12 @@
             border-left: 3px solid #8a8480;
             padding: 2rem;
             margin-bottom: 2rem;
-            min-height: 300px;
+        }
+
+        .thoughts-container {
             position: relative;
+            min-height: 250px;
+            margin-top: 1rem;
         }
 
         .character-label {
@@ -113,13 +117,12 @@
             font-size: clamp(1rem, 2.2vw, 1.2rem);
             line-height: 1.9;
             color: #3a3430;
-            margin-bottom: 1.5rem;
             opacity: 0;
             animation: thoughtFade 9s ease-in-out infinite;
             position: absolute;
-            top: 4rem;
-            left: 2rem;
-            right: 2rem;
+            top: 0;
+            left: 0;
+            right: 0;
         }
 
         .thought:nth-child(1) { animation-delay: 0s; }
@@ -188,8 +191,10 @@
             <div class="character-label" id="character">Clarissa Dalloway</div>
             <div class="moment-label" id="moment">Morning</div>
             <div class="location" id="location">Westminster, London</div>
-            <div id="thoughts">
-                <!-- Thoughts injected here -->
+            <div class="thoughts-container">
+                <div id="thoughts">
+                    <!-- Thoughts injected here -->
+                </div>
             </div>
         </div>
     </div>
