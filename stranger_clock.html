@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Stranger Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #f8e8c8 0%, #e8d8b8 50%, #d8c8a8 100%);
+            font-family: 'Courier Prime', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #2a2a2a;
+            position: relative;
+            overflow: hidden;
+            transition: background 2s ease;
+        }
+
+        body.beach-hour {
+            background: linear-gradient(to bottom, #fff4d8 0%, #ffe8b8 30%, #d8c898 100%);
+        }
+
+        body.trial-hour {
+            background: linear-gradient(to bottom, #e8e8e8 0%, #d8d8d8 50%, #c8c8c8 100%);
+        }
+
+        .sun {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff8e8 0%, #ffe8a8 40%, #ffd888 100%);
+            box-shadow: 0 0 100px rgba(255, 200, 100, 0.8);
+            pointer-events: none;
+            transition: all 2s ease;
+            z-index: 0;
+        }
+
+        body.beach-hour .sun {
+            width: 300px;
+            height: 300px;
+            box-shadow: 0 0 200px rgba(255, 200, 100, 1);
+            background: radial-gradient(circle, #ffffff 0%, #fff8a8 30%, #ffb844 100%);
+        }
+
+        .heat-shimmer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(255, 255, 255, 0.1) 3px,
+                rgba(255, 255, 255, 0.1) 6px
+            );
+            animation: shimmer 3s linear infinite;
+            transition: opacity 2s ease;
+            z-index: 0;
+        }
+
+        body.beach-hour .heat-shimmer {
+            opacity: 1;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(6px); }
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(250, 248, 245, 0.95);
+            border: 1px solid #aaa;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .french-title {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #5a5a5a;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .author {
+            font-size: 0.95rem;
+            color: #6a6a6a;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid #ddd;
+        }
+
+        .current-time {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 600;
+            color: #2a2a2a;
+            margin-bottom: 0.5rem;
+            transition: color 2s ease;
+        }
+
+        body.beach-hour .current-time {
+            color: #ff8844;
+        }
+
+        .part-indicator {
+            font-size: 0.85rem;
+            color: #7a7a7a;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .moment-section {
+            margin-bottom: 2rem;
+        }
+
+        .moment-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 600;
+            color: #2a2a2a;
+            margin-bottom: 1rem;
+        }
+
+        .location {
+            font-size: 0.95rem;
+            color: #6a6a6a;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage-container {
+            position: relative;
+            min-height: 160px;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.9;
+            color: #3a3a3a;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: passageFade 12s ease-in-out infinite;
+        }
+
+        .passage:nth-child(1) { animation-delay: 0s; }
+        .passage:nth-child(2) { animation-delay: 4s; }
+        .passage:nth-child(3) { animation-delay: 8s; }
+
+        @keyframes passageFade {
+            0% { opacity: 0; }
+            3%, 30% { opacity: 1; }
+            33%, 100% { opacity: 0; }
+        }
+
+        .opening-line {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            line-height: 1.7;
+            color: #4a4a4a;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #888;
+            margin-top: 1rem;
+        }
+
+        .absurdity-note {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-size: 0.85rem;
+            color: #7a7a7a;
+            font-style: italic;
+            text-align: right;
+            max-width: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .absurdity-note {
+                bottom: 1rem;
+                right: 1rem;
+                max-width: 200px;
+            }
+
+            .sun {
+                width: 150px;
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sun" id="sun"></div>
+    <div class="heat-shimmer"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">The Stranger</h1>
+            <div class="french-title">L'Étranger</div>
+            <div class="author">Albert Camus</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="part-indicator" id="part">Part One</div>
+        </div>
+
+        <div class="moment-section">
+            <h2 class="moment-title" id="moment-title">The News</h2>
+            <div class="location" id="location">Algiers</div>
+            <div class="passage-container">
+                <div id="passages">
+                    <!-- Passages injected here -->
+                </div>
+            </div>
+            <div class="opening-line" id="famous-line">
+                "Aujourd'hui, maman est morte."
+            </div>
+        </div>
+    </div>
+
+    <div class="absurdity-note">
+        The sun. The heat. The indifference of the world.
+    </div>
+
+    <script>
+        const moments = [
+            // PART ONE (Midnight - Noon)
+            {
+                hour: 0,
+                part: "Part One",
+                title: "Maman Died Today",
+                location: "Algiers, receiving the telegram",
+                passages: [
+                    "Maman died today. Or yesterday maybe, I don't know. I got a telegram from the home: 'Mother deceased. Funeral tomorrow. Faithfully yours.' That doesn't mean anything. Maybe it was yesterday.",
+                    "The home is at Marengo, about eighty kilometers from Algiers. I'll take the two o'clock bus and get there in the afternoon. That way I can be there for the vigil and come back tomorrow night.",
+                    "I asked my boss for two days off and there's no way he was going to refuse me with an excuse like that."
+                ],
+                line: "Aujourd'hui, maman est morte. Ou peut-être hier, je ne sais pas.",
+                sunPosition: { top: '5%', right: '5%' },
+                isBeach: false
+            },
+            {
+                hour: 1,
+                part: "Part One",
+                title: "The Night Before",
+                location: "Unable to sleep",
+                passages: [
+                    "It occurred to me that anyway one more Sunday was over, that Maman was buried now, that I was going back to work, and that, really, nothing had changed.",
+                    "I thought of Maman. I don't know why, but I seemed to see her face for a moment—that I could tell from the way she raised her lips.",
+                    "Even now, sitting in front of this old room, it seems to me I can still hear the low continuous whisper of the sea."
+                ],
+                line: "It was as if familiar paths traced in summer skies could lead as easily to prison as to innocent sleep.",
+                sunPosition: { top: '10%', right: '8%' },
+                isBeach: false
+            },
+            {
+                hour: 2,
+                part: "Part One",
+                title: "The Morning Bus",
+                location: "The bus to Marengo",
+                passages: [
+                    "I took the bus at two o'clock. It was very hot. As usual, I ate at Céleste's restaurant. Everyone felt very sorry for me, and Céleste said, 'You only have one mother.'",
+                    "I slept almost all the way. And when I woke up, I was slumped against a soldier who smiled at me and asked me if I'd come from far away. I just nodded so I wouldn't have to talk.",
+                    "The home is two kilometers from the village. I walked there. I wanted to see Maman right away."
+                ],
+                line: "I wanted to see Maman right away.",
+                sunPosition: { top: '15%', right: '12%' },
+                isBeach: false
+            },
+            {
+                hour: 3,
+                part: "Part One",
+                title: "The Home",
+                location: "The old people's home at Marengo",
+                passages: [
+                    "The director told me, 'She was happier here.' As if I cared about such things.",
+                    "The caretaker took me to the mortuary. The coffin was already closed. I said I wanted to see her. He told me I shouldn't. I insisted.",
+                    "He stood behind me. I didn't turn around. The white room, the whiteness everywhere, the rows of chairs. The coffin in the middle."
+                ],
+                line: "I didn't turn around.",
+                sunPosition: { top: '20%', right: '18%' },
+                isBeach: false
+            },
+            {
+                hour: 4,
+                part: "Part One",
+                title: "The Wake",
+                location: "The mortuary, all night",
+                passages: [
+                    "The old people from the home came in and sat down without saying a word. They brought their chairs up close to the coffin.",
+                    "I had coffee. I wanted very much to smoke. But I hesitated because I didn't know if I could do it with Maman right there. I thought about it; it didn't matter.",
+                    "For a long time, the sobbing went on. For me, it was as if it had never stopped. Finally she fell silent."
+                ],
+                line: "It didn't matter.",
+                sunPosition: { top: '25%', right: '25%' },
+                isBeach: false
+            },
+            {
+                hour: 5,
+                part: "Part One",
+                title: "The Funeral",
+                location: "Walking to the cemetery",
+                passages: [
+                    "The sun was already hot. The sky was bright blue above us, but we were walking in shadow between high hedges.",
+                    "I could feel the blood pounding in my temples. Everything was happening so fast, so definitely, so naturally, that I didn't remember anything anymore.",
+                    "One thing I do remember is that at one point I turned off to the side and I saw the sun on the countryside."
+                ],
+                line: "The sun was pressing down on me.",
+                sunPosition: { top: '30%', right: '35%' },
+                isBeach: false
+            },
+            {
+                hour: 6,
+                part: "Part One",
+                title: "Marie",
+                location: "The swimming pool",
+                passages: [
+                    "I ran into Marie Cardona that evening. She used to be a typist in my office and I'd wanted her for a while. I think she liked me too.",
+                    "We went swimming. While we were swimming, Marie and I felt a closeness as we floated side by side.",
+                    "That evening Marie came by to see me and asked me if I wanted to marry her. I said it didn't matter to me and that we could if she wanted to."
+                ],
+                line: "It didn't matter to me.",
+                sunPosition: { top: '40%', right: '50%' },
+                isBeach: false
+            },
+            {
+                hour: 7,
+                part: "Part One",
+                title: "Raymond",
+                location: "The apartment building",
+                passages: [
+                    "Raymond Sintès is my neighbor. He's short, with broad shoulders and a boxer's nose. He always dresses very well. He told me once, 'I'm a warehouse guard.'",
+                    "In fact he's a pimp. Marie had heard things about him and asked me if it was true. I said I didn't care one way or the other.",
+                    "He asked me if I wanted to be pals. I said it didn't matter to me; I'd be happy to."
+                ],
+                line: "I said I didn't care one way or the other.",
+                sunPosition: { top: '50%', right: '65%' },
+                isBeach: false
+            },
+            {
+                hour: 8,
+                part: "Part One",
+                title: "Sunday Morning",
+                location: "Algiers, the apartment",
+                passages: [
+                    "It's hard to get up on Sunday mornings. Marie had to call me and shake me. We didn't eat because we wanted to go swimming early.",
+                    "I felt completely drained and my head was hurting a little from all the cigarettes we smoked the night before.",
+                    "Marie said I looked like a mourner at a funeral, and she laughed. I didn't say anything."
+                ],
+                line: "I didn't say anything.",
+                sunPosition: { top: '60%', right: '75%' },
+                isBeach: false
+            },
+            {
+                hour: 9,
+                part: "Part One",
+                title: "The Beach Invitation",
+                location: "Raymond's place",
+                passages: [
+                    "Raymond came by to invite me to a friend's beach house near Algiers. I wanted to go, but I said I'd promised to spend the day with Marie.",
+                    "He said she could come too. Then his girlfriend's brother and some Arabs had been following him. He wanted to know if I'd seen them around the building.",
+                    "We went to the police station where Raymond gave his statement. On the way out the officer told him to wait outside. He asked me if I'd be a character witness. I said I would."
+                ],
+                line: "I said I would.",
+                sunPosition: { top: '70%', right: '82%' },
+                isBeach: false
+            },
+            {
+                hour: 10,
+                part: "Part One",
+                title: "Preparing for the Beach",
+                location: "The apartment",
+                passages: [
+                    "When I woke up, Marie had gone. She'd told me her aunt expected her. I thought about the fact that it was Sunday and that bothered me: I don't like Sundays.",
+                    "I smoked a few cigarettes and decided to go for a walk. I walked to the harbor. The sun on the concrete hurt my eyes.",
+                    "I went home, washed up, and Marie came by that evening. She had on one of my ties as a belt and had rolled up the sleeves of her blouse."
+                ],
+                line: "The sun on the concrete hurt my eyes.",
+                sunPosition: { top: '75%', right: '88%' },
+                isBeach: false
+            },
+            {
+                hour: 11,
+                part: "Part One",
+                title: "Arriving at the Beach",
+                location: "The road to the beach",
+                passages: [
+                    "We took the bus. Raymond and his friend Masson were already there. Masson had a little wooden bungalow at the end of the beach.",
+                    "Marie and I swam together. The water was cold and I felt good. Marie and I swam far out, and we felt the same closeness floating side by side.",
+                    "After our swim, Madame Masson called to us that lunch was ready. We went back up to the bungalow."
+                ],
+                line: "The heat was beginning to scorch my cheeks.",
+                sunPosition: { bottom: '45%', left: '50%' },
+                isBeach: true
+            },
+
+            // THE BEACH - THE MURDER (Noon - 2 PM)
+            {
+                hour: 12,
+                part: "Part One — Chapter Six",
+                title: "The Arabs on the Beach",
+                location: "The burning sand",
+                passages: [
+                    "After lunch I felt a bit sick. The sun was beating down on me. Raymond wanted to go for a walk on the beach. I went with him.",
+                    "We walked for a long time. Then we saw two Arabs lying at the far end of the beach. One of them was the brother of Raymond's girlfriend.",
+                    "The sun was so hot it was hard to breathe. Raymond said to me, 'If there's a fight, you take the other one.' I said okay."
+                ],
+                line: "The sun was the same as it had been the day I'd buried Maman.",
+                sunPosition: { bottom: '40%', left: '50%' },
+                isBeach: true
+            },
+            {
+                hour: 13,
+                part: "Part One — The Murder",
+                title: "The Sun and the Revolver",
+                location: "The beach, alone",
+                passages: [
+                    "All I could feel were the cymbals of sunlight crashing on my forehead. The trigger gave; I felt the smooth underside of the butt.",
+                    "And there, in that noise, sharp and deafening at the same time, is where it all started. I shook off the sweat and sun. I knew that I had shattered the harmony of the day.",
+                    "Then I fired four more times at the motionless body. And it was like knocking four quick times on the door of unhappiness."
+                ],
+                line: "It was because of the sun.",
+                sunPosition: { bottom: '35%', left: '50%' },
+                isBeach: true
+            },
+
+            // PART TWO - THE TRIAL (2 PM - Midnight)
+            {
+                hour: 14,
+                part: "Part Two",
+                title: "Arrested",
+                location: "Prison, Algiers",
+                passages: [
+                    "Right away I was taken to prison. At first I was in a room with several other men, mostly Arabs. They laughed when they saw me.",
+                    "They asked me what I'd done. I told them I'd killed an Arab. They were silent for a while.",
+                    "Then in the evening they brought me something to eat, but I couldn't bring myself to eat it. I spent the whole night walking back and forth in my cell."
+                ],
+                line: "I'd killed an Arab.",
+                sunPosition: { bottom: '30%', left: '30%' },
+                isBeach: false
+            },
+            {
+                hour: 15,
+                part: "Part Two",
+                title: "The Lawyer",
+                location: "The prison cell",
+                passages: [
+                    "The lawyer came to see me. He said he'd studied the case and that it shouldn't be too hard. But everything depended on my behavior at the trial.",
+                    "He asked me if I loved my mother. I said yes, like everyone. He started asking me things about the funeral and whether I'd cried.",
+                    "I told him, 'No.' He looked at me strangely. I almost felt like explaining to him that it wasn't my fault. But it would have been too much trouble."
+                ],
+                line: "It wasn't my fault.",
+                sunPosition: { bottom: '25%', left: '20%' },
+                isBeach: false
+            },
+            {
+                hour: 16,
+                part: "Part Two",
+                title: "The Examining Magistrate",
+                location: "The magistrate's office",
+                passages: [
+                    "The examining magistrate was a tall man with delicate features. He seemed very reasonable. He asked me why I'd waited between the first shot and the other four.",
+                    "I told him I didn't know. I think I said something about the sun. The magistrate then said something I'll never forget. He said, 'Why, why did you fire at a body that was on the ground?'",
+                    "At one point he held up a silver crucifix which he shook at me. He asked me if I believed in God. I said no."
+                ],
+                line: "I said no.",
+                sunPosition: { bottom: '20%', left: '15%' },
+                isBeach: false
+            },
+            {
+                hour: 17,
+                part: "Part Two",
+                title: "Waiting",
+                location: "The prison cell, months passing",
+                passages: [
+                    "The hardest thing to get used to was that my days had no more structure. In my former life, every day had the same rhythm.",
+                    "I learned to remember things. Gradually I became completely used to my prison life, and I could think of nothing but the coming trial.",
+                    "I spent my time sleeping, remembering things, and reading an old newspaper story about a crime in Czechoslovakia I found in my cell."
+                ],
+                line: "I could kill time.",
+                sunPosition: { bottom: '15%', left: '10%' },
+                isBeach: false
+            },
+            {
+                hour: 18,
+                part: "Part Two",
+                title: "The Trial Begins",
+                location: "The courtroom",
+                passages: [
+                    "The courtroom was packed. It was very hot. Journalists were fanning themselves with newspapers. The jury was all looking at me.",
+                    "The prosecutor said I had no soul, and that nothing human, not one of the moral principles that govern men's hearts, was within my reach.",
+                    "My lawyer said I was a decent young man who'd worked hard and been devoted to his mother. But the prosecutor kept talking about my 'soul.'"
+                ],
+                line: "I had no soul.",
+                sunPosition: { bottom: '12%', left: '8%' },
+                isBeach: false
+            },
+            {
+                hour: 19,
+                part: "Part Two",
+                title: "The Witnesses",
+                location: "The trial continues",
+                passages: [
+                    "They called the director from the home as a witness. He testified that I hadn't wanted to see Maman's body, that I hadn't cried, and that I'd left right after the funeral.",
+                    "The caretaker testified that I'd had coffee and smoked during the wake. Everyone in the courtroom looked at me. I could feel their eyes.",
+                    "Céleste was called. He said I was his friend and that I was a decent man. But the prosecutor made him sound ridiculous."
+                ],
+                line: "They were looking at me.",
+                sunPosition: { bottom: '10%', left: '7%' },
+                isBeach: false
+            },
+            {
+                hour: 20,
+                part: "Part Two",
+                title: "Marie Testifies",
+                location: "The courtroom",
+                passages: [
+                    "Then they called Marie. She testified that we'd started seeing each other again the day after Maman was buried.",
+                    "The prosecutor made a big deal out of this. He asked her what movie we'd seen. She said it was a Fernandel film. When he said the title, the whole courtroom laughed.",
+                    "I wanted to tell Marie that she shouldn't worry, that it wasn't her fault. But I couldn't."
+                ],
+                line: "It wasn't her fault.",
+                sunPosition: { bottom: '8%', left: '6%' },
+                isBeach: false
+            },
+            {
+                hour: 21,
+                part: "Part Two",
+                title: "The Prosecutor's Speech",
+                location: "The courtroom",
+                passages: [
+                    "The prosecutor said that I'd buried my mother with a criminal's callousness. He said I'd killed a man in cold blood, waiting to make sure he was dead.",
+                    "He said I had no place in a society whose most basic rules I ignored. He said that the same heart that was closed to his mother was closed to all human compassion.",
+                    "He asked that my head be cut off in the name of the French people."
+                ],
+                line: "In the name of the French people.",
+                sunPosition: { bottom: '6%', left: '5%' },
+                isBeach: false
+            },
+            {
+                hour: 22,
+                part: "Part Two",
+                title: "The Verdict",
+                location: "The courtroom",
+                passages: [
+                    "My lawyer spoke, but I barely listened. Finally the judge asked me if I had anything to say. I thought about it. I said quickly, mixing up my words, that I never intended to kill the Arab.",
+                    "The judge told me I'd be taken out while the jury deliberated. They didn't take very long. When I came back, the foreman read the verdict without looking at me.",
+                    "They condemned me to death by guillotine in a public square."
+                ],
+                line: "It was because of the sun.",
+                sunPosition: { bottom: '5%', left: '4%' },
+                isBeach: false
+            },
+            {
+                hour: 23,
+                part: "Part Two — The End",
+                title: "Waiting for Dawn",
+                location: "The prison cell, death row",
+                passages: [
+                    "The chaplain came to see me. I told him I didn't want to waste my last hours on God. I grabbed him by the collar of his cassock and poured out my heart to him.",
+                    "I opened myself to the tender indifference of the world. Finding it so much like myself, I felt that I had been happy and that I was happy again.",
+                    "For everything to be consummated, for me to feel less alone, I had only to wish that there be a large crowd of spectators the day of my execution and that they greet me with cries of hate."
+                ],
+                line: "The tender indifference of the world.",
+                sunPosition: { bottom: '3%', left: '3%' },
+                isBeach: false
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const partEl = document.getElementById('part');
+        const momentTitleEl = document.getElementById('moment-title');
+        const locationEl = document.getElementById('location');
+        const passagesEl = document.getElementById('passages');
+        const famousLineEl = document.getElementById('famous-line');
+        const sunEl = document.getElementById('sun');
+        const bodyEl = document.body;
+
+        let currentMomentIndex = -1;
+
+        function getMomentForHour(hour) {
+            return moments.find(m => m.hour === hour) || moments[0];
+        }
+
+        function renderPassages(passages) {
+            passagesEl.innerHTML = passages.map(passage => `
+                <div class="passage">${passage}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current moment
+            const moment = getMomentForHour(hour);
+            const momentIndex = moments.indexOf(moment);
+
+            // Update content if moment changed
+            if (momentIndex !== currentMomentIndex) {
+                partEl.textContent = moment.part;
+                momentTitleEl.textContent = moment.title;
+                locationEl.textContent = moment.location;
+                renderPassages(moment.passages);
+                famousLineEl.textContent = moment.line;
+
+                // Update sun position
+                const pos = moment.sunPosition;
+                Object.keys(pos).forEach(key => {
+                    sunEl.style[key] = pos[key];
+                });
+                // Clear opposite positions
+                if (pos.top) {
+                    sunEl.style.bottom = 'auto';
+                } else {
+                    sunEl.style.top = 'auto';
+                }
+                if (pos.left) {
+                    sunEl.style.right = 'auto';
+                } else {
+                    sunEl.style.left = 'auto';
+                }
+
+                // Update beach/trial styling
+                if (moment.isBeach) {
+                    bodyEl.classList.add('beach-hour');
+                    bodyEl.classList.remove('trial-hour');
+                } else if (hour >= 14) {
+                    bodyEl.classList.add('trial-hour');
+                    bodyEl.classList.remove('beach-hour');
+                } else {
+                    bodyEl.classList.remove('beach-hour', 'trial-hour');
+                }
+
+                currentMomentIndex = momentIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>
