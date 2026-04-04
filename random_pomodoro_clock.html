@@ -32,6 +32,12 @@
 
         .container {
             text-align: center;
+            position: relative;
+        }
+
+        .timer-display {
+            position: relative;
+            z-index: 1;
         }
 
         .status {
@@ -53,6 +59,35 @@
             display: flex;
             gap: 20px;
             justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .session-note-input {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 20px;
+        }
+
+        .session-note-input input {
+            width: 100%;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+
+        .session-note-input input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .session-note-input input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.25);
         }
 
         button {
@@ -73,22 +108,175 @@
             transform: translateY(-2px);
         }
 
+        .sound-controls {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .sound-icon {
+            font-size: 1.2rem;
+            opacity: 0.7;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .sound-icon:hover {
+            opacity: 1;
+        }
+
+        .volume-slider {
+            width: 120px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            border-radius: 2px;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: white;
+            cursor: pointer;
+            border: none;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .volume-slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+        }
+
         .info {
             margin-top: 30px;
             font-size: 0.9rem;
             opacity: 0.7;
         }
 
+        .completed-list {
+            margin-top: 40px;
+            max-width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .completed-list h3 {
+            margin: 0 0 15px 0;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.9;
+        }
+
+        .completed-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.8;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .completed-item:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .completed-item:last-child {
+            border-bottom: none;
+        }
+
+        .completed-item-header {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .completed-type {
+            font-weight: 700;
+        }
+
+        .completed-duration {
+            opacity: 0.7;
+        }
+
+        .completed-note {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-style: italic;
+            word-wrap: break-word;
+        }
+
+        .completed-note-edit {
+            margin-top: 6px;
+        }
+
+        .completed-note-edit input {
+            width: 100%;
+            padding: 6px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            color: white;
+        }
+
+        .completed-note-edit input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .completed-note-edit input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .completed-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .completed-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .completed-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
         /* Progress ring */
         .progress-container {
-            position: absolute;
+            position: fixed;
             top: 50%;
-            left: 50%;
+            left: 20%;
             transform: translate(-50%, -50%);
-            width: clamp(280px, 80vw, 600px);
-            height: clamp(280px, 80vw, 600px);
+            width: clamp(200px, 30vw, 400px);
+            height: clamp(200px, 30vw, 400px);
             pointer-events: none;
-            z-index: -1;
+            z-index: 0;
         }
 
         circle {
@@ -124,7 +312,21 @@
             <button id="skipBtn">Skip</button>
         </div>
 
+        <div class="sound-controls">
+            <span class="sound-icon" id="sound-icon">🔊</span>
+            <input type="range" min="0" max="100" value="70" class="volume-slider" id="volume-slider" />
+        </div>
+
+        <div class="session-note-input" id="session-note-input" style="display: none;">
+            <input type="text" id="current-session-note" placeholder="What are you working on? (optional)" />
+        </div>
+
         <div class="info" id="next-info">Next: ?</div>
+
+        <div class="completed-list" id="completed-list">
+            <h3>Completed Sessions</h3>
+            <div id="completed-items"></div>
+        </div>
     </div>
 
     <script>
@@ -141,6 +343,11 @@
         let totalDuration = 0; // in seconds
         let timerInterval = null;
         let audioContext = null;
+        let masterGainNode = null;
+        let masterVolume = 0.7;
+        let completedSessions = [];
+        let currentSessionNote = '';
+        let editingSessionIndex = -1;
 
         // Elements
         const timerEl = document.getElementById('timer');
@@ -149,28 +356,287 @@
         const skipBtn = document.getElementById('skipBtn');
         const progressEl = document.getElementById('progress');
         const nextInfoEl = document.getElementById('next-info');
+        const completedItemsEl = document.getElementById('completed-items');
+        const sessionNoteInputContainer = document.getElementById('session-note-input');
+        const currentSessionNoteInput = document.getElementById('current-session-note');
+        const volumeSlider = document.getElementById('volume-slider');
+        const soundIcon = document.getElementById('sound-icon');
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                masterGainNode = audioContext.createGain();
+                masterGainNode.connect(audioContext.destination);
+                masterGainNode.gain.value = masterVolume;
+            }
+        }
+
+        function updateVolume(value) {
+            masterVolume = value / 100;
+            if (masterGainNode) {
+                masterGainNode.gain.value = masterVolume;
+            }
+
+            // Update icon
+            if (value === 0) {
+                soundIcon.textContent = '🔇';
+            } else if (value < 30) {
+                soundIcon.textContent = '🔈';
+            } else if (value < 70) {
+                soundIcon.textContent = '🔉';
+            } else {
+                soundIcon.textContent = '🔊';
+            }
+
+            // Save to localStorage
+            localStorage.setItem('pomodoroVolume', value);
+        }
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        function playSound() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function loadSessions() {
+            try {
+                const saved = localStorage.getItem('pomodoroSessions');
+                if (saved) {
+                    completedSessions = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('Failed to load sessions:', e);
+            }
+        }
+
+        function saveSessions() {
+            try {
+                localStorage.setItem('pomodoroSessions', JSON.stringify(completedSessions));
+            } catch (e) {
+                console.error('Failed to save sessions:', e);
+            }
+        }
+
+        function playSound(type = 'transition') {
+            initAudio();
+            if (masterVolume === 0) return; // Don't play if muted
+            const now = audioContext.currentTime;
+
+            switch (type) {
+                case 'startWork':
+                    playStartWorkSound(now);
+                    break;
+                case 'startBreak':
+                    playStartBreakSound(now);
+                    break;
+                case 'completeWork':
+                    playCompleteWorkSound(now);
+                    break;
+                case 'completeBreak':
+                    playCompleteBreakSound(now);
+                    break;
+                case 'tick':
+                    playTickSound(now);
+                    break;
+                default:
+                    playTransitionSound(now);
+            }
+        }
+
+        function playStartWorkSound(now) {
+            // Energetic ascending chime
+            [523.25, 659.25, 783.99].forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                filter.type = 'lowpass';
+                filter.frequency.value = 2000;
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(masterGainNode);
+
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+
+                const startTime = now + i * 0.1;
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+
+                osc.start(startTime);
+                osc.stop(startTime + 0.5);
+            });
+        }
+
+        function playStartBreakSound(now) {
+            // Gentle descending relaxation sound
+            [783.99, 659.25, 523.25].forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                filter.type = 'lowpass';
+                filter.frequency.value = 1500;
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(masterGainNode);
+
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+
+                const startTime = now + i * 0.15;
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
+
+                osc.start(startTime);
+                osc.stop(startTime + 0.7);
+            });
+        }
+
+        function playCompleteWorkSound(now) {
+            // Achievement fanfare
+            const melody = [
+                { freq: 523.25, time: 0 },     // C5
+                { freq: 659.25, time: 0.1 },   // E5
+                { freq: 783.99, time: 0.2 },   // G5
+                { freq: 1046.5, time: 0.3 }    // C6
+            ];
+
+            melody.forEach(note => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+
+                osc.connect(gain);
+                gain.connect(masterGainNode);
+
+                osc.type = 'triangle';
+                osc.frequency.value = note.freq;
+
+                const startTime = now + note.time;
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+
+                osc.start(startTime);
+                osc.stop(startTime + 0.35);
+            });
+
+            // Add sparkle with higher harmonics
+            setTimeout(() => {
+                const sparkle = audioContext.createOscillator();
+                const sparkleGain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                filter.type = 'bandpass';
+                filter.frequency.value = 3000;
+                filter.Q.value = 5;
+
+                sparkle.connect(filter);
+                filter.connect(sparkleGain);
+                sparkleGain.connect(masterGainNode);
+
+                sparkle.type = 'sine';
+                sparkle.frequency.setValueAtTime(2093, now + 0.35);
+                sparkle.frequency.exponentialRampToValueAtTime(4186, now + 0.55);
+
+                sparkleGain.gain.setValueAtTime(0.15, now + 0.35);
+                sparkleGain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+
+                sparkle.start(now + 0.35);
+                sparkle.stop(now + 0.6);
+            }, 0);
+        }
+
+        function playCompleteBreakSound(now) {
+            // Gentle bell toll
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            filter.type = 'lowpass';
+            filter.frequency.value = 1200;
+            filter.Q.value = 2;
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGainNode);
+
+            osc.type = 'sine';
+            osc.frequency.value = 587.33; // D5
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.35, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+
+            osc.start(now);
+            osc.stop(now + 1.3);
+        }
+
+        function playTickSound(now) {
+            // Subtle click/tick
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            filter.type = 'highpass';
+            filter.frequency.value = 800;
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGainNode);
+
+            osc.type = 'square';
+            osc.frequency.value = 1200;
+
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+            osc.start(now);
+            osc.stop(now + 0.05);
+        }
+
+        function playTransitionSound(now) {
+            // Original simple transition
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
             oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            gainNode.connect(masterGainNode);
 
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
-            oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.5);
+            oscillator.frequency.setValueAtTime(880, now);
+            oscillator.frequency.exponentialRampToValueAtTime(440, now + 0.5);
 
-            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            gainNode.gain.setValueAtTime(0.5, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
 
             oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.5);
+            oscillator.stop(now + 0.5);
+        }
+
+        function playButtonClick() {
+            initAudio();
+            if (masterVolume === 0) return; // Don't play if muted
+            const now = audioContext.currentTime;
+
+            // Quick positive click
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(masterGainNode);
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+            osc.start(now);
+            osc.stop(now + 0.1);
         }
 
         function formatTime(seconds) {
@@ -217,39 +683,184 @@
             nextInfoEl.innerText = `Up next: ${nextType} (${min}-${max} min)`;
         }
 
+        function updateNoteInputVisibility() {
+            // Show note input during work sessions when timer has been started
+            // (whether currently running or paused)
+            if (isWork && (isRunning || timeLeft < totalDuration)) {
+                sessionNoteInputContainer.style.display = 'block';
+            } else {
+                sessionNoteInputContainer.style.display = 'none';
+            }
+        }
+
+        function addCompletedSession(type, duration, note = '') {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            completedSessions.unshift({
+                type: type,
+                duration: duration,
+                time: timeStr,
+                note: note
+            });
+
+            // Keep only last 50 sessions
+            if (completedSessions.length > 50) {
+                completedSessions.pop();
+            }
+
+            saveSessions();
+            renderCompletedSessions();
+        }
+
+        function renderCompletedSessions() {
+            if (completedSessions.length === 0) {
+                completedItemsEl.innerHTML = '<div style="opacity: 0.5; font-style: italic;">No completed sessions yet</div>';
+                return;
+            }
+
+            completedItemsEl.innerHTML = completedSessions.map((session, index) => {
+                const noteHtml = editingSessionIndex === index
+                    ? `<div class="completed-note-edit">
+                         <input type="text"
+                                value="${session.note || ''}"
+                                placeholder="Add a note about this session..."
+                                data-index="${index}"
+                                class="note-edit-input" />
+                       </div>`
+                    : session.note
+                        ? `<div class="completed-note">${session.note}</div>`
+                        : '';
+
+                return `
+                    <div class="completed-item" data-index="${index}">
+                        <div class="completed-item-header">
+                            <span class="completed-type">${session.type}</span>
+                            <span class="completed-duration">${session.duration} min @ ${session.time}</span>
+                        </div>
+                        ${noteHtml}
+                    </div>
+                `;
+            }).join('');
+
+            // Add event listeners for clicking items and editing notes
+            document.querySelectorAll('.completed-item').forEach((item) => {
+                item.addEventListener('click', (e) => {
+                    const index = parseInt(item.dataset.index);
+                    if (e.target.classList.contains('note-edit-input')) {
+                        return; // Don't toggle when clicking the input
+                    }
+                    toggleNoteEdit(index);
+                });
+            });
+
+            // Add event listeners for note inputs
+            document.querySelectorAll('.note-edit-input').forEach((input) => {
+                input.addEventListener('blur', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    saveNote(index, e.target.value);
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        const index = parseInt(e.target.dataset.index);
+                        saveNote(index, e.target.value);
+                    } else if (e.key === 'Escape') {
+                        editingSessionIndex = -1;
+                        renderCompletedSessions();
+                    }
+                });
+                // Auto-focus the input
+                setTimeout(() => input.focus(), 0);
+            });
+        }
+
+        function toggleNoteEdit(index) {
+            editingSessionIndex = editingSessionIndex === index ? -1 : index;
+            renderCompletedSessions();
+        }
+
+        function saveNote(index, note) {
+            completedSessions[index].note = note.trim();
+            editingSessionIndex = -1;
+            saveSessions();
+            renderCompletedSessions();
+        }
+
         function switchPhase() {
+            // Record the completed session BEFORE switching
+            const completedType = isWork ? 'Focus' : 'Break';
+            const completedMinutes = Math.round(totalDuration / 60);
+            const note = isWork ? currentSessionNote : ''; // Only save notes for work sessions
+            addCompletedSession(completedType, completedMinutes, note);
+
+            // Play completion sound for current phase
+            if (isWork) {
+                playSound('completeWork');
+            } else {
+                playSound('completeBreak');
+            }
+
+            // Reset current session note
+            currentSessionNote = '';
+            currentSessionNoteInput.value = '';
+
             isWork = !isWork;
             generateNextPhase();
-            playSound();
+
+            // Play start sound for new phase (delayed slightly)
+            setTimeout(() => {
+                if (isWork) {
+                    playSound('startWork');
+                } else {
+                    playSound('startBreak');
+                }
+            }, 400);
+
+            // Show/hide note input based on new phase
+            updateNoteInputVisibility();
         }
 
         function tick() {
             if (timeLeft > 0) {
                 timeLeft--;
                 updateDisplay();
+
+                // Play subtle tick sound every minute during work sessions
+                if (isWork && timeLeft % 60 === 0 && timeLeft > 0) {
+                    playSound('tick');
+                }
+
+                // Play countdown ticks in the last 3 seconds
+                if (timeLeft <= 3 && timeLeft > 0) {
+                    playSound('tick');
+                }
             } else {
                 switchPhase();
             }
         }
 
         function toggleTimer() {
+            playButtonClick();
+
             if (isRunning) {
                 clearInterval(timerInterval);
                 toggleBtn.innerText = "Start";
                 isRunning = false;
             } else {
                 // Initialize audio context on user gesture
-                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                initAudio();
 
                 timerInterval = setInterval(tick, 1000);
                 toggleBtn.innerText = "Pause";
                 isRunning = true;
             }
+            updateNoteInputVisibility();
         }
 
         function skip() {
             // Initialize audio on skip too
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            initAudio();
+            playButtonClick();
             switchPhase();
             // If it was running, it keeps running
         }
@@ -257,9 +868,42 @@
         // Listeners
         toggleBtn.addEventListener('click', toggleTimer);
         skipBtn.addEventListener('click', skip);
+        currentSessionNoteInput.addEventListener('input', (e) => {
+            currentSessionNote = e.target.value;
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            updateVolume(parseInt(e.target.value));
+        });
+
+        soundIcon.addEventListener('click', () => {
+            const currentVolume = parseInt(volumeSlider.value);
+            if (currentVolume > 0) {
+                // Mute
+                volumeSlider.dataset.previousVolume = currentVolume;
+                volumeSlider.value = 0;
+                updateVolume(0);
+            } else {
+                // Unmute to previous or default
+                const previousVolume = volumeSlider.dataset.previousVolume || 70;
+                volumeSlider.value = previousVolume;
+                updateVolume(parseInt(previousVolume));
+            }
+        });
 
         // Init
+        loadSessions(); // Load from localStorage
         generateNextPhase(); // Start with work
+        renderCompletedSessions(); // Initialize list
+
+        // Load saved volume
+        const savedVolume = localStorage.getItem('pomodoroVolume');
+        if (savedVolume !== null) {
+            volumeSlider.value = savedVolume;
+            updateVolume(parseInt(savedVolume));
+        } else {
+            updateVolume(70); // Default volume
+        }
     </script>
 </body>
 
