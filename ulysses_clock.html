@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloomsday Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,700;1,600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #f4ede4 0%, #e8dfd4 100%);
+            font-family: 'EB Garamond', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #3d3226;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(61, 50, 38, 0.02) 2px,
+                    rgba(61, 50, 38, 0.02) 4px
+                );
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .page {
+            max-width: 1100px;
+            width: 100%;
+            background: #faf7f2;
+            border: 1px solid #c8baa8;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.15),
+                inset 0 0 100px rgba(200, 186, 168, 0.1);
+            padding: 3rem 2.5rem;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #3d3226;
+        }
+
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: #2a2218;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            font-family: 'Libre Baskerville', serif;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            font-style: italic;
+            color: #5a4d3e;
+            margin-bottom: 0.25rem;
+        }
+
+        .bloomsday {
+            font-size: 0.95rem;
+            color: #7a6d5e;
+            margin-top: 0.5rem;
+        }
+
+        .time-display {
+            text-align: center;
+            font-family: 'Libre Baskerville', serif;
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            color: #2a2218;
+            margin: 1.5rem 0;
+            letter-spacing: 0.1em;
+        }
+
+        .episode-container {
+            background: rgba(200, 186, 168, 0.15);
+            border-left: 4px solid #8a7a6a;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .episode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .episode-number {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 0.85rem;
+            color: #7a6d5e;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .episode-time {
+            font-size: 0.9rem;
+            color: #5a4d3e;
+            font-style: italic;
+        }
+
+        .episode-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-weight: 600;
+            color: #2a2218;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+        }
+
+        .episode-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-item {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #5a4d3e;
+        }
+
+        .detail-value {
+            color: #3d3226;
+        }
+
+        .stream-of-consciousness {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid #d8cbb8;
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            min-height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stream-text {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.8;
+            color: #3d3226;
+            font-style: italic;
+            opacity: 0;
+            animation: fadeInOut 12s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateY(10px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+
+        .stream-text:nth-child(2) { animation-delay: 4s; }
+        .stream-text:nth-child(3) { animation-delay: 8s; }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #7a6d5e;
+            font-style: italic;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #d8cbb8;
+        }
+
+        .character-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #8a7a6a;
+            color: #faf7f2;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                padding: 2rem 1.5rem;
+            }
+
+            .episode-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="header">
+            <h1 class="title">Bloomsday Clock</h1>
+            <div class="subtitle">A Chronology of Wandering</div>
+            <div class="bloomsday">June 16, 1904 — Dublin</div>
+        </div>
+
+        <div class="time-display" id="time">00:00:00</div>
+
+        <div class="episode-container">
+            <div class="episode-header">
+                <div class="episode-number" id="episodeNumber">Episode I</div>
+                <div class="episode-time" id="episodeTime">8:00 AM</div>
+            </div>
+
+            <h2 class="episode-title" id="episodeTitle">Telemachus</h2>
+
+            <div class="character-indicator" id="characterIndicator">Stephen Dedalus</div>
+
+            <div class="episode-details">
+                <div class="detail-item">
+                    <span class="detail-label">Location:</span>
+                    <span class="detail-value" id="location">The Martello Tower, Sandycove</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Homeric Parallel:</span>
+                    <span class="detail-value" id="homericParallel">Telemachus</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Art/Technic:</span>
+                    <span class="detail-value" id="artTechnic">Theology (Narrative)</span>
+                </div>
+            </div>
+
+            <div class="stream-of-consciousness" id="stream">
+                <div class="stream-text">Stately, plump Buck Mulligan came from the stairhead, bearing a bowl of lather on which a mirror and a razor lay crossed.</div>
+                <div class="stream-text">Ineluctable modality of the visible: at least that if no more, thought through my eyes.</div>
+                <div class="stream-text">He walked on. Where is poor dear Arius to try conclusions?</div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            The hours of June 16th unwinding, as Bloom and Stephen traverse their Dublin
+        </div>
+    </div>
+
+    <script>
+        // The 18 episodes of Ulysses mapped to hours
+        const episodes = [
+            {
+                hour: 8, title: "Telemachus", number: "I", time: "8:00 AM",
+                location: "The Martello Tower, Sandycove",
+                homeric: "Telemachus",
+                art: "Theology (Narrative)",
+                character: "Stephen Dedalus",
+                streams: [
+                    "Stately, plump Buck Mulligan came from the stairhead, bearing a bowl of lather on which a mirror and a razor lay crossed.",
+                    "The sea, the snotgreen sea, the scrotumtightening sea.",
+                    "He walked along the upwardcurving path. Liliata rutilantium. Turma circumdet. Iubilantium te virginum."
+                ]
+            },
+            {
+                hour: 10, title: "Nestor", number: "II", time: "10:00 AM",
+                location: "Mr Deasy's School, Dalkey",
+                homeric: "Nestor",
+                art: "History (Catechism)",
+                character: "Stephen Dedalus",
+                streams: [
+                    "History, Stephen said, is a nightmare from which I am trying to awake.",
+                    "Fabled by the daughters of memory. And yet it was in some way if not as memory fabled it.",
+                    "All human history moves towards one great goal, the manifestation of God."
+                ]
+            },
+            {
+                hour: 11, title: "Proteus", number: "III", time: "11:00 AM",
+                location: "Sandymount Strand",
+                homeric: "Proteus",
+                art: "Philology (Monologue)",
+                character: "Stephen Dedalus",
+                streams: [
+                    "Ineluctable modality of the visible: at least that if no more, thought through my eyes.",
+                    "Signatures of all things I am here to read, seaspawn and seawrack, the nearing tide, that rusty boot.",
+                    "Am I walking into eternity along Sandymount strand?"
+                ]
+            },
+            {
+                hour: 8, title: "Calypso", number: "IV", time: "8:00 AM (alternate)",
+                location: "7 Eccles Street, Bloom's House",
+                homeric: "Calypso",
+                art: "Economics (Narrative)",
+                character: "Leopold Bloom",
+                streams: [
+                    "Mr Leopold Bloom ate with relish the inner organs of beasts and fowls.",
+                    "The cat walked stiffly round a leg of the table with tail on high. Mkgnao!",
+                    "A soft qualm, regret, flowed down his backbone, increasing. Will happen, yes. Prevent."
+                ]
+            },
+            {
+                hour: 10, title: "Lotus-Eaters", number: "V", time: "10:00 AM (alternate)",
+                location: "The Bath",
+                homeric: "Lotus-Eaters",
+                art: "Chemistry (Narcissism)",
+                character: "Leopold Bloom",
+                streams: [
+                    "He walked cheerfully towards the mosque of the baths. Remind you of a mosque, redbaked bricks, the minarets.",
+                    "Smell of burn. Smell of the corpse. Chaps who stow away their drinks are very nice.",
+                    "Lovely spot it must be: the garden of the world, big lazy leaves to float about on, cactuses, flowery meads."
+                ]
+            },
+            {
+                hour: 11, title: "Hades", number: "VI", time: "11:00 AM (alternate)",
+                location: "Glasnevin Cemetery",
+                homeric: "Hades",
+                art: "Religion (Narrative)",
+                character: "Leopold Bloom",
+                streams: [
+                    "The carriage climbed more slowly the hill of Rutland square. Rattle his bones. Over the stones. Only a pauper.",
+                    "Mr Bloom walked unheeded along his grove by saddened angels, crosses, broken pillars, family vaults.",
+                    "Every mortal day a fresh batch: middleaged men, old women, children, women dead in childbirth."
+                ]
+            },
+            {
+                hour: 12, title: "Aeolus", number: "VII", time: "12:00 PM",
+                location: "The Freeman's Journal Office",
+                homeric: "Aeolus",
+                art: "Rhetoric (Enthymemic)",
+                character: "Bloom & Stephen",
+                streams: [
+                    "ERIN, GREEN GEM OF THE SILVER SEA",
+                    "Clank clank. Sllt. The nethermost deck of the first machine jogged forward its flyboard with sllt the first batch of quirefolded papers.",
+                    "We are the fat in the fire, we are."
+                ]
+            },
+            {
+                hour: 13, title: "Lestrygonians", number: "VIII", time: "1:00 PM",
+                location: "Davy Byrne's Pub",
+                homeric: "Lestrygonians",
+                art: "Architecture (Peristaltic)",
+                character: "Leopold Bloom",
+                streams: [
+                    "Pineapple rock, lemon platt, butter scotch. A sugarsticky girl shovelling scoopfuls of creams for a christian brother.",
+                    "His heart astir he pushed in the door of the Burton restaurant. Stink gripped his trembling breath.",
+                    "Wine soaked and softened rolled pith of bread mustard a moment mawkish cheese."
+                ]
+            },
+            {
+                hour: 14, title: "Scylla and Charybdis", number: "IX", time: "2:00 PM",
+                location: "The National Library",
+                homeric: "Scylla and Charybdis",
+                art: "Literature (Dialectic)",
+                character: "Stephen Dedalus",
+                streams: [
+                    "A man of genius makes no mistakes. His errors are volitional and are the portals of discovery.",
+                    "He is in my father. I am in his son.",
+                    "Hamlet, I am thy father's spirit, doomed for a certain term to walk the night."
+                ]
+            },
+            {
+                hour: 15, title: "Wandering Rocks", number: "X", time: "3:00 PM",
+                location: "The Streets of Dublin",
+                homeric: "Wandering Rocks",
+                art: "Mechanics (Labyrinth)",
+                character: "Various Citizens",
+                streams: [
+                    "The superior, the very reverend John Conmee S.J. reset his smooth watch in his interior pocket.",
+                    "Dilly Dedalus, loitering by the curbstone, heard the beats of the bell, the cries of the auctioneer.",
+                    "Bronze by gold, Miss Kennedy's head by Miss Douce's head, appeared above the crossblind of the Ormond hotel."
+                ]
+            },
+            {
+                hour: 16, title: "Sirens", number: "XI", time: "4:00 PM",
+                location: "The Ormond Hotel",
+                homeric: "Sirens",
+                art: "Music (Fuga per Canonem)",
+                character: "Leopold Bloom",
+                streams: [
+                    "Bronze by gold heard the hoofirons, steelyringing Imperthnthn thnthnthn.",
+                    "Bloom. Flood of warm jamjam lickitup secretness flowed to flow in music out, in desire, dark to lick flow.",
+                    "Tap. Tap. Tap. A stripling, blind, with a tapping cane came taptaptapping."
+                ]
+            },
+            {
+                hour: 17, title: "Cyclops", number: "XII", time: "5:00 PM",
+                location: "Barney Kiernan's Pub",
+                homeric: "Cyclops",
+                art: "Politics (Gigantism)",
+                character: "Leopold Bloom",
+                streams: [
+                    "I was just passing the time of day with old Troy of the D.M.P. at the corner of Arbour hill there.",
+                    "—But it's no use, says he. Force, hatred, history, all that. That's not life for men and women, insult and hatred.",
+                    "—A nation? says Bloom. A nation is the same people living in the same place."
+                ]
+            },
+            {
+                hour: 20, title: "Nausicaa", number: "XIII", time: "8:00 PM",
+                location: "Sandymount Shore",
+                homeric: "Nausicaa",
+                art: "Painting (Tumescence/Detumescence)",
+                character: "Gerty MacDowell & Bloom",
+                streams: [
+                    "The summer evening had begun to fold the world in its mysterious embrace.",
+                    "Gerty MacDowell who was seated near her companions, lost in thought, gazing far away into the distance.",
+                    "Mr Bloom with careful hand recomposed his wet shirt. O Lord, that little limping devil. Begins to feel cold and clammy."
+                ]
+            },
+            {
+                hour: 22, title: "Oxen of the Sun", number: "XIV", time: "10:00 PM",
+                location: "The Maternity Hospital",
+                homeric: "Oxen of the Sun",
+                art: "Medicine (Embryonic Development)",
+                character: "Bloom & Stephen",
+                streams: [
+                    "Deshil Holles Eamus. Deshil Holles Eamus. Deshil Holles Eamus.",
+                    "Send us bright one, light one, Horhorn, quickening and wombfruit.",
+                    "By heaven, Theodore Purefoy, thou hast done a doughty deed and no botch!"
+                ]
+            },
+            {
+                hour: 0, title: "Circe", number: "XV", time: "12:00 AM",
+                location: "Nighttown (Mabbot Street)",
+                homeric: "Circe",
+                art: "Magic (Hallucination)",
+                character: "Bloom & Stephen",
+                streams: [
+                    "(The Mabbot street entrance of nighttown, before which stretches an uncobbled tramsiding set with skeleton tracks.)",
+                    "THE HALLELUJAH CHORUS: (Thickveiled, a crimson halter round her neck) Alleluia, for the Lord God Omnipotent reigneth!",
+                    "BLOOM: (Wonderstruck, calls inaudibly) Molly!"
+                ]
+            },
+            {
+                hour: 1, title: "Eumaeus", number: "XVI", time: "1:00 AM",
+                location: "The Cabman's Shelter",
+                homeric: "Eumaeus",
+                art: "Navigation (Narrative - Relaxed)",
+                character: "Bloom & Stephen",
+                streams: [
+                    "Preparatory to anything else Mr Bloom brushed off the greater bulk of the shavings and handed Stephen the hat.",
+                    "Though it was a warm pleasant sort of a night now yet wonderfully cool for the season considering.",
+                    "The sailor grimaced, chewing, in a way that might be read as yes, ay, or no."
+                ]
+            },
+            {
+                hour: 2, title: "Ithaca", number: "XVII", time: "2:00 AM",
+                location: "7 Eccles Street, Bloom's House",
+                homeric: "Ithaca",
+                art: "Science (Catechism)",
+                character: "Bloom & Stephen",
+                streams: [
+                    "What parallel courses did Bloom and Stephen follow returning?",
+                    "If he had smiled why would he have smiled? To reflect that each one who enters imagines himself to be the first to enter.",
+                    "Where? The heaventree of stars hung with humid nightblue fruit."
+                ]
+            },
+            {
+                hour: 2, title: "Penelope", number: "XVIII", time: "2:00+ AM",
+                location: "7 Eccles Street, Bloom's Bedroom",
+                homeric: "Penelope",
+                art: "Flesh (Monologue - Unpunctuated)",
+                character: "Molly Bloom",
+                streams: [
+                    "Yes because he never did a thing like that before as ask to get his breakfast in bed with a couple of eggs",
+                    "I wished he was here or somebody to let myself go with and come again like that I feel all fire inside me",
+                    "and yes I said yes I will Yes."
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const episodeNumberEl = document.getElementById('episodeNumber');
+        const episodeTimeEl = document.getElementById('episodeTime');
+        const episodeTitleEl = document.getElementById('episodeTitle');
+        const locationEl = document.getElementById('location');
+        const homericParallelEl = document.getElementById('homericParallel');
+        const artTechnicEl = document.getElementById('artTechnic');
+        const characterIndicatorEl = document.getElementById('characterIndicator');
+        const streamEl = document.getElementById('stream');
+
+        let currentEpisodeIndex = -1;
+
+        function getEpisodeForHour(hour) {
+            // Map hours to episodes (some episodes occur at the same time on parallel tracks)
+            const hourMap = {
+                0: 14,  // Midnight - Circe
+                1: 15,  // 1 AM - Eumaeus
+                2: 16,  // 2 AM - Ithaca
+                3: 17,  // 2+ AM - Penelope (use for 3-7)
+                4: 17,
+                5: 17,
+                6: 17,
+                7: 17,
+                8: 0,   // 8 AM - Telemachus (then Calypso)
+                9: 3,   // Calypso continues
+                10: 1,  // 10 AM - Nestor (then Lotus-Eaters)
+                11: 2,  // 11 AM - Proteus (then Hades)
+                12: 6,  // Noon - Aeolus
+                13: 7,  // 1 PM - Lestrygonians
+                14: 8,  // 2 PM - Scylla and Charybdis
+                15: 9,  // 3 PM - Wandering Rocks
+                16: 10, // 4 PM - Sirens
+                17: 11, // 5 PM - Cyclops
+                18: 11, // Continue Cyclops
+                19: 11, // Continue Cyclops
+                20: 12, // 8 PM - Nausicaa
+                21: 12, // Continue Nausicaa
+                22: 13, // 10 PM - Oxen of the Sun
+                23: 13  // Continue Oxen
+            };
+
+            return episodes[hourMap[hour] || 0];
+        }
+
+        function updateStream(streams) {
+            streamEl.innerHTML = streams.map(text =>
+                `<div class="stream-text">${text}</div>`
+            ).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+
+            // Update time
+            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+
+            // Get current episode
+            const episode = getEpisodeForHour(hour);
+            const episodeIndex = episodes.indexOf(episode);
+
+            // Only update episode details if the episode has changed
+            if (episodeIndex !== currentEpisodeIndex) {
+                episodeNumberEl.textContent = `Episode ${episode.number}`;
+                episodeTimeEl.textContent = episode.time;
+                episodeTitleEl.textContent = episode.title;
+                locationEl.textContent = episode.location;
+                homericParallelEl.textContent = episode.homeric;
+                artTechnicEl.textContent = episode.art;
+                characterIndicatorEl.textContent = episode.character;
+                updateStream(episode.streams);
+                currentEpisodeIndex = episodeIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>
