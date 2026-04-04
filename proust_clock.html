@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>À la recherche du temps perdu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Crimson+Text:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #f4f0e8 0%, #e8e4dc 100%);
+            font-family: 'Crimson Text', serif;
+            padding: 2rem;
+            color: #3a342e;
+            position: relative;
+        }
+
+        .page {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fdfbf7;
+            border: 1px solid #d8d4cc;
+            padding: 4rem 3rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #d8d4cc;
+        }
+
+        .title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 300;
+            color: #2a241e;
+            margin-bottom: 0.75rem;
+            font-style: italic;
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 400;
+            color: #4a443e;
+            margin-bottom: 0.5rem;
+        }
+
+        .author {
+            font-size: 1rem;
+            color: #6a645e;
+            margin-top: 0.75rem;
+        }
+
+        .time-container {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .time-label {
+            font-size: 0.85rem;
+            color: #6a645e;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.5rem;
+        }
+
+        .time-display {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 300;
+            color: #2a241e;
+            margin-bottom: 0.5rem;
+        }
+
+        .moment-description {
+            font-style: italic;
+            color: #5a544e;
+            font-size: 1rem;
+        }
+
+        .volume-container {
+            background: rgba(216, 212, 204, 0.15);
+            border-left: 4px solid #9a9488;
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .volume-number {
+            font-size: 0.75rem;
+            color: #6a645e;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+        }
+
+        .volume-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-weight: 400;
+            color: #2a241e;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .memory-container {
+            position: relative;
+            min-height: 400px;
+        }
+
+        .memory {
+            font-size: clamp(1.05rem, 2.2vw, 1.2rem);
+            line-height: 2;
+            color: #3a342e;
+            margin-bottom: 1.5rem;
+            text-align: justify;
+            opacity: 0;
+            animation: memoryFloat 15s ease-in-out infinite;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .memory:nth-child(2) { animation-delay: 5s; }
+        .memory:nth-child(3) { animation-delay: 10s; }
+
+        @keyframes memoryFloat {
+            0%, 100% { opacity: 0; transform: translateY(10px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+
+        .memory em {
+            font-style: italic;
+            color: #5a544e;
+        }
+
+        .sensory-note {
+            font-size: 0.9rem;
+            color: #7a745e;
+            font-style: italic;
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #d8d4cc;
+        }
+
+        .madeleine-quote {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            color: #6a645e;
+            font-style: italic;
+            text-align: center;
+            max-width: 700px;
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                padding: 2.5rem 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="header">
+            <h1 class="title">À la recherche du temps perdu</h1>
+            <div class="subtitle">In Search of Lost Time</div>
+            <div class="author">Marcel Proust</div>
+        </div>
+
+        <div class="time-container">
+            <div class="time-label">The Present Moment</div>
+            <div class="time-display" id="time">00:00</div>
+            <div class="moment-description" id="momentDesc">Time unfolds in memory</div>
+        </div>
+
+        <div class="volume-container">
+            <div class="volume-number" id="volumeNumber">Volume I</div>
+            <h2 class="volume-title" id="volumeTitle">Du côté de chez Swann</h2>
+
+            <div class="memory-container" id="memories">
+                <!-- Memories injected here -->
+            </div>
+
+            <div class="sensory-note" id="sensoryNote">
+                The taste of tea and madeleine unlocks the gates of memory
+            </div>
+        </div>
+    </div>
+
+    <div class="madeleine-quote">
+        "And suddenly the memory revealed itself..."
+    </div>
+
+    <script>
+        // The seven volumes of À la recherche du temps perdu mapped to times of day
+        const volumes = [
+            {
+                hours: [0, 1, 2, 3],
+                number: "Volume I",
+                title: "Du côté de chez Swann",
+                englishTitle: "Swann's Way",
+                moment: "The depths of night, where memory awakens",
+                sensory: "The taste of tea and madeleine unlocks the gates of memory",
+                memories: [
+                    "For a long time, I went to bed early. Sometimes, the candle barely out, my eyes closed so quickly that I did not have time to tell myself: 'I'm falling asleep.'",
+                    "And suddenly the memory revealed itself. The taste was that of the little piece of madeleine which on Sunday mornings at Combray my aunt Léonie used to give me, dipping it first in her own cup of tea or tisane.",
+                    "The places we have known do not belong solely to the world of space in which we situate them for our greater convenience. They were only a thin slice among contiguous impressions which formed our life at that time."
+                ]
+            },
+            {
+                hours: [4, 5, 6],
+                number: "Volume II",
+                title: "À l'ombre des jeunes filles en fleurs",
+                englishTitle: "In the Shadow of Young Girls in Flower",
+                moment: "Dawn breaks, youth and possibility",
+                sensory: "The scent of hawthorn blossoms on the path to Méséglise",
+                memories: [
+                    "The name of a place is not merely a physical location but a vessel containing all our accumulated dreams, associations, and memories of it.",
+                    "To think that I have wasted years of my life, that I have longed for death, that the greatest love that I have ever known has been for a woman who did not please me, who was not my type!",
+                    "Within the little band of girls in flower, I saw Albertine, walking past the sea, and felt that peculiar pang of desire mingled with the impossibility of possession."
+                ]
+            },
+            {
+                hours: [7, 8, 9],
+                number: "Volume III",
+                title: "Le Côté de Guermantes",
+                englishTitle: "The Guermantes Way",
+                moment: "Morning in society, aristocratic rituals",
+                sensory: "The rustle of silk gowns in the Duchesse's salon",
+                memories: [
+                    "The Duchesse de Guermantes represented not merely a woman but an entire world of aristocratic refinement, a symbol of that society I longed to enter.",
+                    "How often have we seen the most brilliant conversation reduced to mere gossip, the most refined aesthetic judgments revealed as simple snobbery.",
+                    "My grandmother's death came to me not all at once, but in successive waves of realization, each bringing fresh pain as though the loss were happening anew."
+                ]
+            },
+            {
+                hours: [10, 11, 12],
+                number: "Volume IV",
+                title: "Sodome et Gomorrhe",
+                englishTitle: "Sodom and Gomorrah",
+                moment: "Midday revelations, hidden truths emerge",
+                sensory: "The heavy perfume of orchids in the Verdurins' garden",
+                memories: [
+                    "I saw then what I had never suspected: Charlus and Jupien meeting in the courtyard, the revelation of an entire hidden world of desire and secrecy.",
+                    "Jealousy is not rational; it feeds on uncertainty, on the infinite possible scenarios of betrayal that our imagination constructs.",
+                    "At Balbec, watching Albertine sleep, I felt that peculiar possessiveness that comes not from love but from the fear of losing what we claim to love."
+                ]
+            },
+            {
+                hours: [13, 14, 15],
+                number: "Volume V",
+                title: "La Prisonnière",
+                englishTitle: "The Captive",
+                moment: "Afternoon's anxious watching",
+                sensory: "Albertine's perfume lingering in the room after she has left",
+                memories: [
+                    "To keep Albertine with me, I made her my prisoner, not realizing that in doing so I made myself more captive than she.",
+                    "Every departure she threatened became a crisis, every absence a torment, as I interrogated servants and invented excuses to confine her.",
+                    "Love, I came to understand, is not possession but rather the impossibility of possession, the eternal gap between desire and fulfillment."
+                ]
+            },
+            {
+                hours: [16, 17, 18],
+                number: "Volume VI",
+                title: "Albertine disparue",
+                englishTitle: "The Fugitive",
+                moment: "Evening's loss and gradual forgetting",
+                sensory: "The absence of scent where her presence had been",
+                memories: [
+                    "Albertine has gone. The words seemed at first impossible, then inevitable, then finally indifferent as grief slowly transformed into mere memory.",
+                    "We forget our dead not all at once but gradually, each day the memory growing fainter until we realize with shock that whole days have passed without thinking of them.",
+                    "The news of her death came to me without the expected devastation, for in truth I had already begun to forget her, to release her from the prison of my desire."
+                ]
+            },
+            {
+                hours: [19, 20, 21],
+                number: "Volume VII",
+                title: "Le Temps retrouvé",
+                englishTitle: "Time Regained",
+                moment: "Evening's wisdom, time recovered",
+                sensory: "The taste of tea once more, the circle completing",
+                memories: [
+                    "After years of absence, I returned to Paris to find everyone aged, transformed, some barely recognizable—time made visible in faces and bodies.",
+                    "At the Guermantes' matinée, I stumbled on an uneven paving stone and suddenly all of Venice flooded back, entire and perfect, resurrected from the depths of lost time.",
+                    "And then I understood: the true purpose of art is to recover lost time, to defeat death through memory made eternal in the work."
+                ]
+            },
+            {
+                hours: [22, 23],
+                number: "Volume VII",
+                title: "Le Temps retrouvé",
+                englishTitle: "Time Regained (concluded)",
+                moment: "Night's culmination, the work conceived",
+                sensory: "The silence in which the work begins",
+                memories: [
+                    "I finally understood that I must write, that all the years of illness, of wasted time, of social climbing, had been the necessary preparation for the work.",
+                    "The real paradises are the paradises we have lost. It is only when they are gone that we can recapture them in art.",
+                    "And so I resolved to begin, to dedicate what remained of my life to capturing in words what had seemed forever lost: time itself, recovered through the power of involuntary memory."
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const momentDescEl = document.getElementById('momentDesc');
+        const volumeNumberEl = document.getElementById('volumeNumber');
+        const volumeTitleEl = document.getElementById('volumeTitle');
+        const memoriesEl = document.getElementById('memories');
+        const sensoryNoteEl = document.getElementById('sensoryNote');
+
+        let currentVolumeIndex = -1;
+
+        function getVolumeForHour(hour) {
+            for (const volume of volumes) {
+                if (volume.hours.includes(hour)) {
+                    return volume;
+                }
+            }
+            return volumes[volumes.length - 1];
+        }
+
+        function renderMemories(memories) {
+            memoriesEl.innerHTML = memories.map(memory =>
+                `<div class="memory">${memory}</div>`
+            ).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // Update time
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+            // Get current volume
+            const volume = getVolumeForHour(hour);
+            const volumeIndex = volumes.indexOf(volume);
+
+            // Update content if changed
+            if (volumeIndex !== currentVolumeIndex) {
+                momentDescEl.textContent = volume.moment;
+                volumeNumberEl.textContent = volume.number;
+                volumeTitleEl.innerHTML = `${volume.title}<br><span style="font-size: 0.8em; opacity: 0.8;">${volume.englishTitle}</span>`;
+                renderMemories(volume.memories);
+                sensoryNoteEl.textContent = volume.sensory;
+                currentVolumeIndex = volumeIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

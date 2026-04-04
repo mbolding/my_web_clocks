@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mrs Dalloway Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #e8e4dc 0%, #d8d4cc 100%);
+            font-family: 'Crimson Text', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #3a3430;
+            position: relative;
+        }
+
+        .page {
+            max-width: 900px;
+            width: 100%;
+            background: #f8f6f2;
+            border: 1px solid #b8b4ac;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 3rem 2.5rem;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #c8c4bc;
+        }
+
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 400;
+            color: #2a2420;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-style: italic;
+            color: #5a5450;
+            margin-bottom: 0.5rem;
+        }
+
+        .date-line {
+            font-size: 0.95rem;
+            color: #7a7470;
+            margin-top: 0.75rem;
+        }
+
+        .big-ben {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .clock-face {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 600;
+            color: #2a2420;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .chime-text {
+            font-size: 0.9rem;
+            color: #5a5450;
+            font-style: italic;
+            animation: chime 2s ease-in-out infinite;
+        }
+
+        @keyframes chime {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .stream-container {
+            background: rgba(200, 196, 188, 0.1);
+            border-left: 3px solid #8a8480;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            min-height: 300px;
+            position: relative;
+        }
+
+        .character-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.85rem;
+            color: #5a5450;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .thought {
+            font-size: clamp(1rem, 2.2vw, 1.2rem);
+            line-height: 1.9;
+            color: #3a3430;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: thoughtFade 10s ease-in-out infinite;
+            position: absolute;
+            top: 4rem;
+            left: 2rem;
+            right: 2rem;
+        }
+
+        .thought:nth-child(2) { animation-delay: 3.3s; }
+        .thought:nth-child(3) { animation-delay: 6.6s; }
+
+        @keyframes thoughtFade {
+            0%, 100% { opacity: 0; transform: translateY(5px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+
+        .thought em {
+            font-style: italic;
+            color: #5a5450;
+        }
+
+        .moment-label {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+            color: #2a2420;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .location {
+            font-size: 0.95rem;
+            color: #6a6460;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .flowers {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            color: #7a7470;
+            font-style: italic;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="header">
+            <h1 class="title">Mrs Dalloway</h1>
+            <div class="subtitle">Virginia Woolf</div>
+            <div class="date-line">A June day in London, 1923</div>
+        </div>
+
+        <div class="big-ben">
+            <div class="clock-face" id="time">00:00</div>
+            <div class="chime-text" id="chime">Big Ben strikes the hour</div>
+        </div>
+
+        <div class="stream-container">
+            <div class="character-label" id="character">Clarissa Dalloway</div>
+            <div class="moment-label" id="moment">Morning</div>
+            <div class="location" id="location">Westminster, London</div>
+            <div id="thoughts">
+                <!-- Thoughts injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="flowers">
+        "I will buy the flowers myself," said Mrs Dalloway
+    </div>
+
+    <script>
+        const moments = [
+            {
+                hours: [0, 1, 2, 3, 4, 5],
+                moment: "Before Dawn",
+                character: "The City Sleeping",
+                location: "London in darkness",
+                thoughts: [
+                    "The city lay sleeping, the great wheel of London turning silently in the night, Big Ben preparing to sound the hours.",
+                    "Even now, in the darkness, preparations were being made—the florists arranging their flowers, the servants rising to light the fires.",
+                    "London slept, but <em>she</em> would wake, Mrs Dalloway would wake, and say she would buy the flowers herself."
+                ]
+            },
+            {
+                hours: [6, 7, 8, 9],
+                moment: "Morning — The Flowers",
+                character: "Clarissa Dalloway",
+                location: "Westminster, walking to the florist",
+                thoughts: [
+                    "What a lark! What a plunge! For so it had always seemed to her when, with a little squeak of the hinges, she had burst open the French windows and plunged at Bourton into the open air.",
+                    "In people's eyes, in the swing, tramp, and trudge; in the bellow and the uproar; the carriages, motor cars, omnibuses, vans, sandwich men shuffling and swinging; brass bands; barrel organs; in the triumph and the jingle and the strange high singing of some aeroplane overhead was what she loved; life; London; this moment of June.",
+                    "She would buy the flowers herself. For Lucy had her work cut out for her. The doors would be taken off their hinges; Rumpelmayer's men were coming."
+                ]
+            },
+            {
+                hours: [10, 11],
+                moment: "Late Morning",
+                character: "Septimus Warren Smith",
+                location: "Regent's Park",
+                thoughts: [
+                    "The world has raised its whip; where will it descend?",
+                    "Men must not cut down trees. There is a God. He noted such revelations on the backs of envelopes.",
+                    "But Septimus could not see her. <em>Evans</em> was behind the railings. The dead were in the trees."
+                ]
+            },
+            {
+                hours: [12, 13],
+                moment: "Midday",
+                character: "Clarissa Dalloway",
+                location: "Westminster, preparing",
+                thoughts: [
+                    "She felt very young; at the same time unspeakably aged. She sliced like a knife through everything; at the same time was outside, looking on.",
+                    "That was her self—pointed; dartlike; definite. That was her self when some effort, some call on her to be her self, drew the parts together.",
+                    "For Heaven only knows why one loves it so, how one sees it so, making it up, building it round one, tumbling it, creating it every moment afresh."
+                ]
+            },
+            {
+                hours: [14, 15, 16],
+                moment: "Afternoon",
+                character: "Peter Walsh",
+                location: "Walking through London",
+                thoughts: [
+                    "For why go back like this to the past? Why make him think of it again? Why make him suffer, when she had tortured him so infernally?",
+                    "The compensation of growing old, Peter Walsh thought, coming out of Regent's Park, was simply this; that the passions remain as strong as ever.",
+                    "Clarissa, he said. For there she was."
+                ]
+            },
+            {
+                hours: [17, 18, 19],
+                moment: "Evening — The Party Begins",
+                character: "Clarissa Dalloway",
+                location: "Westminster, the party",
+                thoughts: [
+                    "Every time she gave a party she had this feeling of being something not herself, and that every one was unreal in one way; much more real in another.",
+                    "She had a perpetual sense, as she watched the taxi cabs, of being out, out, far out to sea and alone; she always had the feeling that it was very, very dangerous to live even one day.",
+                    "But to go deeper, beneath what people said (and these judgements, how superficial, how fragmentary they are!) in her own mind now, what did it mean to her, this thing she called life?"
+                ]
+            },
+            {
+                hours: [20, 21, 22],
+                moment: "The Party in Full",
+                character: "Clarissa Dalloway",
+                location: "The party at Westminster",
+                thoughts: [
+                    "There! That was satisfactory. And she had not said either, that she would not ask Ellie Henderson! Here was dear Mrs Hilbery making straight for her.",
+                    "What a lark! What a plunge! How surprised they would be, these dull women, if they knew!",
+                    "And there is a dignity in people; a solitude; even between husband and wife a gulf; and that one must respect."
+                ]
+            },
+            {
+                hours: [23],
+                moment: "Late Night — News Arrives",
+                character: "Clarissa Dalloway",
+                location: "The party ending",
+                thoughts: [
+                    "Oh! thought Clarissa, in the middle of my party, here's death, she thought.",
+                    "She had once thrown a shilling into the Serpentine, never anything more. But he had flung it away. They went on living. She had never been so happy.",
+                    "She must go back to them. But what an extraordinary night! She felt somehow very like him—the young man who had killed himself."
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const chimeEl = document.getElementById('chime');
+        const characterEl = document.getElementById('character');
+        const momentEl = document.getElementById('moment');
+        const locationEl = document.getElementById('location');
+        const thoughtsEl = document.getElementById('thoughts');
+
+        let currentMomentIndex = -1;
+        let lastHour = -1;
+        let audioContext = null;
+
+        function getMomentForHour(hour) {
+            for (const moment of moments) {
+                if (moment.hours.includes(hour)) {
+                    return moment;
+                }
+            }
+            return moments[0];
+        }
+
+        function renderThoughts(thoughts) {
+            thoughtsEl.innerHTML = thoughts.map(thought => `
+                <div class="thought">${thought}</div>
+            `).join('');
+        }
+
+        function playBigBen(hour) {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioContext.currentTime;
+
+            // Big Ben's famous E note (Westminster Quarters)
+            const notes = [659.25, 493.88, 587.33, 392.00]; // E, B, C#, G#
+
+            notes.forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                filter.type = 'lowpass';
+                filter.frequency.value = 2000;
+                filter.Q.value = 1;
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+
+                const startTime = now + i * 0.4;
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 2);
+
+                osc.start(startTime);
+                osc.stop(startTime + 2.5);
+            });
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // Update time (12-hour format like Big Ben)
+            const hour12 = hour % 12 || 12;
+            const ampm = hour < 12 ? 'AM' : 'PM';
+            timeEl.textContent = `${String(hour12).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+            // Update chime text
+            if (minute === 0) {
+                chimeEl.textContent = `Big Ben strikes ${hour12 === 1 ? 'one' : hour12} ${ampm === 'AM' ? 'in the morning' : 'in the evening'}`;
+            } else {
+                chimeEl.textContent = 'The hours pass in London';
+            }
+
+            // Get current moment
+            const moment = getMomentForHour(hour);
+            const momentIndex = moments.indexOf(moment);
+
+            // Update content if moment changed
+            if (momentIndex !== currentMomentIndex) {
+                characterEl.textContent = moment.character;
+                momentEl.textContent = moment.moment;
+                locationEl.textContent = moment.location;
+                renderThoughts(moment.thoughts);
+                currentMomentIndex = momentIndex;
+            }
+
+            // Play Big Ben on the hour
+            if (hour !== lastHour && lastHour !== -1 && minute === 0) {
+                playBigBen(hour);
+            }
+            lastHour = hour;
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Waste Land Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2a2520 0%, #1a1510 100%);
+            font-family: 'Courier Prime', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #b8a890;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .fragments {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0.1;
+        }
+
+        .fragment {
+            position: absolute;
+            font-size: 0.7rem;
+            color: #8a7860;
+            white-space: nowrap;
+            animation: drift 40s linear infinite;
+        }
+
+        @keyframes drift {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100vw); }
+        }
+
+        .page {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(30, 25, 20, 0.9);
+            border: 2px solid #4a3d30;
+            padding: 3rem 2.5rem;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 1.5rem,
+                rgba(74, 61, 48, 0.1) 1.5rem,
+                rgba(74, 61, 48, 0.1) calc(1.5rem + 1px)
+            );
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px double #6a5d50;
+        }
+
+        .title {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: #d8c8b0;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-family: 'EB Garamond', serif;
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            font-style: italic;
+            color: #9a8870;
+        }
+
+        .epigraph {
+            font-family: 'EB Garamond', serif;
+            font-size: 0.9rem;
+            color: #7a6850;
+            font-style: italic;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .time-display {
+            text-align: center;
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            color: #c8b8a0;
+            margin: 1.5rem 0 2rem;
+            letter-spacing: 0.2em;
+        }
+
+        .section-container {
+            margin-bottom: 2rem;
+        }
+
+        .section-number {
+            font-size: 0.8rem;
+            color: #6a5d50;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(1.3rem, 3vw, 2rem);
+            color: #c8b8a0;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .voices-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid #6a5d50;
+            padding: 1.5rem;
+            min-height: 300px;
+            position: relative;
+        }
+
+        .voice {
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeInVoice 8s ease-in-out infinite;
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+        }
+
+        .voice:nth-child(2) { animation-delay: 2.5s; }
+        .voice:nth-child(3) { animation-delay: 5s; }
+        .voice:nth-child(4) { animation-delay: 7.5s; }
+
+        @keyframes fadeInVoice {
+            0%, 100% { opacity: 0; }
+            15%, 85% { opacity: 1; }
+        }
+
+        .voice-line {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.8;
+            color: #b8a890;
+            margin-bottom: 0.5rem;
+        }
+
+        .voice-line.german {
+            font-family: 'EB Garamond', serif;
+            font-style: italic;
+            color: #9a8870;
+        }
+
+        .voice-line.broken {
+            letter-spacing: 0.2em;
+            word-spacing: 0.5em;
+        }
+
+        .voice-attribution {
+            font-size: 0.85rem;
+            color: #6a5d50;
+            font-style: italic;
+            margin-top: 0.5rem;
+            text-align: right;
+        }
+
+        .footnote {
+            position: relative;
+            display: inline-block;
+        }
+
+        .footnote-mark {
+            font-size: 0.7em;
+            vertical-align: super;
+            color: #8a7860;
+        }
+
+        .april-cruel {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Special Elite', monospace;
+            font-size: 0.85rem;
+            color: #6a5d50;
+            text-align: center;
+            z-index: 10;
+            letter-spacing: 0.1em;
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="fragments" id="fragments"></div>
+
+    <div class="page">
+        <div class="header">
+            <h1 class="title">The Waste Land</h1>
+            <div class="subtitle">T. S. Eliot</div>
+        </div>
+
+        <div class="epigraph">
+            "Nam Sibyllam quidem Cumis ego ipse oculis meis vidi..."
+        </div>
+
+        <div class="time-display" id="time">00:00:00</div>
+
+        <div class="section-container">
+            <div class="section-number" id="sectionNumber">I.</div>
+            <h2 class="section-title" id="sectionTitle">The Burial of the Dead</h2>
+
+            <div class="voices-container" id="voices">
+                <!-- Voices will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="april-cruel">
+        April is the cruellest month, breeding / Lilacs out of the dead land
+    </div>
+
+    <script>
+        // The five sections mapped to different times
+        const sections = [
+            {
+                hours: [0, 1, 2, 3, 4, 5], // Night/early morning
+                number: "I.",
+                title: "The Burial of the Dead",
+                voices: [
+                    { lines: ["April is the cruellest month, breeding", "Lilacs out of the dead land, mixing", "Memory and desire, stirring", "Dull roots with spring rain."], attr: "" },
+                    { lines: ["Summer surprised us, coming over the Starnbergersee", "With a shower of rain; we stopped in the colonnade,", "And went on in sunlight, into the Hofgarten,", "And drank coffee, and talked for an hour."], attr: "" },
+                    { lines: ["What are the roots that clutch, what branches grow", "Out of this stony rubbish? Son of man,", "You cannot say, or guess, for you know only", "A heap of broken images, where the sun beats"], attr: "" },
+                    { lines: ["'You gave me hyacinths first a year ago;", "'They called me the hyacinth girl.'", "—Yet when we came back, late, from the Hyacinth garden,", "Your arms full, and your hair wet, I could not", "Speak"], attr: "" }
+                ]
+            },
+            {
+                hours: [6, 7, 8, 9], // Morning
+                number: "II.",
+                title: "A Game of Chess",
+                voices: [
+                    { lines: ["The Chair she sat in, like a burnished throne,", "Glowed on the marble, where the glass", "Held up by standards wrought with fruited vines", "From which a golden Cupidon peeped out"], attr: "" },
+                    { lines: ["'My nerves are bad tonight. Yes, bad. Stay with me.", "'Speak to me. Why do you never speak. Speak.", "'What are you thinking of? What thinking? What?", "'I never know what you are thinking. Think.'"], attr: "" },
+                    { lines: ["When Lil's husband got demobbed, I said—", "I didn't mince my words, I said to her myself,", "HURRY UP PLEASE ITS TIME", "Now Albert's coming back, make yourself a bit smart."], attr: "" },
+                    { lines: ["Goodnight Bill. Goodnight Lou. Goodnight May. Goodnight.", "Ta ta. Goodnight. Goodnight.", "Good night, ladies, good night, sweet ladies, good night, good night."], attr: "— Ophelia" }
+                ]
+            },
+            {
+                hours: [10, 11, 12, 13, 14, 15], // Midday/afternoon
+                number: "III.",
+                title: "The Fire Sermon",
+                voices: [
+                    { lines: ["The river's tent is broken: the last fingers of leaf", "Clutch and sink into the wet bank. The wind", "Crosses the brown land, unheard. The nymphs are departed.", "Sweet Thames, run softly, till I end my song."], attr: "— Spenser" },
+                    { lines: ["But at my back in a cold blast I hear", "The rattle of the bones, and chuckle spread from ear to ear.", "A rat crept softly through the vegetation", "Dragging its slimy belly on the bank"], attr: "" },
+                    { lines: ["Unreal City", "Under the brown fog of a winter noon", "Mr. Eugenides, the Smyrna merchant", "Unshaven, with a pocket full of currants"], attr: "" },
+                    { lines: ["'Well now that's done: and I'm glad it's over.'", "When lovely woman stoops to folly and", "Paces about her room again, alone,", "She smoothes her hair with automatic hand"], attr: "" }
+                ]
+            },
+            {
+                hours: [16, 17, 18, 19], // Evening
+                number: "IV.",
+                title: "Death by Water",
+                voices: [
+                    { lines: ["Phlebas the Phoenician, a fortnight dead,", "Forgot the cry of gulls, and the deep sea swell", "And the profit and loss."], attr: "" },
+                    { lines: ["A current under sea", "Picked his bones in whispers. As he rose and fell", "He passed the stages of his age and youth", "Entering the whirlpool."], attr: "" },
+                    { lines: ["Gentile or Jew", "O you who turn the wheel and look to windward,", "Consider Phlebas, who was once handsome and tall as you."], attr: "" },
+                    { lines: ["Death by water.", "The drowned Phoenician sailor.", "Fear death by water."], attr: "— Madame Sosostris" }
+                ]
+            },
+            {
+                hours: [20, 21, 22, 23], // Night
+                number: "V.",
+                title: "What the Thunder Said",
+                voices: [
+                    { lines: ["Here is no water but only rock", "Rock and no water and the sandy road", "The road winding above among the mountains", "Which are mountains of rock without water"], attr: "" },
+                    { lines: ["Who is the third who walks always beside you?", "When I count, there are only you and I together", "But when I look ahead up the white road", "There is always another one walking beside you"], attr: "" },
+                    { lines: ["Datta. Dayadhvam. Damyata.", "Give. Sympathise. Control.", "The awful daring of a moment's surrender", "By this, and this only, we have existed"], attr: "— The Upanishads" },
+                    { lines: ["Shantih shantih shantih"], attr: "— The peace which passeth understanding" }
+                ]
+            }
+        ];
+
+        // Background fragments
+        const fragmentTexts = [
+            "HURRY UP PLEASE ITS TIME",
+            "Unreal City",
+            "Sweet Thames run softly",
+            "Fear death by water",
+            "These fragments I have shored against my ruins",
+            "Shantih shantih shantih",
+            "A heap of broken images",
+            "mixing memory and desire",
+            "Son of man",
+            "The hyacinth garden",
+            "Madame Sosostris",
+            "Datta Dayadhvam Damyata",
+            "London Bridge is falling down"
+        ];
+
+        const timeEl = document.getElementById('time');
+        const sectionNumberEl = document.getElementById('sectionNumber');
+        const sectionTitleEl = document.getElementById('sectionTitle');
+        const voicesEl = document.getElementById('voices');
+        const fragmentsEl = document.getElementById('fragments');
+
+        let currentSectionIndex = -1;
+
+        // Create drifting fragments
+        function createFragments() {
+            for (let i = 0; i < 15; i++) {
+                const fragment = document.createElement('div');
+                fragment.className = 'fragment';
+                fragment.textContent = fragmentTexts[Math.floor(Math.random() * fragmentTexts.length)];
+                fragment.style.top = Math.random() * 100 + '%';
+                fragment.style.animationDuration = (30 + Math.random() * 40) + 's';
+                fragment.style.animationDelay = Math.random() * 10 + 's';
+                fragmentsEl.appendChild(fragment);
+            }
+        }
+
+        function getSectionForHour(hour) {
+            for (const section of sections) {
+                if (section.hours.includes(hour)) {
+                    return section;
+                }
+            }
+            return sections[0];
+        }
+
+        function renderVoices(voices) {
+            voicesEl.innerHTML = voices.map(voice => `
+                <div class="voice">
+                    ${voice.lines.map(line => `
+                        <div class="voice-line ${line.includes('HURRY UP') ? 'broken' : ''}">${line}</div>
+                    `).join('')}
+                    ${voice.attr ? `<div class="voice-attribution">${voice.attr}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+
+            // Update time
+            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+
+            // Get current section
+            const section = getSectionForHour(hour);
+            const sectionIndex = sections.indexOf(section);
+
+            // Only update if section changed
+            if (sectionIndex !== currentSectionIndex) {
+                sectionNumberEl.textContent = section.number;
+                sectionTitleEl.textContent = section.title;
+                renderVoices(section.voices);
+                currentSectionIndex = sectionIndex;
+            }
+        }
+
+        // Initialize
+        createFragments();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

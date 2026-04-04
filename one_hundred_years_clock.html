@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Hundred Years Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&family=Cardo:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at center, #d8c8a0 0%, #b8a880 100%);
+            font-family: 'Gentium Book Plus', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #3d3226;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .butterflies {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .butterfly {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0.3;
+            animation: flutter 15s ease-in-out infinite;
+        }
+
+        @keyframes flutter {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+                transform: translate(50px, -30px) rotate(10deg);
+            }
+            50% {
+                transform: translate(100px, 20px) rotate(-5deg);
+            }
+            75% {
+                transform: translate(30px, -50px) rotate(15deg);
+            }
+        }
+
+        .page {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(248, 240, 220, 0.95);
+            border: 3px solid #8a7a6a;
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #a89878;
+        }
+
+        .title {
+            font-family: 'Cardo', serif;
+            font-size: clamp(2rem, 5vw, 3.8rem);
+            font-weight: 700;
+            color: #2a1f14;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.03em;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            font-style: italic;
+            color: #5a4d3e;
+            margin-bottom: 0.5rem;
+        }
+
+        .macondo {
+            font-size: 0.95rem;
+            color: #6a5d4e;
+            margin-top: 0.5rem;
+        }
+
+        .circular-time {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1;
+            margin: 0 auto 2rem;
+        }
+
+        .circle-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .time-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .time-display {
+            font-family: 'Cardo', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: #2a1f14;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .generation-label {
+            font-size: 0.85rem;
+            color: #5a4d3e;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .generation-container {
+            background: rgba(138, 122, 106, 0.1);
+            border: 2px solid #a89878;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .generation-name {
+            font-family: 'Cardo', serif;
+            font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+            color: #2a1f14;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .character-role {
+            font-size: 1rem;
+            color: #5a4d3e;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .memory {
+            font-size: clamp(1rem, 2.2vw, 1.2rem);
+            line-height: 1.9;
+            color: #3d3226;
+            margin-bottom: 1.2rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .memory::before {
+            content: '◆';
+            position: absolute;
+            left: 0;
+            color: #a89878;
+        }
+
+        .memory.active {
+            animation: memoryFade 12s ease-in-out infinite;
+        }
+
+        @keyframes memoryFade {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        .ice-quote {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            color: #5a4d3e;
+            font-style: italic;
+            text-align: center;
+            max-width: 600px;
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="butterflies" id="butterflies"></div>
+
+    <div class="page">
+        <div class="header">
+            <h1 class="title">Cien Años de Soledad</h1>
+            <div class="subtitle">Gabriel García Márquez</div>
+            <div class="macondo">In Macondo, where time moves in circles</div>
+        </div>
+
+        <div class="circular-time">
+            <svg class="circle-svg" viewBox="0 0 200 200" id="circleSvg">
+                <circle cx="100" cy="100" r="90" fill="none" stroke="#a89878" stroke-width="2" opacity="0.3"/>
+                <circle cx="100" cy="100" r="70" fill="none" stroke="#8a7a6a" stroke-width="2" opacity="0.4"/>
+                <circle cx="100" cy="100" r="50" fill="none" stroke="#6a5d4e" stroke-width="3" opacity="0.5"/>
+            </svg>
+            <div class="time-center">
+                <div class="time-display" id="time">00:00</div>
+                <div class="generation-label" id="genLabel">The Cycle Continues</div>
+            </div>
+        </div>
+
+        <div class="generation-container">
+            <div class="generation-name" id="genName">José Arcadio Buendía</div>
+            <div class="character-role" id="genRole">The Patriarch who discovered ice</div>
+
+            <div id="memories">
+                <div class="memory active">
+                    Many years later, as he faced the firing squad, Colonel Aureliano Buendía was to remember that distant afternoon when his father took him to discover ice.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ice-quote">
+        "It's the largest diamond in the world." — "No," the gypsy countered. "It's ice."
+    </div>
+
+    <script>
+        // Cyclical generations mapped to hours (repeating names)
+        const generations = [
+            {
+                hours: [0, 1, 2],
+                name: "José Arcadio Buendía",
+                role: "The Patriarch who discovered ice",
+                memories: [
+                    "Many years later, as he faced the firing squad, Colonel Aureliano Buendía was to remember that distant afternoon when his father took him to discover ice.",
+                    "José Arcadio Buendía, obsessed with alchemy and magnets, tied to the chestnut tree, speaking in Latin and seeing ghosts of the dead.",
+                    "The world was so recent that many things lacked names, and in order to indicate them it was necessary to point."
+                ]
+            },
+            {
+                hours: [3, 4, 5],
+                name: "Úrsula Iguarán",
+                role: "The Matriarch who lived beyond a century",
+                memories: [
+                    "Úrsula, who lived to be between one hundred fifteen and one hundred twenty-two years old, watching the same cycles repeat with each generation.",
+                    "She had seen the yellow butterflies before, always preceding death, following Mauricio Babilonia wherever he went.",
+                    "In the precision of her vast experience, Úrsula knew that time was not passing but turning in a circle."
+                ]
+            },
+            {
+                hours: [6, 7, 8],
+                name: "Colonel Aureliano Buendía",
+                role: "Who waged thirty-two wars and lost them all",
+                memories: [
+                    "Colonel Aureliano Buendía organized thirty-two armed uprisings and lost them all. He had seventeen male children by seventeen different women.",
+                    "Alone in his workshop, making little gold fishes, melting them down, and making them again in an endless cycle.",
+                    "He drew a circle in the dirt with his stick. 'I'm staying here, until the Conservative government falls.'"
+                ]
+            },
+            {
+                hours: [9, 10, 11],
+                name: "Remedios the Beauty",
+                role: "Who ascended to heaven while folding sheets",
+                memories: [
+                    "Remedios the Beauty, the most beautiful woman in the world, ascending into the sky on a Thursday afternoon while folding sheets.",
+                    "She was oblivious to her devastating beauty, to the men who died for love of her, to the chaos she left in her wake.",
+                    "The yellow butterflies preceded her ascension, a golden cloud that lifted her into the air as she waved goodbye."
+                ]
+            },
+            {
+                hours: [12, 13, 14],
+                name: "Aureliano Segundo",
+                role: "Whose animals multiplied endlessly",
+                memories: [
+                    "During the time of the rains that lasted four years, eleven months, and two days, Aureliano Segundo's animals multiplied with impossible fecundity.",
+                    "His legendary parties, his accordion, his appetite that seemed to expand the house itself with prosperity.",
+                    "He searched for Úrsula's buried gold with such passion that the floor of the house was left like a honeycomb."
+                ]
+            },
+            {
+                hours: [15, 16, 17],
+                name: "Fernanda del Carpio",
+                role: "The Queen of Madagascar",
+                memories: [
+                    "Fernanda del Carpio, raised to be a queen, brought European pretensions to the chaos of Macondo.",
+                    "She wrote letters to invisible doctors, maintained schedules no one followed, and tried to impose order on the cyclical disorder of the Buendías.",
+                    "Even in death, her influence lingered, her rigid schedules and invisible enemies haunting the house."
+                ]
+            },
+            {
+                hours: [18, 19, 20],
+                name: "Meme (Renata Remedios)",
+                role: "Who loved Mauricio Babilonia and the yellow butterflies",
+                memories: [
+                    "Meme and Mauricio Babilonia, always accompanied by yellow butterflies that gave away his presence.",
+                    "She was sent to a convent after they shot him, spent the rest of her life in silence, never speaking again.",
+                    "The butterflies persisted long after, a golden reminder of impossible love destroyed by propriety and fear."
+                ]
+            },
+            {
+                hours: [21, 22, 23],
+                name: "Aureliano Babilonia",
+                role: "The Last, who deciphered the manuscripts",
+                memories: [
+                    "Aureliano Babilonia, born in secret, raised in solitude, destined to decipher the Sanskrit manuscripts of Melquíades.",
+                    "In those manuscripts he found the history of his family written one hundred years before it happened, every moment predicted, every tragedy foretold.",
+                    "As he read the final line describing himself reading the final line, the wind began, and Macondo was swept from memory forever."
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const genLabelEl = document.getElementById('genLabel');
+        const genNameEl = document.getElementById('genName');
+        const genRoleEl = document.getElementById('genRole');
+        const memoriesEl = document.getElementById('memories');
+        const butterfliesEl = document.getElementById('butterflies');
+        const circleSvg = document.getElementById('circleSvg');
+
+        let currentGenIndex = -1;
+
+        // Create butterflies
+        function createButterflies() {
+            const emojis = ['🦋', '🦋', '🦋'];
+            for (let i = 0; i < 12; i++) {
+                const butterfly = document.createElement('div');
+                butterfly.className = 'butterfly';
+                butterfly.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                butterfly.style.left = Math.random() * 100 + '%';
+                butterfly.style.top = Math.random() * 100 + '%';
+                butterfly.style.animationDelay = Math.random() * 5 + 's';
+                butterfly.style.animationDuration = (10 + Math.random() * 10) + 's';
+                butterfliesEl.appendChild(butterfly);
+            }
+        }
+
+        // Draw hour markers on circle
+        function drawCircularHours() {
+            const svg = circleSvg;
+            const centerX = 100;
+            const centerY = 100;
+            const radius = 85;
+
+            for (let hour = 0; hour < 24; hour++) {
+                const angle = (hour / 24) * Math.PI * 2 - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', '#6a5d4e');
+                text.setAttribute('font-size', '8');
+                text.setAttribute('font-family', 'Cardo, serif');
+                text.setAttribute('opacity', '0.6');
+                text.textContent = hour;
+                svg.appendChild(text);
+            }
+        }
+
+        function getGenerationForHour(hour) {
+            for (const gen of generations) {
+                if (gen.hours.includes(hour)) {
+                    return gen;
+                }
+            }
+            return generations[0];
+        }
+
+        function renderMemories(memories) {
+            memoriesEl.innerHTML = memories.map((memory, i) =>
+                `<div class="memory ${i === 0 ? 'active' : ''}">${memory}</div>`
+            ).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // Update time
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+            // Get current generation
+            const gen = getGenerationForHour(hour);
+            const genIndex = generations.indexOf(gen);
+
+            // Update content if changed
+            if (genIndex !== currentGenIndex) {
+                genLabelEl.textContent = `Generation ${genIndex + 1}`;
+                genNameEl.textContent = gen.name;
+                genRoleEl.textContent = gen.role;
+                renderMemories(gen.memories);
+                currentGenIndex = genIndex;
+            }
+        }
+
+        // Initialize
+        createButterflies();
+        drawCircularHours();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

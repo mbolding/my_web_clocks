@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Jest Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f8f8f4;
+            font-family: 'IBM Plex Sans', sans-serif;
+            padding: 2rem;
+            color: #2a2a2a;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+        }
+
+        .title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            color: #5a5a5a;
+        }
+
+        .subsidized-year {
+            background: #ffe066;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 3px solid #1a1a1a;
+            text-align: center;
+        }
+
+        .year-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            color: #5a5a5a;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .year-name {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .time-display {
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .narrative-panel {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            padding: 2rem;
+        }
+
+        .location-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            color: #5a5a5a;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .location-name {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
+        }
+
+        .narrative-text {
+            font-size: clamp(0.95rem, 2vw, 1.05rem);
+            line-height: 1.8;
+            color: #2a2a2a;
+            margin-bottom: 1rem;
+        }
+
+        .footnote-ref {
+            font-size: 0.7em;
+            vertical-align: super;
+            color: #0066cc;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .footnote-ref:hover {
+            text-decoration: underline;
+        }
+
+        .footnotes-panel {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            padding: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .footnotes-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #d0d0d0;
+        }
+
+        .footnote {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #3a3a3a;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #d8d8d8;
+        }
+
+        .footnote:last-child {
+            border-bottom: none;
+        }
+
+        .footnote-number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            color: #0066cc;
+            margin-right: 0.5rem;
+        }
+
+        .entertainment-list {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .entertainment-title {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9rem;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        .entertainment-item {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #3a3a3a;
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+        }
+
+        .entertainment-item::before {
+            content: '▸';
+            color: #5a5a5a;
+            margin-right: 0.5rem;
+            margin-left: -1rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .footnotes-panel {
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">INFINITE JEST</h1>
+            <div class="subtitle">David Foster Wallace</div>
+        </div>
+
+        <div class="subsidized-year">
+            <div class="year-label">Current Subsidized Year</div>
+            <div class="year-name" id="subsidizedYear">Year of the Depend Adult Undergarment</div>
+        </div>
+
+        <div class="time-display" id="time">00:00:00</div>
+
+        <div class="main-content">
+            <div class="narrative-panel">
+                <div class="location-label">Location</div>
+                <div class="location-name" id="location">Enfield Tennis Academy</div>
+
+                <div id="narrative">
+                    <!-- Narrative injected here -->
+                </div>
+            </div>
+
+            <div class="footnotes-panel">
+                <div class="footnotes-title">Footnotes & Endnotes</div>
+                <div id="footnotes">
+                    <!-- Footnotes injected here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="entertainment-list">
+            <div class="entertainment-title">Entertainment Cartridges Available This Hour</div>
+            <div id="entertainments">
+                <!-- Entertainments injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Subsidized years cycle through the day
+        const subsidizedYears = [
+            "Year of the Whopper",
+            "Year of the Tucks Medicated Pad",
+            "Year of the Trial-Size Dove Bar",
+            "Year of the Perdue Wonderchicken",
+            "Year of the Whisper-Quiet Maytag Dishmaster",
+            "Year of the Yushityu 2007 Mimetic-Resolution-Cartridge-View-Motherboard-Easy-To-Install-Upgrade",
+            "Year of Dairy Products from the American Heartland",
+            "Year of the Depend Adult Undergarment",
+            "Year of Glad"
+        ];
+
+        const hourlyContent = [
+            {
+                hours: [0, 1, 2],
+                location: "Ennet House Drug and Alcohol Recovery House",
+                narrative: [
+                    "The thing about being in a halfway house is that you're in this place where everybody's trying to quit the same Substance you are, and you're all free to call one another on their Substance-patterns.",
+                    "Don Gately<a class='footnote-ref' href='#fn1'>[1]</a>, former professional burglar and Demerol addict, lay in his staff bed thinking about the difference between abstinence and recovery.",
+                    "The thing about AA is they claim there's no difference between wanting to stop and actually stopping. The paradox is you have to want to want to."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> Don Gately, six-foot-four and 270 pounds of former narcotics addict, now Ennet House's live-in staff member and enforcer of sobriety.",
+                    "<span class='footnote-number'>[2]</span> Demerol (generic meperidine hydrochloride), a Schedule II narcotic analgesic, produces euphoria and analgesia similar to morphine but with less sedation.",
+                    "<span class='footnote-number'>[3]</span> Alcoholics Anonymous, founded 1935 in Akron OH, follows the famous Twelve Steps, which begin with admitting powerlessness over alcohol."
+                ],
+                entertainments: [
+                    "The Medusa v. The Odalisque — A Study in Comparative Stillness",
+                    "Valuable Coupon Has Been Removed — A consumer's lament",
+                    "Sorry All Over Your Face — Apology studies"
+                ]
+            },
+            {
+                hours: [3, 4, 5],
+                location: "Enfield Tennis Academy",
+                narrative: [
+                    "At the Enfield Tennis Academy<a class='footnote-ref' href='#fn1'>[1]</a>, the pre-dawn drills were underway. Hal Incandenza thought about his father's films while practicing serves.",
+                    "The thing about competitive junior tennis is that it's about junior competitive tennis. Not about learning. Not about maturity. About winning now.",
+                    "Hal's internal monologue ran at multiple levels simultaneously, a consequence of both intelligence and certain Substances<a class='footnote-ref' href='#fn2'>[2]</a>."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> Enfield Tennis Academy (E.T.A.), founded by James O. Incandenza and located on the hill above Ennet House, trains pre-adolescent tennis players.",
+                    "<span class='footnote-number'>[2]</span> Cannabis, which Hal consumes regularly via one-hitters hidden throughout E.T.A., produces complex cognitive effects including temporal distortion and recursive thinking.",
+                    "<span class='footnote-number'>[3]</span> James O. Incandenza, a.k.a. 'Himself,' former tennis player and optical physicist, created over 300 films before his suicide by microwave."
+                ],
+                entertainments: [
+                    "Infinite Jest (V or VI?) — The Entertainment, allegedly lethally entertaining",
+                    "Tennis and the Feral Prodigy — A documentary study",
+                    "Death in Scarsdale — Suburban mortality studies"
+                ]
+            },
+            {
+                hours: [6, 7, 8],
+                location: "Enfield Tennis Academy — Morning Drills",
+                narrative: [
+                    "Mario Incandenza<a class='footnote-ref' href='#fn1'>[1]</a>, despite or because of his various challenges, was perhaps the most cheerful person at E.T.A. He filmed everything with innocent enthusiasm.",
+                    "The morning drills involved serves, returns, tactical positioning, and the grinding repetition that separated the potentially great from the merely good.",
+                    "Hal considered the recursive nature of competition: you compete to get better to compete better to get better to compete."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> Mario Incandenza, Hal's older adopted brother, born with severe physical challenges including bradykinesia and an oversized head, nevertheless remains unfailingly cheerful.",
+                    "<span class='footnote-number'>[2]</span> The Eschaton game, invented by Otis P. Lord and played on the tennis courts with tennis balls representing thermonuclear warheads, ended in chaos when metaphor collapsed into reality.",
+                    "<span class='footnote-number'>[3]</span> James Incandenza's obsession with tennis and optics merged in his films, particularly in his studies of light, reflection, and competitive isolation."
+                ],
+                entertainments: [
+                    "Pre-Nuptial Agreement of Heaven and Hell — Theological studies",
+                    "Cage III — Free Show — Performance art piece",
+                    "Blood Sister: One Tough Nun — Action dramedy"
+                ]
+            },
+            {
+                hours: [9, 10, 11],
+                location: "Enfield Tennis Academy — Academic Classes",
+                narrative: [
+                    "The thing about E.T.A. is it's both tennis academy and accredited secondary school, which means the students are exhausted both physically and intellectually.",
+                    "Pemulis<a class='footnote-ref' href='#fn1'>[1]</a> dealt various Substances to students, carefully calibrated to enhance performance without detection, a pharmacological balancing act.",
+                    "Classes covered calculus, literature, chemistry—all taught with the understanding that tennis came first, academics second, in a kind of unstated hierarchy."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> Michael Pemulis, chemistry prodigy and dealer of performance-enhancing and recreational Substances, maintains an extensive pharmacopoeia hidden throughout E.T.A.",
+                    "<span class='footnote-number'>[2]</span> The Disciplines: total focus on the present moment, taught by Lyle in the weight room, achieved through various physical and mental practices.",
+                    "<span class='footnote-number'>[3]</span> Organization of North American Nations (O.N.A.N.), formed after the U.S. ceded substantial territory to Canada in the Great Concavity/Convexity exchange."
+                ],
+                entertainments: [
+                    "It Was a Great Marvel That He Was in the Father Without Knowing Him — Experimental narrative",
+                    "The Man Who Began to Suspect He Was Made of Glass — Phenomenological study",
+                    "Accomplice! — Co-dependency thriller"
+                ]
+            },
+            {
+                hours: [12, 13, 14],
+                location: "Ennet House — Group Meetings",
+                narrative: [
+                    "The thing about Group meetings at Ennet House is that you're supposed to share your feelings without expecting solutions, which seems paradoxical.",
+                    "Residents talked about the Cage<a class='footnote-ref' href='#fn1'>[1]</a>, about dreams of using, about the difficulty of living in the present moment without chemical assistance.",
+                    "Don Gately listened to stories of bottoming out: the DUIs, the lost jobs, the burned bridges, the pattern of progressive enslavement to Substance."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> The Cage, a particularly bad withdrawl state where the addict feels trapped in their own skin, desperate and unable to escape consciousness.",
+                    "<span class='footnote-number'>[2]</span> The Disease Concept: addiction as progressive, chronic, and potentially fatal illness rather than moral failing or lack of willpower.",
+                    "<span class='footnote-number'>[3]</span> White Flag Group, one of the many AA meetings residents attend, known for militant enthusiasm and aggressive sharing."
+                ],
+                entertainments: [
+                    "The ONANtiad — Epic poem about continental reconfiguration",
+                    "Every Inch of Disney Leith — Experimental travelogue",
+                    "Kinds of Light — Optical studies by James O. Incandenza"
+                ]
+            },
+            {
+                hours: [15, 16, 17],
+                location: "Enfield Tennis Academy — Afternoon Matches",
+                narrative: [
+                    "Competitive matches at E.T.A. were grueling psychological battles disguised as athletic contests. The real opponent was always yourself.",
+                    "Hal Incandenza<a class='footnote-ref' href='#fn1'>[1]</a> played with mechanical precision, his mind simultaneously engaged in the match and floating elsewhere, dissociated through practice and Substances.",
+                    "The thing about tennis is it's one of the few sports where you're completely alone out there with your failure."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> Harold James Incandenza, age 17, ranked #2 in Eastern North America for boys 18-and-under, linguistic prodigy and secret marijuana addict.",
+                    "<span class='footnote-number'>[2]</span> The Show Court, where matches of note are played, equipped with stadium seating and occasionally attended by professional scouts.",
+                    "<span class='footnote-number'>[3]</span> Schtitt's philosophy: junior tennis should be joyless preparation for professional joylessness, embracing suffering as path to excellence."
+                ],
+                entertainments: [
+                    "The Machine in the Ghost: Annular Fusion — Science documentary",
+                    "Tennis and the Feral Prodigy — Incandenza family studies",
+                    "Fun with Teeth — Dental horror-comedy"
+                ]
+            },
+            {
+                hours: [18, 19, 20],
+                location: "Ennet House — Evening Routine",
+                narrative: [
+                    "Evening at Ennet House meant dinner, chores, mandatory AA meetings, and the grinding routine of staying clean one day at a time.",
+                    "Residents discussed The Entertainment<a class='footnote-ref' href='#fn1'>[1]</a> in hushed tones—the supposedly lethally entertaining film that made viewers unable to do anything but watch it repeatedly.",
+                    "Gately, in his patient way, reminded residents that the only thing they had to do was not pick up a Substance today, just today, then repeat."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> The Entertainment, also known as 'Infinite Jest' or 'The Samizdat,' James Incandenza's final film, allegedly so entertaining that viewers lose all will to do anything but watch it.",
+                    "<span class='footnote-number'>[2]</span> The Wheelchair Assassins, Québécois separatist group seeking The Entertainment as a weapon to destabilize O.N.A.N.",
+                    "<span class='footnote-number'>[3]</span> A.F.R. (Les Assassins des Fauteuils Rollents), the militant Québécois separatist group led by the remorseless Fortier and theatrical Marathe."
+                ],
+                entertainments: [
+                    "The Joke — Audience-specific humor studies",
+                    "Infinite Jest (V or VI?) — The Entertainment itself",
+                    "Death and the Single Girl — Mortality comedy"
+                ]
+            },
+            {
+                hours: [21, 22, 23],
+                location: "Enfield Tennis Academy — Night",
+                narrative: [
+                    "Late at night, E.T.A. students dealt with insomnia through various means: Substances, exercise, reading, or simply lying awake contemplating competition and mortality.",
+                    "Mario wandered the halls with his camera<a class='footnote-ref' href='#fn1'>[1]</a>, filming the empty courts, the sleeping students, the architecture of institutional athletics.",
+                    "Hal, unable to sleep, consumed Substances and thought about his father's suicide, about The Entertainment, about the recursive trap of self-consciousness."
+                ],
+                footnotes: [
+                    "<span class='footnote-number'>[1]</span> Mario's documentaries captured E.T.A. life with unsentimental affection, seeing beauty in the grinding repetition his brother Hal found oppressive.",
+                    "<span class='footnote-number'>[2]</span> James Incandenza's death by microwave: placing head in microwave oven and activating it, an act of either supreme despair or ultimate commitment to optical experiments.",
+                    "<span class='footnote-number'>[3]</span> The Year of the Depend Adult Undergarment, when most of the novel's action occurs, representing the commercialization and infantilization of American culture."
+                ],
+                entertainments: [
+                    "Found Drama — Reality as entertainment",
+                    "The American Century as Seen Through a Brick — Historical compression",
+                    "Mobius Strips — Infinite loops and paradoxes"
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const subsidizedYearEl = document.getElementById('subsidizedYear');
+        const locationEl = document.getElementById('location');
+        const narrativeEl = document.getElementById('narrative');
+        const footnotesEl = document.getElementById('footnotes');
+        const entertainmentsEl = document.getElementById('entertainments');
+
+        let currentContentIndex = -1;
+
+        function getContentForHour(hour) {
+            for (const content of hourlyContent) {
+                if (content.hours.includes(hour)) {
+                    return content;
+                }
+            }
+            return hourlyContent[0];
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+
+            // Update time
+            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+
+            // Update subsidized year (cycles through hours)
+            const yearIndex = Math.floor(hour / 3) % subsidizedYears.length;
+            subsidizedYearEl.textContent = subsidizedYears[yearIndex];
+
+            // Get content
+            const content = getContentForHour(hour);
+            const contentIndex = hourlyContent.indexOf(content);
+
+            // Update if changed
+            if (contentIndex !== currentContentIndex) {
+                locationEl.textContent = content.location;
+                narrativeEl.innerHTML = content.narrative.map(para =>
+                    `<p class="narrative-text">${para}</p>`
+                ).join('');
+                footnotesEl.innerHTML = content.footnotes.map(note =>
+                    `<div class="footnote">${note}</div>`
+                ).join('');
+                entertainmentsEl.innerHTML = content.entertainments.map(ent =>
+                    `<div class="entertainment-item">${ent}</div>`
+                ).join('');
+                currentContentIndex = contentIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>
