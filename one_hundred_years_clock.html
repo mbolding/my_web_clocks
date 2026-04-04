@@ -171,13 +171,13 @@
             color: #a89878;
         }
 
-        .memory.active {
-            animation: memoryFade 12s ease-in-out infinite;
+        .memory {
+            opacity: 0.4;
         }
 
-        @keyframes memoryFade {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
+        .memory:hover {
+            opacity: 1;
+            transition: opacity 0.3s ease;
         }
 
         .ice-quote {

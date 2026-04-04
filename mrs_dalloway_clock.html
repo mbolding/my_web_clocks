@@ -115,19 +115,21 @@
             color: #3a3430;
             margin-bottom: 1.5rem;
             opacity: 0;
-            animation: thoughtFade 10s ease-in-out infinite;
+            animation: thoughtFade 9s ease-in-out infinite;
             position: absolute;
             top: 4rem;
             left: 2rem;
             right: 2rem;
         }
 
-        .thought:nth-child(2) { animation-delay: 3.3s; }
-        .thought:nth-child(3) { animation-delay: 6.6s; }
+        .thought:nth-child(1) { animation-delay: 0s; }
+        .thought:nth-child(2) { animation-delay: 3s; }
+        .thought:nth-child(3) { animation-delay: 6s; }
 
         @keyframes thoughtFade {
-            0%, 100% { opacity: 0; transform: translateY(5px); }
-            10%, 90% { opacity: 1; transform: translateY(0); }
+            0% { opacity: 0; transform: translateY(5px); }
+            5%, 28% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(5px); }
         }
 
         .thought em {

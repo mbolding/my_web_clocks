@@ -133,12 +133,14 @@
             right: 0;
         }
 
+        .memory:nth-child(1) { animation-delay: 0s; }
         .memory:nth-child(2) { animation-delay: 5s; }
         .memory:nth-child(3) { animation-delay: 10s; }
 
         @keyframes memoryFloat {
-            0%, 100% { opacity: 0; transform: translateY(10px); }
-            10%, 90% { opacity: 1; transform: translateY(0); }
+            0% { opacity: 0; transform: translateY(10px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(10px); }
         }
 
         .memory em {

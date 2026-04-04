@@ -160,7 +160,6 @@
             background: rgba(255, 255, 255, 0.5);
             border: 1px solid #d8cbb8;
             border-radius: 4px;
-            padding: 1.5rem;
             margin-top: 1.5rem;
             min-height: 200px;
             position: relative;
@@ -174,13 +173,20 @@
             font-style: italic;
             opacity: 0;
             animation: fadeInOut 12s ease-in-out infinite;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1.5rem;
         }
 
         @keyframes fadeInOut {
-            0%, 100% { opacity: 0; transform: translateY(10px); }
-            10%, 90% { opacity: 1; transform: translateY(0); }
+            0% { opacity: 0; transform: translateY(10px); }
+            5%, 28% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(10px); }
         }
 
+        .stream-text:nth-child(1) { animation-delay: 0s; }
         .stream-text:nth-child(2) { animation-delay: 4s; }
         .stream-text:nth-child(3) { animation-delay: 8s; }
 

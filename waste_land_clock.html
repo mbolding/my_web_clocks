@@ -150,20 +150,22 @@
         .voice {
             margin-bottom: 2rem;
             opacity: 0;
-            animation: fadeInVoice 8s ease-in-out infinite;
+            animation: fadeInVoice 10s ease-in-out infinite;
             position: absolute;
             top: 1.5rem;
             left: 1.5rem;
             right: 1.5rem;
         }
 
+        .voice:nth-child(1) { animation-delay: 0s; }
         .voice:nth-child(2) { animation-delay: 2.5s; }
         .voice:nth-child(3) { animation-delay: 5s; }
         .voice:nth-child(4) { animation-delay: 7.5s; }
 
         @keyframes fadeInVoice {
             0%, 100% { opacity: 0; }
-            15%, 85% { opacity: 1; }
+            5%, 20% { opacity: 1; }
+            25% { opacity: 0; }
         }
 
         .voice-line {
