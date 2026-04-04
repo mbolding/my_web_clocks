@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamlet Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #0a0a0f 0%, #1a1a2a 50%, #000000 100%);
+            font-family: 'Cormorant Garamond', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #c8c4cc;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.midnight {
+            background: linear-gradient(to bottom, #000000 0%, #0a0a1a 50%, #000005 100%);
+        }
+
+        .ghost-fog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(100, 100, 150, 0.2), transparent 50%);
+            transition: opacity 3s ease;
+            z-index: 0;
+        }
+
+        body.midnight .ghost-fog {
+            opacity: 1;
+            animation: ghostlyPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes ghostlyPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .battlements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 15%;
+            background: linear-gradient(to bottom, #2a2a3a, transparent);
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(10, 10, 20, 0.9);
+            border: 2px solid #4a4a6a;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+            transition: border-color 2s ease;
+        }
+
+        body.midnight .container {
+            border-color: #6a6aaa;
+            box-shadow: 0 20px 80px rgba(100, 100, 200, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(200, 196, 204, 0.2);
+        }
+
+        .title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 600;
+            color: #e8e4ec;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #a8a4ac;
+            font-style: italic;
+            margin-bottom: 0.5rem;
+        }
+
+        .author {
+            font-size: 0.95rem;
+            color: #8a8490;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(200, 196, 204, 0.15);
+            position: relative;
+        }
+
+        .current-time {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 600;
+            color: #b8b4bc;
+            margin-bottom: 0.5rem;
+            transition: color 2s ease, text-shadow 2s ease;
+        }
+
+        body.midnight .current-time {
+            color: #c8c4ec;
+            text-shadow: 0 0 30px rgba(150, 150, 200, 0.8);
+        }
+
+        .act-indicator {
+            font-size: 0.85rem;
+            color: #7a7480;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .scene-section {
+            margin-bottom: 2rem;
+        }
+
+        .scene-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 600;
+            color: #d8d4dc;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .scene-location {
+            font-size: 0.95rem;
+            color: #9a9498;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .speech-container {
+            position: relative;
+            min-height: 200px;
+            margin-bottom: 1.5rem;
+        }
+
+        .speech {
+            font-size: clamp(1.05rem, 2.3vw, 1.3rem);
+            line-height: 1.8;
+            color: #d8d4dc;
+            font-style: italic;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: speechFade 18s ease-in-out infinite;
+        }
+
+        .speech:nth-child(1) { animation-delay: 0s; }
+        .speech:nth-child(2) { animation-delay: 6s; }
+        .speech:nth-child(3) { animation-delay: 12s; }
+
+        @keyframes speechFade {
+            0% { opacity: 0; transform: translateY(10px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(10px); }
+        }
+
+        .famous-line {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            line-height: 1.7;
+            color: #b8b4cc;
+            padding: 1.5rem;
+            background: rgba(100, 100, 140, 0.1);
+            border-left: 4px solid #6a6a9a;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .ghost-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            color: rgba(150, 150, 200, 0);
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 0 0 40px rgba(150, 150, 200, 0);
+            transition: all 3s ease;
+            z-index: 10;
+        }
+
+        body.midnight .ghost-message {
+            color: rgba(150, 150, 200, 0.9);
+            text-shadow: 0 0 40px rgba(150, 150, 200, 0.9);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ghost-fog"></div>
+    <div class="battlements"></div>
+    <div class="ghost-message" id="ghost-message"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Hamlet</h1>
+            <div class="subtitle">Prince of Denmark</div>
+            <div class="author">William Shakespeare</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="act-indicator" id="act">Act I</div>
+        </div>
+
+        <div class="scene-section">
+            <h2 class="scene-title" id="scene-title">The Battlements</h2>
+            <div class="scene-location" id="location">Elsinore Castle, Denmark</div>
+            <div class="speech-container">
+                <div id="speeches">
+                    <!-- Speeches injected here -->
+                </div>
+            </div>
+            <div class="famous-line" id="famous-line">
+                "The time is out of joint"
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scenes = [
+            // ACT I (Midnight - 5 AM)
+            {
+                hour: 0,
+                act: "Act I, Scene I",
+                title: "The Ghost Appears",
+                location: "The battlements of Elsinore, midnight",
+                speeches: [
+                    "Who's there? Nay, answer me. Stand and unfold yourself!",
+                    "'Tis now struck twelve. Get thee to bed, Francisco.",
+                    "Look where it comes again! In the same figure like the King that's dead. Thou art a scholar. Speak to it, Horatio!"
+                ],
+                line: "Something is rotten in the state of Denmark",
+                ghost: "I am thy father's spirit"
+            },
+            {
+                hour: 1,
+                act: "Act I, Scene II",
+                title: "The Court Gathers",
+                location: "The throne room of Elsinore",
+                speeches: [
+                    "Though yet of Hamlet our dear brother's death / The memory be green, yet so far hath discretion fought with nature / That we with wisest sorrow think on him.",
+                    "A little more than kin, and less than kind.",
+                    "Seems, madam? Nay, it is. I know not 'seems.' These indeed seem, for they are actions that a man might play."
+                ],
+                line: "Frailty, thy name is woman"
+            },
+            {
+                hour: 2,
+                act: "Act I, Scene III",
+                title: "Ophelia Warned",
+                location: "Polonius's chambers",
+                speeches: [
+                    "Do not believe his vows, for they are brokers, not of that dye which their investments show.",
+                    "Give thy thoughts no tongue, nor any unproportioned thought his act.",
+                    "This above all: to thine own self be true, and it must follow as the night the day, thou canst not then be false to any man."
+                ],
+                line: "To thine own self be true"
+            },
+            {
+                hour: 3,
+                act: "Act I, Scene IV-V",
+                title: "Hamlet Meets the Ghost",
+                location: "The battlements, the witching hour",
+                speeches: [
+                    "Angels and ministers of grace defend us! Be thou a spirit of health or goblin damned, I will speak to thee!",
+                    "I am thy father's spirit, doomed for a certain term to walk the night.",
+                    "Murder most foul, as in the best it is, but this most foul, strange, and unnatural."
+                ],
+                line: "The serpent that did sting thy father's life / Now wears his crown"
+            },
+            {
+                hour: 4,
+                act: "Act I, Scene V",
+                title: "The Oath",
+                location: "Still upon the battlements",
+                speeches: [
+                    "O all you host of heaven! O earth! What else? And shall I couple hell?",
+                    "There are more things in heaven and earth, Horatio, than are dreamt of in your philosophy.",
+                    "The time is out of joint. O cursed spite, that ever I was born to set it right!"
+                ],
+                line: "There are more things in heaven and earth, Horatio"
+            },
+
+            // ACT II (5 AM - 10 AM)
+            {
+                hour: 5,
+                act: "Act II, Scene I",
+                title: "Polonius Schemes",
+                location: "A room in Polonius's house",
+                speeches: [
+                    "And thus do we of wisdom and of reach, with windlasses and with assays of bias, by indirections find directions out.",
+                    "Lord Hamlet, with his doublet all unbraced, no hat upon his head, pale as his shirt, his knees knocking each other—",
+                    "This is the very ecstasy of love, whose violent property fordoes itself and leads the will to desperate undertakings."
+                ],
+                line: "By indirections find directions out"
+            },
+            {
+                hour: 6,
+                act: "Act II, Scene II",
+                title: "The Players Arrive",
+                location: "A hall in the castle",
+                speeches: [
+                    "What a piece of work is a man! How noble in reason, how infinite in faculty! In form and moving how express and admirable!",
+                    "And yet, to me, what is this quintessence of dust? Man delights not me—no, nor woman neither.",
+                    "I am but mad north-north-west. When the wind is southerly, I know a hawk from a handsaw."
+                ],
+                line: "What a piece of work is a man"
+            },
+            {
+                hour: 7,
+                act: "Act II, Scene II",
+                title: "O What a Rogue",
+                location: "Hamlet alone",
+                speeches: [
+                    "O, what a rogue and peasant slave am I! Is it not monstrous that this player here, but in a fiction, in a dream of passion, could force his soul so to his own conceit?",
+                    "Am I a coward? Who calls me villain, breaks my pate across, plucks off my beard and blows it in my face?",
+                    "The play's the thing wherein I'll catch the conscience of the King!"
+                ],
+                line: "The play's the thing wherein I'll catch the conscience of the King"
+            },
+
+            // ACT III (10 AM - 5 PM)
+            {
+                hour: 8,
+                act: "Act III, Scene I",
+                title: "To Be or Not to Be",
+                location: "A room in the castle",
+                speeches: [
+                    "To be, or not to be—that is the question: whether 'tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles and, by opposing, end them.",
+                    "To die, to sleep—no more—and by a sleep to say we end the heartache and the thousand natural shocks that flesh is heir to.",
+                    "For in that sleep of death what dreams may come, when we have shuffled off this mortal coil, must give us pause."
+                ],
+                line: "To be, or not to be—that is the question"
+            },
+            {
+                hour: 9,
+                act: "Act III, Scene I",
+                title: "Get Thee to a Nunnery",
+                location: "Hamlet and Ophelia",
+                speeches: [
+                    "Get thee to a nunnery. Why wouldst thou be a breeder of sinners?",
+                    "I am very proud, revengeful, ambitious, with more offenses at my beck than I have thoughts to put them in.",
+                    "God hath given you one face, and you make yourselves another."
+                ],
+                line: "Get thee to a nunnery"
+            },
+            {
+                hour: 10,
+                act: "Act III, Scene II",
+                title: "The Mousetrap",
+                location: "The hall prepared for the play",
+                speeches: [
+                    "Speak the speech, I pray you, as I pronounced it to you, trippingly on the tongue.",
+                    "Suit the action to the word, the word to the action, with this special observance: that you o'erstep not the modesty of nature.",
+                    "The purpose of playing, whose end both at the first and now, was and is to hold as 'twere the mirror up to nature."
+                ],
+                line: "The play's the thing"
+            },
+            {
+                hour: 11,
+                act: "Act III, Scene II",
+                title: "The King Rises",
+                location: "During the performance",
+                speeches: [
+                    "The croaking raven doth bellow for revenge!",
+                    "Give me some light! Away!",
+                    "I'll take the ghost's word for a thousand pound! Didst perceive?"
+                ],
+                line: "O my offense is rank, it smells to heaven"
+            },
+            {
+                hour: 12,
+                act: "Act III, Scene III",
+                title: "The King at Prayer",
+                location: "The chapel",
+                speeches: [
+                    "Now might I do it pat, now he is praying. And now I'll do't—and so he goes to heaven, and so am I revenged. That would be scanned.",
+                    "A villain kills my father, and for that, I, his sole son, do this same villain send to heaven.",
+                    "My words fly up, my thoughts remain below. Words without thoughts never to heaven go."
+                ],
+                line: "Now might I do it pat"
+            },
+            {
+                hour: 13,
+                act: "Act III, Scene IV",
+                title: "The Closet Scene",
+                location: "The Queen's chamber",
+                speeches: [
+                    "Mother, you have my father much offended.",
+                    "A bloody deed—almost as bad, good mother, as kill a king and marry with his brother.",
+                    "Look here upon this picture, and on this, the counterfeit presentment of two brothers."
+                ],
+                line: "Thou turn'st mine eyes into my very soul"
+            },
+            {
+                hour: 14,
+                act: "Act III, Scene IV",
+                title: "Polonius Dies",
+                location: "Behind the arras",
+                speeches: [
+                    "How now, a rat? Dead for a ducat, dead!",
+                    "Thou wretched, rash, intruding fool, farewell! I took thee for thy better.",
+                    "I must be cruel only to be kind. Thus bad begins, and worse remains behind."
+                ],
+                line: "I must be cruel only to be kind"
+            },
+
+            // ACT IV (3 PM - 10 PM)
+            {
+                hour: 15,
+                act: "Act IV, Scene I-III",
+                title: "Hamlet Sent to England",
+                location: "The castle in turmoil",
+                speeches: [
+                    "Diseases desperate grown by desperate appliance are relieved, or not at all.",
+                    "In heaven. Send thither to see. If your messenger find him not there, seek him i' th' other place yourself.",
+                    "England, if my love thou hold'st at aught, thou mayst not coldly set our sovereign process."
+                ],
+                line: "My thoughts be bloody or be nothing worth"
+            },
+            {
+                hour: 16,
+                act: "Act IV, Scene IV",
+                title: "How All Occasions",
+                location: "A plain in Denmark",
+                speeches: [
+                    "How all occasions do inform against me and spur my dull revenge!",
+                    "What is a man if his chief good and market of his time be but to sleep and feed? A beast, no more.",
+                    "Rightly to be great is not to stir without great argument, but greatly to find quarrel in a straw when honor's at the stake."
+                ],
+                line: "How all occasions do inform against me"
+            },
+            {
+                hour: 17,
+                act: "Act IV, Scene V",
+                title: "Ophelia's Madness",
+                location: "A room in the castle",
+                speeches: [
+                    "Where is the beauteous majesty of Denmark?",
+                    "He is dead and gone, lady, he is dead and gone. At his head a grass-green turf, at his heels a stone.",
+                    "They bore him barefaced on the bier, hey non nonny, nonny, hey nonny."
+                ],
+                line: "Lord, we know what we are, but know not what we may be"
+            },
+            {
+                hour: 18,
+                act: "Act IV, Scene V",
+                title: "Laertes Returns",
+                location: "The castle under siege",
+                speeches: [
+                    "Where is my father? Dead. But not by him.",
+                    "To hell, allegiance! Vows to the blackest devil! Conscience and grace, to the profoundest pit!",
+                    "I dare damnation. To this point I stand, that both the worlds I give to negligence. Let come what comes, only I'll be revenged most thoroughly for my father."
+                ],
+                line: "O heat, dry up my brains"
+            },
+            {
+                hour: 19,
+                act: "Act IV, Scene VII",
+                title: "The Poisoned Plot",
+                location: "Claudius and Laertes conspire",
+                speeches: [
+                    "Revenge should have no bounds.",
+                    "I'll touch my point with this contagion, that if I gall him slightly, it may be death.",
+                    "There is a willow grows aslant a brook—your sister's drowned, Laertes."
+                ],
+                line: "There's rosemary, that's for remembrance"
+            },
+
+            // ACT V (8 PM - Midnight)
+            {
+                hour: 20,
+                act: "Act V, Scene I",
+                title: "The Gravediggers",
+                location: "A churchyard",
+                speeches: [
+                    "Has this fellow no feeling of his business that he sings at grave-making?",
+                    "Custom hath made it in him a property of easiness.",
+                    "Here hung those lips that I have kissed I know not how oft. Where be your gibes now, your gambols, your songs?"
+                ],
+                line: "Alas, poor Yorick! I knew him, Horatio"
+            },
+            {
+                hour: 21,
+                act: "Act V, Scene I",
+                title: "Ophelia's Burial",
+                location: "The graveyard",
+                speeches: [
+                    "What, the fair Ophelia?",
+                    "Sweets to the sweet. Farewell. I hoped thou shouldst have been my Hamlet's wife.",
+                    "I loved Ophelia. Forty thousand brothers could not with all their quantity of love make up my sum!"
+                ],
+                line: "I loved Ophelia"
+            },
+            {
+                hour: 22,
+                act: "Act V, Scene II",
+                title: "The Duel Begins",
+                location: "A hall in the castle",
+                speeches: [
+                    "If it be now, 'tis not to come. If it be not to come, it will be now. If it be not now, yet it will come. The readiness is all.",
+                    "Come on, sir. Come, my lord.",
+                    "A hit, a very palpable hit."
+                ],
+                line: "The readiness is all"
+            },
+            {
+                hour: 23,
+                act: "Act V, Scene II",
+                title: "The Ending",
+                location: "All are poisoned",
+                speeches: [
+                    "The point envenomed too? Then, venom, to thy work!",
+                    "The rest is silence.",
+                    "Now cracks a noble heart. Good night, sweet prince, and flights of angels sing thee to thy rest."
+                ],
+                line: "Good night, sweet prince"
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const actEl = document.getElementById('act');
+        const sceneTitleEl = document.getElementById('scene-title');
+        const locationEl = document.getElementById('location');
+        const speechesEl = document.getElementById('speeches');
+        const famousLineEl = document.getElementById('famous-line');
+        const ghostMessageEl = document.getElementById('ghost-message');
+        const bodyEl = document.body;
+
+        let currentSceneIndex = -1;
+
+        function getSceneForHour(hour) {
+            return scenes.find(s => s.hour === hour) || scenes[0];
+        }
+
+        function renderSpeeches(speeches) {
+            speechesEl.innerHTML = speeches.map(speech => `
+                <div class="speech">${speech}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Check for midnight (ghost appears)
+            if (hour === 0) {
+                bodyEl.classList.add('midnight');
+                ghostMessageEl.textContent = scenes[0].ghost || "";
+            } else {
+                bodyEl.classList.remove('midnight');
+                ghostMessageEl.textContent = "";
+            }
+
+            // Get current scene
+            const scene = getSceneForHour(hour);
+            const sceneIndex = scenes.indexOf(scene);
+
+            // Update content if scene changed
+            if (sceneIndex !== currentSceneIndex) {
+                actEl.textContent = scene.act;
+                sceneTitleEl.textContent = scene.title;
+                locationEl.textContent = scene.location;
+                renderSpeeches(scene.speeches);
+                famousLineEl.textContent = `"${scene.line}"`;
+                currentSceneIndex = sceneIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

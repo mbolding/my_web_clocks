@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Old Man and the Sea Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #0a2a4a 0%, #1a4a6a 50%, #0a1a2a 100%);
+            font-family: 'PT Serif', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #c8d4dc;
+            position: relative;
+            overflow: hidden;
+            transition: background 3s ease;
+        }
+
+        body.dawn {
+            background: linear-gradient(to bottom, #ff6b4a 0%, #ffa06a 30%, #4a6a8a 100%);
+        }
+
+        body.day {
+            background: linear-gradient(to bottom, #4a8aca 0%, #6aaaea 50%, #2a5a8a 100%);
+        }
+
+        body.dusk {
+            background: linear-gradient(to bottom, #2a3a5a 0%, #ff6b4a 30%, #1a2a4a 100%);
+        }
+
+        body.night {
+            background: linear-gradient(to bottom, #0a1a2a 0%, #1a2a3a 50%, #000010 100%);
+        }
+
+        .ocean-waves {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            pointer-events: none;
+            opacity: 0.2;
+            z-index: 0;
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            width: 200%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 50px,
+                rgba(200, 220, 240, 0.1) 50px,
+                rgba(200, 220, 240, 0.1) 100px
+            );
+            animation: waveMove 20s linear infinite;
+        }
+
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .wave:nth-child(2) {
+            animation-duration: 15s;
+            opacity: 0.5;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(10, 20, 30, 0.85);
+            border: 2px solid #4a6a8a;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(200, 212, 220, 0.2);
+        }
+
+        .title {
+            font-family: 'Merriweather', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: #e8ecf0;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.02em;
+        }
+
+        .author {
+            font-size: 1.1rem;
+            color: #a8b4bc;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(200, 212, 220, 0.15);
+        }
+
+        .current-time {
+            font-family: 'Merriweather', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 700;
+            color: #c8d4dc;
+            margin-bottom: 0.5rem;
+        }
+
+        .day-indicator {
+            font-size: 0.9rem;
+            color: #8a94a0;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .struggle-section {
+            margin-bottom: 2rem;
+        }
+
+        .moment-title {
+            font-family: 'Merriweather', serif;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 700;
+            color: #d8e4ec;
+            margin-bottom: 1rem;
+        }
+
+        .location {
+            font-size: 0.95rem;
+            color: #9aa4b0;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage-container {
+            position: relative;
+            min-height: 180px;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage {
+            font-size: clamp(1rem, 2.2vw, 1.2rem);
+            line-height: 1.9;
+            color: #d8dce0;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: passageFade 15s ease-in-out infinite;
+        }
+
+        .passage:nth-child(1) { animation-delay: 0s; }
+        .passage:nth-child(2) { animation-delay: 5s; }
+        .passage:nth-child(3) { animation-delay: 10s; }
+
+        @keyframes passageFade {
+            0% { opacity: 0; transform: translateY(8px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(8px); }
+        }
+
+        .hemingway-line {
+            font-size: clamp(0.95rem, 2vw, 1.15rem);
+            line-height: 1.8;
+            color: #b8c4cc;
+            padding: 1.5rem;
+            background: rgba(74, 106, 138, 0.15);
+            border-left: 4px solid #6a9aca;
+            margin-top: 1rem;
+            font-style: italic;
+        }
+
+        .catch-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            text-align: right;
+            padding: 1rem;
+            background: rgba(10, 20, 30, 0.8);
+            border: 2px solid #4a6a8a;
+        }
+
+        .catch-counter .day {
+            font-family: 'Merriweather', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #c8d4dc;
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .catch-counter .label {
+            font-size: 0.8rem;
+            color: #8a94a0;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .catch-counter {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="night">
+    <div class="ocean-waves">
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">The Old Man and the Sea</h1>
+            <div class="author">Ernest Hemingway</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="day-indicator" id="day-indicator">Far Out at Sea</div>
+        </div>
+
+        <div class="struggle-section">
+            <h2 class="moment-title" id="moment-title">The Struggle</h2>
+            <div class="location" id="location">The Gulf Stream, alone</div>
+            <div class="passage-container">
+                <div id="passages">
+                    <!-- Passages injected here -->
+                </div>
+            </div>
+            <div class="hemingway-line">
+                "A man can be destroyed but not defeated."
+            </div>
+        </div>
+    </div>
+
+    <div class="catch-counter">
+        <span class="day" id="day-count">1</span>
+        <span class="label">Day of Struggle</span>
+    </div>
+
+    <script>
+        const moments = [
+            // BEFORE THE JOURNEY (Midnight - 4 AM)
+            {
+                hour: 0,
+                title: "The Night Before",
+                location: "The shack, sleeping",
+                day: "Day 0",
+                passages: [
+                    "He was asleep in a short time and he dreamed of Africa when he was a young man and the long golden beaches and the white beaches, so white they hurt your eyes, and the high capes and the great brown mountains.",
+                    "He no longer dreamed of storms, nor of women, nor of great occurrences, nor of great fish, nor fights, nor contests of strength. He only dreamed of places now and of the lions on the beach.",
+                    "The old man had taught the boy to fish and the boy loved him."
+                ],
+                timeOfDay: "night"
+            },
+            {
+                hour: 1,
+                title: "Sleep and Dreams",
+                location: "The shack",
+                day: "Day 0",
+                passages: [
+                    "The boy loved him and he pitied him. If Manolin had no money of his own, he begged or stole to make sure the old man had enough to eat.",
+                    "Santiago dreamed of lions. He had seen them on the beaches of Africa when he was young, shipped before the mast on a square riggerbound for that coast.",
+                    "He slept peacefully and the boy sat by him and watched him."
+                ],
+                timeOfDay: "night"
+            },
+            {
+                hour: 2,
+                title: "Before Dawn",
+                location: "The shack",
+                day: "Day 0",
+                passages: [
+                    "It was too early to wake the old man and he rested against the stern and waited for the first of the light.",
+                    "He had no mysticism about turtles although he had gone in turtle boats for many years. He was sorry for them all, even the great trunk backs that were as long as the skiff.",
+                    "Most people are heartless about turtles because a turtle's heart will beat for hours after it has been cut up. But the old man thought, I have such a heart too."
+                ],
+                timeOfDay: "night"
+            },
+
+            // DAY ONE — SETTING OUT (4 AM - Midnight)
+            {
+                hour: 3,
+                title: "The Old Man Wakes",
+                location: "The shack",
+                day: "Day 1",
+                passages: [
+                    "The old man woke and the boy brought him coffee. Then they went down the road to wake the other fishermen.",
+                    "'I know you did not leave me because you doubted.' 'It was papa made me leave. I am a boy and I must obey him.' 'I know,' the old man said. 'It is quite normal.'",
+                    "'How much did you suffer?' 'Plenty,' the old man said."
+                ],
+                timeOfDay: "dawn"
+            },
+            {
+                hour: 4,
+                title: "Dawn — Setting Sail",
+                location: "Rowing out from harbor",
+                day: "Day 1",
+                passages: [
+                    "He was rowing steadily and it was no effort for him since he kept well within his speed. The ocean was very dark and the light made prisms in the water.",
+                    "The old man knew he was going far out and he left the smell of the land behind and rowed out into the clean early morning smell of the ocean.",
+                    "Just before it was dark, as they passed the great island of sargasso weed, he saw the scattered purple, formless, iridescent, gelatinous bladder of a Portuguese man-of-war."
+                ],
+                timeOfDay: "dawn"
+            },
+            {
+                hour: 5,
+                title: "First Light",
+                location: "Rowing farther out",
+                day: "Day 1",
+                passages: [
+                    "The sun rose thinly from the sea and the old man could see the other boats, low on the water and well in toward the shore, spread out across the current.",
+                    "'I may not be as strong as I think,' the old man said. 'But I know many tricks and I have resolution.'",
+                    "He loved green turtles and hawk-bills with their elegance and speed. He was sorry for all of them, even the great loggerheads."
+                ],
+                timeOfDay: "dawn"
+            },
+            {
+                hour: 6,
+                title: "The Lines Are Set",
+                location: "Far out, alone",
+                day: "Day 1",
+                passages: [
+                    "Each line, as thick around as a big pencil, was looped onto a green-sapped stick so that any pull or touch on the bait would make the stick dip.",
+                    "The old man watched the dip of the three sticks over the side of the skiff and rowed gently to keep the lines straight up and down.",
+                    "'Eighty-five is a lucky number,' the old man said. 'How would you like to see me bring one in that dressed out over a thousand pounds?'"
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 7,
+                title: "Morning on the Gulf Stream",
+                location: "Deep water",
+                day: "Day 1",
+                passages: [
+                    "The old man looked at the fish constantly to make sure it was true. It was an hour before the first shark hit him.",
+                    "But, he thought, I keep them with precision. Only I have no luck anymore. But who knows? Maybe today. Every day is a new day.",
+                    "'Fish,' he said softly, aloud, 'I'll stay with you until I am dead.'"
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 8,
+                title: "A Small Bird Rests",
+                location: "The skiff, alone at sea",
+                day: "Day 1",
+                passages: [
+                    "Just then the stern line came taut under his foot, where he had kept the loop of the line, and he dropped his oars and felt the weight of the small tuna's shivering pull.",
+                    "A small bird came toward the skiff from the north. He was a warbler and flying very low over the water.",
+                    "'Take a good rest, small bird,' he said. 'Then go in and take your chance like any man or bird or fish.'"
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 9,
+                title: "The Bird Leaves",
+                location: "The endless sea",
+                day: "Day 1",
+                passages: [
+                    "The bird made the stern of the boat and rested there. Then it flew around the old man's head and rested on the line where it was more comfortable.",
+                    "'How old are you?' the old man asked the bird. 'Is this your first trip?' The bird looked at him when he spoke.",
+                    "'Stay at my house if you like, bird,' he said. 'I am sorry I cannot hoist the sail and take you in with the small breeze that is rising. But I am with a friend.'"
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 10,
+                title: "The Line Moves",
+                location: "Drifting far from land",
+                day: "Day 1",
+                passages: [
+                    "Then the line began to rise slowly and steadily toward the surface and the old man kneeled down and crawled backward against the pull.",
+                    "He felt faint again now but he held on the great fish all the strain that he could. The fish came up slowly and the old man raised him steadily.",
+                    "'Fish,' he said, 'I love you and respect you very much. But I will kill you before this day ends.'"
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 11,
+                title: "Midday Heat",
+                location: "Under the burning sun",
+                day: "Day 1",
+                passages: [
+                    "The sun was hot now and the old man felt it on the back of his neck and felt the sweat drip down his back.",
+                    "'I wish I had the boy,' he said aloud and settled himself against the rounded planks of the bow.",
+                    "The fish is my friend too, he thought. I have never seen or heard of such a fish. But I must kill him."
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 12,
+                title: "The Great Fish",
+                location: "Locked in battle",
+                day: "Day 1",
+                passages: [
+                    "The line rose slowly and steadily and then the surface of the ocean bulged ahead of the boat and the fish came out.",
+                    "He came out unendingly and water poured from his sides. He was bright in the sun and his head and back were dark purple and in the sun the stripes on his sides showed wide and a light lavender.",
+                    "The old man dropped the line and put his foot on it and lifted the harpoon as high as he could and drove it down with all his strength into the fish's side."
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 13,
+                title: "Afternoon — The Pull",
+                location: "Towed by the fish",
+                day: "Day 1",
+                passages: [
+                    "The fish swam steadily and they traveled slowly on the calm water. The fish never changed his course nor his direction all that night.",
+                    "'I wonder why he jumped,' the old man thought. 'He jumped almost as though to show me how big he was.'",
+                    "'I'll kill him though,' he said. 'In all his greatness and his glory.' Although it is unjust, he thought. But I will show him what a man can do and what a man endures."
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 14,
+                title: "Hand Cramps",
+                location: "Far from any shore",
+                day: "Day 1",
+                passages: [
+                    "His left hand was still cramped, but he was unknotting it slowly. I hate a cramp, he thought. It is a treachery of one's own body.",
+                    "'Please, hand,' he said. 'Please work for me. You have done it before.'",
+                    "He looked across the sea and knew how alone he was now. But he could see the prisms in the deep dark water and the line stretching ahead."
+                ],
+                timeOfDay: "day"
+            },
+            {
+                hour: 15,
+                title: "Late Afternoon",
+                location: "The endless struggle",
+                day: "Day 1",
+                passages: [
+                    "He did not truly feel good because the pain from the cord across his back had almost passed pain and into dullness.",
+                    "'Fish,' he said, 'I love you and respect you very much. But I will kill you dead before this day ends.'",
+                    "Let us hope so, he thought. A thousand times he had proved it meant nothing. Now he was proving it again. Each time was a new time and he never thought about the past when he was doing it."
+                ],
+                timeOfDay: "dusk"
+            },
+            {
+                hour: 16,
+                title: "Evening Comes",
+                location: "Drifting northwest",
+                day: "Day 1",
+                passages: [
+                    "Now the old man looked up and saw that the bird was circling again. 'You'd better settle down again, bird,' the old man said.",
+                    "It was getting dark now. The old man took the line in his left hand and slowly and carefully reeled in until he could see the swirls of the great fish.",
+                    "'You're tired, fish,' he said. 'I'll tire you to death.'"
+                ],
+                timeOfDay: "dusk"
+            },
+            {
+                hour: 17,
+                title: "Dusk",
+                location: "The darkening sea",
+                day: "Day 1",
+                passages: [
+                    "He looked at the sky and saw the white cumulus built like friendly piles of ice cream and high above were the thin feathers of the cirrus against the high September sky.",
+                    "'I cannot think of wars,' he said to himself. 'But what is this fish to think of?'",
+                    "The old man settled himself to steer. He did not even watch the big fish now. He only watched the sky and the line."
+                ],
+                timeOfDay: "dusk"
+            },
+            {
+                hour: 18,
+                title: "Night Falls — Day One Ends",
+                location: "Under the stars",
+                day: "Day 1",
+                passages: [
+                    "After it was dark the old man knew the fish would not change nor would it change before morning. After it was really dark he eased his position.",
+                    "The stars were bright now and he saw the dolphin clearly. When the fish jumped it made a great bursting of water.",
+                    "'Sleep well, fish,' the old man said. 'I will sleep well too.'"
+                ],
+                timeOfDay: "night"
+            },
+
+            // DAY TWO (7 PM - 6 AM next day)
+            {
+                hour: 19,
+                title: "Night — The Fish Circles",
+                location: "The dark ocean",
+                day: "Day 2",
+                passages: [
+                    "Twice more it was the same on the turns. I do not know, the old man thought. He had been on the point of feeling himself go each time.",
+                    "He felt sick and his whole hand was stiff and his shoulder ached. 'Fish,' he said, 'I'll stay with you until I am dead.'",
+                    "He thought of the great DiMaggio. 'I must be worthy of the great DiMaggio who does all things perfectly even with the pain of the bone spur in his heel.'"
+                ],
+                timeOfDay: "night"
+            },
+            {
+                hour: 20,
+                title: "Late Night",
+                location: "Alone with the fish",
+                day: "Day 2",
+                passages: [
+                    "The old man had seen many great fish. He had seen many that weighed more than a thousand pounds and he had caught two of that size in his life, but never alone.",
+                    "Now alone, and out of sight of land, he was fast to the biggest fish that he had ever seen.",
+                    "'I wish the boy was here,' he said aloud and settled himself against the worn wood of the bow."
+                ],
+                timeOfDay: "night"
+            },
+            {
+                hour: 21,
+                title: "Deep Night",
+                location: "Stars above",
+                day: "Day 2",
+                passages: [
+                    "He looked at the stars and he thought: I am being towed by this fish and I am the towing bitt.",
+                    "'He cannot know that it is only one man against him, nor that it is an old man. But what a great fish he is!'",
+                    "He rested sitting on the un-stepped mast and sail and tried not to think but only to endure."
+                ],
+                timeOfDay: "night"
+            },
+            {
+                hour: 22,
+                title: "Past Midnight",
+                location: "The endless sea",
+                day: "Day 2",
+                passages: [
+                    "Once he stood up and urinated over the side of the skiff and looked at the stars and checked his course.",
+                    "The line showed like a phosphorescent streak in the water straight out from his shoulders.",
+                    "'Fish,' he said, 'I love you. But I must kill you.'"
+                ],
+                timeOfDay: "night"
+            },
+            {
+                hour: 23,
+                title: "Before Dawn — Day Three",
+                location: "Still far out",
+                day: "Day 3",
+                passages: [
+                    "When the old man woke he could see the fish and knew that nothing had changed. One line went out from the fish's mouth.",
+                    "'I think the great DiMaggio would be proud of me today,' he thought.",
+                    "'I must kill him. I am glad we do not have to try to kill the stars. Imagine if each day a man must try to kill the moon, he thought.'"
+                ],
+                timeOfDay: "night"
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const dayIndicatorEl = document.getElementById('day-indicator');
+        const momentTitleEl = document.getElementById('moment-title');
+        const locationEl = document.getElementById('location');
+        const passagesEl = document.getElementById('passages');
+        const dayCountEl = document.getElementById('day-count');
+        const bodyEl = document.body;
+
+        let currentMomentIndex = -1;
+
+        function getMomentForHour(hour) {
+            return moments.find(m => m.hour === hour) || moments[0];
+        }
+
+        function renderPassages(passages) {
+            passagesEl.innerHTML = passages.map(passage => `
+                <div class="passage">${passage}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current moment
+            const moment = getMomentForHour(hour);
+            const momentIndex = moments.indexOf(moment);
+
+            // Update time of day class
+            bodyEl.className = moment.timeOfDay;
+
+            // Update content if moment changed
+            if (momentIndex !== currentMomentIndex) {
+                dayIndicatorEl.textContent = `${moment.title} — ${moment.day}`;
+                momentTitleEl.textContent = moment.title;
+                locationEl.textContent = moment.location;
+                renderPassages(moment.passages);
+
+                // Update day counter (simplified)
+                if (hour < 3) {
+                    dayCountEl.textContent = '0';
+                } else if (hour < 19) {
+                    dayCountEl.textContent = '1';
+                } else {
+                    dayCountEl.textContent = '2';
+                }
+
+                currentMomentIndex = momentIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>
