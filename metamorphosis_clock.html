@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Metamorphosis Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #2a2522 0%, #1a1512 100%);
+            font-family: 'IBM Plex Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #c8c4bc;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .insect-legs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.05;
+            z-index: 0;
+        }
+
+        .leg {
+            position: absolute;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, #8a7a6a, transparent);
+            transform-origin: top center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(30, 26, 22, 0.95);
+            border: 1px solid #4a4037;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #3a3430;
+        }
+
+        .title {
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 300;
+            color: #d8d4cc;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .original-title {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: #8a8480;
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+
+        .author {
+            font-size: 0.95rem;
+            color: #9a9490;
+            letter-spacing: 0.2em;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(20, 16, 12, 0.5);
+            border: 1px solid #3a3430;
+        }
+
+        .current-time {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 600;
+            color: #e8e4dc;
+            margin-bottom: 0.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .stage-indicator {
+            font-size: 0.85rem;
+            color: #8a8480;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .transformation-stage {
+            margin-bottom: 2rem;
+        }
+
+        .stage-title {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 600;
+            color: #b8b4ac;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .narrative-container {
+            position: relative;
+            min-height: 180px;
+            margin-bottom: 1.5rem;
+        }
+
+        .narrative {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.8;
+            color: #c8c4bc;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: narrativeFade 15s ease-in-out infinite;
+        }
+
+        .narrative:nth-child(1) { animation-delay: 0s; }
+        .narrative:nth-child(2) { animation-delay: 5s; }
+        .narrative:nth-child(3) { animation-delay: 10s; }
+
+        @keyframes narrativeFade {
+            0% { opacity: 0; transform: translateY(8px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(8px); }
+        }
+
+        .opening-line {
+            font-size: clamp(0.85rem, 1.8vw, 1rem);
+            line-height: 1.7;
+            color: #a8a4ac;
+            font-style: italic;
+            padding: 1.5rem;
+            background: rgba(10, 6, 2, 0.3);
+            border-left: 3px solid #6a6460;
+            margin-top: 1rem;
+        }
+
+        .body-count {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-size: 0.8rem;
+            color: #6a6460;
+            text-align: right;
+            z-index: 2;
+        }
+
+        .body-count .number {
+            font-size: 3rem;
+            font-weight: 600;
+            color: #8a8480;
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .body-count {
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+
+        @keyframes legTwitch {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(3deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="insect-legs" id="legs"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">The Metamorphosis</h1>
+            <div class="original-title">Die Verwandlung</div>
+            <div class="author">Franz Kafka</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="stage-indicator" id="stage-indicator">Transformation in Progress</div>
+        </div>
+
+        <div class="transformation-stage">
+            <h2 class="stage-title" id="stage-title">The Awakening</h2>
+            <div class="narrative-container">
+                <div id="narratives">
+                    <!-- Narratives injected here -->
+                </div>
+            </div>
+            <div class="opening-line">
+                "As Gregor Samsa awoke one morning from uneasy dreams he found himself transformed in his bed into a monstrous vermin."
+            </div>
+        </div>
+    </div>
+
+    <div class="body-count">
+        <span class="number" id="leg-count">6</span>
+        <span>legs</span>
+    </div>
+
+    <script>
+        const stages = [
+            {
+                hours: [0, 1, 2, 3],
+                title: "Night — Before Transformation",
+                indicator: "The Uneasy Dreams",
+                narratives: [
+                    "In the darkness before dawn, Gregor Samsa sleeps fitfully. His dreams are troubled, chaotic. Something is changing.",
+                    "The sample collection lies on the table. Tomorrow he must wake early for the five o'clock train. Always the traveling, the worries, the irregular meals.",
+                    "His parents sleep in the next room. Grete, his sister, in hers. The apartment is silent. But something terrible is about to happen."
+                ]
+            },
+            {
+                hours: [4, 5, 6],
+                title: "Dawn — The Awakening",
+                indicator: "Discovering the Change",
+                narratives: [
+                    "As Gregor Samsa awoke one morning from uneasy dreams he found himself transformed in his bed into a monstrous vermin.",
+                    "He lay on his armour-like back and saw, when he lifted his head a little, his brown, arched abdomen divided into stiff sections.",
+                    "What has happened to me? he thought. It was no dream. His room, a proper human room, lay quiet between the four familiar walls."
+                ]
+            },
+            {
+                hours: [7, 8, 9],
+                title: "Morning — The Failed Escape",
+                indicator: "Unable to Rise",
+                narratives: [
+                    "His many legs, pitifully thin compared with the size of the rest of him, waved helplessly before his eyes.",
+                    "He tried to get back to sleep, but found it impossible. When he tried to lift himself, he fell back again with a little cry.",
+                    "The alarm clock had not rung. It was past seven o'clock. Had the alarm not rung? He could see from the bed that it was set for four o'clock."
+                ]
+            },
+            {
+                hours: [10, 11],
+                title: "Late Morning — The Chief Clerk",
+                indicator: "The Locked Door",
+                narratives: [
+                    "'Gregor!' his father called. 'The chief clerk is here.' And already his mother was saying: 'Gregor, the chief clerk is here.'",
+                    "Through the door, he tried to speak. But his voice had changed—it was the voice of an animal, painful and incomprehensible.",
+                    "The chief clerk stepped back into the hall. 'Did you hear him speak?' 'That was the voice of an animal,' said the chief clerk."
+                ]
+            },
+            {
+                hours: [12, 13, 14],
+                title: "Midday — The Revelation",
+                indicator: "They See Him",
+                narratives: [
+                    "Gregor had pushed himself through the doorway. His mother saw him and fell backward. His father clenched his fist with a hostile expression.",
+                    "The chief clerk was already on the stairs. He vanished with a cry of 'Ugh!' that echoed through the entire stairwell.",
+                    "His father seized the chief clerk's walking stick and a newspaper, stamping his feet and driving Gregor back into his room with hisses."
+                ]
+            },
+            {
+                hours: [15, 16, 17],
+                title: "Afternoon — The Isolation Begins",
+                indicator: "Locked Away",
+                narratives: [
+                    "No one came anymore, and the keys were now always in the locks. They had locked him in. He was a prisoner.",
+                    "His sister brought him food, but she could not bear to look at him. She hurried in, quickly set down the bowl, and rushed out.",
+                    "He spent the hours crawling on the walls and ceiling. It was much better than lying on the floor. He could breathe more freely."
+                ]
+            },
+            {
+                hours: [18, 19],
+                title: "Evening — Grete's Care",
+                indicator: "His Sister's Pity",
+                narratives: [
+                    "Grete understood better than anyone what sort of food would suit him. She brought him a selection: old, half-rotten vegetables, bones covered with congealed white sauce.",
+                    "He had thought no one would dare to remove anything from his room. But his sister was determined to look after him, in her own way.",
+                    "She had even started to move the furniture out, to give him more room to crawl. But did he really want a bare room, stripped of all memory?"
+                ]
+            },
+            {
+                hours: [20, 21],
+                title: "Night — The Apple",
+                indicator: "His Father's Rage",
+                narratives: [
+                    "His father had decided to bombard him. Apples rolled across the floor. Then one flew directly at him and lodged in his back.",
+                    "The pain was indescribable. 'Gregor!' his sister had cried. She had seen it. His mother had fainted. The apple remained embedded in his flesh.",
+                    "From that injury, which disabled him for more than a month, he never fully recovered. The apple remained there, a visible reminder."
+                ]
+            },
+            {
+                hours: [22, 23],
+                title: "Late Night — The Final Stage",
+                indicator: "Decline and Death",
+                narratives: [
+                    "He had become completely neglected. Dust covered everything in his room. His sister no longer bothered to clean.",
+                    "He ate almost nothing now. The wound in his back was open and inflamed. He could barely move. He thought of his family with tenderness and love.",
+                    "He remained in this state of empty, peaceful reflection until the church clock struck three in the morning. Then his head sank to the floor, and his last breath weakly left his nostrils."
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const stageIndicatorEl = document.getElementById('stage-indicator');
+        const stageTitleEl = document.getElementById('stage-title');
+        const narrativesEl = document.getElementById('narratives');
+        const legCountEl = document.getElementById('leg-count');
+        const legsContainer = document.getElementById('legs');
+
+        let currentStageIndex = -1;
+
+        // Create background legs
+        function createLegs() {
+            for (let i = 0; i < 6; i++) {
+                const leg = document.createElement('div');
+                leg.className = 'leg';
+                const x = (i % 2 === 0) ? Math.random() * 30 : 70 + Math.random() * 30;
+                const height = 200 + Math.random() * 300;
+                const rotation = (i % 2 === 0) ? -20 - Math.random() * 40 : 20 + Math.random() * 40;
+
+                leg.style.left = `${x}%`;
+                leg.style.height = `${height}px`;
+                leg.style.transform = `rotate(${rotation}deg)`;
+                leg.style.animation = `legTwitch ${3 + Math.random() * 4}s ease-in-out infinite`;
+                leg.style.animationDelay = `${Math.random() * 2}s`;
+
+                legsContainer.appendChild(leg);
+            }
+        }
+
+        function getStageForHour(hour) {
+            for (const stage of stages) {
+                if (stage.hours.includes(hour)) {
+                    return stage;
+                }
+            }
+            return stages[0];
+        }
+
+        function renderNarratives(narratives) {
+            narrativesEl.innerHTML = narratives.map(narrative => `
+                <div class="narrative">${narrative}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current stage
+            const stage = getStageForHour(hour);
+            const stageIndex = stages.indexOf(stage);
+
+            // Update content if stage changed
+            if (stageIndex !== currentStageIndex) {
+                stageTitleEl.textContent = stage.title;
+                stageIndicatorEl.textContent = stage.indicator;
+                renderNarratives(stage.narratives);
+                currentStageIndex = stageIndex;
+            }
+
+            // Update leg count based on stage (deterioration)
+            if (hour >= 20) {
+                legCountEl.textContent = '3'; // Losing functionality
+            } else if (hour >= 15) {
+                legCountEl.textContent = '5'; // One damaged
+            } else if (hour >= 7) {
+                legCountEl.textContent = '6'; // Full vermin
+            } else if (hour >= 4) {
+                legCountEl.textContent = '6'; // Transformation complete
+            } else {
+                legCountEl.textContent = '2'; // Still human
+            }
+        }
+
+        // Initialize
+        createLegs();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

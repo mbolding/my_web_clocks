@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Divine Comedy Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --inferno-bg: linear-gradient(to bottom, #1a0a0a 0%, #3d0000 50%, #000000 100%);
+            --inferno-border: #8b0000;
+            --inferno-text: #ff6b6b;
+
+            --purgatorio-bg: linear-gradient(to bottom, #2a2a3a 0%, #4a4a6a 50%, #6a6a8a 100%);
+            --purgatorio-border: #8a8aaa;
+            --purgatorio-text: #c8c8e8;
+
+            --paradiso-bg: linear-gradient(to bottom, #0a1a3a 0%, #1a3a6a 50%, #ffffff 100%);
+            --paradiso-border: #6a9aff;
+            --paradiso-text: #ffd700;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--inferno-bg);
+            font-family: 'Crimson Text', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #d8d4cc;
+            position: relative;
+            transition: background 2s ease;
+        }
+
+        body.inferno {
+            background: var(--inferno-bg);
+        }
+
+        body.purgatorio {
+            background: var(--purgatorio-bg);
+        }
+
+        body.paradiso {
+            background: var(--paradiso-bg);
+        }
+
+        .illumination {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .flame {
+            position: absolute;
+            width: 2px;
+            height: 60px;
+            background: linear-gradient(to top, #ff4400, #ffaa00, transparent);
+            animation: flicker 2s ease-in-out infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 0.3; transform: scaleY(1); }
+            50% { opacity: 0.8; transform: scaleY(1.2); }
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--inferno-border);
+            box-shadow: 0 0 60px rgba(139, 0, 0, 0.5);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+            transition: border-color 2s ease, box-shadow 2s ease;
+        }
+
+        body.purgatorio .container {
+            border-color: var(--purgatorio-border);
+            box-shadow: 0 0 60px rgba(138, 138, 170, 0.5);
+        }
+
+        body.paradiso .container {
+            border-color: var(--paradiso-border);
+            box-shadow: 0 0 60px rgba(106, 154, 255, 0.7);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 700;
+            color: #f8f6f2;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .original-title {
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            color: #c8c4bc;
+            font-style: italic;
+            margin-bottom: 0.5rem;
+        }
+
+        .author {
+            font-size: 1rem;
+            color: #a8a4ac;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .current-time {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 600;
+            color: var(--inferno-text);
+            margin-bottom: 0.5rem;
+            transition: color 2s ease;
+        }
+
+        body.purgatorio .current-time {
+            color: var(--purgatorio-text);
+        }
+
+        body.paradiso .current-time {
+            color: var(--paradiso-text);
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+        }
+
+        .realm-indicator {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #8a8480;
+        }
+
+        .journey-section {
+            margin-bottom: 2rem;
+        }
+
+        .circle-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.3rem, 3vw, 2rem);
+            font-weight: 600;
+            color: var(--inferno-text);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: color 2s ease;
+        }
+
+        body.purgatorio .circle-title {
+            color: var(--purgatorio-text);
+        }
+
+        body.paradiso .circle-title {
+            color: var(--paradiso-text);
+        }
+
+        .location {
+            font-size: 0.95rem;
+            color: #9a9490;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .verse-container {
+            position: relative;
+            min-height: 160px;
+            margin-bottom: 1.5rem;
+        }
+
+        .verse {
+            font-size: clamp(1rem, 2.2vw, 1.2rem);
+            line-height: 1.9;
+            color: #d8d4cc;
+            font-style: italic;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: verseFade 12s ease-in-out infinite;
+        }
+
+        .verse:nth-child(1) { animation-delay: 0s; }
+        .verse:nth-child(2) { animation-delay: 4s; }
+        .verse:nth-child(3) { animation-delay: 8s; }
+
+        @keyframes verseFade {
+            0% { opacity: 0; transform: translateY(10px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(10px); }
+        }
+
+        .inscription {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.85rem, 2vw, 1.1rem);
+            line-height: 1.7;
+            color: #ff6b6b;
+            padding: 1.5rem;
+            background: rgba(139, 0, 0, 0.2);
+            border-left: 3px solid #8b0000;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="inferno">
+    <div class="illumination" id="illumination"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">The Divine Comedy</h1>
+            <div class="original-title">La Divina Commedia</div>
+            <div class="author">Dante Alighieri</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="realm-indicator" id="realm">Inferno</div>
+        </div>
+
+        <div class="journey-section">
+            <h2 class="circle-title" id="circle-title">The Dark Wood</h2>
+            <div class="location" id="location">The entrance to Hell</div>
+            <div class="verse-container">
+                <div id="verses">
+                    <!-- Verses injected here -->
+                </div>
+            </div>
+            <div class="inscription">
+                "Abandon all hope, ye who enter here"
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const circles = [
+            // INFERNO (Midnight to 8 AM)
+            {
+                hour: 0,
+                realm: "Inferno",
+                title: "The Dark Wood",
+                romanNumeral: "Canto I",
+                location: "Lost in the selva oscura",
+                verses: [
+                    "Nel mezzo del cammin di nostra vita / mi ritrovai per una selva oscura, / ché la diritta via era smarrita.",
+                    "In the middle of the journey of our life / I found myself in a dark wood, / for the straight way was lost.",
+                    "Dante wanders lost in the darkness, unable to find his way. The path to righteousness has vanished."
+                ]
+            },
+            {
+                hour: 1,
+                realm: "Inferno",
+                title: "Circle I — Limbo",
+                romanNumeral: "Canto IV",
+                location: "The virtuous pagans",
+                verses: [
+                    "Here dwell the souls of the unbaptized and virtuous pagans—Homer, Virgil, Ovid, and the great philosophers.",
+                    "No torment afflicts them except the absence of hope. They sigh without suffering, living in desire without hope.",
+                    "A noble castle with seven walls stands here, where the great spirits of antiquity reside in eternal melancholy."
+                ]
+            },
+            {
+                hour: 2,
+                realm: "Inferno",
+                title: "Circle II — Lust",
+                romanNumeral: "Canto V",
+                location: "The lustful whirled by winds",
+                verses: [
+                    "Here the carnal sinners are punished, blown about ceaselessly by fierce winds, as in life they were swept by passion.",
+                    "Paolo and Francesca, tragic lovers, tell their tale: 'That day we read no more.' Forever bound in the storm.",
+                    "Amor condusse noi ad una morte. Love brought us to one death. They swirl eternally together."
+                ]
+            },
+            {
+                hour: 3,
+                realm: "Inferno",
+                title: "Circle III — Gluttony",
+                romanNumeral: "Canto VI",
+                location: "Guarded by Cerberus",
+                verses: [
+                    "The gluttons lie in freezing rain and hail, trampled by Cerberus, the three-headed beast who tears at them.",
+                    "They wallow in mud, their eyes blind to all but their degradation, howling like dogs.",
+                    "Here Ciacco prophesies Florence's doom, speaking of political strife before sinking back into the mire."
+                ]
+            },
+            {
+                hour: 4,
+                realm: "Inferno",
+                title: "Circle IV — Greed",
+                romanNumeral: "Canto VII",
+                location: "Hoarders and wasters",
+                verses: [
+                    "Two groups push great weights against each other—the hoarders and the wasters, forever in futile combat.",
+                    "'Why do you hoard?' 'Why do you waste?' they shout, circling eternally, clashing and turning back.",
+                    "Here misers and spendthrifts learn that Fortune's wheel turns for all, and wealth means nothing."
+                ]
+            },
+            {
+                hour: 5,
+                realm: "Inferno",
+                title: "Circle V — Wrath",
+                romanNumeral: "Canto VIII",
+                location: "The river Styx",
+                verses: [
+                    "The wrathful fight each other on the surface of the muddy Styx, while the sullen gurgle beneath.",
+                    "Filippo Argenti rises from the marsh, and Dante shows him no pity. 'May you weep and wail for all eternity!'",
+                    "The boatman Phlegyas ferries them across the marsh of boiling souls toward the City of Dis."
+                ]
+            },
+            {
+                hour: 6,
+                realm: "Inferno",
+                title: "Circle VI — Heresy",
+                romanNumeral: "Canto X",
+                location: "Burning tombs",
+                verses: [
+                    "The heretics lie in open burning tombs, their bodies aflame for denying the soul's immortality.",
+                    "Farinata degli Uberti rises from his sepulcher, proud and unrepentant, speaking of Florentine politics.",
+                    "The tombs will be sealed forever on Judgment Day, when all knowledge of the future ends."
+                ]
+            },
+            {
+                hour: 7,
+                realm: "Inferno",
+                title: "Circle VII — Violence",
+                romanNumeral: "Cantos XII-XVII",
+                location: "The river of blood and the burning sands",
+                verses: [
+                    "The violent against neighbors boil in Phlegethon's blood. The violent against themselves become gnarled trees.",
+                    "In the burning sands, the violent against God lie supine beneath flakes of fire, forever blasphemous.",
+                    "Here too are the usurers, their purses hanging from their necks, marks of their sin against nature and art."
+                ]
+            },
+
+            // PURGATORIO (8 AM to 4 PM)
+            {
+                hour: 8,
+                realm: "Purgatorio",
+                title: "The Shores of Purgatory",
+                romanNumeral: "Canto I",
+                location: "The beach at the mountain's base",
+                verses: [
+                    "To course over better waters the little bark of my wit now lifts her sails, leaving behind so cruel a sea.",
+                    "Cato guards the shores, his face illuminated by four stars representing the cardinal virtues unseen since Eden.",
+                    "The souls arrive singing In exitu Israel de Aegypto, delivered from bondage, beginning their ascent."
+                ]
+            },
+            {
+                hour: 9,
+                realm: "Purgatorio",
+                title: "Ante-Purgatory",
+                romanNumeral: "Cantos II-IV",
+                location: "The excommunicated and the late-repentant",
+                verses: [
+                    "Here wait those who delayed repentance until the last moment, or died excommunicate from the Church.",
+                    "Casella sings one of Dante's own canzoni: 'Amor che ne la mente mi ragiona.' But Cato chides their delay.",
+                    "They must wait thirty times as long as they defied God before beginning their climb."
+                ]
+            },
+            {
+                hour: 10,
+                realm: "Purgatorio",
+                title: "Terrace I — Pride",
+                romanNumeral: "Cantos X-XII",
+                location: "Bearing great stones",
+                verses: [
+                    "The proud are bent low under massive stones, their backs crushed, unable to lift their heads in arrogance.",
+                    "They recite the Paternoster together, and Dante sees marble reliefs showing examples of humility.",
+                    "The angel of humility brushes Dante's forehead, erasing the first P, the mark of pride's sin."
+                ]
+            },
+            {
+                hour: 11,
+                realm: "Purgatorio",
+                title: "Terrace II — Envy",
+                romanNumeral: "Cantos XIII-XIV",
+                location: "Eyes sewn shut",
+                verses: [
+                    "The envious sit with their eyes sewn shut with iron wire, unable to see what others possess.",
+                    "They wear cloaks of coarse haircloth and lean against each other, singing the Litany of Saints.",
+                    "Voices cry out examples of charity, while the whip of envy lashes them with tales of its punishment."
+                ]
+            },
+            {
+                hour: 12,
+                realm: "Purgatorio",
+                title: "Terrace III — Wrath",
+                romanNumeral: "Cantos XV-XVII",
+                location: "The blinding smoke",
+                verses: [
+                    "Acrid smoke, blacker than night, blinds the wrathful as they stumble through the darkness.",
+                    "They chant the Agnus Dei: 'Lamb of God, who takest away the sins of the world, grant us peace.'",
+                    "Dante sees visions of wrath's consequences—Procne, Haman, and the destruction they brought."
+                ]
+            },
+            {
+                hour: 13,
+                realm: "Purgatorio",
+                title: "Terrace IV — Sloth",
+                romanNumeral: "Cantos XVII-XVIII",
+                location: "Running without rest",
+                verses: [
+                    "The slothful run ceaselessly, never resting, calling out examples of zeal and swift action.",
+                    "'Mary ran with haste to the mountains!' 'Caesar struck at Lerida!' They must never slow.",
+                    "Dante learns of love—how all virtue and vice stem from love misdirected or insufficiently pursued."
+                ]
+            },
+            {
+                hour: 14,
+                realm: "Purgatorio",
+                title: "Terrace V — Avarice",
+                romanNumeral: "Cantos XIX-XX",
+                location: "Bound face-down",
+                verses: [
+                    "The avaricious and prodigal lie face-down, bound hand and foot, weeping into the dust.",
+                    "They recite 'Adhaesit pavimento anima mea'—My soul cleaveth to the dust. They loved earthly things too much.",
+                    "Pope Adrian V lies here, confessing that only in death did he see how vain were all earthly dignities."
+                ]
+            },
+            {
+                hour: 15,
+                realm: "Purgatorio",
+                title: "Terrace VI — Gluttony",
+                romanNumeral: "Cantos XXII-XXIV",
+                location: "Starving beneath fruit trees",
+                verses: [
+                    "The gluttonous are emaciated, wasted to shadows, starving beneath trees heavy with fruit they cannot reach.",
+                    "Water cascades down, and fragrant apples hang just out of reach—eternal hunger, eternal thirst.",
+                    "Forese Donati recognizes Dante: 'How can you be here before your death?' They speak of poetry and Florence."
+                ]
+            },
+
+            // PARADISO (4 PM to Midnight)
+            {
+                hour: 16,
+                realm: "Paradiso",
+                title: "Sphere I — The Moon",
+                romanNumeral: "Cantos II-V",
+                location: "The inconstant",
+                verses: [
+                    "Beatrice leads Dante into the pearl-like substance of the Moon, where dwell those who broke their vows.",
+                    "Piccarda Donati appears, serene despite being in the lowest sphere: 'In His will is our peace.'",
+                    "Here Dante learns that all souls in Paradise are content, for each sphere perfectly fulfills God's love."
+                ]
+            },
+            {
+                hour: 17,
+                realm: "Paradiso",
+                title: "Sphere II — Mercury",
+                romanNumeral: "Cantos V-VII",
+                location: "The ambitious",
+                verses: [
+                    "In Mercury dwell those who did good for fame and glory rather than pure love of God.",
+                    "The Emperor Justinian tells of Rome's history and the triumph of the eagle standard.",
+                    "These souls shine like sparks in a flame, dancing in the radiance of the second heaven."
+                ]
+            },
+            {
+                hour: 18,
+                realm: "Paradiso",
+                title: "Sphere III — Venus",
+                romanNumeral: "Cantos VIII-IX",
+                location: "The lovers",
+                verses: [
+                    "Venus holds those whose love was earthly but redeemed—Charles Martel, Cunizza, and Folquet.",
+                    "They sing 'Hosanna' and dance in circles of light, their earthly passion now transformed to holy love.",
+                    "Here love becomes the ladder to divine love, the earthly transformed into the celestial."
+                ]
+            },
+            {
+                hour: 19,
+                realm: "Paradiso",
+                title: "Sphere IV — The Sun",
+                romanNumeral: "Cantos X-XIV",
+                location: "The wise",
+                verses: [
+                    "In the Sun, the great theologians and wise souls form two circling crowns of light.",
+                    "Thomas Aquinas and Bonaventure lead the dance, rivals on Earth now united in eternal wisdom.",
+                    "They blaze like suns, their intellects perfected, singing of the Trinity in harmonies beyond human understanding."
+                ]
+            },
+            {
+                hour: 20,
+                realm: "Paradiso",
+                title: "Sphere V — Mars",
+                romanNumeral: "Cantos XIV-XVIII",
+                location: "Warriors of faith",
+                verses: [
+                    "The warriors who fought for faith form a great cross of light, Christ's image blazing in Mars.",
+                    "Cacciaguida, Dante's ancestor, prophesies his exile: 'You shall leave everything beloved most dearly.'",
+                    "The crusaders sing and flash along the arms of the cross, their sacrifice now eternal glory."
+                ]
+            },
+            {
+                hour: 21,
+                realm: "Paradiso",
+                title: "Sphere VI — Jupiter",
+                romanNumeral: "Cantos XVIII-XX",
+                location: "The just rulers",
+                verses: [
+                    "Just rulers form letters in the sky: DILIGITE IUSTITIAM—Love righteousness, ye that be judges.",
+                    "The souls arrange themselves into the shape of an eagle, the emblem of divine justice.",
+                    "The eagle speaks with one voice of the mystery of divine election and the limits of human understanding."
+                ]
+            },
+            {
+                hour: 22,
+                realm: "Paradiso",
+                title: "Sphere VII — Saturn",
+                romanNumeral: "Cantos XXI-XXII",
+                location: "The contemplatives",
+                verses: [
+                    "A golden ladder rises infinitely upward, with contemplative souls ascending and descending like Jacob's angels.",
+                    "Peter Damian and Benedict appear, speaking of monasticism and the corruption of the modern Church.",
+                    "Silence reigns here—the music would be too overwhelming for mortal ears."
+                ]
+            },
+            {
+                hour: 23,
+                realm: "Paradiso",
+                title: "The Empyrean — The Beatific Vision",
+                romanNumeral: "Cantos XXX-XXXIII",
+                location: "Beyond the spheres, the dwelling of God",
+                verses: [
+                    "Dante sees the Mystic Rose, where all the blessed sit in tiers of light, gazing upon God.",
+                    "Bernard of Clairvaux guides him now, and Mary intercedes. Dante gazes into the eternal light.",
+                    "L'amor che move il sole e l'altre stelle—The love that moves the sun and the other stars."
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const realmEl = document.getElementById('realm');
+        const circleTitleEl = document.getElementById('circle-title');
+        const locationEl = document.getElementById('location');
+        const versesEl = document.getElementById('verses');
+        const illuminationEl = document.getElementById('illumination');
+        const bodyEl = document.body;
+
+        let currentCircleIndex = -1;
+
+        function createIllumination(realm) {
+            illuminationEl.innerHTML = '';
+
+            if (realm === 'Inferno') {
+                // Create flames
+                for (let i = 0; i < 30; i++) {
+                    const flame = document.createElement('div');
+                    flame.className = 'flame';
+                    flame.style.left = `${Math.random() * 100}%`;
+                    flame.style.bottom = `${Math.random() * 30}%`;
+                    flame.style.animationDelay = `${Math.random() * 2}s`;
+                    illuminationEl.appendChild(flame);
+                }
+            } else if (realm === 'Paradiso') {
+                // Create stars
+                for (let i = 0; i < 100; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = `${Math.random() * 100}%`;
+                    star.style.top = `${Math.random() * 100}%`;
+                    star.style.animationDelay = `${Math.random() * 3}s`;
+                    illuminationEl.appendChild(star);
+                }
+            }
+        }
+
+        function getCircleForHour(hour) {
+            return circles.find(c => c.hour === hour) || circles[0];
+        }
+
+        function renderVerses(verses) {
+            versesEl.innerHTML = verses.map(verse => `
+                <div class="verse">${verse}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current circle
+            const circle = getCircleForHour(hour);
+            const circleIndex = circles.indexOf(circle);
+
+            // Update content if circle changed
+            if (circleIndex !== currentCircleIndex) {
+                realmEl.textContent = `${circle.realm} — ${circle.romanNumeral}`;
+                circleTitleEl.textContent = circle.title;
+                locationEl.textContent = circle.location;
+                renderVerses(circle.verses);
+
+                // Update realm class
+                bodyEl.className = circle.realm.toLowerCase();
+
+                // Recreate illumination if realm changed
+                if (currentCircleIndex === -1 || circles[currentCircleIndex].realm !== circle.realm) {
+                    createIllumination(circle.realm);
+                }
+
+                currentCircleIndex = circleIndex;
+            }
+        }
+
+        // Initialize
+        createIllumination('Inferno');
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

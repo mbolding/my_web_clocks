@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Canterbury Tales Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #f4e8d8 0%, #e8dcc8 50%, #d8c8b0 100%);
+            font-family: 'Crimson Text', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #3a2a1a;
+            position: relative;
+        }
+
+        .manuscript-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.08;
+            background-image:
+                repeating-linear-gradient(90deg, #8a6a4a 0px, transparent 1px, transparent 50px),
+                repeating-linear-gradient(0deg, #8a6a4a 0px, transparent 1px, transparent 50px);
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: #faf8f4;
+            border: 3px solid #8a6a4a;
+            box-shadow:
+                0 0 0 8px #faf8f4,
+                0 0 0 11px #8a6a4a,
+                0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .illuminated-initial {
+            position: absolute;
+            top: 2rem;
+            left: 1rem;
+            font-family: 'UnifrakturMaguntia', cursive;
+            font-size: 6rem;
+            color: #c41e3a;
+            opacity: 0.15;
+            line-height: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #b8a090;
+        }
+
+        .title {
+            font-family: 'UnifrakturMaguntia', cursive;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 400;
+            color: #3a2a1a;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: #6a5a4a;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+        }
+
+        .author {
+            font-size: 0.95rem;
+            color: #7a6a5a;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(184, 160, 144, 0.15);
+            border: 2px solid #b8a090;
+            position: relative;
+        }
+
+        .current-time {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 600;
+            color: #5a3a2a;
+            margin-bottom: 0.5rem;
+        }
+
+        .journey-progress {
+            font-size: 0.85rem;
+            color: #7a6a5a;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .pilgrim-section {
+            margin-bottom: 2rem;
+        }
+
+        .pilgrim-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.3rem, 3vw, 2rem);
+            font-weight: 600;
+            color: #c41e3a;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .pilgrim-title {
+            font-size: 1rem;
+            color: #6a5a4a;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .tale-container {
+            position: relative;
+            min-height: 180px;
+            margin-bottom: 1.5rem;
+        }
+
+        .tale-passage {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.9;
+            color: #4a3a2a;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: passageFade 15s ease-in-out infinite;
+        }
+
+        .tale-passage:nth-child(1) { animation-delay: 0s; }
+        .tale-passage:nth-child(2) { animation-delay: 5s; }
+        .tale-passage:nth-child(3) { animation-delay: 10s; }
+
+        @keyframes passageFade {
+            0% { opacity: 0; transform: translateY(8px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(8px); }
+        }
+
+        .middle-english {
+            font-size: clamp(0.85rem, 1.8vw, 1rem);
+            line-height: 1.7;
+            color: #8a6a4a;
+            font-style: italic;
+            padding: 1.5rem;
+            background: rgba(138, 106, 74, 0.1);
+            border-left: 4px solid #c41e3a;
+            margin-top: 1rem;
+        }
+
+        .road-marker {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            color: #7a6a5a;
+            text-align: right;
+            padding: 1rem;
+            background: rgba(250, 248, 244, 0.9);
+            border: 2px solid #b8a090;
+        }
+
+        .road-marker .miles {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #5a3a2a;
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .illuminated-initial {
+                font-size: 4rem;
+                top: 1.5rem;
+            }
+
+            .road-marker {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="manuscript-decoration"></div>
+    <div class="illuminated-initial">W</div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">The Canterbury Tales</h1>
+            <div class="subtitle">A journey through the houres to Canterbury</div>
+            <div class="author">Geoffrey Chaucer</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="journey-progress" id="progress">Upon the Road to Canterbury</div>
+        </div>
+
+        <div class="pilgrim-section">
+            <h2 class="pilgrim-name" id="pilgrim-name">The Knight</h2>
+            <div class="pilgrim-title" id="pilgrim-title">A worthy man from the first beginning</div>
+            <div class="tale-container">
+                <div id="passages">
+                    <!-- Passages injected here -->
+                </div>
+            </div>
+            <div class="middle-english" id="middle-english">
+                "Whan that Aprill with his shoures soote..."
+            </div>
+        </div>
+    </div>
+
+    <div class="road-marker">
+        <span class="miles" id="miles">0</span>
+        <span>miles to Canterbury</span>
+    </div>
+
+    <script>
+        const pilgrims = [
+            {
+                hour: 0,
+                name: "The Host",
+                title: "Harry Bailly, keeper of the Tabard Inn",
+                passages: [
+                    "At the Tabard Inn in Southwark, Harry Bailly gathers the pilgrims and proposes a game: each shall tell tales on the way to Canterbury.",
+                    "The one who tells the best tale shall win a supper paid for by all the others upon their return.",
+                    "And thus begins the great pilgrimage, twenty-nine souls bound for the shrine of Thomas Becket."
+                ],
+                middleEnglish: "Ye goon to Caunterbury—God yow speede!"
+            },
+            {
+                hour: 1,
+                name: "The Knight",
+                title: "A worthy man, distinguished in chivalry",
+                passages: [
+                    "The Knight tells of Palamon and Arcite, two cousins imprisoned in Athens who both fall in love with Emily.",
+                    "They compete in a tournament for her hand, but fate intervenes: Arcite wins but dies, and Palamon weds Emily.",
+                    "A noble tale of chivalry, honor, and the cruel twists of fortune's wheel."
+                ],
+                middleEnglish: "And shortly for to speken of this thyng, / Fallen in love with faire Emelye."
+            },
+            {
+                hour: 2,
+                name: "The Miller",
+                title: "A stout carl, full strong and big of bone",
+                passages: [
+                    "Drunk and bawdy, the Miller insists on telling his tale next, mocking the Knight's nobility.",
+                    "He tells of a carpenter cuckolded by a young student, Nicholas, who tricks him with a flood prophecy.",
+                    "Bawdy humor abounds: kisses misdirected, hot pokers applied, and a fool exposed."
+                ],
+                middleEnglish: "An housbonde shal nat been inquisityf / Of Goddes pryvetee, nor of his wyf."
+            },
+            {
+                hour: 3,
+                name: "The Reeve",
+                title: "A slendre colerik man, lean and thin",
+                passages: [
+                    "Offended because he was a carpenter, the Reeve retaliates against the Miller with his own tale.",
+                    "Two students trick a dishonest miller and seduce his wife and daughter in the night.",
+                    "Revenge is sweet, and the proud are humbled. The pilgrims laugh at the rivalry."
+                ],
+                middleEnglish: "Him that hath yvel, yvel shal be quit."
+            },
+            {
+                hour: 4,
+                name: "The Cook",
+                title: "Roger of Ware, skilled in roasting and boiling",
+                passages: [
+                    "The Cook, laughing at the previous tales, begins his own story of Perkyn, an apprentice who loves dice and women.",
+                    "But the tale breaks off unfinished, interrupted—perhaps the Cook was too drunk to continue.",
+                    "The morning road stretches ahead, and the pilgrims ride on."
+                ],
+                middleEnglish: "But everemoore he loved the tavernalways best."
+            },
+            {
+                hour: 5,
+                name: "The Man of Law",
+                title: "A sergeant of the lawe, war and wys",
+                passages: [
+                    "The lawyer tells the pious tale of Constance, a Christian princess cast adrift on the sea.",
+                    "Through trials and tribulations, falsely accused and exiled, she remains faithful to God.",
+                    "In the end, she is reunited with her husband the Sultan, virtue triumphant."
+                ],
+                middleEnglish: "O queenes, lyvynge in prosperitee, / Duchesses, and ye ladyes everichone!"
+            },
+            {
+                hour: 6,
+                name: "The Wife of Bath",
+                title: "A worthy womman al hir lyve",
+                passages: [
+                    "The Wife proclaims her authority in matters of marriage—she has had five husbands, after all!",
+                    "She tells of a knight who must discover what women most desire: sovereignty over their husbands.",
+                    "The old hag who answers him transforms into a beautiful maiden when he grants her choice."
+                ],
+                middleEnglish: "Wommen desiren to have sovereynetee / As wel over hir housbond as hir love."
+            },
+            {
+                hour: 7,
+                name: "The Friar",
+                title: "A wantowne and a merye friar",
+                passages: [
+                    "The Friar tells a mocking tale of a corrupt summoner who partners with a devil.",
+                    "When an old woman curses the summoner to hell, the devil gleefully carries him away.",
+                    "The moral: beware the corruption of church officials who prey upon the poor."
+                ],
+                middleEnglish: "The feend him hente, body and soul and all!"
+            },
+            {
+                hour: 8,
+                name: "The Summoner",
+                title: "A gentil hostelere, with fire-red face",
+                passages: [
+                    "Enraged, the Summoner retaliates with a disgusting tale of a corrupt friar.",
+                    "The friar in his story is humiliated by a dying man who bequeaths him a fart to divide among his brothers.",
+                    "Crude and vengeful, the tale earns both laughter and groans."
+                ],
+                middleEnglish: "An impossible thing, to divide equally a fart among twelve!"
+            },
+            {
+                hour: 9,
+                name: "The Clerk",
+                title: "A clerk from Oxenford, devoted to study",
+                passages: [
+                    "The scholarly Clerk tells of patient Griselda, tested to extremes by her husband Walter.",
+                    "He pretends to kill their children and divorce her, yet she endures all without complaint.",
+                    "Finally relenting, he reveals the truth. A tale of patience—though the Clerk warns no wife should imitate it!"
+                ],
+                middleEnglish: "This storie is seyd nat for that wyves sholde / Folwen Grisilde in humylitee."
+            },
+            {
+                hour: 10,
+                name: "The Merchant",
+                title: "A merchant with a forking beard",
+                passages: [
+                    "Bitter from marriage, the Merchant tells of old January who weds young May.",
+                    "She deceives him with his squire Damian in a pear tree while January is struck blind.",
+                    "Though his sight is restored by Pluto, Proserpina gives May cunning words to deceive him still."
+                ],
+                middleEnglish: "Ther nys no werkman that kan bothe werk and ryde—take time and do it well."
+            },
+            {
+                hour: 11,
+                name: "The Squire",
+                title: "A youthful lover and a lusty bachelor",
+                passages: [
+                    "The young Squire begins an exotic tale of Cambyuskan and his magical gifts from the King of Arabia.",
+                    "A brass horse that flies, a mirror that reveals truth, a ring that allows understanding of birds...",
+                    "But the tale breaks off incomplete, a romance left unfinished, dreams half-told."
+                ],
+                middleEnglish: "And al was bras, of which they wonder faste."
+            },
+            {
+                hour: 12,
+                name: "The Franklin",
+                title: "White was his berd as is the dayesye",
+                passages: [
+                    "The Franklin tells of Dorigen, who rashly promises to love Aurelius if he can remove the rocks from the coast.",
+                    "Through magic, the rocks disappear, but her husband Arveragus tells her to keep her word.",
+                    "Moved by such nobility, Aurelius releases her from the promise. Honor begets honor."
+                ],
+                middleEnglish: "Trouthe is the hyeste thyng that man may kepe."
+            },
+            {
+                hour: 13,
+                name: "The Physician",
+                title: "A doctour of phisik, grounded in astronomy",
+                passages: [
+                    "The Physician tells the tragic tale of Virginia, whose beauty causes the corrupt judge Appius to desire her.",
+                    "Her father, to save her honor, kills her with her consent rather than let her be defiled.",
+                    "Justice comes swiftly: Appius is imprisoned and dies. Sin brings its own punishment."
+                ],
+                middleEnglish: "Forsake synne, er synne yow forsake."
+            },
+            {
+                hour: 14,
+                name: "The Pardoner",
+                title: "With yellow hair hanging like flax",
+                passages: [
+                    "The Pardoner, hypocritical seller of false relics, tells a tale against his own vice: greed.",
+                    "Three rioters seek Death and find gold instead. They murder each other for it.",
+                    "Radix malorum est cupiditas—the root of evil is greed. Yet the Pardoner tries to sell pardons immediately after!"
+                ],
+                middleEnglish: "Radix malorum est cupiditas."
+            },
+            {
+                hour: 15,
+                name: "The Shipman",
+                title: "A good felawe from Dartmouth",
+                passages: [
+                    "The Shipman tells of a merchant's wife who borrows money from a monk to buy fine clothes.",
+                    "The monk borrows the money from her husband, sleeps with the wife, then tells the husband he has repaid the debt to her.",
+                    "All are fooled in this merry triangle of deception."
+                ],
+                middleEnglish: "Thus endeth my tale, and God us sende / Taillynge ynogh unto oure lyves ende!"
+            },
+            {
+                hour: 16,
+                name: "The Prioress",
+                title: "Madame Eglantine, with brooch of gold",
+                passages: [
+                    "The Prioress tells a pious tale of a young Christian boy murdered by Jews for singing O Alma Redemptoris.",
+                    "Though his throat is cut, he continues singing until a grain is removed from his tongue.",
+                    "A miracle of faith, though dark with the prejudices of the age."
+                ],
+                middleEnglish: "O Alma Redemptoris Mater—O nurturing Mother of the Redeemer."
+            },
+            {
+                hour: 17,
+                name: "Chaucer Himself",
+                title: "The poet among pilgrims",
+                passages: [
+                    "Chaucer tells the Tale of Sir Thopas, a ridiculous romance full of doggerel verse and absurd adventures.",
+                    "The Host interrupts: 'No more of this, for Goddes dignitee! Thy drasty rymyng is nat worth a toord!'",
+                    "Chaucer then tells the Tale of Melibee instead, a long moral allegory."
+                ],
+                middleEnglish: "Namoore of this, for Goddes dignitee!"
+            },
+            {
+                hour: 18,
+                name: "The Monk",
+                title: "A manly man, a hunter of great estate",
+                passages: [
+                    "The Monk begins recounting tragedies: Lucifer, Adam, Sampson, Hercules—all fell from high to low.",
+                    "On and on he drones with examples of Fortune's cruelty, until the Knight begs him to stop.",
+                    "'Enough!' cries the Host. 'Such talking is not worth a butterfly!'"
+                ],
+                middleEnglish: "Tragedie is to seyn a certeyn storie / Of hym that stood in greet prosperitee."
+            },
+            {
+                hour: 19,
+                name: "The Nun's Priest",
+                title: "The priest accompanying the Prioress",
+                passages: [
+                    "The Nun's Priest tells the beast fable of Chauntecleer the rooster and the fox Daun Russell.",
+                    "Chauntecleer dreams of danger but his hen-wife Pertelote dismisses it. The fox flatters and seizes him!",
+                    "But Chauntecleer tricks the fox into speaking, escapes, and learns: beware of flattery."
+                ],
+                middleEnglish: "Mordre wol out—murder will out, that we see day by day."
+            },
+            {
+                hour: 20,
+                name: "The Second Nun",
+                title: "Companion to the Prioress",
+                passages: [
+                    "The Second Nun tells the life of Saint Cecilia, virgin martyr who converted her husband Valerian.",
+                    "She preached fearlessly and was martyred by being locked in a bath of flames.",
+                    "Though the fires could not kill her, she was beheaded, and sang praises to God with her last breaths."
+                ],
+                middleEnglish: "The sweete smelthe odour of the rose and lily—the scent of sanctity."
+            },
+            {
+                hour: 21,
+                name: "The Canon's Yeoman",
+                title: "A servant who joins the pilgrimage late",
+                passages: [
+                    "The Yeoman exposes his master the Canon as a fraudulent alchemist who tricks people with fake gold.",
+                    "He describes the elaborate deceptions: switching in real gold to make fools believe in transmutation.",
+                    "Alchemy is a futile pursuit that ruins men, draining their wealth and sanity."
+                ],
+                middleEnglish: "The slidynge science of alchemistry—a slippery science indeed."
+            },
+            {
+                hour: 22,
+                name: "The Manciple",
+                title: "A steward of a temple, purchasing provisions",
+                passages: [
+                    "The Manciple tells of Phoebus Apollo and his white crow, who could speak and sing beautifully.",
+                    "When the crow reveals that Phoebus's wife is unfaithful, Phoebus kills her in rage.",
+                    "Regretting his haste, he plucks the crow's white feathers, making it black, and silences its song forever."
+                ],
+                middleEnglish: "Keep well thy tonge and think upon the crowe!"
+            },
+            {
+                hour: 23,
+                name: "The Parson",
+                title: "A holy man of good intent",
+                passages: [
+                    "As evening falls and they near Canterbury, the Parson delivers not a tale but a sermon on penitence.",
+                    "He speaks of the seven deadly sins and the path to salvation through confession and contrition.",
+                    "The pilgrimage ends not with laughter but with solemn reflection on the soul's true journey."
+                ],
+                middleEnglish: "The tales are done. Now comes the reckoning of the soul."
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const progressEl = document.getElementById('progress');
+        const pilgrimNameEl = document.getElementById('pilgrim-name');
+        const pilgrimTitleEl = document.getElementById('pilgrim-title');
+        const passagesEl = document.getElementById('passages');
+        const middleEnglishEl = document.getElementById('middle-english');
+        const milesEl = document.getElementById('miles');
+
+        let currentPilgrimIndex = -1;
+
+        function getPilgrimForHour(hour) {
+            return pilgrims.find(p => p.hour === hour) || pilgrims[0];
+        }
+
+        function renderPassages(passages) {
+            passagesEl.innerHTML = passages.map(passage => `
+                <div class="tale-passage">${passage}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current pilgrim
+            const pilgrim = getPilgrimForHour(hour);
+            const pilgrimIndex = pilgrims.indexOf(pilgrim);
+
+            // Update miles to Canterbury (decreases as day progresses)
+            const totalMiles = 60; // Approximate distance London to Canterbury
+            const milesRemaining = Math.max(0, totalMiles - Math.floor((hour / 24) * totalMiles));
+            milesEl.textContent = milesRemaining;
+
+            // Update progress
+            if (hour < 8) {
+                progressEl.textContent = "Departing from the Tabard Inn";
+            } else if (hour < 20) {
+                progressEl.textContent = "Upon the Road to Canterbury";
+            } else {
+                progressEl.textContent = "Approaching the Holy Shrine";
+            }
+
+            // Update content if pilgrim changed
+            if (pilgrimIndex !== currentPilgrimIndex) {
+                pilgrimNameEl.textContent = pilgrim.name;
+                pilgrimTitleEl.textContent = pilgrim.title;
+                renderPassages(pilgrim.passages);
+                middleEnglishEl.textContent = pilgrim.middleEnglish;
+                currentPilgrimIndex = pilgrimIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>
