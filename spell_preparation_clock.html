@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spell Preparation Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #1a1410;
+            background-image:
+                radial-gradient(ellipse at top, rgba(60, 45, 30, 0.3), transparent),
+                radial-gradient(ellipse at bottom, rgba(40, 30, 20, 0.2), transparent);
+            font-family: 'IM Fell English', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #d4b896;
+            overflow-x: hidden;
+        }
+
+        .grimoire {
+            max-width: 900px;
+            width: 100%;
+            background: linear-gradient(135deg, #2d2418 0%, #231c14 100%);
+            border: 3px solid #8b7355;
+            border-radius: 8px;
+            padding: 3rem 2.5rem;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.8),
+                inset 0 0 100px rgba(0, 0, 0, 0.3),
+                inset 0 0 30px rgba(139, 115, 85, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .grimoire::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.03) 2px,
+                    rgba(0, 0, 0, 0.03) 4px
+                );
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .parchment-texture {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence baseFrequency="0.9" numOctaves="4" /></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.05"/></svg>');
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .border-decoration {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            bottom: 1.5rem;
+            border: 2px solid #8b7355;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .corner-ornament {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 2px solid #b8956f;
+            opacity: 0.4;
+        }
+
+        .corner-ornament.top-left {
+            top: 1rem;
+            left: 1rem;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .corner-ornament.top-right {
+            top: 1rem;
+            right: 1rem;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .corner-ornament.bottom-left {
+            bottom: 1rem;
+            left: 1rem;
+            border-right: none;
+            border-top: none;
+        }
+
+        .corner-ornament.bottom-right {
+            bottom: 1rem;
+            right: 1rem;
+            border-left: none;
+            border-top: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .title {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            text-align: center;
+            color: #d4a574;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(212, 165, 116, 0.5);
+            letter-spacing: 0.1em;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-style: italic;
+            color: #a68b6a;
+            margin-bottom: 2rem;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+        }
+
+        .time-display {
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            color: #e8d4b8;
+            margin-bottom: 3rem;
+            letter-spacing: 0.2em;
+        }
+
+        .spell-slots {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .spell-slot {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #6b5a45;
+            border-radius: 4px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.5s ease;
+        }
+
+        .spell-slot.prepared {
+            border-color: #d4a574;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+
+        .spell-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .spell-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            color: #d4a574;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .spell-level {
+            font-size: 0.85rem;
+            color: #8b7355;
+            font-style: italic;
+        }
+
+        .spell-description {
+            font-size: 0.9rem;
+            color: #a68b6a;
+            line-height: 1.6;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .preparation-bar-container {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #4a3d2f;
+        }
+
+        .preparation-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b6f47, #d4a574, #8b6f47);
+            background-size: 200% 100%;
+            border-radius: 4px;
+            transition: width 1s linear;
+            position: relative;
+            animation: shimmer 3s linear infinite;
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        .sigil-container {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            opacity: 0.1;
+            transition: opacity 1s ease;
+            z-index: 1;
+        }
+
+        .spell-slot.prepared .sigil-container {
+            opacity: 0.3;
+        }
+
+        .sigil {
+            width: 80px;
+            height: 80px;
+            stroke: #d4a574;
+            fill: none;
+            stroke-width: 1.5;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .preparation-status {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #8b7355;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .arcane-notation {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #4a3d2f;
+            font-size: 0.85rem;
+            color: #6b5a45;
+            font-style: italic;
+        }
+
+        .candle-glow {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 165, 116, 0.15), transparent 70%);
+            pointer-events: none;
+            animation: flicker 3s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .candle-glow.left {
+            top: 10%;
+            left: 5%;
+        }
+
+        .candle-glow.right {
+            bottom: 10%;
+            right: 5%;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        @media (max-width: 600px) {
+            .grimoire {
+                padding: 2rem 1.5rem;
+            }
+
+            .spell-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="candle-glow left"></div>
+    <div class="candle-glow right"></div>
+
+    <div class="grimoire">
+        <div class="parchment-texture"></div>
+        <div class="border-decoration"></div>
+        <div class="corner-ornament top-left"></div>
+        <div class="corner-ornament top-right"></div>
+        <div class="corner-ornament bottom-left"></div>
+        <div class="corner-ornament bottom-right"></div>
+
+        <div class="content">
+            <h1 class="title">Grimoire Horologique</h1>
+            <div class="subtitle">The Chronometric Incantations of Phandaal</div>
+
+            <div class="time-display" id="time">00:00:00</div>
+
+            <div class="spell-slots" id="spell-slots">
+                <!-- Spell slots will be generated here -->
+            </div>
+
+            <div class="arcane-notation">
+                <em>As the hours turn, so too do the spells commit themselves to memory,<br>
+                each incantation ripening in its appointed time.</em>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vancian spell names with exotic flair
+        const spells = [
+            {
+                name: "The Excellent Prismatic Spray",
+                level: "First Circle",
+                description: "Seven scintillating beams of chromatic puissance, each possessed of unique and terrible efficacy",
+                hour: 0
+            },
+            {
+                name: "Phandaal's Gyrator",
+                level: "Second Circle",
+                description: "Whereupon the target is subjected to involuntary circumrotation at velocities most distressing",
+                hour: 1
+            },
+            {
+                name: "The Spell of Forlorn Encystment",
+                level: "Third Circle",
+                description: "Imprisons the malefactor within a vitreous sphere of lamentable confinement",
+                hour: 2
+            },
+            {
+                name: "Felojun's Second Hypnotic Spell",
+                level: "Fourth Circle",
+                description: "Induces a stupor of remarkable profundity, immune to common perturbations",
+                hour: 3
+            },
+            {
+                name: "The Charm of Untiring Nourishment",
+                level: "First Circle",
+                description: "Sustains the corpus through prolonged exertions without recourse to vulgar victuals",
+                hour: 4
+            },
+            {
+                name: "Lugwiler's Dismal Itch",
+                level: "Second Circle",
+                description: "Afflicts the victim with pruritus of such severity as to preclude all rational thought",
+                hour: 5
+            },
+            {
+                name: "The Spell of the Macroid Toe",
+                level: "Fifth Circle",
+                description: "Causes the pedal extremity to swell to dimensions both grotesque and inconvenient",
+                hour: 6
+            },
+            {
+                name: "Arnhoult's Sequestrious Digitalia",
+                level: "Third Circle",
+                description: "Renders the fingers invisible whilst retaining their corporeal substance",
+                hour: 7
+            },
+            {
+                name: "Khulip's Nasal Polymer",
+                level: "First Circle",
+                description: "Elongates the proboscis to extraordinary and ridiculous proportions",
+                hour: 8
+            },
+            {
+                name: "The Spell of the Omnipotent Sphere",
+                level: "Seventh Circle",
+                description: "Summons a globe of absolute dominion, terrible in its perfection",
+                hour: 9
+            },
+            {
+                name: "Tinkler's Old-Fashioned Froust",
+                level: "Second Circle",
+                description: "Generates an effluvium of such pungency as to repel even the most persistent aggressor",
+                hour: 10
+            },
+            {
+                name: "The Indicating Odor",
+                level: "First Circle",
+                description: "Causes the malefactor to emit a distinctive and persistent redolence",
+                hour: 11
+            },
+            {
+                name: "Phandaal's Critique of the Chill",
+                level: "Fourth Circle",
+                description: "Extracts all caloric essence from the designated volume, inducing thermal privation",
+                hour: 12
+            },
+            {
+                name: "The Temporal Immurement",
+                level: "Sixth Circle",
+                description: "Suspends the subject in a stasis most profound, immune to temporal progression",
+                hour: 13
+            },
+            {
+                name: "Lugwiler's Dismal Itch (Variant)",
+                level: "Second Circle",
+                description: "An enhanced formulation of the aforementioned affliction, with doubled severity",
+                hour: 14
+            },
+            {
+                name: "The Spell of Forlorn Encystment",
+                level: "Third Circle",
+                description: "Imprisons the malefactor within a vitreous sphere of lamentable confinement",
+                hour: 15
+            },
+            {
+                name: "Radl's Excavation",
+                level: "Fifth Circle",
+                description: "Removes earth and stone with admirable expedition, leaving a void most commodious",
+                hour: 16
+            },
+            {
+                name: "The Charm of Untiring Nourishment",
+                level: "First Circle",
+                description: "Sustains the corpus through prolonged exertions without recourse to vulgar victuals",
+                hour: 17
+            },
+            {
+                name: "Felojun's Second Hypnotic Spell",
+                level: "Fourth Circle",
+                description: "Induces a stupor of remarkable profundity, immune to common perturbations",
+                hour: 18
+            },
+            {
+                name: "The Green and Purple Postponement",
+                level: "Eighth Circle",
+                description: "Defers catastrophe through chromatic manipulation of the causal flux",
+                hour: 19
+            },
+            {
+                name: "Phandaal's Mantle of Stealth",
+                level: "Second Circle",
+                description: "Renders the practitioner imperceptible to conventional observation",
+                hour: 20
+            },
+            {
+                name: "The Spell of the Macroid Toe",
+                level: "Fifth Circle",
+                description: "Causes the pedal extremity to swell to dimensions both grotesque and inconvenient",
+                hour: 21
+            },
+            {
+                name: "Lugwiler's Dismal Itch",
+                level: "Second Circle",
+                description: "Afflicts the victim with pruritus of such severity as to preclude all rational thought",
+                hour: 22
+            },
+            {
+                name: "The Excellent Prismatic Spray",
+                level: "First Circle",
+                description: "Seven scintillating beams of chromatic puissance, each possessed of unique and terrible efficacy",
+                hour: 23
+            }
+        ];
+
+        // Sigil patterns (simple geometric shapes for mystical effect)
+        const sigils = [
+            '<svg class="sigil" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M50,10 L50,90 M10,50 L90,50"/><circle cx="50" cy="50" r="20"/></svg>',
+            '<svg class="sigil" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90"/><circle cx="50" cy="50" r="15"/><path d="M50,30 L50,70"/></svg>',
+            '<svg class="sigil" viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="15"/></svg>',
+            '<svg class="sigil" viewBox="0 0 100 100"><path d="M50,10 L90,50 L50,90 L10,50 Z"/><circle cx="50" cy="50" r="20"/><path d="M50,30 L70,50 L50,70 L30,50 Z"/></svg>',
+            '<svg class="sigil" viewBox="0 0 100 100"><polygon points="50,5 80,35 95,70 70,95 30,95 5,70 20,35"/><circle cx="50" cy="50" r="15"/></svg>',
+            '<svg class="sigil" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M50,10 L90,50 L50,90 L10,50 Z"/></svg>'
+        ];
+
+        const timeEl = document.getElementById('time');
+        const spellSlotsEl = document.getElementById('spell-slots');
+        let audioContext = null;
+        let lastMinute = -1;
+
+        function renderSpellSlots() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+
+            spellSlotsEl.innerHTML = '';
+
+            // Show current hour and next 5 hours
+            for (let i = 0; i < 6; i++) {
+                const hour = (currentHour + i) % 24;
+                const spell = spells[hour];
+
+                let preparationPercent = 0;
+                let status = '';
+                let isPrepared = false;
+
+                if (i === 0) {
+                    // Current hour - show progress
+                    preparationPercent = (currentMinute / 60) * 100;
+                    status = `Memorizing... ${Math.floor(preparationPercent)}% complete`;
+                    isPrepared = preparationPercent === 100;
+                } else if (i > 0) {
+                    // Future hours - not yet memorizing
+                    preparationPercent = 0;
+                    status = `Awaiting preparation in ${i} hour${i > 1 ? 's' : ''}`;
+                }
+
+                const slotDiv = document.createElement('div');
+                slotDiv.className = `spell-slot ${isPrepared ? 'prepared' : ''}`;
+                slotDiv.innerHTML = `
+                    <div class="sigil-container">
+                        ${sigils[hour % sigils.length]}
+                    </div>
+                    <div class="spell-header">
+                        <div class="spell-name">${spell.name}</div>
+                        <div class="spell-level">${spell.level}</div>
+                    </div>
+                    <div class="spell-description">${spell.description}</div>
+                    <div class="preparation-bar-container">
+                        <div class="preparation-bar" style="width: ${preparationPercent}%"></div>
+                    </div>
+                    <div class="preparation-status">${status}</div>
+                `;
+                spellSlotsEl.appendChild(slotDiv);
+            }
+        }
+
+        function playMysticalChime() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioContext.currentTime;
+
+            // Ethereal bell sound
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const osc3 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            filter.type = 'lowpass';
+            filter.frequency.value = 2000;
+            filter.Q.value = 5;
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            osc3.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc3.type = 'triangle';
+
+            // Perfect fifth + octave
+            osc1.frequency.value = 523.25; // C5
+            osc2.frequency.value = 783.99; // G5
+            osc3.frequency.value = 1046.5; // C6
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 3);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc3.start(now);
+            osc1.stop(now + 3.5);
+            osc2.stop(now + 3.5);
+            osc3.stop(now + 3.5);
+
+            // Add shimmer
+            setTimeout(() => {
+                const shimmer = audioContext.createOscillator();
+                const shimmerGain = audioContext.createGain();
+
+                shimmer.connect(shimmerGain);
+                shimmerGain.connect(audioContext.destination);
+
+                shimmer.type = 'sine';
+                shimmer.frequency.setValueAtTime(2093, now + 1);
+                shimmer.frequency.exponentialRampToValueAtTime(1046.5, now + 2.5);
+
+                shimmerGain.gain.setValueAtTime(0.1, now + 1);
+                shimmerGain.gain.exponentialRampToValueAtTime(0.01, now + 2.5);
+
+                shimmer.start(now + 1);
+                shimmer.stop(now + 3);
+            }, 0);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const minute = now.getMinutes();
+
+            // Update time display
+            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+
+            // Render spell slots
+            renderSpellSlots();
+
+            // Play chime when a new spell is prepared (at the top of each hour)
+            if (minute === 0 && minute !== lastMinute) {
+                playMysticalChime();
+            }
+            lastMinute = minute;
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

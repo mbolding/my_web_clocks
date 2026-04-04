@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Deodand Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at center, #1a0f1f 0%, #0d0612 100%);
+            font-family: 'Cormorant Garamond', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #b8a0c8;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #d8c8e8;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .summoning-circle {
+            position: relative;
+            max-width: 1000px;
+            width: 100%;
+            aspect-ratio: 1;
+            max-height: 90vh;
+        }
+
+        .circle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .center-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            width: 60%;
+        }
+
+        .title {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            color: #d8b8e8;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(216, 184, 232, 0.6);
+            letter-spacing: 0.15em;
+        }
+
+        .current-entity {
+            margin-bottom: 1.5rem;
+        }
+
+        .entity-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.3rem, 3vw, 2rem);
+            color: #e8c8f8;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px rgba(232, 200, 248, 0.8);
+            letter-spacing: 0.1em;
+        }
+
+        .entity-title {
+            font-style: italic;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            color: #a888b8;
+            margin-bottom: 0.75rem;
+        }
+
+        .entity-description {
+            font-size: clamp(0.85rem, 1.8vw, 1rem);
+            color: #8870a0;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .time-display {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            color: #c8a8d8;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+        }
+
+        .date-display {
+            font-size: clamp(0.8rem, 1.8vw, 1rem);
+            color: #8870a0;
+            font-style: italic;
+        }
+
+        .rune-container {
+            position: absolute;
+            transition: all 1s ease;
+        }
+
+        .rune {
+            fill: none;
+            stroke: #a888c8;
+            stroke-width: 2;
+            opacity: 0.4;
+            transition: all 1s ease;
+            filter: drop-shadow(0 0 5px rgba(168, 136, 200, 0.4));
+        }
+
+        .rune-container.active .rune {
+            stroke: #e8c8f8;
+            opacity: 1;
+            filter: drop-shadow(0 0 15px rgba(232, 200, 248, 0.8));
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .hour-marker {
+            position: absolute;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: #7860a0;
+            text-shadow: 0 0 5px rgba(120, 96, 160, 0.5);
+            transition: all 0.5s ease;
+        }
+
+        .hour-marker.active {
+            color: #e8c8f8;
+            text-shadow: 0 0 15px rgba(232, 200, 248, 0.8);
+            transform: scale(1.2);
+        }
+
+        .arcane-notation {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6850a0;
+            font-style: italic;
+            z-index: 1;
+            max-width: 600px;
+        }
+
+        .ethereal-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 136, 200, 0.1), transparent 60%);
+            animation: breathe 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.05); opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .center-content {
+                width: 70%;
+            }
+
+            .hour-marker {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stars" id="stars"></div>
+
+    <div class="summoning-circle">
+        <canvas class="circle-canvas" id="canvas"></canvas>
+        <div class="ethereal-glow"></div>
+
+        <div class="center-content">
+            <h1 class="title">The Deodand Clock</h1>
+
+            <div class="current-entity">
+                <div class="entity-name" id="entityName">Thasdrubal the Ineffable</div>
+                <div class="entity-title" id="entityTitle">Keeper of the Midnight Hour</div>
+                <div class="entity-description" id="entityDesc">
+                    A being of shadows and whispers, dwelling in the spaces between moments
+                </div>
+            </div>
+
+            <div class="time-display" id="time">00:00:00</div>
+            <div class="date-display" id="date">The 1st of January, 2026</div>
+        </div>
+
+        <div id="runes"></div>
+        <div id="hourMarkers"></div>
+    </div>
+
+    <div class="arcane-notation">
+        Each hour is governed by a deodand from the Overworld,<br>
+        entities of power both capricious and inscrutable
+    </div>
+
+    <script>
+        // 24 deodands, one for each hour
+        const deodands = [
+            { name: "Thasdrubal the Ineffable", title: "Keeper of the Midnight Hour", desc: "A being of shadows and whispers, dwelling in the spaces between moments" },
+            { name: "Nyctophax the Tenebrous", title: "Herald of Deepest Night", desc: "Emerges from darkness absolute, bearing dreams both pleasant and dire" },
+            { name: "Umbraleth", title: "Weaver of Night's Tapestry", desc: "Spins the hours into shadow-cloth, stitching stars into the firmament" },
+            { name: "Crepusculus Minor", title: "Guardian of False Dawn", desc: "A trickster entity, promising light that does not yet come" },
+            { name: "Somnoleth the Drowsy", title: "Bringer of Torpor", desc: "Breathes lethargy into the waking world, heavy-lidded and slow" },
+            { name: "Auroraxis", title: "Herald of the Breaking Day", desc: "First light incarnate, reluctant and weary in its eternal return" },
+            { name: "Luminos the Hesitant", title: "Bearer of Tentative Radiance", desc: "Carries the newborn sun with trembling hands, uncertain of its duty" },
+            { name: "Matutinus Rex", title: "Sovereign of Morning", desc: "Rules the hours of waking with benevolent but distracted governance" },
+            { name: "Viridax", title: "The Verdant Timekeeper", desc: "Tinges the morning with strange green hues, unsettling and fey" },
+            { name: "Splendifex", title: "Architect of Brilliance", desc: "Constructs monuments of light, grandiose and absurd" },
+            { name: "Meridianus", title: "The Apex Attendant", desc: "Stands vigil at the day's zenith, solemn and ceremonious" },
+            { name: "Fulgorax the Resplendent", title: "Master of Noonday Glory", desc: "Blazes with uncomfortable intensity, demanding obeisance" },
+            { name: "Declinatus", title: "The Descending One", desc: "Begins the slow retreat toward evening, already melancholic" },
+            { name: "Ochreseth", title: "Painter of Afternoon", desc: "Applies tawny pigments to the sky with careless artistry" },
+            { name: "Pucedrix", title: "The Mauve Magister", desc: "Presides over the hours of strange purple light, enigmatic and aloof" },
+            { name: "Vesperos", title: "Herald of Evening", desc: "Announces the coming twilight with soft chimes and sighs" },
+            { name: "Crepuscula Major", title: "Queen of Dusk", desc: "Spreads her dusky mantle across the world, tender and inexorable" },
+            { name: "Tenebrix", title: "Summoner of Shadows", desc: "Calls forth the darkness from earth and air, eager and hungry" },
+            { name: "Noctivagus", title: "The Night Wanderer", desc: "Roams the early dark, mischievous and fleet of foot" },
+            { name: "Stygianor", title: "Lord of Deepening Gloom", desc: "Intensifies the darkness, adding layers of obscurity" },
+            { name: "Umbraxis the Elder", title: "Primordial Shadow-Dweller", desc: "Ancient beyond reckoning, patient and utterly alien" },
+            { name: "Nyxarion", title: "The Starry Custodian", desc: "Tends the constellations, rearranging them on whim" },
+            { name: "Somniferus", title: "Dispenser of Slumber", desc: "Distributes sleep like alms, equitable but indifferent" },
+            { name: "Nadirax", title: "Keeper of the Lowest Hour", desc: "Guards the nadir of night, grim and taciturn" }
+        ];
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const timeEl = document.getElementById('time');
+        const dateEl = document.getElementById('date');
+        const entityNameEl = document.getElementById('entityName');
+        const entityTitleEl = document.getElementById('entityTitle');
+        const entityDescEl = document.getElementById('entityDesc');
+        const runesEl = document.getElementById('runes');
+        const hourMarkersEl = document.getElementById('hourMarkers');
+        const starsEl = document.getElementById('stars');
+
+        let audioContext = null;
+        let lastHour = -1;
+
+        // Canvas setup
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Create stars
+        function createStars() {
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (2 + Math.random() * 3) + 's';
+                starsEl.appendChild(star);
+            }
+        }
+
+        // Rune symbols (mystical geometric patterns)
+        const runePatterns = [
+            '<svg width="40" height="40" viewBox="0 0 40 40"><path d="M20,5 L20,35 M5,20 L35,20 M10,10 L30,30 M30,10 L10,30"/></svg>',
+            '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="12"/><path d="M20,8 L20,32 M8,20 L32,20"/></svg>',
+            '<svg width="40" height="40" viewBox="0 0 40 40"><polygon points="20,5 32,35 8,35"/><circle cx="20" cy="20" r="5"/></svg>',
+            '<svg width="40" height="40" viewBox="0 0 40 40"><path d="M20,5 L32,20 L20,35 L8,20 Z"/><circle cx="20" cy="20" r="6"/></svg>',
+            '<svg width="40" height="40" viewBox="0 0 40 40"><rect x="8" y="8" width="24" height="24"/><path d="M20,8 L20,32 M8,20 L32,20"/></svg>',
+            '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="15"/><path d="M20,5 L35,20 L20,35 L5,20 Z"/></svg>'
+        ];
+
+        // Create runes around the circle
+        function createRunes() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.4;
+
+            for (let i = 0; i < 24; i++) {
+                const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius - 20;
+                const y = centerY + Math.sin(angle) * radius - 20;
+
+                const runeContainer = document.createElement('div');
+                runeContainer.className = 'rune-container';
+                runeContainer.style.left = x + 'px';
+                runeContainer.style.top = y + 'px';
+                runeContainer.innerHTML = runePatterns[i % runePatterns.length].replace('<svg', '<svg class="rune"');
+                runesEl.appendChild(runeContainer);
+            }
+        }
+
+        // Create hour markers
+        function createHourMarkers() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.45;
+
+            for (let i = 0; i < 24; i++) {
+                const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+
+                const marker = document.createElement('div');
+                marker.className = 'hour-marker';
+                marker.textContent = i;
+                marker.style.left = x + 'px';
+                marker.style.top = y + 'px';
+                marker.style.transform = 'translate(-50%, -50%)';
+                marker.dataset.hour = i;
+                hourMarkersEl.appendChild(marker);
+            }
+        }
+
+        // Draw summoning circle
+        function drawCircle() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) * 0.48;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Outer circles
+            for (let i = 0; i < 3; i++) {
+                const radius = maxRadius - i * 8;
+                ctx.strokeStyle = i === 1 ? '#a888c8' : '#7860a0';
+                ctx.lineWidth = i === 1 ? 3 : 2;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Inner circle
+            ctx.strokeStyle = '#8870a0';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * 0.3, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Connecting lines (pentagram-ish)
+            ctx.strokeStyle = '#6850a0';
+            ctx.lineWidth = 1.5;
+            ctx.globalAlpha = 0.3;
+            const points = 24;
+            for (let i = 0; i < points; i++) {
+                const angle1 = (i / points) * Math.PI * 2 - Math.PI / 2;
+                const angle2 = ((i + 7) / points) * Math.PI * 2 - Math.PI / 2;
+
+                const x1 = centerX + Math.cos(angle1) * maxRadius * 0.95;
+                const y1 = centerY + Math.sin(angle1) * maxRadius * 0.95;
+                const x2 = centerX + Math.cos(angle2) * maxRadius * 0.95;
+                const y2 = centerY + Math.sin(angle2) * maxRadius * 0.95;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            ctx.globalAlpha = 1;
+        }
+
+        // Play summoning sound
+        function playSummoningSound() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioContext.currentTime;
+
+            // Low ominous drone
+            const drone = audioContext.createOscillator();
+            const droneGain = audioContext.createGain();
+            const droneFilter = audioContext.createBiquadFilter();
+
+            droneFilter.type = 'lowpass';
+            droneFilter.frequency.value = 200;
+
+            drone.connect(droneFilter);
+            droneFilter.connect(droneGain);
+            droneGain.connect(audioContext.destination);
+
+            drone.type = 'sawtooth';
+            drone.frequency.value = 55; // A1
+
+            droneGain.gain.setValueAtTime(0, now);
+            droneGain.gain.linearRampToValueAtTime(0.15, now + 0.5);
+            droneGain.gain.exponentialRampToValueAtTime(0.01, now + 4);
+
+            drone.start(now);
+            drone.stop(now + 4.5);
+
+            // Ethereal overtone
+            setTimeout(() => {
+                const ethereal = audioContext.createOscillator();
+                const etherealGain = audioContext.createGain();
+                const etherealFilter = audioContext.createBiquadFilter();
+
+                etherealFilter.type = 'bandpass';
+                etherealFilter.frequency.value = 1500;
+                etherealFilter.Q.value = 10;
+
+                ethereal.connect(etherealFilter);
+                etherealFilter.connect(etherealGain);
+                etherealGain.connect(audioContext.destination);
+
+                ethereal.type = 'sine';
+                ethereal.frequency.setValueAtTime(880, now + 1);
+                ethereal.frequency.exponentialRampToValueAtTime(1760, now + 1.5);
+                ethereal.frequency.exponentialRampToValueAtTime(440, now + 3.5);
+
+                etherealGain.gain.setValueAtTime(0, now + 1);
+                etherealGain.gain.linearRampToValueAtTime(0.1, now + 1.2);
+                etherealGain.gain.exponentialRampToValueAtTime(0.01, now + 3.5);
+
+                ethereal.start(now + 1);
+                ethereal.stop(now + 4);
+            }, 0);
+        }
+
+        // Update display
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time
+            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+
+            // Update date
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const date = now.getDate();
+            const year = now.getFullYear();
+
+            const suffix = date === 1 || date === 21 || date === 31 ? 'st' :
+                          date === 2 || date === 22 ? 'nd' :
+                          date === 3 || date === 23 ? 'rd' : 'th';
+
+            dateEl.textContent = `${dayName}, the ${date}${suffix} of ${monthName}, ${year}`;
+
+            // Update entity
+            const deodand = deodands[hour];
+            entityNameEl.textContent = deodand.name;
+            entityTitleEl.textContent = deodand.title;
+            entityDescEl.textContent = deodand.desc;
+
+            // Update active rune and hour marker
+            document.querySelectorAll('.rune-container').forEach((rune, i) => {
+                rune.classList.toggle('active', i === hour);
+            });
+            document.querySelectorAll('.hour-marker').forEach((marker) => {
+                marker.classList.toggle('active', parseInt(marker.dataset.hour) === hour);
+            });
+
+            // Play sound on hour change
+            if (hour !== lastHour && lastHour !== -1) {
+                playSummoningSound();
+            }
+            lastHour = hour;
+        }
+
+        // Initialize
+        createStars();
+        drawCircle();
+        createRunes();
+        createHourMarkers();
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Redraw on resize
+        window.addEventListener('resize', () => {
+            drawCircle();
+            runesEl.innerHTML = '';
+            hourMarkersEl.innerHTML = '';
+            createRunes();
+            createHourMarkers();
+            updateClock();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dying Sun</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            overflow: hidden;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #1a0a0f, #2d1520);
+            transition: background 3s ease;
+        }
+
+        .sky-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #f4e4d7;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+        }
+
+        .period-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2rem, 6vw, 4.5rem);
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            color: #f4d9c6;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeIn 2s ease forwards;
+        }
+
+        .period-description {
+            font-size: clamp(1rem, 2.5vw, 1.8rem);
+            font-style: italic;
+            margin-bottom: 3rem;
+            color: #d4b5a1;
+            opacity: 0;
+            animation: fadeIn 2s ease 0.5s forwards;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .time-display {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(3rem, 10vw, 7rem);
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            margin-bottom: 2rem;
+            color: #ffecd1;
+            opacity: 0;
+            animation: fadeIn 2s ease 1s forwards;
+        }
+
+        .date-display {
+            font-size: clamp(0.9rem, 2vw, 1.3rem);
+            color: #c4a58a;
+            opacity: 0;
+            animation: fadeIn 2s ease 1.5s forwards;
+            margin-bottom: 2rem;
+        }
+
+        .ornament {
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d4a574, transparent);
+            margin: 1rem auto;
+            opacity: 0;
+            animation: fadeIn 2s ease 2s forwards;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            color: #8a7060;
+            opacity: 0;
+            animation: fadeIn 2s ease 2.5s forwards;
+            z-index: 10;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .particle {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: radial-gradient(circle, #ffd4a3, transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas class="sky-canvas" id="sky"></canvas>
+
+    <div class="content">
+        <div class="period-name" id="periodName">The Crepuscular Hour</div>
+        <div class="ornament"></div>
+        <div class="period-description" id="periodDesc">When the dying sun first breaches the purple horizon</div>
+        <div class="time-display" id="time">12:00:00</div>
+        <div class="date-display" id="date">The 1st of January, 2026</div>
+    </div>
+
+    <div class="footer">
+        A Chronometer of the Dying Earth
+    </div>
+
+    <script>
+        // Time periods with Vancian names
+        const periods = [
+            { hour: 0, name: "The Obsidian Bell", desc: "When darkness holds dominion and the stars gutter low", colors: { sky1: "#0d0510", sky2: "#1a0a1f", sun: "#6b2942" } },
+            { hour: 1, name: "The Penumbral Chime", desc: "The deepest hour, when shadows congeal into substance", colors: { sky1: "#0f0614", sky2: "#1c0d23", sun: "#6f2d45" } },
+            { hour: 2, name: "The Tenebrous Watch", desc: "Night's final grasp before the stellar fade", colors: { sky1: "#120818", sky2: "#1f1028", sun: "#73314a" } },
+            { hour: 3, name: "The Stellar Waning", desc: "When distant suns begin their slow retreat", colors: { sky1: "#150a1e", sky2: "#251530", sun: "#78354f" } },
+            { hour: 4, name: "The Umber Prelude", desc: "First hint of the sun's weary approach", colors: { sky1: "#1a0d24", sky2: "#2d1a38", sun: "#7f3a54" } },
+            { hour: 5, name: "The Crepuscular Hour", desc: "When the dying sun first breaches the purple horizon", colors: { sky1: "#2a1530", sky2: "#4a2545", sun: "#8f4560" } },
+            { hour: 6, name: "The Carmine Dawn", desc: "Crimson light spills across the ancient wastes", colors: { sky1: "#3d1f3a", sky2: "#5f3550", sun: "#a55470" } },
+            { hour: 7, name: "The Vermillion Rising", desc: "The great orb climbs, already exhausted", colors: { sky1: "#502a45", sky2: "#704555", sun: "#b86580" } },
+            { hour: 8, name: "The Sanguine Ascent", desc: "Ruby light illuminates the decaying spires", colors: { sky1: "#5f3550", sky2: "#805560", sun: "#c87890" } },
+            { hour: 9, name: "The Viridian Chime", desc: "Strange green hues tinge the bloated sun", colors: { sky1: "#654548", sky2: "#886658", sun: "#d88ca0" } },
+            { hour: 10, name: "The Fulvous Watch", desc: "Tawny light, thick as ancient honey", colors: { sky1: "#6a5050", sky2: "#907868", sun: "#e5a0b0" } },
+            { hour: 11, name: "The Amber Meridian", desc: "Zenith approaches with golden languor", colors: { sky1: "#6f5a58", sky2: "#988a78", sun: "#f0b5c0" } },
+            { hour: 12, name: "The Coruscant Apex", desc: "The dying sun achieves its brief, weary glory", colors: { sky1: "#746560", sky2: "#a09c88", sun: "#f5cad0" } },
+            { hour: 13, name: "The Ochre Descent", desc: "Already the slow decline begins anew", colors: { sky1: "#706058", sky2: "#989080", sun: "#f0bfc8" } },
+            { hour: 14, name: "The Puce Declension", desc: "Brownish-purple shadows lengthen across the land", colors: { sky1: "#6a5850", sky2: "#908578", sun: "#e8b0c0" } },
+            { hour: 15, name: "The Rufous Hour", desc: "Reddish-brown light grows thick and syrupy", colors: { sky1: "#655048", sky2: "#887a68", sun: "#dfa0b0" } },
+            { hour: 16, name: "The Heliotrope Waning", desc: "Purple hues deepen as the sun weakens", colors: { sky1: "#5f4548", sky2: "#806860", sun: "#d58ca0" } },
+            { hour: 17, name: "The Vespertine Chime", desc: "Evening bells toll across the dimming waste", colors: { sky1: "#583a48", sky2: "#785860", sun: "#ca7890" } },
+            { hour: 18, name: "The Tenebrous Vesper", desc: "Twilight spreads like spilled wine", colors: { sky1: "#4f3045", sky2: "#6f4858", sun: "#be6580" } },
+            { hour: 19, name: "The Murk Descending", desc: "Darkness rises from the earth itself", colors: { sky1: "#442840", sky2: "#5f3850", sun: "#b05470" } },
+            { hour: 20, name: "The Ebon Eventide", desc: "Night claims the world once more", colors: { sky1: "#382035", sky2: "#4f2845", sun: "#a04560" } },
+            { hour: 21, name: "The Stygian Bell", desc: "Deep darkness, relieved only by fading embers", colors: { sky1: "#2d1a30", sky2: "#3f1e3a", sun: "#8f3d55" } },
+            { hour: 22, name: "The Umbral Watch", desc: "Shadows within shadows, darkness profound", colors: { sky1: "#221528", sky2: "#301830", sun: "#7f3550" } },
+            { hour: 23, name: "The Midnight Desolation", desc: "The nadir of light, when hope itself grows dim", colors: { sky1: "#180f20", sky2: "#251028", sun: "#702d4a" } }
+        ];
+
+        const canvas = document.getElementById('sky');
+        const ctx = canvas.getContext('2d');
+        const timeEl = document.getElementById('time');
+        const dateEl = document.getElementById('date');
+        const periodNameEl = document.getElementById('periodName');
+        const periodDescEl = document.getElementById('periodDesc');
+
+        let audioContext = null;
+        let lastHour = -1;
+        let particles = [];
+
+        // Canvas setup
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Get current period
+        function getCurrentPeriod(hour) {
+            return periods[hour] || periods[0];
+        }
+
+        // Create floating particles
+        function createParticles() {
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDuration = (10 + Math.random() * 20) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                particle.style.animation = `float ${10 + Math.random() * 20}s ease-in-out infinite`;
+                document.body.appendChild(particle);
+
+                particles.push({
+                    element: particle,
+                    x: parseFloat(particle.style.left),
+                    y: parseFloat(particle.style.top),
+                    speedX: (Math.random() - 0.5) * 0.02,
+                    speedY: (Math.random() - 0.5) * 0.02
+                });
+            }
+        }
+
+        // Animate particles
+        function animateParticles() {
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+
+                if (p.x < 0 || p.x > 100) p.speedX *= -1;
+                if (p.y < 0 || p.y > 100) p.speedY *= -1;
+
+                p.element.style.left = p.x + '%';
+                p.element.style.top = p.y + '%';
+            });
+        }
+
+        // Draw the dying sun
+        function drawSun(hour, minute, second) {
+            const period = getCurrentPeriod(hour);
+            const totalSeconds = hour * 3600 + minute * 60 + second;
+            const dayProgress = totalSeconds / 86400;
+
+            // Sun position - arc across the sky
+            const sunAngle = Math.PI * dayProgress * 2 - Math.PI / 2;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height * 0.7;
+            const radiusX = canvas.width * 0.45;
+            const radiusY = canvas.height * 0.4;
+
+            const sunX = centerX + Math.cos(sunAngle) * radiusX;
+            const sunY = centerY + Math.sin(sunAngle) * radiusY;
+
+            // Sun size - larger and more bloated
+            const baseSunSize = Math.min(canvas.width, canvas.height) * 0.15;
+            const sunSize = baseSunSize * (1 + Math.sin(dayProgress * Math.PI) * 0.2);
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw sun glow
+            const gradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunSize * 2);
+            gradient.addColorStop(0, period.colors.sun + '40');
+            gradient.addColorStop(0.5, period.colors.sun + '10');
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw sun body
+            const sunGradient = ctx.createRadialGradient(sunX, sunY, sunSize * 0.3, sunX, sunY, sunSize);
+            sunGradient.addColorStop(0, '#ffe4d0');
+            sunGradient.addColorStop(0.4, period.colors.sun);
+            sunGradient.addColorStop(1, period.colors.sun + 'aa');
+            ctx.fillStyle = sunGradient;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Add texture/spots to sun
+            ctx.globalAlpha = 0.3;
+            for (let i = 0; i < 5; i++) {
+                const angle = (i / 5) * Math.PI * 2 + dayProgress * Math.PI;
+                const dist = sunSize * 0.4;
+                const spotX = sunX + Math.cos(angle) * dist;
+                const spotY = sunY + Math.sin(angle) * dist;
+                const spotSize = sunSize * (0.1 + Math.random() * 0.15);
+
+                ctx.fillStyle = '#00000040';
+                ctx.beginPath();
+                ctx.arc(spotX, spotY, spotSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Play atmospheric sound
+        function playChime(hour) {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioContext.currentTime;
+
+            // Deep, resonant gong
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            filter.type = 'lowpass';
+            filter.frequency.value = 300;
+            filter.Q.value = 5;
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc1.frequency.value = 80;
+            osc2.frequency.value = 120;
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 4);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + 4.5);
+            osc2.stop(now + 4.5);
+
+            // Crystalline overtone
+            setTimeout(() => {
+                const crystal = audioContext.createOscillator();
+                const crystalGain = audioContext.createGain();
+                const crystalFilter = audioContext.createBiquadFilter();
+
+                crystalFilter.type = 'bandpass';
+                crystalFilter.frequency.value = 2000;
+                crystalFilter.Q.value = 10;
+
+                crystal.connect(crystalFilter);
+                crystalFilter.connect(crystalGain);
+                crystalGain.connect(audioContext.destination);
+
+                crystal.type = 'sine';
+                crystal.frequency.setValueAtTime(1760, now + 0.5);
+                crystal.frequency.exponentialRampToValueAtTime(880, now + 3);
+
+                crystalGain.gain.setValueAtTime(0, now + 0.5);
+                crystalGain.gain.linearRampToValueAtTime(0.15, now + 0.6);
+                crystalGain.gain.exponentialRampToValueAtTime(0.01, now + 3);
+
+                crystal.start(now + 0.5);
+                crystal.stop(now + 3.5);
+            }, 0);
+        }
+
+        // Update display
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time
+            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+
+            // Update date
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const date = now.getDate();
+            const year = now.getFullYear();
+
+            const suffix = date === 1 || date === 21 || date === 31 ? 'st' :
+                          date === 2 || date === 22 ? 'nd' :
+                          date === 3 || date === 23 ? 'rd' : 'th';
+
+            dateEl.textContent = `${dayName}, the ${date}${suffix} of ${monthName}, ${year}`;
+
+            // Update period
+            const period = getCurrentPeriod(hour);
+            periodNameEl.textContent = period.name;
+            periodDescEl.textContent = period.desc;
+
+            // Update background
+            document.body.style.background = `linear-gradient(to bottom, ${period.colors.sky1}, ${period.colors.sky2})`;
+
+            // Draw sun
+            drawSun(hour, minute, second);
+
+            // Animate particles
+            animateParticles();
+
+            // Play chime on hour change
+            if (hour !== lastHour && lastHour !== -1) {
+                playChime(hour);
+            }
+            lastHour = hour;
+        }
+
+        // Initialize
+        createParticles();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>
