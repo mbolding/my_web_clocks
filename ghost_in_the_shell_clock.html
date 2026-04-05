@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost in the Shell Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Aldrich&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --tactical-cyan: #00ffcc;
+            --ghost-green: #00ff66;
+            --bg-dark: #050a0a;
+            --ring-color: rgba(0, 255, 204, 0.4);
+            --glitch-shadow: -2px 0 #ff00ff, 2px 0 #00ffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--tactical-cyan);
+            font-family: 'Share Tech Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background-image: 
+                linear-gradient(rgba(0, 255, 204, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 204, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Scanlines */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Data Stream Background */
+        canvas#data-stream {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        /* Central UI Context */
+        .cyber-brain-interface {
+            position: relative;
+            z-index: 10;
+            width: clamp(300px, 80vw, 500px);
+            height: clamp(300px, 80vw, 500px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tactical Rings */
+        .ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid var(--ring-color);
+            pointer-events: none;
+        }
+
+        .ring-1 {
+            width: 100%;
+            height: 100%;
+            border: 2px dashed rgba(0, 255, 204, 0.5);
+            animation: spin 60s linear infinite;
+        }
+
+        .ring-2 {
+            width: 85%;
+            height: 85%;
+            border: 1px dotted rgba(0, 255, 102, 0.6);
+            animation: spin-reverse 45s linear infinite;
+        }
+
+        .ring-3 {
+            width: 70%;
+            height: 70%;
+            border: 4px solid transparent;
+            border-top: 4px solid var(--tactical-cyan);
+            border-bottom: 4px solid var(--ghost-green);
+            animation: spin-pulse 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes spin-reverse {
+            100% { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+
+        @keyframes spin-pulse {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+            50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.05); }
+            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
+        }
+
+        /* The Clock Output */
+        .shell-clock {
+            font-family: 'Aldrich', sans-serif;
+            font-size: clamp(3rem, 8vw, 5rem);
+            color: #ffffff;
+            text-shadow: 0 0 10px var(--tactical-cyan), 0 0 20px var(--tactical-cyan);
+            z-index: 20;
+            position: relative;
+            letter-spacing: 2px;
+        }
+
+        .shell-ms {
+            font-size: 1.5rem;
+            color: var(--ghost-green);
+            text-shadow: none;
+            opacity: 0.8;
+            margin-left: 5px;
+        }
+
+        /* CSS Glitch Effect (Ghost Noise) */
+        .glitch-active {
+            animation: glitch-anim 0.2s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: #fff;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                transform: translate(0);
+                text-shadow: var(--glitch-shadow);
+            }
+            20% {
+                transform: translate(-3px, 3px);
+                text-shadow: 2px 0 blue, -2px 0 red;
+            }
+            40% {
+                transform: translate(-3px, -3px);
+                text-shadow: none;
+            }
+            60% {
+                transform: translate(3px, 3px);
+                text-shadow: -2px 0 green, 2px 0 blue;
+            }
+            80% {
+                transform: translate(3px, -3px);
+                text-shadow: var(--glitch-shadow);
+            }
+            100% {
+                transform: translate(0);
+                text-shadow: none;
+            }
+        }
+
+        /* Info readout */
+        .readout {
+            position: absolute;
+            bottom: 60px;
+            text-align: center;
+            width: 80%;
+            max-width: 600px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: rgba(0, 255, 204, 0.8);
+            border-top: 1px solid var(--ring-color);
+            padding-top: 15px;
+        }
+
+        .header-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 0.8rem;
+            color: var(--ghost-green);
+            opacity: 0.6;
+        }
+
+        .ghost-status {
+            color: #ff0055;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-status">
+        CYBER-BRAIN INTERFACE v2.4.1<br>
+        SYNC: OPTIMAL [99.8%]<br>
+        <span class="ghost-status" id="ghostStatus">> ANOMALY DETECTED: GHOST NOISE</span>
+    </div>
+
+    <canvas id="data-stream"></canvas>
+
+    <div class="cyber-brain-interface">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+
+        <div class="shell-clock" id="clockDisplay">
+            <span id="clockMain">00:00:00</span><span class="shell-ms" id="clockMs">.000</span>
+        </div>
+    </div>
+
+    <div class="readout" id="quoteDisplay">
+        "The net is vast and infinite."
+    </div>
+
+    <script>
+        const quotes = [
+            "Just a whisper. I hear it in my ghost.",
+            "There are countless ingredients that make up the human body and mind, like all the components that make up me as an individual with my own personality.",
+            "If a technological feat is possible, man will do it. Almost as if it's wired into the core of our being.",
+            "I feel confined, only free to expand myself within boundaries.",
+            "The net is vast and infinite.",
+            "All things change in a dynamic environment. Your effort to remain what you are is what limits you.",
+            "We weep for a bird's cry, but not for a fish's blood. Blessed are those with a voice.",
+            "Any way you look at it, all the information that a person accumulates in a lifetime is just a drop in the bucket."
+        ];
+
+        const clockMain = document.getElementById('clockMain');
+        const clockMs = document.getElementById('clockMs');
+        const shellClockContainer = document.getElementById('clockDisplay');
+        const quoteDisplay = document.getElementById('quoteDisplay');
+        const ghostStatus = document.getElementById('ghostStatus');
+
+        let lastMinute = -1;
+
+        // Canvas Data Stream (Hacking style background)
+        const canvas = document.getElementById('data-stream');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const columns = Math.floor(width / 20) + 1;
+        const yPositions = Array(columns).fill(0);
+
+        function drawDataStream() {
+            ctx.fillStyle = 'rgba(5, 10, 10, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#00ffcc';
+            ctx.font = '15pt "Share Tech Mono"';
+
+            yPositions.forEach((y, index) => {
+                // Random binary or hex char
+                const text = Math.random() > 0.5 ? Math.floor(Math.random() * 2).toString() : String.fromCharCode(Math.floor(Math.random() * 16) + 48 + (Math.random() > 0.5 ? 7 : 0));
+                
+                const x = index * 20;
+                ctx.fillText(text, x, y);
+
+                if (y > 100 + Math.random() * 10000) {
+                    yPositions[index] = 0;
+                } else {
+                    yPositions[index] = y + 20;
+                }
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        setInterval(drawDataStream, 50);
+
+        // Clock and Ghost Noise Logic
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            let ms = now.getMilliseconds().toString().padStart(3, '0');
+
+            // Random Ghost Glitch (1% chance every frame to start a short glitch)
+            if (Math.random() < 0.005) {
+                shellClockContainer.classList.add('glitch-active');
+                ghostStatus.style.display = 'inline-block';
+                
+                setTimeout(() => {
+                    shellClockContainer.classList.remove('glitch-active');
+                    ghostStatus.style.display = 'none';
+                }, 100 + Math.random() * 300); // Glitch lasts 100-400ms
+            }
+
+            clockMain.textContent = `${h}:${m}:${s}`;
+            clockMs.textContent = `.${ms}`;
+
+            // Sync Quotes
+            if (lastMinute !== now.getMinutes()) {
+                lastMinute = now.getMinutes();
+                quoteDisplay.textContent = `"${quotes[now.getMinutes() % quotes.length]}"`;
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

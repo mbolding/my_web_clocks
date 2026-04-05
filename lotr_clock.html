@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOTR Clock - The One Ring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Tangerine:wght@700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mordor-dark: #0a0200;
+            --mordor-glow: #380a00;
+            --gold: #FFD700;
+            --gold-dark: #B8860B;
+            --fire-glow: #ff4500;
+            --fire-bright: #ffffe0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--mordor-dark);
+            background-image: radial-gradient(circle at center, var(--mordor-glow) 0%, var(--mordor-dark) 80%);
+            color: var(--gold);
+            font-family: 'Uncial Antiqua', cursive;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Subtle smoke overlay */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='smoke'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='3' result='noise'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0' in='noise'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23smoke)'/%3E%3C/svg%3E");
+            pointer-events: none;
+            mix-blend-mode: color-dodge;
+            opacity: 0.4;
+            animation: smokeDrift 60s linear infinite;
+        }
+
+        @keyframes smokeDrift {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.1) translate(-20px, 10px); }
+            100% { transform: scale(1) translate(0, 0); }
+        }
+
+        .ring-container {
+            position: relative;
+            width: clamp(300px, 80vw, 600px);
+            height: clamp(300px, 80vw, 600px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The SVG Ring Canvas */
+        .ring-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 30px rgba(255, 120, 0, 0.4));
+            animation: spinRing 60s linear infinite;
+        }
+
+        @keyframes spinRing {
+            100% { transform: rotate(360deg); }
+        }
+
+        .ring-band {
+            fill: none;
+            stroke: url(#goldGradient);
+            stroke-width: 40;
+            filter: drop-shadow(0 0 10px var(--gold-dark));
+        }
+
+        .ring-band-inner {
+            fill: none;
+            stroke: var(--gold-dark);
+            stroke-width: 42;
+            opacity: 0.4;
+        }
+
+        /* The Inscription */
+        .tengwar-text {
+            font-family: 'Tangerine', cursive;
+            font-size: 34px;
+            font-weight: 700;
+            fill: var(--fire-bright);
+            letter-spacing: 4px;
+            text-anchor: middle;
+            filter: drop-shadow(0 0 8px var(--fire-glow)) drop-shadow(0 0 15px #f00);
+            animation: pulseFire 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseFire {
+            0% { filter: drop-shadow(0 0 5px var(--fire-glow)) drop-shadow(0 0 10px #f00); opacity: 0.8; }
+            100% { filter: drop-shadow(0 0 15px var(--fire-glow)) drop-shadow(0 0 25px #ff4500) drop-shadow(0 0 35px var(--gold)); opacity: 1; }
+        }
+
+        /* Central Time Display */
+        .time-display {
+            position: relative;
+            z-index: 10;
+            font-family: 'Cinzel Decorative', serif;
+            font-size: clamp(3rem, 10vw, 6rem);
+            color: var(--fire-bright);
+            text-shadow: 0 0 20px var(--fire-glow), 0 0 40px #f00;
+            text-align: center;
+            letter-spacing: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ampm {
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-top: -10px;
+        }
+
+        /* Quote Box */
+        .quote-box {
+            position: absolute;
+            bottom: 40px;
+            text-align: center;
+            font-family: 'Cinzel Decorative', serif;
+            color: var(--gold);
+            font-size: 1.2rem;
+            max-width: 800px;
+            width: 90%;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            opacity: 0.9;
+            transition: opacity 1s ease;
+            z-index: 20;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="ring-container">
+        
+        <svg class="ring-svg" viewBox="0 0 500 500">
+            <defs>
+                <radialGradient id="goldGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="90%" stop-color="#FFD700" />
+                    <stop offset="95%" stop-color="#fff" />
+                    <stop offset="100%" stop-color="#B8860B" />
+                </radialGradient>
+                <!-- SVG path for the text to follow (centered at 250, radius 210) -->
+                <path id="textCircle" d="M 250, 40 A 210, 210 0 1,1 249.9, 40" fill="transparent" />
+            </defs>
+
+            <!-- Base shadow of the ring -->
+            <circle cx="250" cy="250" r="210" class="ring-band-inner" />
+            
+            <!-- Main solid gold ring -->
+            <circle cx="250" cy="250" r="210" class="ring-band" />
+            
+            <!-- Glowing Text following the circle path -->
+            <text class="tengwar-text">
+                <textPath href="#textCircle" startOffset="50%">
+                    Ash nazg durbatulûk, ash nazg gimbatul, ash nazg thrakatulûk agh burzum-ishi krimpatul.
+                </textPath>
+            </text>
+        </svg>
+
+        <div class="time-display">
+            <span id="timeText">00:00</span>
+            <span class="ampm" id="ampmText">AM</span>
+        </div>
+
+    </div>
+
+    <div class="quote-box" id="quoteText">
+        "Even the smallest person can change the course of the future."
+    </div>
+
+    <script>
+        const quotes = [
+            "Even the smallest person can change the course of the future.",
+            "Not all those who wander are lost.",
+            "All we have to decide is what to do with the time that is given to us.",
+            "There is some good in this world, and it's worth fighting for.",
+            "A day may come when the courage of men fails, but it is not this day.",
+            "Deeds will not be less valiant because they are unpraised.",
+            "It's a dangerous business, Frodo, going out your door.",
+            "I will not say: do not weep; for not all tears are an evil."
+        ];
+
+        const timeText = document.getElementById('timeText');
+        const ampmText = document.getElementById('ampmText');
+        const quoteText = document.getElementById('quoteText');
+        
+        let lastMinute = -1;
+
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours();
+            let m = now.getMinutes().toString().padStart(2, '0');
+            
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12; // the hour '0' should be '12'
+            
+            timeText.textContent = `${h}:${m}`;
+            ampmText.textContent = ampm;
+
+            // Change Quote every hour or minute for demo (we'll do minute)
+            if (lastMinute !== now.getMinutes()) {
+                lastMinute = now.getMinutes();
+                quoteText.style.opacity = 0;
+                setTimeout(() => {
+                    quoteText.textContent = `"${quotes[now.getMinutes() % quotes.length]}"`;
+                    quoteText.style.opacity = 0.9;
+                }, 1000);
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

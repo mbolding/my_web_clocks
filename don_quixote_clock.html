@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Don Quixote Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Reality (Sancho) Colors */
+            --bg-color-normal: #ebd2a9;
+            --ink-normal: #3e2723;
+            --accent-normal: #6d4c41;
+
+            /* Madness (Quixote) Colors */
+            --bg-color-mad: #4a2311;
+            --ink-mad: #ffcc80;
+            --accent-mad: #d84315;
+
+            /* Current Theme Variables */
+            --bg-color: var(--bg-color-normal);
+            --ink: var(--ink-normal);
+            --accent: var(--accent-normal);
+            
+            transition: all 1.5s ease-in-out;
+        }
+
+        body.madness {
+            --bg-color: var(--bg-color-mad);
+            --ink: var(--ink-mad);
+            --accent: var(--accent-mad);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--ink);
+            font-family: 'IM Fell English', serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+        }
+
+        /* Top Control */
+        .controls {
+            position: absolute;
+            top: 40px;
+            z-index: 100;
+        }
+
+        .visor-btn {
+            background: transparent;
+            border: 2px solid var(--ink);
+            color: var(--ink);
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+        }
+
+        .visor-btn:hover {
+            background: var(--ink);
+            color: var(--bg-color);
+        }
+
+        /* The Clock/Scene Container */
+        .scene {
+            position: relative;
+            width: clamp(300px, 60vw, 500px);
+            height: clamp(300px, 60vw, 500px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        /* Windmill / Giant Body */
+        .structure {
+            position: absolute;
+            bottom: 10%;
+            width: 120px;
+            height: 200px;
+            transition: all 1.5s ease-in-out;
+        }
+
+        /* SVG Bodies */
+        .body-normal {
+            fill: var(--bg-color);
+            stroke: var(--ink);
+            stroke-width: 4;
+            transition: opacity 1.5s ease;
+        }
+
+        .body-mad {
+            fill: var(--bg-color);
+            stroke: var(--ink);
+            stroke-width: 4;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        body.madness .body-normal { opacity: 0; }
+        body.madness .body-mad { opacity: 1; }
+
+        /* The Sweeping Blades / Arms */
+        .blades-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            margin-top: -60px; /* offset to align with top of structure */
+            transform-origin: center center;
+            /* Rotation is handled by JS */
+        }
+
+        .blade {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 200px;
+            background: transparent;
+            transform-origin: top center;
+        }
+
+        /* Normal Blades */
+        .blade-normal {
+            border: 2px solid var(--ink);
+            background: rgba(0,0,0,0.05); /* Canvas cloth */
+            transition: opacity 1.5s ease;
+        }
+
+        /* Giant Arms */
+        .blade-mad {
+            border: 2px solid var(--accent);
+            background: var(--bg-color);
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        body.madness .blade-normal { opacity: 0; }
+        body.madness .blade-mad { opacity: 1; }
+
+        /* Clock Time Display */
+        .time-display {
+            position: absolute;
+            z-index: 50;
+            bottom: -50px;
+            font-size: clamp(3rem, 8vw, 4.5rem);
+            font-family: 'IM Fell English SC', serif;
+            text-shadow: 2px 2px 0px var(--bg-color), -2px -2px 0px var(--bg-color), 0px 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        /* Quote Box */
+        .quote-box {
+            position: absolute;
+            bottom: 40px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            font-size: 1.4rem;
+            font-style: italic;
+            transition: opacity 0.5s ease;
+            padding: 20px;
+            border-top: 1px solid var(--ink);
+            border-bottom: 1px solid var(--ink);
+        }
+
+        .character-name {
+            display: block;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1rem;
+            margin-top: 10px;
+            font-style: normal;
+            color: var(--accent);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button class="visor-btn" id="visorBtn">LOWER VISOR</button>
+    </div>
+
+    <div class="scene">
+        
+        <!-- SVG Structure -->
+        <svg class="structure" viewBox="0 0 100 200">
+            <!-- Normal Windmill -->
+            <path class="body-normal" d="M30,200 L45,30 L50,15 L55,30 L70,200 Z" />
+            <rect class="body-normal" x="43" y="150" width="14" height="20" rx="7" />
+            <line class="body-normal" x1="45" y1="80" x2="55" y2="80" />
+            <line class="body-normal" x1="40" y1="130" x2="60" y2="130" />
+
+            <!-- Giant -->
+            <!-- Head & Torso -->
+            <circle class="body-mad" cx="50" cy="25" r="15" />
+            <path class="body-mad" d="M30,200 L40,100 L25,40 L75,40 L60,100 L70,200 Z" />
+            <!-- Glowing Eyes -->
+            <circle class="body-mad" cx="43" cy="22" r="3" fill="var(--accent)" stroke="none" />
+            <circle class="body-mad" cx="57" cy="22" r="3" fill="var(--accent)" stroke="none" />
+            <!-- Mouth -->
+            <path class="body-mad" d="M45,32 Q50,38 55,32" fill="none" />
+        </svg>
+
+        <!-- Sweeping Blades (Seconds Hand) -->
+        <div class="blades-container" id="bladesContainer">
+            <!-- 4 arms forming the cross -->
+            <div class="blade" style="transform: rotate(0deg);">
+                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
+                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
+                </div>
+                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
+                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
+                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="blade" style="transform: rotate(90deg);">
+                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
+                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
+                </div>
+                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
+                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
+                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="blade" style="transform: rotate(180deg);">
+                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
+                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
+                </div>
+                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
+                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
+                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="blade" style="transform: rotate(270deg);">
+                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
+                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
+                </div>
+                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
+                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
+                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="time-display" id="timeDisplay">00:00</div>
+    </div>
+
+    <div class="quote-box" id="quoteBox">
+        "Those are not giants, but windmills."
+        <span class="character-name">— Sancho Panza</span>
+    </div>
+
+    <script>
+        const realityQuotes = [
+            "Those are not giants, but windmills.",
+            "A bird in the hand is worth two in the bush.",
+            "Whether the pitcher strikes the stone, or the stone the pitcher, it is bad for the pitcher.",
+            "There's no stomach that is a hand's breadth bigger than another.",
+            "Let every man mind his own business.",
+            "I drink when I have occasion, and sometimes when I have no occasion."
+        ];
+
+        const madnessQuotes = [
+            "Destiny guides our fortunes more favorably than we could have expected.",
+            "Look there, friend Sancho Panza, where thirty or more monstrous giants present themselves.",
+            "I intend to engage in battle with them and slay them all.",
+            "To surrender dreams — this may be madness.",
+            "Too much sanity may be madness — and maddest of all: to see life as it is, and not as it should be!",
+            "Thou art a cowardly creature... For they are giants!"
+        ];
+
+        const body = document.body;
+        const visorBtn = document.getElementById('visorBtn');
+        const bladesContainer = document.getElementById('bladesContainer');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const quoteBox = document.getElementById('quoteBox');
+
+        let isMadness = false;
+        let lastMinute = -1;
+
+        visorBtn.addEventListener('click', () => {
+            isMadness = !isMadness;
+            if(isMadness) {
+                body.classList.add('madness');
+                visorBtn.textContent = "RAISE VISOR";
+            } else {
+                body.classList.remove('madness');
+                visorBtn.textContent = "LOWER VISOR";
+            }
+            updateQuote(true);
+        });
+
+        function updateQuote(force = false) {
+            quoteBox.style.opacity = 0;
+            setTimeout(() => {
+                const arr = isMadness ? madnessQuotes : realityQuotes;
+                const char = isMadness ? "Don Quixote" : "Sancho Panza";
+                const q = arr[Math.floor(Math.random() * arr.length)];
+                quoteBox.innerHTML = `"${q}" <span class="character-name">— ${char}</span>`;
+                quoteBox.style.opacity = 1;
+            }, 500);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours();
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds();
+            let ms = now.getMilliseconds();
+
+            // AM/PM format for classic feel
+            let ampm = h >= 12 ? 'PM' : 'AM';
+            let displayH = h % 12;
+            displayH = displayH ? displayH : 12;
+
+            timeDisplay.textContent = `${displayH}:${m} ${ampm}`;
+
+            // Continuous rotation for seconds. 
+            // The cross starts at 0, 90, 180, 270. 
+            // One full rotation takes 60 seconds.
+            const totalSeconds = s + (ms / 1000);
+            const degrees = (totalSeconds / 60) * 360;
+            
+            bladesContainer.style.transform = `rotate(${degrees}deg)`;
+
+            if (lastMinute !== now.getMinutes()) {
+                lastMinute = now.getMinutes();
+                // update quote slowly every minute
+                updateQuote();
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

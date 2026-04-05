@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dune Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Jura:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --desert-sand: #c1753c;
+            --desert-dark: #3a1505;
+            --spice-blue: #0077ff;
+            --spice-glow: rgba(0, 119, 255, 0.6);
+            --water-blue: #4fa4e8;
+            --text-light: #f4dcb5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(180deg, var(--desert-dark) 0%, #762f0a 100%);
+            color: var(--text-light);
+            font-family: 'Jura', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        canvas#spice-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+            mix-blend-mode: screen;
+        }
+
+        .ui-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            background: rgba(58, 21, 5, 0.4);
+            border: 1px solid rgba(193, 117, 60, 0.3);
+            border-radius: 50%;
+            width: clamp(300px, 80vw, 600px);
+            height: clamp(300px, 80vw, 600px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 100px rgba(193, 117, 60, 0.2);
+        }
+
+        .title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: var(--desert-sand);
+            margin-bottom: 20px;
+        }
+
+        .time-wrapper {
+            position: relative;
+            margin: 30px 0;
+        }
+
+        .time-prescience {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.05);
+            font-size: clamp(3rem, 10vw, 5rem);
+            font-weight: 700;
+            color: var(--spice-blue);
+            opacity: 0.3;
+            filter: blur(4px);
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .time-current {
+            position: relative;
+            font-size: clamp(3rem, 10vw, 5rem);
+            font-weight: 700;
+            color: var(--text-light);
+            text-shadow: 0 0 20px var(--spice-glow);
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .water-discipline {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .water-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(244, 220, 181, 0.7);
+        }
+
+        .water-bar-container {
+            width: 200px;
+            height: 4px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .water-bar {
+            height: 100%;
+            background: var(--water-blue);
+            width: 100%;
+            box-shadow: 0 0 10px var(--water-blue);
+            transition: width 1s linear;
+        }
+
+        .quote-container {
+            margin-top: 40px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            color: var(--desert-sand);
+            font-style: italic;
+            opacity: 0.8;
+            max-width: 80%;
+            text-align: center;
+            transition: opacity 1s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="spice-canvas"></canvas>
+
+    <div class="ui-container">
+        <div class="title">Arrakis Standard</div>
+        
+        <div class="time-wrapper">
+            <div class="time-prescience" id="timePrescience">00:00:00</div>
+            <div class="time-current" id="timeCurrent">00:00:00</div>
+        </div>
+
+        <div class="water-discipline">
+            <div class="water-label">Water Retention</div>
+            <div class="water-bar-container">
+                <div class="water-bar" id="waterBar"></div>
+            </div>
+            <div class="water-label" id="waterDetails" style="font-size:0.7rem;">Expended: 0 Liters</div>
+        </div>
+
+        <div class="quote-container" id="quoteText">
+            "I must not fear. Fear is the mind-killer."
+        </div>
+    </div>
+
+    <script>
+        // Quotes array
+        const quotes = [
+            "I must not fear. Fear is the mind-killer.",
+            "He who controls the spice controls the universe.",
+            "The mystery of life isn't a problem to solve, but a reality to experience.",
+            "Deep in the human unconscious is a pervasive need for a logical universe that makes sense.",
+            "A process cannot be understood by stopping it.",
+            "Survival is the ability to swim in strange water.",
+            "Hope clouds observation.",
+            "To know the future is to be trapped by it."
+        ];
+
+        const timeCurrent = document.getElementById('timeCurrent');
+        const timePrescience = document.getElementById('timePrescience');
+        const waterBar = document.getElementById('waterBar');
+        const waterDetails = document.getElementById('waterDetails');
+        const quoteText = document.getElementById('quoteText');
+        
+        let lastMinute = -1;
+
+        // Spice Canvas Setup
+        const canvas = document.getElementById('spice-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class SpiceMote {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 0.5;
+                this.vx = (Math.random() - 0.5) * 0.5 + 0.2; // slight drift to the right
+                this.vy = (Math.random() - 0.5) * 0.5 - 0.3; // slight drift upward
+                // Colors range from orange to spice blue
+                const isBlue = Math.random() > 0.85;
+                this.color = isBlue ? 'rgba(0, 119, 255, ' : 'rgba(255, 150, 50, ';
+                this.alpha = Math.random() * 0.5 + 0.2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Wraparound
+                if (this.x > width + 10) this.x = -10;
+                if (this.x < -10) this.x = width + 10;
+                if (this.y > height + 10) this.y = -10;
+                if (this.y < -10) this.y = height + 10;
+
+                // Twinkle
+                this.alpha += (Math.random() - 0.5) * 0.05;
+                if (this.alpha < 0.1) this.alpha = 0.1;
+                if (this.alpha > 0.8) this.alpha = 0.8;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color + this.alpha + ')';
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 200; i++) {
+            particles.push(new SpiceMote());
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // Clock Logic
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            
+            // Current Time
+            timeCurrent.textContent = `${h}:${m}:${s}`;
+
+            // Prescience Time (Showing 1 minute and 15 seconds into the future)
+            const future = new Date(now.getTime() + 75000);
+            let fh = future.getHours().toString().padStart(2, '0');
+            let fm = future.getMinutes().toString().padStart(2, '0');
+            let fs = future.getSeconds().toString().padStart(2, '0');
+            timePrescience.textContent = `${fh}:${fm}:${fs}`;
+
+            // Water Discipline (Resetting every 60 seconds linearly)
+            const seconds = now.getSeconds();
+            const ms = now.getMilliseconds();
+            const progress = ((seconds + ms/1000) / 60) * 100; // 0 to 100 over a minute
+            
+            // It depletes, so we do 100 - progress
+            waterBar.style.width = `${100 - progress}%`;
+            const expended = (progress / 100 * 1.5).toFixed(3); // lose 1.5 liters per minute
+            waterDetails.textContent = `Expended: ${expended} Liters`;
+
+            // Change Quote every hour or minute for demo (we'll do minute)
+            if (lastMinute !== now.getMinutes()) {
+                lastMinute = now.getMinutes();
+                quoteText.style.opacity = 0;
+                setTimeout(() => {
+                    quoteText.textContent = `"${quotes[now.getMinutes() % quotes.length]}"`;
+                    quoteText.style.opacity = 0.8;
+                }, 1000);
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

@@ -18,18 +18,27 @@ A collection of literary works that would make amazing time-based visualizations
 - ✅ **Infinite Jest** - David Foster Wallace (subsidized years, footnotes, E.T.A./Ennet House)
 - ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes, involuntary memory)
 
+- ✅ **The Metamorphosis** - Franz Kafka
+- ✅ **Slaughterhouse-Five** - Kurt Vonnegut
+- ✅ **The Divine Comedy** - Dante Alighieri
+- ✅ **The Canterbury Tales** - Geoffrey Chaucer
+- ✅ **The Odyssey** - Homer
+- ✅ **Hamlet** - William Shakespeare
+- ✅ **The Old Man and the Sea** - Ernest Hemingway
+- ✅ **The Stranger** - Albert Camus
+- ✅ **Crime and Punishment** - Fyodor Dostoevsky
+- ✅ **On the Road** - Jack Kerouac
+- ✅ **Catch-22** - Joseph Heller
+- ✅ **Dune** - Frank Herbert
+- ✅ **Don Quixote** - Miguel de Cervantes
+- ✅ **Ghost in the Shell** - Masamune Shirow
+- ✅ **The Lord of the Rings** - J.R.R. Tolkien
+
 ---
 
 ## To Build
 
 ### Kafka & Existential
-- **The Metamorphosis** - Gregor Samsa's transformation stages through the day
-  - Morning: waking as vermin
-  - Afternoon: family reactions
-  - Evening: isolation and decline
-  - Night: acceptance and death
-  - Kafka's sparse, direct prose style
-  - Insect motifs and claustrophobic layout
 
 - **The Trial** - Josef K's bureaucratic nightmare
   - Endless waiting rooms
@@ -44,12 +53,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Surveyor's impossible task
 
 ### Time-Bending & Non-Linear
-- **Slaughterhouse-Five** - Kurt Vonnegut
-  - Billy Pilgrim "unstuck in time"
-  - Jumping between WWII, Tralfamadore, and his American life
-  - "So it goes" appearing regularly
-  - Non-linear hour display
-  - Tralfamadorian perspective on time (all moments existing simultaneously)
 
 - **The Sound and the Fury** - William Faulkner
   - Four sections, four narrators (Benjy, Quentin, Jason, Dilsey)
@@ -58,12 +61,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Different typefaces for different consciousness levels
   - April 7, 1928 and June 2, 1910
 
-- **Catch-22** - Joseph Heller
-  - Recursive time loops
-  - Paradoxical logic
-  - Yossarian's missions
-  - Circular narrative structure
-  - "Everyone has the same number of missions to fly"
 
 - **Cloud Atlas** - David Mitchell
   - Six nested stories across time
@@ -72,20 +69,7 @@ A collection of literary works that would make amazing time-based visualizations
   - Interconnected birthmark motif
 
 ### Epic & Classical
-- **The Divine Comedy** - Dante Alighieri
-  - Descending through Inferno (circles of hell)
-  - Ascending through Purgatorio (terraces)
-  - Rising through Paradiso (spheres of heaven)
-  - Each hour maps to different circles/terraces/spheres
-  - Medieval illuminated manuscript aesthetic
-  - Terza rima structure reflected in design
 
-- **The Canterbury Tales** - Geoffrey Chaucer
-  - 24 pilgrims = 24 hours
-  - Different tales told throughout the journey
-  - Middle English excerpts
-  - Medieval manuscript style
-  - Journey to Canterbury mapped to day's progression
 
 - **Orlando** - Virginia Woolf
   - Centuries passing in one life
@@ -94,12 +78,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Each hour represents different century
   - Shifting pronouns and identity
 
-- **The Odyssey** - Homer
-  - 24 books = 24 hours
-  - Odysseus's journey home
-  - Each hour a different adventure (Cyclops, Sirens, Circe, etc.)
-  - Ancient Greek aesthetic
-  - Wine-dark sea
 
 ### Experimental & Metafiction
 - **If on a winter's night a traveler** - Italo Calvino
@@ -221,12 +199,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Contemporary minimalism
 
 ### Shakespeare
-- **Hamlet** - "The time is out of joint"
-  - 5 acts = 5 time periods
-  - Soliloquies cycling through
-  - Denmark's decay
-  - "To be or not to be"
-  - Ghost at midnight
 
 - **A Midsummer Night's Dream**
   - One night in the forest
@@ -278,12 +250,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Rain imagery
   - "The world breaks everyone"
 
-- **The Old Man and the Sea**
-  - Santiago's three-day struggle
-  - Dawn, day, night cycles
-  - The marlin and sharks
-  - Endurance and dignity
-  - "A man can be destroyed but not defeated"
 
 - **For Whom the Bell Tolls**
   - Three days in Spanish Civil War
@@ -300,12 +266,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Moments of violence and grace
 
 ### French Literature
-- **The Stranger (L'Étranger)** - Albert Camus
-  - Meursault's indifference
-  - Funeral, beach, trial
-  - Algerian heat
-  - "Aujourd'hui, maman est morte"
-  - The sun and murder
 
 - **Nausea (La Nausée)** - Jean-Paul Sartre
   - Roquentin's existential crisis
@@ -322,12 +282,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Endless night
 
 ### Russian Literature
-- **Crime and Punishment** - Fyodor Dostoevsky
-  - Raskolnikov's feverish days
-  - The murder and aftermath
-  - St. Petersburg heat
-  - Guilt and redemption
-  - Porfiry's interrogations
 
 - **The Brothers Karamazov** - Fyodor Dostoevsky
   - Three brothers (Dmitri, Ivan, Alyosha)
@@ -370,12 +324,6 @@ A collection of literary works that would make amazing time-based visualizations
   - "For Madmen Only"
 
 ### Beat & Postwar American
-- **On the Road** - Jack Kerouac
-  - Cross-country journeys
-  - Spontaneous prose
-  - Sal and Dean
-  - Jazz and speed
-  - "The road is life"
 
 - **Naked Lunch** - William S. Burroughs
   - Cut-up technique
@@ -392,12 +340,6 @@ A collection of literary works that would make amazing time-based visualizations
   - "Shall I project a world?"
 
 ### Science Fiction & Speculative
-- **Dune** - Frank Herbert
-  - Arrakis time (water-scarce hours)
-  - Spice and prescience
-  - Paul's visions
-  - Desert rhythms
-  - Fremen calendar
 
 - **The Dispossessed** - Ursula K. Le Guin
   - Anarres vs. Urras

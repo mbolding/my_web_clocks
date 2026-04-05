@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entire Life Clock (Memento Mori)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #111111;
+            --text: #eeeeee;
+            --text-muted: #888888;
+            --box-filled: #eeeeee;
+            --box-empty: #333333;
+            --box-current: #ff3333;
+            --years: 90;
+            --weeks-per-year: 52;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .setup-container {
+            margin-bottom: 40px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 15px 30px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        input[type="date"] {
+            background: #222;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            color-scheme: dark;
+        }
+
+        button {
+            background: #eee;
+            color: #111;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* The Grid */
+        .grid-container {
+            display: grid;
+            /* 52 columns for 52 weeks in a year */
+            grid-template-columns: repeat(var(--weeks-per-year), 1fr);
+            gap: clamp(2px, 0.4vw, 4px);
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 40px;
+        }
+
+        .week-box {
+            aspect-ratio: 1 / 1;
+            border-radius: 1px;
+            background-color: var(--box-empty);
+            transition: background-color 0.5s ease;
+        }
+
+        .week-filled {
+            background-color: var(--box-filled);
+        }
+
+        .week-current {
+            background-color: var(--box-current);
+            animation: pulse 1.5s infinite alternate;
+            box-shadow: 0 0 10px var(--box-current);
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.3); opacity: 1; }
+        }
+
+        /* Stats */
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(255,255,255,0.03);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #222;
+        }
+
+        .stat-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+        }
+
+        /* Continuous Timer */
+        .live-timer {
+            margin-top: 40px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .timer-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 300;
+            letter-spacing: -2px;
+            color: #ddd;
+        }
+
+        .timer-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .fraction-ms {
+            font-size: 0.5em;
+            opacity: 0.6;
+        }
+
+        /* Hidden states */
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Memento Mori</h1>
+        <div class="subtitle">A 90-Year Life Visualized</div>
+    </div>
+
+    <div class="setup-container" id="setupContainer">
+        <label for="birthdate" class="stat-label">Enter Date of Birth:</label>
+        <input type="date" id="birthdate">
+        <button id="saveBtn">Visualize</button>
+    </div>
+
+    <!-- The 4680 Weeks Grid -->
+    <div class="grid-container" id="gridContainer" class="hidden">
+        <!-- Boxes generated by JS -->
+    </div>
+
+    <!-- Detailed Stats -->
+    <div class="stats-container hidden" id="statsContainer">
+        <div class="stat-block">
+            <div class="stat-value" id="valPercent">0%</div>
+            <div class="stat-label">Time Lived</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-value" id="valWeeks">0</div>
+            <div class="stat-label">Weeks Past</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-value" id="valRemaining">0</div>
+            <div class="stat-label">Weeks Remaining</div>
+        </div>
+    </div>
+
+    <!-- Live Timer -->
+    <div class="live-timer hidden" id="liveTimer">
+        <div class="timer-value" id="timerValue">0<span class="fraction-ms">.000</span></div>
+        <div class="timer-label">Total Seconds Alive</div>
+    </div>
+
+    <script>
+        const setupContainer = document.getElementById('setupContainer');
+        const gridContainer = document.getElementById('gridContainer');
+        const statsContainer = document.getElementById('statsContainer');
+        const liveTimer = document.getElementById('liveTimer');
+        const birthdateInput = document.getElementById('birthdate');
+        const saveBtn = document.getElementById('saveBtn');
+
+        const valPercent = document.getElementById('valPercent');
+        const valWeeks = document.getElementById('valWeeks');
+        const valRemaining = document.getElementById('valRemaining');
+        const timerValue = document.getElementById('timerValue');
+
+        const TOTAL_YEARS = 90;
+        const WEEKS_PER_YEAR = 52;
+        const TOTAL_WEEKS = TOTAL_YEARS * WEEKS_PER_YEAR; // 4680
+        
+        let dobDate = null;
+        let animationFrameId = null;
+
+        // Initialize grid
+        function initGrid() {
+            gridContainer.innerHTML = '';
+            for (let i = 0; i < TOTAL_WEEKS; i++) {
+                const box = document.createElement('div');
+                box.className = 'week-box';
+                box.id = `week-${i}`;
+                gridContainer.appendChild(box);
+            }
+        }
+
+        function calculateLife() {
+            if (!dobDate) return;
+
+            const now = new Date();
+            const msAlive = now.getTime() - dobDate.getTime();
+            
+            // If future date, cap at 0
+            if (msAlive < 0) return;
+
+            // Calculate weeks lived
+            // 1000 ms * 60 s * 60 m * 24 h * 7 d = 604,800,000 ms per week
+            const MS_PER_WEEK = 604800000;
+            const absoluteWeeksLived = Math.floor(msAlive / MS_PER_WEEK);
+            
+            // Constrain to our 90 year grid
+            const weeksLived = Math.min(absoluteWeeksLived, TOTAL_WEEKS);
+
+            // Update DOM Grid
+            // We use standard class assignment to prevent heavy relayouts where possible
+            for (let i = 0; i < TOTAL_WEEKS; i++) {
+                const box = gridContainer.children[i];
+                if (!box) continue;
+
+                if (i < weeksLived) {
+                    if (box.className !== 'week-box week-filled') box.className = 'week-box week-filled';
+                } else if (i === weeksLived) {
+                    if (box.className !== 'week-box week-current') box.className = 'week-box week-current';
+                } else {
+                    if (box.className !== 'week-box') box.className = 'week-box';
+                }
+            }
+
+            // Update stats
+            const weeksRemaining = TOTAL_WEEKS - weeksLived;
+            const percent = ((weeksLived / TOTAL_WEEKS) * 100).toFixed(2);
+
+            valWeeks.textContent = weeksLived.toLocaleString();
+            valRemaining.textContent = Math.max(0, weeksRemaining).toLocaleString();
+            valPercent.textContent = `${percent}%`;
+
+            // Update Live Timer (Total seconds alive)
+            const secondsAlive = Math.floor(msAlive / 1000);
+            const msFraction = (msAlive % 1000).toString().padStart(3, '0');
+            timerValue.innerHTML = `${secondsAlive.toLocaleString()}<span class="fraction-ms">.${msFraction}</span>`;
+
+            animationFrameId = requestAnimationFrame(calculateLife);
+        }
+
+        function startVisualization(dateString) {
+            dobDate = new Date(dateString);
+            
+            // Save to local storage
+            localStorage.setItem('memento_dob', dateString);
+
+            // Show UI
+            gridContainer.classList.remove('hidden');
+            statsContainer.classList.remove('hidden');
+            liveTimer.classList.remove('hidden');
+            
+            // Minimalize setup visually
+            setupContainer.style.opacity = '0.5';
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            calculateLife();
+        }
+
+        // On Load
+        initGrid();
+        gridContainer.classList.remove('hidden'); // Show empty grid initially for visual impact
+
+        const savedDob = localStorage.getItem('memento_dob');
+        if (savedDob) {
+            birthdateInput.value = savedDob;
+            startVisualization(savedDob);
+        }
+
+        // Events
+        saveBtn.addEventListener('click', () => {
+            if (birthdateInput.value) {
+                startVisualization(birthdateInput.value);
+            }
+        });
+
+        birthdateInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && birthdateInput.value) {
+                startVisualization(birthdateInput.value);
+            }
+        });
+    </script>
+</body>
+</html>
