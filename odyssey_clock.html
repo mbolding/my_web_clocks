@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Odyssey Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #1a1a3a 0%, #2a2a4a 30%, #0a0a1a 100%);
+            font-family: 'Crimson Text', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #d8d4cc;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wine-dark-sea {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to bottom, transparent 0%, #2a1a3a 50%, #1a0a2a 100%);
+            pointer-events: none;
+            opacity: 0.6;
+            z-index: 0;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.5;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: starTwinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .greek-border {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 20px solid transparent;
+            border-image: repeating-linear-gradient(
+                90deg,
+                #8a7a4a 0px,
+                #8a7a4a 20px,
+                transparent 20px,
+                transparent 40px
+            ) 20;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(20, 15, 25, 0.95);
+            border: 3px solid #8a7a4a;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #6a5a3a;
+        }
+
+        .title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 700;
+            color: #f8e8c8;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .greek-title {
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            color: #c8b898;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .author {
+            font-size: 1rem;
+            color: #a89878;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #6a5a3a;
+        }
+
+        .current-time {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 700;
+            color: #f8e8c8;
+            margin-bottom: 0.5rem;
+        }
+
+        .book-indicator {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            color: #a89878;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .journey-section {
+            margin-bottom: 2rem;
+        }
+
+        .adventure-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.3rem, 3vw, 2rem);
+            font-weight: 600;
+            color: #e8d8b8;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .location {
+            font-size: 1rem;
+            color: #b8a888;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .verse-container {
+            position: relative;
+            min-height: 180px;
+            margin-bottom: 1.5rem;
+        }
+
+        .verse {
+            font-size: clamp(1rem, 2.2vw, 1.2rem);
+            line-height: 1.9;
+            color: #d8d4cc;
+            font-style: italic;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: verseFade 15s ease-in-out infinite;
+        }
+
+        .verse:nth-child(1) { animation-delay: 0s; }
+        .verse:nth-child(2) { animation-delay: 5s; }
+        .verse:nth-child(3) { animation-delay: 10s; }
+
+        @keyframes verseFade {
+            0% { opacity: 0; transform: translateY(8px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(8px); }
+        }
+
+        .epic-line {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.9rem, 2vw, 1.15rem);
+            line-height: 1.7;
+            color: #f8e8c8;
+            padding: 1.5rem;
+            background: rgba(138, 122, 74, 0.2);
+            border-left: 4px solid #c8a858;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .years-marker {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            text-align: right;
+            padding: 1rem;
+            background: rgba(20, 15, 25, 0.9);
+            border: 2px solid #6a5a3a;
+        }
+
+        .years-marker .number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f8e8c8;
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .years-marker .label {
+            font-size: 0.8rem;
+            color: #a89878;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .years-marker {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.75rem;
+            }
+
+            .greek-border {
+                border-width: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wine-dark-sea"></div>
+    <div class="stars" id="stars"></div>
+    <div class="greek-border"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">The Odyssey</h1>
+            <div class="greek-title">Ὀδύσσεια</div>
+            <div class="author">Homer</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="book-indicator" id="book">Book I</div>
+        </div>
+
+        <div class="journey-section">
+            <h2 class="adventure-title" id="adventure-title">The Council of the Gods</h2>
+            <div class="location" id="location">Mount Olympus</div>
+            <div class="verse-container">
+                <div id="verses">
+                    <!-- Verses injected here -->
+                </div>
+            </div>
+            <div class="epic-line">
+                "Tell me, O Muse, of the man of many devices"
+            </div>
+        </div>
+    </div>
+
+    <div class="years-marker">
+        <span class="number" id="years">10</span>
+        <span class="label">Years Wandering</span>
+    </div>
+
+    <script>
+        const books = [
+            {
+                hour: 0,
+                book: "Book I",
+                title: "The Council of the Gods",
+                location: "Mount Olympus and Ithaca",
+                verses: [
+                    "Tell me, O Muse, of the man of many devices, who wandered full many ways after he had sacked the sacred citadel of Troy.",
+                    "All the other Greeks who had survived were safe at home, but Odysseus alone still wandered, for the nymph Calypso kept him captive.",
+                    "Athena spoke to Zeus: 'Father, why do you not pity Odysseus? He has made so many sacrifices to you at Troy.'"
+                ]
+            },
+            {
+                hour: 1,
+                book: "Book II",
+                title: "The Assembly at Ithaca",
+                location: "Ithaca, the palace",
+                verses: [
+                    "Telemachus called an assembly of all the Achaeans. The suitors of Penelope devoured the substance of his house daily.",
+                    "Antinous spoke: 'We will not leave your house until your mother chooses one of us to marry.'",
+                    "Telemachus replied: 'The gods will punish you for this outrage. I will seek news of my father, whether he lives or is dead.'"
+                ]
+            },
+            {
+                hour: 2,
+                book: "Book III",
+                title: "Telemachus Visits Nestor",
+                location: "Pylos, the sandy shore",
+                verses: [
+                    "They came to Pylos, where Nestor the old charioteer was sacrificing bulls to Poseidon by the seashore.",
+                    "Nestor told of the returns from Troy: 'Agamemnon was murdered by his wife and Aegisthus. Menelaus wandered for seven years.'",
+                    "'But of Odysseus I have heard nothing. Perhaps he lives, perhaps he is dead. Only the gods know.'"
+                ]
+            },
+            {
+                hour: 3,
+                book: "Book IV",
+                title: "Telemachus Visits Menelaus",
+                location: "Sparta, the palace of Menelaus",
+                verses: [
+                    "At Sparta they found Menelaus and Helen feasting. Helen recognized Telemachus: 'This must be Odysseus's son, for he looks just like him.'",
+                    "Menelaus wept: 'I would give all my treasure to have Odysseus here again, my dear comrade who suffered so much for my sake.'",
+                    "Helen put a drug in their wine, nepenthe, which makes men forget all sorrows. Then Menelaus told of meeting Proteus, the Old Man of the Sea, who said Odysseus lived, held captive by Calypso."
+                ]
+            },
+            {
+                hour: 4,
+                book: "Book V",
+                title: "Calypso's Island",
+                location: "Ogygia, the nymph's cave",
+                verses: [
+                    "Hermes came to Calypso's island and told her Zeus commanded that she let Odysseus go. The nymph wept but obeyed.",
+                    "Odysseus built a raft with twenty trees. Calypso gave him provisions and a fair wind. He sailed for seventeen days.",
+                    "But Poseidon saw him and raised a great storm. The raft was shattered, and Odysseus clung to a plank in the wine-dark sea."
+                ]
+            },
+            {
+                hour: 5,
+                book: "Book VI",
+                title: "Nausicaa and the Phaeacians",
+                location: "Scheria, the land of the Phaeacians",
+                verses: [
+                    "Odysseus washed ashore naked and covered himself with leaves. He heard voices—Princess Nausicaa and her maidens washing clothes.",
+                    "He emerged from the bushes, and the maidens fled. But Nausicaa stood her ground. She gave him clothing and food.",
+                    "'Follow me to the city,' she said, 'but at a distance, so people won't gossip. Go to the palace and clasp my mother's knees.'"
+                ]
+            },
+            {
+                hour: 6,
+                book: "Book VII",
+                title: "The Palace of Alcinous",
+                location: "The Phaeacian palace",
+                verses: [
+                    "Odysseus entered the palace, marveling at its splendor. The walls were bronze, the doors were gold, and silver dogs guarded the entrance.",
+                    "He threw himself at Queen Arete's feet and begged for help. Alcinous welcomed him: 'Whoever you are, we will help you reach your home.'",
+                    "They feasted, and Odysseus told them he had been with Calypso for seven years, longing always for home."
+                ]
+            },
+            {
+                hour: 7,
+                book: "Book VIII",
+                title: "The Songs of Demodocus",
+                location: "The Phaeacian assembly",
+                verses: [
+                    "The blind bard Demodocus sang of the Trojan War. When he sang of the wooden horse and the sack of Troy, Odysseus wept.",
+                    "Alcinous noticed his tears: 'Tell us your name, stranger, and your story. Why do you weep at the songs of Troy?'",
+                    "The Phaeacians gave gifts and prepared a ship. They promised to take him home at last."
+                ]
+            },
+            {
+                hour: 8,
+                book: "Book IX",
+                title: "The Cyclops",
+                location: "The land of the Cyclopes",
+                verses: [
+                    "'I am Odysseus, son of Laertes,' he said. 'Let me tell you of my wanderings.' First we came to the Lotus-Eaters, who gave my men the lotus that makes you forget.",
+                    "Then we came to the land of the Cyclopes. Polyphemus trapped us in his cave and ate six of my men.",
+                    "I gave him wine and told him my name was Nobody. When he slept, we drove a burning stake into his eye. 'Nobody has blinded me!' he cried."
+                ]
+            },
+            {
+                hour: 9,
+                book: "Book X",
+                title: "Circe the Enchantress",
+                location: "Aeaea, Circe's island",
+                verses: [
+                    "Aeolus the wind-god gave me a bag of winds. But my men opened it, thinking it was treasure, and the winds blew us back.",
+                    "We came to Circe's island. She turned my men into pigs with her magic. Hermes gave me a charm, and I resisted.",
+                    "Circe restored my men and became my lover. We stayed for a year. When we left, she said: 'You must go to the House of Hades and speak with the dead.'"
+                ]
+            },
+            {
+                hour: 10,
+                book: "Book XI",
+                title: "The Land of the Dead",
+                location: "The House of Hades",
+                verses: [
+                    "We sailed to the end of the world and dug a trench. The ghosts came forth to drink the blood of our sacrifice.",
+                    "Tiresias the prophet told me: 'You will reach home, but only after great suffering. Do not harm the cattle of Helios.'",
+                    "I saw my mother's ghost. She told me Penelope still waited, though suitors devoured my substance. She died of grief for me."
+                ]
+            },
+            {
+                hour: 11,
+                book: "Book XII",
+                title: "The Sirens and Scylla",
+                location: "Between the rocks and the whirlpool",
+                verses: [
+                    "We passed the Sirens. I stuffed my men's ears with wax, but I had them tie me to the mast so I could hear their song.",
+                    "Then we sailed between Scylla and Charybdis. Scylla's six heads seized six of my men. I could not save them.",
+                    "We came to the island of Helios. My men killed his sacred cattle while I slept. Zeus destroyed our ship with lightning. Only I survived."
+                ]
+            },
+            {
+                hour: 12,
+                book: "Book XIII",
+                title: "Odysseus Returns to Ithaca",
+                location: "Ithaca, the shore",
+                verses: [
+                    "The Phaeacians brought him home while he slept. They left him on the shore with all his treasure and sailed away.",
+                    "When he woke, Athena disguised the land so he wouldn't recognize it. She tested him, and he lied cleverly about who he was.",
+                    "Then she revealed herself: 'You are in Ithaca, your homeland. But the suitors have taken over your house. We must be cunning.'"
+                ]
+            },
+            {
+                hour: 13,
+                book: "Book XIV",
+                title: "Odysseus and the Swineherd",
+                location: "Eumaeus's hut",
+                verses: [
+                    "Athena disguised Odysseus as an old beggar. He went to the swineherd Eumaeus, who welcomed him kindly.",
+                    "Eumaeus spoke of his master: 'Odysseus has been gone twenty years. Surely he is dead. But his son Telemachus still hopes.'",
+                    "Odysseus did not reveal himself but tested the swineherd's loyalty. Eumaeus passed the test."
+                ]
+            },
+            {
+                hour: 14,
+                book: "Book XV",
+                title: "Telemachus Returns",
+                location: "From Sparta to Ithaca",
+                verses: [
+                    "Athena warned Telemachus to leave Sparta. He sailed home, avoiding the suitors' ambush.",
+                    "Meanwhile, Eumaeus told the disguised Odysseus stories of the suitors' insolence and Penelope's grief.",
+                    "Telemachus landed safely and went first to Eumaeus's hut, as Athena had instructed."
+                ]
+            },
+            {
+                hour: 15,
+                book: "Book XVI",
+                title: "Father and Son Reunited",
+                location: "Eumaeus's hut",
+                verses: [
+                    "When Telemachus arrived, Odysseus was still disguised. Then Athena restored his true appearance.",
+                    "Telemachus could not believe it: 'You must be a god!' But Odysseus embraced him: 'I am your father, for whom you have grieved so long.'",
+                    "They wept together and planned their revenge against the suitors."
+                ]
+            },
+            {
+                hour: 16,
+                book: "Book XVII",
+                title: "Odysseus the Beggar",
+                location: "The palace of Odysseus",
+                verses: [
+                    "Odysseus, disguised again as a beggar, went to his own palace. His old dog Argos recognized him and died of joy.",
+                    "The suitors mocked him and threw things at him. Antinous struck him with a stool.",
+                    "Penelope heard of the beggar and wanted to question him, to see if he had news of Odysseus."
+                ]
+            },
+            {
+                hour: 17,
+                book: "Book XVIII",
+                title: "The Fight with Irus",
+                location: "The great hall",
+                verses: [
+                    "A real beggar named Irus challenged Odysseus to a fight. The suitors laughed and encouraged it.",
+                    "Odysseus knocked him out with one punch. The suitors were amazed at the old beggar's strength.",
+                    "Athena made Penelope appear more beautiful than ever. The suitors gazed at her with desire and brought her gifts."
+                ]
+            },
+            {
+                hour: 18,
+                book: "Book XIX",
+                title: "The Scar",
+                location: "Penelope's chamber",
+                verses: [
+                    "Penelope questioned the beggar. He told her convincing lies about meeting Odysseus long ago.",
+                    "She wept and ordered her nurse Eurycleia to wash the stranger's feet. As the old nurse washed him, she felt the scar from a boar hunt.",
+                    "She recognized him and almost cried out, but Odysseus gripped her throat and silenced her."
+                ]
+            },
+            {
+                hour: 19,
+                book: "Book XX",
+                title: "The Night Before",
+                location: "The palace, preparing",
+                verses: [
+                    "Odysseus could not sleep. He heard the disloyal maidservants sneaking out to the suitors and burned with rage.",
+                    "Athena appeared to him: 'Have courage. Tomorrow you will have your revenge.'",
+                    "Penelope announced she would marry whichever suitor could string Odysseus's bow and shoot through twelve axe-heads."
+                ]
+            },
+            {
+                hour: 20,
+                book: "Book XXI",
+                title: "The Bow",
+                location: "The great hall",
+                verses: [
+                    "Penelope brought out the great bow. One by one the suitors tried to string it and failed.",
+                    "The beggar asked to try. The suitors mocked him, but Penelope allowed it.",
+                    "Odysseus strung the bow easily and shot an arrow through all twelve axes. The suitors turned pale."
+                ]
+            },
+            {
+                hour: 21,
+                book: "Book XXII",
+                title: "The Slaughter",
+                location: "The great hall, blood and carnage",
+                verses: [
+                    "Odysseus cast off his rags and shot Antinous through the throat. The suitors panicked.",
+                    "'You will die here, all of you!' Odysseus cried. He and Telemachus and two faithful servants killed them all.",
+                    "The disloyal maidservants were hanged. The hall was purified with sulfur and fire."
+                ]
+            },
+            {
+                hour: 22,
+                book: "Book XXIII",
+                title: "Penelope's Test",
+                location: "The bedchamber",
+                verses: [
+                    "Penelope could not believe Odysseus had returned. She tested him: 'Move our bed outside for the stranger.'",
+                    "Odysseus grew angry: 'Impossible! I built that bed around a living olive tree. It cannot be moved unless someone cut the tree.'",
+                    "Then Penelope knew it was truly him. They embraced and wept, and he told her all his adventures."
+                ]
+            },
+            {
+                hour: 23,
+                book: "Book XXIV",
+                title: "Peace Restored",
+                location: "Ithaca, the kingdom at rest",
+                verses: [
+                    "Odysseus went to see his father Laertes, who wept with joy. The families of the dead suitors sought revenge.",
+                    "But Athena descended and commanded peace: 'Enough! Let there be no more bloodshed in Ithaca.'",
+                    "Zeus sent down a thunderbolt as a sign. Odysseus made peace with his people, and so his wanderings ended at last."
+                ]
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const bookEl = document.getElementById('book');
+        const adventureTitleEl = document.getElementById('adventure-title');
+        const locationEl = document.getElementById('location');
+        const versesEl = document.getElementById('verses');
+        const yearsEl = document.getElementById('years');
+        const starsEl = document.getElementById('stars');
+
+        let currentBookIndex = -1;
+
+        // Create stars
+        function createStars() {
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 60}%`;
+                star.style.animationDelay = `${Math.random() * 3}s`;
+                starsEl.appendChild(star);
+            }
+        }
+
+        function getBookForHour(hour) {
+            return books.find(b => b.hour === hour) || books[0];
+        }
+
+        function renderVerses(verses) {
+            versesEl.innerHTML = verses.map(verse => `
+                <div class="verse">${verse}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current book
+            const book = getBookForHour(hour);
+            const bookIndex = books.indexOf(book);
+
+            // Update years wandering (10 years for the journey)
+            if (hour < 6) {
+                yearsEl.textContent = '10';
+            } else if (hour < 12) {
+                yearsEl.textContent = '7';
+            } else if (hour < 18) {
+                yearsEl.textContent = '3';
+            } else {
+                yearsEl.textContent = '0';
+            }
+
+            // Update content if book changed
+            if (bookIndex !== currentBookIndex) {
+                bookEl.textContent = book.book;
+                adventureTitleEl.textContent = book.title;
+                locationEl.textContent = book.location;
+                renderVerses(book.verses);
+                currentBookIndex = bookIndex;
+            }
+        }
+
+        // Initialize
+        createStars();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

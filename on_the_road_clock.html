@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On the Road Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to right, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+            font-family: 'Courier Prime', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #e8e8e8;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .road-lines {
+            position: fixed;
+            bottom: 30%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 30px,
+                #f8f8f8 30px,
+                #f8f8f8 60px
+            );
+            animation: roadScroll 2s linear infinite;
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        @keyframes roadScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-60px); }
+        }
+
+        .horizon {
+            position: fixed;
+            bottom: 30%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #6a6a6a 50%, transparent);
+            pointer-events: none;
+            opacity: 0.5;
+            z-index: 0;
+        }
+
+        .headlights {
+            position: fixed;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 40%;
+            background: radial-gradient(ellipse at center bottom, rgba(255, 248, 200, 0.1), transparent 70%);
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(30, 30, 30, 0.95);
+            border: 3px solid #4a4a4a;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #5a5a5a;
+        }
+
+        .title {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 400;
+            color: #f8f8f8;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .author {
+            font-size: 1.1rem;
+            color: #b8b8b8;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #5a5a5a;
+        }
+
+        .current-time {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 400;
+            color: #f8f8f8;
+            margin-bottom: 0.5rem;
+        }
+
+        .part-indicator {
+            font-size: 0.9rem;
+            color: #a8a8a8;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .journey-section {
+            margin-bottom: 2rem;
+        }
+
+        .moment-title {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 400;
+            color: #f8f8f8;
+            margin-bottom: 0.75rem;
+        }
+
+        .location {
+            font-size: 1rem;
+            color: #c8c8c8;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage-container {
+            position: relative;
+            min-height: 180px;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.8;
+            color: #e8e8e8;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: passageFade 12s ease-in-out infinite;
+        }
+
+        .passage:nth-child(1) { animation-delay: 0s; }
+        .passage:nth-child(2) { animation-delay: 4s; }
+        .passage:nth-child(3) { animation-delay: 8s; }
+
+        @keyframes passageFade {
+            0% { opacity: 0; transform: translateX(-10px); }
+            3%, 30% { opacity: 1; transform: translateX(0); }
+            33%, 100% { opacity: 0; transform: translateX(-10px); }
+        }
+
+        .kerouac-line {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            line-height: 1.7;
+            color: #d8d8d8;
+            padding: 1.5rem;
+            background: rgba(90, 90, 90, 0.3);
+            border-left: 4px solid #f8f8f8;
+            margin-top: 1rem;
+            font-style: italic;
+        }
+
+        .speed-meter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            text-align: right;
+            padding: 1rem;
+            background: rgba(30, 30, 30, 0.9);
+            border: 2px solid #5a5a5a;
+        }
+
+        .speed-meter .speed {
+            font-family: 'Special Elite', monospace;
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: #f8f8f8;
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .speed-meter .label {
+            font-size: 0.75rem;
+            color: #a8a8a8;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .speed-meter {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="road-lines"></div>
+    <div class="horizon"></div>
+    <div class="headlights"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">On the Road</h1>
+            <div class="author">Jack Kerouac</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="part-indicator" id="part">Part One</div>
+        </div>
+
+        <div class="journey-section">
+            <h2 class="moment-title" id="moment-title">I first met Dean...</h2>
+            <div class="location" id="location">New York</div>
+            <div class="passage-container">
+                <div id="passages">
+                    <!-- Passages injected here -->
+                </div>
+            </div>
+            <div class="kerouac-line">
+                "The only people for me are the mad ones, the ones who are mad to live, mad to talk, mad to be saved..."
+            </div>
+        </div>
+    </div>
+
+    <div class="speed-meter">
+        <span class="speed" id="speed">GO</span>
+        <span class="label">The Road Is Life</span>
+    </div>
+
+    <script>
+        const moments = [
+            {
+                hour: 0,
+                part: "Part One",
+                title: "I First Met Dean",
+                location: "New York, 1947",
+                passages: [
+                    "I first met Dean not long after my wife and I split up. I had just gotten over a serious illness that I won't bother to talk about, except that it had something to do with the miserably weary split-up and my feeling that everything was dead.",
+                    "With the coming of Dean Moriarty began the part of my life you could call my life on the road. Before that I'd often dreamed of going West to see the country, always vaguely planning and never taking off.",
+                    "Dean is the perfect guy for the road because he actually was born on the road, when his parents were passing through Salt Lake City in 1926, in a jalopy, on their way to Los Angeles."
+                ],
+                speed: "GO"
+            },
+            {
+                hour: 1,
+                part: "Part One",
+                title: "Planning the Trip",
+                location: "Paterson, New Jersey",
+                passages: [
+                    "I spent a week in New York with Dean and his first wife Marylou. We talked all night about everything—jazz, philosophy, girls, poetry, America.",
+                    "Dean said to me, 'Sal, we gotta go and never stop going till we get there.' 'Where we going, man?' 'I don't know but we gotta go.'",
+                    "I prepared for my trip West. I had fifty dollars in my pocket. My aunt gave me a big feed and said, 'When are you going to settle down?'"
+                ],
+                speed: "NOW"
+            },
+            {
+                hour: 2,
+                part: "Part One",
+                title: "The First Ride",
+                location: "Route 6, heading west",
+                passages: [
+                    "I took the bus to Bear Mountain, then started thumbing. Nobody picked me up. Rain started to fall. I spent the whole night in the mountains getting nowhere.",
+                    "Finally I took a bus to Chicago. I was wasting my money and time. In Chicago I had coffee. Dean was supposed to meet me but he was late, as always.",
+                    "I couldn't wait. I had to keep moving. The road called. I caught a ride with two guys going to Des Moines."
+                ],
+                speed: "WEST"
+            },
+            {
+                hour: 3,
+                part: "Part One",
+                title: "Nebraska",
+                location: "The Great Plains",
+                passages: [
+                    "We were in Nebraska now. The road stretched endlessly ahead. Grain elevators on the horizon. The American night.",
+                    "I thought all the wilderness of America was in the West till I saw it in the corn of Iowa. The flatness. The endlessness.",
+                    "We drove and drove. I fell asleep in the back. When I woke up we were in the middle of nowhere under a million stars."
+                ],
+                speed: "110"
+            },
+            {
+                hour: 4,
+                part: "Part One",
+                title: "Denver",
+                location: "Denver, Colorado",
+                passages: [
+                    "I arrived in Denver at dawn and went looking for my friends. Carlo Marx was there, and Allen Ginsberg, talking about visions and poetry.",
+                    "We spent days in Denver, talking, drinking, listening to jazz. Dean showed up in a stolen car, grinning.",
+                    "'Man, I've been all the way to San Francisco and back! Let's go again!' He never stopped moving."
+                ],
+                speed: "IT"
+            },
+            {
+                hour: 5,
+                part: "Part One",
+                title: "Central City",
+                location: "The Colorado mountains",
+                passages: [
+                    "We drove up to Central City, an old mining town in the mountains. Opera festival. Girls everywhere.",
+                    "Dean pursued a blonde. I wandered the streets. The mountains rose all around. I felt free for the first time.",
+                    "That night we all got drunk. Dean disappeared with the blonde. I slept under the stars on a mountain."
+                ],
+                speed: "YES"
+            },
+            {
+                hour: 6,
+                part: "Part One",
+                title: "Heading to San Francisco",
+                location: "Crossing the Rockies",
+                passages: [
+                    "We left Denver and headed for San Francisco. The Rockies rose before us. We climbed and climbed.",
+                    "At the Continental Divide we stopped and Dean said, 'Think about it! On one side the water goes to the Atlantic, on the other to the Pacific!'",
+                    "We descended into Utah. Red rocks. Desert. The West was opening up."
+                ],
+                speed: "120"
+            },
+            {
+                hour: 7,
+                part: "Part One",
+                title: "San Francisco",
+                location: "The City, the Bay",
+                passages: [
+                    "We hit Frisco at dusk. The lights came on. The bridges. The hills. The city by the bay.",
+                    "We went to a jazz club in North Beach. Slim Gaillard was playing. Dean went mad, dancing, shouting, snapping his fingers.",
+                    "I wandered Chinatown alone. Neon signs. Strange smells. I was as far from home as I'd ever been."
+                ],
+                speed: "DIG"
+            },
+            {
+                hour: 8,
+                part: "Part Two",
+                title: "Back East",
+                location: "New York again",
+                passages: [
+                    "I spent some time in Frisco, working, saving money. But the road called. I went back East.",
+                    "In New York I saw Dean again. He'd left Marylou and married a girl named Camille. But already he was restless.",
+                    "'Sal, man, we gotta go again! This time to Mexico! All the way down!' His eyes gleamed."
+                ],
+                speed: "NEW"
+            },
+            {
+                hour: 9,
+                part: "Part Two",
+                title: "The Second Trip West",
+                location: "Pennsylvania",
+                passages: [
+                    "Dean showed up at my door at midnight in a brand new Hudson. 'Let's GO!' We took off immediately.",
+                    "We drove through Pennsylvania, Ohio, Indiana. Dean at the wheel talking nonstop about everything and nothing.",
+                    "'We gotta make time! Chicago by dawn!' He pushed the accelerator. The needle climbed."
+                ],
+                speed: "130"
+            },
+            {
+                hour: 10,
+                part: "Part Two",
+                title: "Chicago to Denver",
+                location: "The heartland, blazing speed",
+                passages: [
+                    "We made Chicago by dawn. Stopped for coffee. Dean was wild-eyed, hadn't slept.",
+                    "Across Iowa, Nebraska. The car flew. Dean shouted and sang. I held on.",
+                    "We hit Denver and found Carlo. Talked for three hours straight. Then back in the car. 'To Frisco!'"
+                ],
+                speed: "140"
+            },
+            {
+                hour: 11,
+                part: "Part Two",
+                title: "Over the Divide Again",
+                location: "The Rocky Mountains",
+                passages: [
+                    "Up into the mountains again. Higher and higher. The engine strained. Dean laughed.",
+                    "At the top we stopped. Silent mountains all around. Dean said, 'Sal, doesn't it make you want to cry?'",
+                    "We descended into the desert. Sunset. The whole sky on fire."
+                ],
+                speed: "PEAK"
+            },
+            {
+                hour: 12,
+                part: "Part Two",
+                title: "Frisco Again",
+                location: "Back to the City",
+                passages: [
+                    "We rolled into Frisco exhausted. Dean went to see Camille. I crashed at a friend's place.",
+                    "For weeks we stayed in Frisco. Working odd jobs. Going to jazz clubs. Planning the next trip.",
+                    "Dean was becoming more frantic. His marriages were falling apart. He needed to keep moving."
+                ],
+                speed: "REST"
+            },
+            {
+                hour: 13,
+                part: "Part Three",
+                title: "The Third Trip",
+                location: "Denver again",
+                passages: [
+                    "Dean showed up again, more manic than ever. 'Sal! To New York! I need to see my wives!'",
+                    "We drove back across America. Three days straight. Barely stopping.",
+                    "In New York, chaos. Dean running between his wives. Arguments. Tears. He couldn't stay still."
+                ],
+                speed: "MANIC"
+            },
+            {
+                hour: 14,
+                part: "Part Three",
+                title: "South",
+                location: "Heading to the Gulf",
+                passages: [
+                    "We decided to go South. Through Virginia, the Carolinas, into Georgia.",
+                    "The weather got warmer. Palm trees. We could smell the ocean.",
+                    "In Louisiana we met Old Bull Lee, who talked philosophy and took drugs. Dean listened, rapt."
+                ],
+                speed: "SLOW"
+            },
+            {
+                hour: 15,
+                part: "Part Three",
+                title: "New Orleans",
+                location: "The Crescent City",
+                passages: [
+                    "New Orleans. Jazz pouring out of every door. We wandered Bourbon Street.",
+                    "Dean found a girl. I walked alone. The humid night. Spanish moss.",
+                    "'Let's go to Mexico, Sal! That's where we really gotta go!'"
+                ],
+                speed: "JAZZ"
+            },
+            {
+                hour: 16,
+                part: "Part Four",
+                title: "To Mexico",
+                location: "Laredo, the border",
+                passages: [
+                    "We crossed into Mexico at Laredo. Immediately everything was different. Dusty streets. Donkeys.",
+                    "Dean shouted, 'This is IT! This is what we've been looking for! The real world!'",
+                    "We drove deeper into Mexico. Jungle. Mountains. Ancient pyramids."
+                ],
+                speed: "SUR"
+            },
+            {
+                hour: 17,
+                part: "Part Four",
+                title: "The Jungle",
+                location: "Somewhere in Mexico",
+                passages: [
+                    "The road became dirt. We drove through villages where no American had ever been.",
+                    "Kids ran alongside the car. Old women stared. We bought mangoes from a stand.",
+                    "Dean was in ecstasy. 'This is the real world, man! Not America! This!'"
+                ],
+                speed: "DEEP"
+            },
+            {
+                hour: 18,
+                part: "Part Four",
+                title: "Mexico City",
+                location: "The ancient capital",
+                passages: [
+                    "We reached Mexico City. The altitude made us dizzy. Ancient pyramids loomed outside the city.",
+                    "We got a cheap hotel room. That night we got dysentery. I was sick for days.",
+                    "Dean left me there. He had to get back to New York. 'Sorry, Sal. I gotta go.'"
+                ],
+                speed: "SICK"
+            },
+            {
+                hour: 19,
+                part: "Part Four",
+                title: "Abandoned",
+                location: "Alone in Mexico",
+                passages: [
+                    "I woke up and Dean was gone. Took the car. Took everything.",
+                    "I was alone in Mexico City, sick, broke. I'd never felt so far from home.",
+                    "Eventually I recovered enough to take a bus back to the border. The trip was over."
+                ],
+                speed: "END"
+            },
+            {
+                hour: 20,
+                part: "Part Five",
+                title: "Back Home",
+                location: "New York, settling down",
+                passages: [
+                    "I went back to New York. Got a job. Met a girl. Started to settle down.",
+                    "I heard Dean was in San Francisco with Camille. He'd had another kid. Maybe he'd finally stopped.",
+                    "But I knew he'd never really stop. The road was in his blood."
+                ],
+                speed: "STOP"
+            },
+            {
+                hour: 21,
+                part: "Part Five",
+                title: "Dean Returns",
+                location: "New York, one last time",
+                passages: [
+                    "Dean showed up one more time, skeletal, wild-eyed. He'd driven straight from Frisco.",
+                    "'Sal, man, one more time! Let's go!' But I couldn't. I had a life now.",
+                    "We went to a jazz concert. Sat in silence. The music played. We were older now."
+                ],
+                speed: "LAST"
+            },
+            {
+                hour: 22,
+                part: "Part Five",
+                title: "Goodbye",
+                location: "The street, parting",
+                passages: [
+                    "After the concert, Dean had to leave. He had to get back to Frisco.",
+                    "We stood on the corner. I wanted to say so much but couldn't find the words.",
+                    "'Goodbye, Sal.' He got in his car and drove off. I never saw him quite the same way again."
+                ],
+                speed: "BYE"
+            },
+            {
+                hour: 23,
+                part: "Part Five — The End",
+                title: "The Afterglow",
+                location: "Remembering",
+                passages: [
+                    "So in America when the sun goes down and I sit on the old broken-down river pier watching the long, long skies over New Jersey and sense all that raw land that rolls in one unbelievable huge bulge over to the West Coast...",
+                    "...and all that road going, all the people dreaming in the immensity of it...",
+                    "...I think of Dean Moriarty, I even think of Old Dean Moriarty the father we never found, I think of Dean Moriarty."
+                ],
+                speed: "..."
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const partEl = document.getElementById('part');
+        const momentTitleEl = document.getElementById('moment-title');
+        const locationEl = document.getElementById('location');
+        const passagesEl = document.getElementById('passages');
+        const speedEl = document.getElementById('speed');
+
+        let currentMomentIndex = -1;
+
+        function getMomentForHour(hour) {
+            return moments.find(m => m.hour === hour) || moments[0];
+        }
+
+        function renderPassages(passages) {
+            passagesEl.innerHTML = passages.map(passage => `
+                <div class="passage">${passage}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current moment
+            const moment = getMomentForHour(hour);
+            const momentIndex = moments.indexOf(moment);
+
+            // Update content if moment changed
+            if (momentIndex !== currentMomentIndex) {
+                partEl.textContent = moment.part;
+                momentTitleEl.textContent = moment.title;
+                locationEl.textContent = moment.location;
+                renderPassages(moment.passages);
+                speedEl.textContent = moment.speed;
+
+                currentMomentIndex = momentIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

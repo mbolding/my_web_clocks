@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime and Punishment Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #3a3a2a 0%, #2a2a1a 50%, #1a1a0a 100%);
+            font-family: 'PT Serif', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #d8d4c8;
+            position: relative;
+            overflow: hidden;
+            transition: background 2s ease;
+        }
+
+        body.fever {
+            background: linear-gradient(to bottom, #4a3a2a 0%, #3a2a1a 50%, #2a1a0a 100%);
+        }
+
+        body.confession {
+            background: linear-gradient(to bottom, #2a3a4a 0%, #1a2a3a 50%, #0a1a2a 100%);
+        }
+
+        .petersburg-fog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 40%, rgba(100, 90, 70, 0.1), transparent 50%);
+            pointer-events: none;
+            opacity: 0.5;
+            z-index: 0;
+        }
+
+        .heat-distortion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(200, 180, 140, 0.05) 2px,
+                rgba(200, 180, 140, 0.05) 4px
+            );
+            pointer-events: none;
+            opacity: 0;
+            animation: heatWave 2s linear infinite;
+            transition: opacity 2s ease;
+            z-index: 0;
+        }
+
+        body.fever .heat-distortion {
+            opacity: 1;
+        }
+
+        @keyframes heatWave {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(30, 25, 20, 0.95);
+            border: 2px solid #6a5a4a;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.7);
+            padding: 3rem 2.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(200, 212, 200, 0.2);
+        }
+
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.2rem, 5vw, 3.8rem);
+            font-weight: 700;
+            color: #e8e4d8;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.03em;
+        }
+
+        .russian-title {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #b8b4a8;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .author {
+            font-size: 1rem;
+            color: #a8a498;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .time-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(200, 200, 180, 0.15);
+        }
+
+        .current-time {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 700;
+            color: #d8d4c8;
+            margin-bottom: 0.5rem;
+            transition: color 2s ease;
+        }
+
+        body.fever .current-time {
+            color: #e8b898;
+        }
+
+        body.confession .current-time {
+            color: #a8c8e8;
+        }
+
+        .part-indicator {
+            font-size: 0.85rem;
+            color: #8a8478;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .scene-section {
+            margin-bottom: 2rem;
+        }
+
+        .scene-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 600;
+            color: #d8d4c8;
+            margin-bottom: 0.75rem;
+        }
+
+        .location {
+            font-size: 0.95rem;
+            color: #a8a498;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage-container {
+            position: relative;
+            min-height: 180px;
+            margin-bottom: 1.5rem;
+        }
+
+        .passage {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.9;
+            color: #d8d4c8;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            animation: passageFade 15s ease-in-out infinite;
+        }
+
+        .passage:nth-child(1) { animation-delay: 0s; }
+        .passage:nth-child(2) { animation-delay: 5s; }
+        .passage:nth-child(3) { animation-delay: 10s; }
+
+        @keyframes passageFade {
+            0% { opacity: 0; transform: translateY(8px); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(8px); }
+        }
+
+        .dostoevsky-line {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            line-height: 1.7;
+            color: #c8c4b8;
+            padding: 1.5rem;
+            background: rgba(106, 90, 74, 0.2);
+            border-left: 4px solid #8a7a6a;
+            margin-top: 1rem;
+            font-style: italic;
+        }
+
+        .guilt-meter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            text-align: right;
+            padding: 1rem;
+            background: rgba(30, 25, 20, 0.9);
+            border: 2px solid #6a5a4a;
+        }
+
+        .guilt-meter .intensity {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.75rem;
+            color: #a8a498;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+        }
+
+        .guilt-meter .bar-container {
+            width: 150px;
+            height: 8px;
+            background: rgba(200, 200, 180, 0.2);
+            border: 1px solid #6a5a4a;
+            margin-bottom: 0.5rem;
+        }
+
+        .guilt-meter .bar {
+            height: 100%;
+            background: linear-gradient(to right, #8a7a6a, #e8b898);
+            transition: width 2s ease;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .guilt-meter {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.75rem;
+            }
+
+            .guilt-meter .bar-container {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="petersburg-fog"></div>
+    <div class="heat-distortion"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Crime and Punishment</h1>
+            <div class="russian-title">Преступление и наказание</div>
+            <div class="author">Fyodor Dostoevsky</div>
+        </div>
+
+        <div class="time-display">
+            <div class="current-time" id="time">00:00</div>
+            <div class="part-indicator" id="part">Part One</div>
+        </div>
+
+        <div class="scene-section">
+            <h2 class="scene-title" id="scene-title">The Garret</h2>
+            <div class="location" id="location">St. Petersburg, a cramped room</div>
+            <div class="passage-container">
+                <div id="passages">
+                    <!-- Passages injected here -->
+                </div>
+            </div>
+            <div class="dostoevsky-line" id="famous-line">
+                "Pain and suffering are always inevitable for a large intelligence and a deep heart."
+            </div>
+        </div>
+    </div>
+
+    <div class="guilt-meter">
+        <div class="intensity">Psychological Torment</div>
+        <div class="bar-container">
+            <div class="bar" id="guilt-bar" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <script>
+        const scenes = [
+            {
+                hour: 0,
+                part: "Part One",
+                title: "The Garret",
+                location: "Raskolnikov's room, stifling heat",
+                passages: [
+                    "On an exceptionally hot evening early in July a young man came out of the garret in which he lodged and walked slowly, as though in hesitation, towards the bridge.",
+                    "He was hopelessly in debt to his landlady and was afraid of meeting her. His room was a tiny closet, like a cupboard.",
+                    "He was crushed by poverty, but of late he had ceased to be troubled by his position. All his attention was absorbed in a certain 'article' he was composing."
+                ],
+                line: "On an exceptionally hot evening early in July...",
+                guilt: 5,
+                isFever: false
+            },
+            {
+                hour: 1,
+                part: "Part One",
+                title: "The Pawnbroker",
+                location: "Alyona Ivanovna's apartment",
+                passages: [
+                    "He had been to the old pawnbroker once before, on an experiment. Now he went again to rehearse his plan.",
+                    "The old woman, Alyona Ivanovna, was a tiny, dried-up creature with sharp malignant eyes. She lived alone, her younger sister Lizaveta serving her as a slave.",
+                    "'So I shall come at seven o'clock,' he said. His heart was beating violently. An extraordinary idea was taking shape in his mind."
+                ],
+                line: "An extraordinary idea was taking shape in his mind.",
+                guilt: 10,
+                isFever: false
+            },
+            {
+                hour: 2,
+                part: "Part One",
+                title: "The Tavern",
+                location: "A filthy tavern",
+                passages: [
+                    "In a tavern he met Marmeladov, a former government clerk, now a drunkard. The man poured out his story in a flood of words.",
+                    "'Poverty is not a vice, but destitution is,' Marmeladov said. 'My daughter Sonya has gone on the streets to support us. And I drink away the money she earns.'",
+                    "Raskolnikov helped the drunken man home and left money for the family, though he could ill afford it."
+                ],
+                line: "Poverty is not a vice, but destitution is.",
+                guilt: 8,
+                isFever: false
+            },
+            {
+                hour: 3,
+                part: "Part One",
+                title: "The Letter",
+                location: "Raskolnikov's room",
+                passages: [
+                    "A letter came from his mother. His sister Dounia was to marry a wealthy man, Luzhin, to save the family from poverty.",
+                    "'No, mother, it shall not be!' he cried. 'I will not permit this sacrifice!' But he had no money, no prospects.",
+                    "The heat was suffocating. His thoughts became confused. The 'article,' the plan—it all swirled together in his fevered brain."
+                ],
+                line: "I will not permit this sacrifice!",
+                guilt: 15,
+                isFever: true
+            },
+            {
+                hour: 4,
+                part: "Part One",
+                title: "The Dream",
+                location: "Fevered sleep",
+                passages: [
+                    "He fell asleep and dreamed. In his dream he was a child again, walking with his father. They saw a peasant beating a horse to death.",
+                    "The child cried and threw his arms around the horse's dead head. 'Papa, why did they kill it?' His father led him away.",
+                    "He woke in horror. 'Good God! Can it be I shall really take an axe and strike her on the head?' But the idea had taken hold."
+                ],
+                line: "Can it be I shall really take an axe?",
+                guilt: 25,
+                isFever: true
+            },
+            {
+                hour: 5,
+                part: "Part One",
+                title: "The Decision",
+                location: "The streets at dusk",
+                passages: [
+                    "He wandered the streets. By chance he overheard that Lizaveta would be away from the apartment the next evening at seven.",
+                    "'Tomorrow at seven o'clock precisely,' he thought. The pawnbroker would be alone. It was as if fate itself conspired.",
+                    "All night he walked, preparing himself. At dawn, he slept for a few hours. When he woke, everything seemed unreal, like a dream."
+                ],
+                line: "It was as if fate itself conspired.",
+                guilt: 35,
+                isFever: true
+            },
+            {
+                hour: 6,
+                part: "Part One",
+                title: "The Preparations",
+                location: "Making the loop for the axe",
+                passages: [
+                    "He sewed a noose inside his coat to hold the axe. His hands trembled. The heat was unbearable.",
+                    "'Shall I really do it? Am I capable of that?' But something drove him forward, mechanical, inevitable.",
+                    "He felt as though he were being led to the scaffold. Yet he moved forward step by step."
+                ],
+                line: "He felt as though he were being led to the scaffold.",
+                guilt: 50,
+                isFever: true
+            },
+            {
+                hour: 7,
+                part: "Part One — The Murder",
+                title: "The Axe Falls",
+                location: "Alyona Ivanovna's apartment, 7 PM",
+                passages: [
+                    "He rang the bell. She opened the door. While she examined the pledge, he drew out the axe and struck her on the crown of the head.",
+                    "Blood gushed out. He struck again and again. She fell without a cry. Just then—footsteps on the stairs.",
+                    "Lizaveta entered. She saw her sister dead and stood frozen. He killed her too. Two murders. He had not planned for two."
+                ],
+                line: "Two murders. He had not planned for two.",
+                guilt: 100,
+                isFever: true
+            },
+
+            {
+                hour: 8,
+                part: "Part Two",
+                title: "The Escape",
+                location: "Fleeing the scene",
+                passages: [
+                    "He washed the blood off and hid the stolen items under a rock in a courtyard. He barely remembered doing it.",
+                    "When he reached his room, he threw himself on the sofa. The fever consumed him. He fell into delirium.",
+                    "For days he was ill, sometimes conscious, sometimes raving. His landlady brought him soup. He could not eat."
+                ],
+                line: "The fever consumed him.",
+                guilt: 95,
+                isFever: true
+            },
+            {
+                hour: 9,
+                part: "Part Two",
+                title: "Razumikhin",
+                location: "Raskolnikov's room",
+                passages: [
+                    "His friend Razumikhin came to see him. 'You've been ill for three days! The police have been asking for you.'",
+                    "'The police?' His heart pounded. But it was only about an IOU, a debt he owed.",
+                    "He went to the police station. There he heard them discussing the murders. He fainted."
+                ],
+                line: "He fainted.",
+                guilt: 90,
+                isFever: true
+            },
+            {
+                hour: 10,
+                part: "Part Three",
+                title: "Porfiry Petrovich",
+                location: "The magistrate's office",
+                passages: [
+                    "Porfiry Petrovich, the examining magistrate, was clever and psychological. He questioned Raskolnikov about his 'article.'",
+                    "'You wrote that certain extraordinary men have the right to commit crimes for the greater good. Interesting theory.'",
+                    "Raskolnikov felt the trap closing but could not see the bars. Porfiry smiled. The cat playing with the mouse."
+                ],
+                line: "The cat playing with the mouse.",
+                guilt: 85,
+                isFever: false
+            },
+            {
+                hour: 11,
+                part: "Part Three",
+                title: "Sonia",
+                location: "The Marmeladov apartment",
+                passages: [
+                    "Marmeladov was run over by a carriage and died. Raskolnikov helped carry him home and gave the family money.",
+                    "There he saw Sonia, the daughter forced into prostitution. She looked at him with infinite compassion.",
+                    "Something stirred in his heart. A connection. A possibility of redemption he had not imagined."
+                ],
+                line: "A possibility of redemption.",
+                guilt: 80,
+                isFever: false
+            },
+            {
+                hour: 12,
+                part: "Part Four",
+                title: "The Confession to Sonia",
+                location: "Sonia's room",
+                passages: [
+                    "He went to her room. 'I have come to tell you who killed Lizaveta.' She stared at him, terrified.",
+                    "'It was I who killed the old pawnbroker and her sister Lizaveta with an axe and robbed them.'",
+                    "Sonia did not recoil. Instead, she embraced him. 'What have you done to yourself?' She wept for him."
+                ],
+                line: "What have you done to yourself?",
+                guilt: 75,
+                isFever: false
+            },
+            {
+                hour: 13,
+                part: "Part Four",
+                title: "The Suffering",
+                location: "Wandering the streets",
+                passages: [
+                    "He could not bear to be alone with his thoughts. The suffering was unbearable, yet he could not confess.",
+                    "Sonia begged him: 'Go to the crossroads, bow down, and kiss the earth you have defiled. Then confess to all men.'",
+                    "But pride held him back. He was not ready. Not yet."
+                ],
+                line: "Pride held him back.",
+                guilt: 70,
+                isFever: false
+            },
+            {
+                hour: 14,
+                part: "Part Five",
+                title: "Porfiry's Trap",
+                location: "The magistrate's office again",
+                passages: [
+                    "Porfiry called him in. 'I know you did it. The psychological evidence is overwhelming. But I need your confession.'",
+                    "'Confess now and your sentence will be lighter. Wait, and I will arrest you anyway.'",
+                    "Raskolnikov left in a rage. He would not give Porfiry the satisfaction."
+                ],
+                line: "He would not give Porfiry the satisfaction.",
+                guilt: 65,
+                isFever: false
+            },
+            {
+                hour: 15,
+                part: "Part Five",
+                title: "Svidrigailov",
+                location: "A tavern",
+                passages: [
+                    "He encountered Svidrigailov, his sister's former employer, a man of mystery and vice.",
+                    "Svidrigailov told him: 'We are much alike, you and I. We have both crossed certain lines.'",
+                    "The man unnerved him. Svidrigailov knew something. Or sensed it."
+                ],
+                line: "We have both crossed certain lines.",
+                guilt: 60,
+                isFever: false
+            },
+            {
+                hour: 16,
+                part: "Part Six",
+                title: "The Breaking Point",
+                location: "Raskolnikov's room",
+                passages: [
+                    "His mother and sister arrived. He could barely face them. The guilt was crushing him.",
+                    "Sonia came and stood in silence. His sister Dounia saw her and understood something.",
+                    "'Who is this woman?' 'She is Sonya Marmeladov. And I bow down to her suffering.'"
+                ],
+                line: "I bow down to her suffering.",
+                guilt: 55,
+                isFever: false
+            },
+            {
+                hour: 17,
+                part: "Part Six",
+                title: "Svidrigailov's End",
+                location: "A hotel room",
+                passages: [
+                    "Svidrigailov, tormented by his own crimes, shot himself. Before dying, he helped Sonia's family.",
+                    "Raskolnikov learned of the suicide. He saw it as a sign. There were only two paths: confession or death.",
+                    "Sonia waited for him. 'Go now,' she said. 'Take the cross I give you.'"
+                ],
+                line: "There were only two paths.",
+                guilt: 50,
+                isFever: false
+            },
+            {
+                hour: 18,
+                part: "Part Six — The Confession",
+                title: "The Crossroads",
+                location: "The street, the crowd",
+                passages: [
+                    "He went to the crossroads. He knelt and kissed the earth. People laughed at him.",
+                    "But he did not care. Something had broken inside him. The pride, the theory—it was all ashes.",
+                    "He walked to the police station. Sonia followed at a distance."
+                ],
+                line: "He walked to the police station.",
+                guilt: 40,
+                isFever: false,
+                isConfession: true
+            },
+            {
+                hour: 19,
+                part: "Part Six — The Confession",
+                title: "I Killed",
+                location: "The police station",
+                passages: [
+                    "He entered and found the officer. 'I wish to make a statement.'",
+                    "'It was I who killed the old pawnbroker and her sister Lizaveta with an axe.'",
+                    "The officer stared. Porfiry arrived, unsurprised. 'I knew you would come.'"
+                ],
+                line: "It was I who killed.",
+                guilt: 30,
+                isFever: false,
+                isConfession: true
+            },
+            {
+                hour: 20,
+                part: "Epilogue",
+                title: "Siberia",
+                location: "The prison camp",
+                passages: [
+                    "He was sentenced to eight years hard labor in Siberia. Sonia followed him there.",
+                    "At first he was sullen and proud even in chains. He did not speak to the other prisoners.",
+                    "But slowly, something changed. Sonia's love, her faith—it began to penetrate his heart."
+                ],
+                line: "Slowly, something changed.",
+                guilt: 20,
+                isFever: false,
+                isConfession: true
+            },
+            {
+                hour: 21,
+                part: "Epilogue",
+                title: "The Dream of the Plague",
+                location: "Prison hospital",
+                passages: [
+                    "He fell ill and dreamed of a plague of reason. Men believed themselves infallible and killed each other over ideas.",
+                    "The dream terrified him. He saw his own crime writ large across all humanity.",
+                    "When he woke, Sonia was there. She had been sitting by his bedside for days."
+                ],
+                line: "Sonia was there.",
+                guilt: 10,
+                isFever: false,
+                isConfession: true
+            },
+            {
+                hour: 22,
+                part: "Epilogue",
+                title: "Love",
+                location: "By the river",
+                passages: [
+                    "One day by the river, he fell at her feet weeping. She understood. He had finally accepted her love.",
+                    "He took the Gospels she had given him. He would read them now. Something new was beginning.",
+                    "Love had resurrected him. But that is the beginning of a new story."
+                ],
+                line: "Love had resurrected him.",
+                guilt: 5,
+                isFever: false,
+                isConfession: true
+            },
+            {
+                hour: 23,
+                part: "Epilogue",
+                title: "Gradual Renewal",
+                location: "The prison, hope at last",
+                passages: [
+                    "He did not know that the new life would not be given him for nothing, that it must be bought dearly.",
+                    "But that is the beginning of a new story—the story of the gradual renewal of a man, the story of his gradual regeneration.",
+                    "Pain and suffering are always inevitable for a large intelligence and a deep heart. The really great men must, I think, have great sadness on earth."
+                ],
+                line: "The gradual renewal of a man.",
+                guilt: 0,
+                isFever: false,
+                isConfession: true
+            }
+        ];
+
+        const timeEl = document.getElementById('time');
+        const partEl = document.getElementById('part');
+        const sceneTitleEl = document.getElementById('scene-title');
+        const locationEl = document.getElementById('location');
+        const passagesEl = document.getElementById('passages');
+        const famousLineEl = document.getElementById('famous-line');
+        const guiltBarEl = document.getElementById('guilt-bar');
+        const bodyEl = document.body;
+
+        let currentSceneIndex = -1;
+
+        function getSceneForHour(hour) {
+            return scenes.find(s => s.hour === hour) || scenes[0];
+        }
+
+        function renderPassages(passages) {
+            passagesEl.innerHTML = passages.map(passage => `
+                <div class="passage">${passage}</div>
+            `).join('');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            // Update time display
+            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+
+            // Get current scene
+            const scene = getSceneForHour(hour);
+            const sceneIndex = scenes.indexOf(scene);
+
+            // Update content if scene changed
+            if (sceneIndex !== currentSceneIndex) {
+                partEl.textContent = scene.part;
+                sceneTitleEl.textContent = scene.title;
+                locationEl.textContent = scene.location;
+                renderPassages(scene.passages);
+                famousLineEl.textContent = scene.line;
+
+                // Update guilt meter
+                guiltBarEl.style.width = `${scene.guilt}%`;
+
+                // Update body class
+                bodyEl.classList.remove('fever', 'confession');
+                if (scene.isFever) {
+                    bodyEl.classList.add('fever');
+                } else if (scene.isConfession) {
+                    bodyEl.classList.add('confession');
+                }
+
+                currentSceneIndex = sceneIndex;
+            }
+        }
+
+        // Initialize
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>
