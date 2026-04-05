@@ -39,6 +39,8 @@ A collection of literary works that would make amazing time-based visualizations
 - ✅ **The Sound and the Fury** - William Faulkner
 - ✅ **If on a winter's night a traveler** - Italo Calvino
 - ✅ **Finnegans Wake** - James Joyce
+- ✅ **Snow Country** - Yasunari Kawabata
+- ✅ **Macbeth** - William Shakespeare
 
 ---
 
@@ -147,12 +149,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Classical Japanese aesthetic
   - Waka poetry integration
 
-- **Snow Country** - Yasunari Kawabata
-  - "The train came out of the long tunnel into the snow country"
-  - Shimamura and Komako
-  - Seasons in hot springs town
-  - Minimalist aesthetic
-  - Fleeting beauty (aware)
 
 - **Norwegian Wood** - Haruki Murakami
   - 1960s Tokyo
@@ -195,12 +191,6 @@ A collection of literary works that would make amazing time-based visualizations
   - "Lord, what fools these mortals be"
   - Dream vs. reality
 
-- **Macbeth**
-  - Witches' prophecies
-  - "Tomorrow and tomorrow and tomorrow"
-  - Time's progression toward doom
-  - Sleep and sleeplessness
-  - Blood and night
 
 - **The Tempest**
   - Unity of time (action occurs in ~3 hours)

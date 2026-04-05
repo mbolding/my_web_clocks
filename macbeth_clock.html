@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macbeth Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-night: #050000;
+            --blood: #8a0303;
+            --blood-dark: #4a0101;
+            --ghost: rgba(255, 255, 255, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-night);
+            color: var(--blood);
+            font-family: 'UnifrakturMaguntia', cursive;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Scotland Fog Overlay */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, transparent 30%, #000 100%);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .clock-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-display {
+            font-size: clamp(6rem, 20vw, 12rem);
+            line-height: 1;
+            letter-spacing: 5px;
+            color: var(--blood);
+            text-shadow: 0 0 20px var(--blood-dark), 0 5px 15px #000;
+            position: relative;
+            z-index: 20;
+        }
+
+        /* SVG filters to make it look wet/gooey */
+        .time-display {
+            filter: drop-shadow(0 0 10px rgba(138, 3, 3, 0.5));
+        }
+
+        /* The canvas over the clock for physically rendering bleeding drips */
+        #dripCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .quote-box {
+            position: absolute;
+            bottom: 60px;
+            text-align: center;
+            max-width: 600px;
+            z-index: 60;
+            padding: 0 20px;
+        }
+
+        .quote {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            color: var(--ghost);
+            line-height: 1.5;
+            text-shadow: 0 0 5px #000;
+        }
+
+        /* The slow pulse representing the 'creeping pace' */
+        .pulse-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: var(--blood);
+            opacity: 0;
+            z-index: 5;
+            pointer-events: none;
+            transition: opacity 1s ease-out;
+        }
+
+        .pulse-active {
+            opacity: 0.1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="pulse-overlay" id="pulseOverlay"></div>
+
+    <canvas id="dripCanvas"></canvas>
+
+    <div class="clock-container">
+        <div class="time-display" id="timeDisplay">00:00:00</div>
+    </div>
+
+    <div class="quote-box">
+        <div class="quote">"Tomorrow, and tomorrow, and tomorrow,<br> creeps in this petty pace from day to day..."</div>
+    </div>
+
+    <script>
+        // --- Clock Logic & Heartbeat Pulse ---
+        const timeDisplay = document.getElementById('timeDisplay');
+        const pulseOverlay = document.getElementById('pulseOverlay');
+        let lastSecond = -1;
+
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            
+            timeDisplay.textContent = `${h}:${m}:${s}`;
+
+            if(lastSecond !== now.getSeconds()) {
+                lastSecond = now.getSeconds();
+                
+                // Heartbeat pulse effect exactly on the second
+                pulseOverlay.classList.add('pulse-active');
+                setTimeout(() => pulseOverlay.classList.remove('pulse-active'), 200);
+
+                // Spawn a new blood drip randomly along the width of the clock text (approximate bounding box)
+                if (Math.random() > 0.4) {
+                    spawnDrip();
+                }
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        // --- Canvas Drip System ---
+        const canvas = document.getElementById('dripCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Ensure canvas exactly matches window size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Get center position for spawning drips near the text
+            clockRect = timeDisplay.getBoundingClientRect();
+        }
+        
+        let clockRect = { left: 0, top: 0, width: 0, height: 0, bottom: 0 };
+        window.addEventListener('resize', resizeCanvas);
+
+        const drips = [];
+
+        class Drip {
+            constructor(x) {
+                this.x = x;
+                this.y = clockRect.bottom - (Math.random() * 20); // Spawn at bottom string of text
+                this.size = Math.random() * 3 + 1; // thickness
+                this.speed = Math.random() * 0.5 + 0.1; // slow, petty pace
+                this.opacity = 1;
+                this.maxLength = Math.random() * window.innerHeight * 0.8; // how far it travels before fading
+                this.distance = 0;
+            }
+
+            update() {
+                this.y += this.speed;
+                this.distance += this.speed;
+
+                // Leave a trail (drawing happens in `draw()`)
+                
+                if (this.distance > this.maxLength) {
+                    this.opacity -= 0.01; // slow fade when reached length
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(138, 3, 3, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw trailing line up slightly to simulate liquid tension
+                ctx.strokeStyle = `rgba(138, 3, 3, ${this.opacity})`;
+                ctx.lineWidth = this.size;
+                ctx.beginPath();
+                ctx.moveTo(this.x, Math.max(clockRect.bottom - 10, this.y - 15));
+                ctx.lineTo(this.x, this.y);
+                ctx.stroke();
+            }
+        }
+
+        function spawnDrip() {
+            if (clockRect.width === 0) resizeCanvas();
+            // Spawn anywhere along the horizontal width of the clock text
+            const randomX = clockRect.left + (Math.random() * clockRect.width);
+            drips.push(new Drip(randomX));
+        }
+
+        // We do not clear the canvas so trails physically build up over time,
+        // bleeding down the screen very slowly! We apply a very slight darkening to simulate drying blood.
+        function animateCanvas() {
+            // Very slow fade to black/dry blood
+            ctx.fillStyle = 'rgba(5, 0, 0, 0.01)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = drips.length - 1; i >= 0; i--) {
+                let drip = drips[i];
+                drip.update();
+                if (drip.opacity > 0) {
+                    drip.draw();
+                } else {
+                    drips.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(animateCanvas);
+        }
+
+        // Init
+        // Slight delay to ensure fonts load before measuring DOM
+        setTimeout(() => {
+            resizeCanvas();
+            updateClock();
+            animateCanvas();
+        }, 300);
+
+    </script>
+</body>
+</html>
