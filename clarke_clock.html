@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arthur C. Clarke Clock</title>
+    <!-- Jost font closely resembles Futura / the 1968 geometric aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #000;
+            --nasa-white: #f4f4f4;
+            --hal-red: #ff2a2a;
+            --hal-glow: #ff7373;
+            --metal-light: #d1d1d1;
+            --metal-dark: #2a2a2a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--nasa-white);
+            font-family: 'Jost', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ----------------------------------
+           HAL 9000
+           ---------------------------------- */
+        .hal-container {
+            position: relative;
+            width: clamp(250px, 40vmin, 400px);
+            height: clamp(250px, 40vmin, 400px);
+            margin-bottom: 50px;
+            /* The iconic rectangular mounting block */
+            background: linear-gradient(135deg, #222 0%, #000 100%);
+            border: 2px solid #333;
+            border-radius: 5px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 2px 2px rgba(255,255,255,0.1);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hal-outer-ring {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--metal-light) 0%, var(--metal-dark) 80%);
+            box-shadow: inset 0 0 20px #000, 0 10px 20px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hal-inner-ring {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background: #000;
+            box-shadow: inset 0 -10px 20px rgba(255,0,0,0.2), 0 0 10px #000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The glowing red aperture */
+        .hal-lens {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, #ff0000 0%, #660000 40%, #000 80%);
+            position: absolute;
+            transition: opacity 0.5s ease;
+        }
+
+        /* The bright yellow/white core that pulses */
+        .hal-pupil-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        .hal-pupil {
+            width: 30%;
+            height: 30%;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, #fff 0%, #ffffaa 20%, #ff5500 60%, transparent 100%);
+            box-shadow: 0 0 40px #ff0000, inset 0 0 10px #fff;
+            transition: transform 0.1s ease-out; /* Smooth tracking */
+        }
+
+        /* Heartbeat flare */
+        .hal-flare {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(255,100,100,0.5) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .pulsing .hal-flare {
+            opacity: 1;
+        }
+
+        /* Glass reflection overlay */
+        .hal-glass {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 100%);
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        /* ----------------------------------
+           THE CLOCK DISPLAY
+           ---------------------------------- */
+        .clock-display {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 300;
+            letter-spacing: 5px;
+            color: var(--nasa-white);
+            text-align: center;
+            z-index: 30;
+        }
+
+        .clock-label {
+            font-size: 0.8rem;
+            letter-spacing: 15px;
+            text-transform: uppercase;
+            color: #777;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .quote-overlay {
+            position: absolute;
+            bottom: 40px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--hal-red);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 1s ease;
+            letter-spacing: 2px;
+        }
+
+        .quote-overlay.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="hal-container">
+        <div class="hal-outer-ring">
+            <div class="hal-inner-ring" id="halEye">
+                <div class="hal-lens"></div>
+                <div class="hal-pupil-container">
+                    <div class="hal-pupil" id="halPupil"></div>
+                </div>
+                <div class="hal-flare" id="halFlare"></div>
+                <div class="hal-glass"></div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="clock-label">SYSTEM TIME</div>
+        <div class="clock-display" id="timeDisplay">00:00:00</div>
+    </div>
+
+    <div class="quote-overlay" id="quoteBox">
+        "I'm sorry, Dave. I'm afraid I can't do that."
+    </div>
+
+    <script>
+        // --- Clock Core ---
+        const timeDisplay = document.getElementById('timeDisplay');
+        const halFlare = document.getElementById('halFlare');
+        const quoteBox = document.getElementById('quoteBox');
+        let lastSecond = -1;
+
+        function updateClock() {
+            const now = new Date();
+            const s = now.getSeconds();
+            
+            let hStr = now.getHours().toString().padStart(2, '0');
+            let mStr = now.getMinutes().toString().padStart(2, '0');
+            let sStr = s.toString().padStart(2, '0');
+            
+            timeDisplay.textContent = `${hStr}:${mStr}:${sStr}`;
+
+            if(lastSecond !== s) {
+                lastSecond = s;
+                // Pulse the eye every second
+                halFlare.parentElement.classList.add('pulsing');
+                setTimeout(() => halFlare.parentElement.classList.remove('pulsing'), 300);
+
+                // Randomly show the HAL quote
+                if (Math.random() < 0.02 && !quoteBox.classList.contains('visible')) {
+                    quoteBox.classList.add('visible');
+                    // Hide after 6 seconds
+                    setTimeout(() => quoteBox.classList.remove('visible'), 6000);
+                }
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+
+        // --- Mouse Tracking Logic for HAL 9000 Pupil ---
+        const halEye = document.getElementById('halEye');
+        const halPupil = document.getElementById('halPupil');
+
+        document.addEventListener('mousemove', (e) => {
+            // Get center position of the HAL eye
+            const rect = halEye.getBoundingClientRect();
+            const eyeCenterX = rect.left + rect.width / 2;
+            const eyeCenterY = rect.top + rect.height / 2;
+
+            // Calculate distance from center to mouse
+            const deltaX = e.clientX - eyeCenterX;
+            const deltaY = e.clientY - eyeCenterY;
+
+            // We want to constrain the pupil so it doesn't move completely out of the bounds
+            // The constraint radius is proportional to the eye size
+            const constraintRadius = rect.width * 0.15; 
+
+            // Calculate angle and distance
+            const angle = Math.atan2(deltaY, deltaX);
+            let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Normalize distance based on screen size so movement feels responsive across whole screen
+            const maxScreenDist = Math.max(window.innerWidth, window.innerHeight);
+            let normalizedDist = (distance / maxScreenDist) * constraintRadius * 3;
+
+            // Constrain
+            if (normalizedDist > constraintRadius) {
+                normalizedDist = constraintRadius;
+            }
+
+            // Calculate final pupil translation
+            const moveX = Math.cos(angle) * normalizedDist;
+            const moveY = Math.sin(angle) * normalizedDist;
+
+            halPupil.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        });
+
+        // Touch support for mobile tracking
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                // mock the clientX and Y for the first touch point and trigger same logic
+                const touch = e.touches[0];
+                const mockEvent = { clientX: touch.clientX, clientY: touch.clientY };
+                // Using internal dispatch or just direct call is easier here:
+                document.dispatchEvent(new MouseEvent('mousemove', mockEvent));
+            }
+        });
+
+    </script>
+</body>
+</html>

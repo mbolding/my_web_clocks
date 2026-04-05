@@ -41,6 +41,9 @@ A collection of literary works that would make amazing time-based visualizations
 - ✅ **Finnegans Wake** - James Joyce
 - ✅ **Snow Country** - Yasunari Kawabata
 - ✅ **Macbeth** - William Shakespeare
+- ✅ **2001: A Space Odyssey** - Arthur C. Clarke
+- ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
+- ✅ **Candide** - Voltaire
 
 ---
 

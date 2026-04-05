@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nelson / Eames Ball Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Vintage wall colors */
+            --bg-wall: #f4f1ea; 
+            
+            /* Brass colors */
+            --brass-light: #e6c27a;
+            --brass-mid: #d4af37;
+            --brass-dark: #997a00;
+            
+            /* Nelson Ball Colors */
+            --ball-orange: #d95c27;
+            --ball-teal: #3b8b88;
+            --ball-yellow: #eab73b;
+            --ball-black: #2a2a2a;
+            --ball-red: #c13939;
+            --ball-wood: #a67c52;
+            --ball-white: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-wall);
+            /* Subtle texture for the wall */
+            background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="rgba(0,0,0,0.02)"/></svg>');
+            font-family: 'Jost', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* -----------------------------------
+           THE CLOCK STRUCTURE
+           ----------------------------------- */
+        .clock-container {
+            position: relative;
+            width: clamp(300px, 60vmin, 600px);
+            height: clamp(300px, 60vmin, 600px);
+            border-radius: 50%;
+            /* The overall drop shadow of the clock cast on the wall */
+            filter: drop-shadow(15px 15px 15px rgba(0,0,0,0.2));
+        }
+
+        /* The central brass housing */
+        .clock-center-housing {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 25%;
+            height: 25%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--brass-light) 0%, var(--brass-mid) 40%, var(--brass-dark) 100%);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3), inset 0 0 5px rgba(255,255,255,0.5);
+            z-index: 10;
+        }
+
+        /* The protective black inner circle */
+        .clock-face {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 80%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: #f7f7f7;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* -----------------------------------
+           THE SPOKES AND BALLS (12 of them)
+           ----------------------------------- */
+        .spoke-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        .spoke {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px; /* Thickness of brass rod */
+            height: 50%; /* Length from center to edge */
+            background: linear-gradient(90deg, var(--brass-dark) 0%, var(--brass-light) 50%, var(--brass-dark) 100%);
+            transform-origin: 50% 0; /* Rotate from center */
+            margin-left: -2px; /* Center horizontally */
+        }
+
+        .ball {
+            position: absolute;
+            bottom: -15%; /* Positioned at the end of the spoke */
+            left: 50%;
+            width: clamp(25px, 6vmin, 50px);
+            height: clamp(25px, 6vmin, 50px);
+            transform: translateX(-50%);
+            border-radius: 50%;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.4), inset 2px 2px 5px rgba(255,255,255,0.4);
+        }
+
+        /* -----------------------------------
+           THE HANDS
+           ----------------------------------- */
+        .hands-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20;
+        }
+
+        .hand {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 50% 100%; /* Pivot point right at the center */
+        }
+
+        /* The distinctive triangular/diamond Hour Hand */
+        .hour-hand {
+            width: 8%;
+            height: 25%;
+            margin-left: -4%;
+            margin-top: -25%;
+            background: var(--ball-black);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            box-shadow: 0 0 5px rgba(0,0,0,0.5); /* Clip path breaks box shadow usually, just CSS */
+            filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.3));
+        }
+
+        /* The distinctive triangular/diamond Minute Hand */
+        .minute-hand {
+            width: 6%;
+            height: 40%;
+            margin-left: -3%;
+            margin-top: -40%;
+            background: var(--ball-black);
+            clip-path: polygon(50% 0%, 100% 20%, 50% 100%, 0% 20%);
+            filter: drop-shadow(2px 8px 4px rgba(0,0,0,0.3));
+        }
+
+        /* The bright red thin Second Hand */
+        .second-hand {
+            width: 2px;
+            height: 45%;
+            margin-left: -1px;
+            margin-top: -45%;
+            background: var(--ball-red);
+            filter: drop-shadow(4px 10px 5px rgba(0,0,0,0.3));
+        }
+
+        /* Second hand counter-weight */
+        .second-hand::after {
+            content: '';
+            position: absolute;
+            bottom: -15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            background: var(--ball-red);
+            border-radius: 50%;
+        }
+
+        /* Center brass pin */
+        .center-pin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--brass-light) 0%, var(--brass-dark) 100%);
+            z-index: 30;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Info Badge */
+        .badge {
+            position: absolute;
+            bottom: 30px;
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        .badge-title {
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        .badge-sub {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="clock-container" id="clockContainer">
+        
+        <div class="spoke-container" id="spokes">
+            <!-- Autogenerated 12 spokes in Javascript -->
+        </div>
+
+        <div class="clock-center-housing">
+            <div class="clock-face"></div>
+        </div>
+
+        <div class="hands-container">
+            <div class="hand hour-hand" id="hrHand"></div>
+            <div class="hand minute-hand" id="minHand"></div>
+            <div class="hand second-hand" id="secHand"></div>
+            <div class="center-pin"></div>
+        </div>
+
+    </div>
+
+    <div class="badge">
+        <div class="badge-title">Ball Clock</div>
+        <div class="badge-sub">Mid-Century Modern</div>
+    </div>
+
+    <script>
+        // --- Spoke Generation ---
+        const spokesContainer = document.getElementById('spokes');
+        
+        // Classic playful Nelson color-way layout (using custom CSS vars)
+        const ballColors = [
+            'var(--ball-orange)', 'var(--ball-wood)', 'var(--ball-teal)', 
+            'var(--ball-black)', 'var(--ball-white)', 'var(--ball-wood)', 
+            'var(--ball-red)', 'var(--ball-yellow)', 'var(--ball-wood)', 
+            'var(--ball-teal)', 'var(--ball-white)', 'var(--ball-black)'
+        ];
+
+        for (let i = 0; i < 12; i++) {
+            const spoke = document.createElement('div');
+            spoke.className = 'spoke';
+            // Rotate each spoke 30 degrees (360 / 12)
+            // Starts at 12 o'clock, which is 0 degrees or 180 degrees depending on base css
+            spoke.style.transform = `rotate(${i * 30 + 180}deg)`; 
+            
+            const ball = document.createElement('div');
+            ball.className = 'ball';
+            // Give it a solid color base and the CSS inset shadow handles the 3D 'wooden ball' effect
+            ball.style.backgroundColor = ballColors[i];
+
+            spoke.appendChild(ball);
+            spokesContainer.appendChild(spoke);
+        }
+
+        // --- Clock Logic ---
+        const hrHand = document.getElementById('hrHand');
+        const minHand = document.getElementById('minHand');
+        const secHand = document.getElementById('secHand');
+
+        function updateClock() {
+            const now = new Date();
+            const hrs = now.getHours();
+            const mins = now.getMinutes();
+            const secs = now.getSeconds();
+            const ms = now.getMilliseconds();
+
+            // Smooth fluid motion for seconds (sweeping)
+            const secDeg = (secs + ms/1000) * 6; 
+            const minDeg = mins * 6 + (secs/60) * 6;
+            const hrDeg = (hrs % 12) * 30 + (mins/60) * 30;
+
+            secHand.style.transform = `rotate(${secDeg}deg)`;
+            minHand.style.transform = `rotate(${minDeg}deg)`;
+            hrHand.style.transform = `rotate(${hrDeg}deg)`;
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

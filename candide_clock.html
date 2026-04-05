@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candide Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-calm: #87CEEB;
+            --sky-storm: #2c3e50;
+            --sky-fire: #7a1c1c;
+            --frame-gold: #d4af37;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* -------------------------------------
+           THE ABSURD WORLD (Background)
+           ------------------------------------- */
+        body {
+            background-color: var(--sky-calm);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            transition: background-color 0.5s ease;
+        }
+
+        /* Disaster states toggled by JS */
+        body.disaster-storm {
+            background-color: var(--sky-storm);
+        }
+        
+        body.disaster-fire {
+            background-color: var(--sky-fire);
+        }
+
+        body.disaster-earthquake .scenery-layer {
+            animation: violentShake 0.1s infinite;
+        }
+
+        @keyframes violentShake {
+            0% { transform: translate(5px, 5px) rotate(0deg); }
+            10% { transform: translate(-5px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        /* A layer that holds everything except the clock and canvas so they can shake */
+        .scenery-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Random lightning flashes */
+        .lightning-flash {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: white;
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .is-lightning {
+            animation: lightningAnim 0.3s ease-out;
+        }
+
+        @keyframes lightningAnim {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            20% { opacity: 0; }
+            30% { opacity: 0.5; }
+            100% { opacity: 0; }
+        }
+
+        /* -------------------------------------
+           THE PANGLOSSIAN CLOCK
+           ------------------------------------- */
+        .clock-wrapper {
+            position: relative;
+            z-index: 20;
+            /* The clock itself never shakes, it is perfectly optimistic */
+            background: #fff;
+            padding: 40px 60px;
+            border: 8px solid var(--frame-gold);
+            border-radius: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1), 0 20px 40px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        /* Inner gold trim */
+        .clock-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 2px solid var(--frame-gold);
+            border-radius: 5px;
+            pointer-events: none;
+        }
+
+        .clock-title {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.5rem;
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .time-display {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 700;
+            color: #222;
+        }
+
+        .clock-subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #888;
+            margin-top: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* -------------------------------------
+           "CULTIVATE OUR GARDEN"
+           ------------------------------------- */
+        #gardenCanvas {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: clamp(150px, 30vh, 400px);
+            z-index: 30; /* Over everything */
+            pointer-events: none;
+        }
+        
+        .quote-garden {
+            position: absolute;
+            bottom: 20px;
+            z-index: 40;
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            letter-spacing: 3px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scenery-layer" id="sceneryLayer">
+        <!-- Any background shapes/mountains could go here, for now it's just the sky shifting -->
+    </div>
+    <div class="lightning-flash" id="lightningFlash"></div>
+
+    <div class="clock-wrapper">
+        <div class="clock-title">It is exactly...</div>
+        <div class="time-display" id="timeDisplay">00:00:00</div>
+        <div class="clock-subtitle">The Best of All Possible Times!</div>
+    </div>
+
+    <canvas id="gardenCanvas"></canvas>
+    <div class="quote-garden">"Il faut cultiver notre jardin."</div>
+
+    <script>
+        // --- Clock Core ---
+        const timeDisplay = document.getElementById('timeDisplay');
+        
+        function updateClock() {
+            const now = new Date();
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            timeDisplay.textContent = `${h}:${m}:${s}`;
+            requestAnimationFrame(updateClock);
+        }
+        updateClock();
+
+        // --- Event Manager (The Disasters) ---
+        const bodyEl = document.body;
+        const lightningFlash = document.getElementById('lightningFlash');
+        
+        const disasters = ['disaster-storm', 'disaster-fire', 'disaster-earthquake'];
+        let activeDisasters = [];
+
+        function triggerRandomDisaster() {
+            // Un-trigger everything
+            bodyEl.className = '';
+            
+            // 70% chance a disaster happens
+            if (Math.random() < 0.7) {
+                // Pick a disaster
+                const d = disasters[Math.floor(Math.random() * disasters.length)];
+                bodyEl.classList.add(d);
+                
+                // If storm, maybe trigger lightning
+                if (d === 'disaster-storm' && Math.random() < 0.5) {
+                    setTimeout(() => {
+                        lightningFlash.classList.add('is-lightning');
+                        setTimeout(() => lightningFlash.classList.remove('is-lightning'), 400);
+                    }, Math.random() * 2000);
+                }
+            }
+
+            // Reschedule next check in 3-8 seconds
+            setTimeout(triggerRandomDisaster, Math.random() * 5000 + 3000);
+        }
+        
+        // Start disasters loop
+        setTimeout(triggerRandomDisaster, 5000);
+
+        // --- The Garden System (Procedural Canvas) ---
+        const canvas = document.getElementById('gardenCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        
+        function initCanvas() {
+            width = window.innerWidth;
+            // The canvas is positioned at bottom, but its internal coordinate system spans from 0 to height
+            height = canvas.getBoundingClientRect().height; 
+            canvas.width = width;
+            canvas.height = height;
+        }
+        initCanvas();
+        window.addEventListener('resize', initCanvas);
+
+        // We will grow vines procedurally up from the bottom over time.
+        const vines = [];
+
+        class Vine {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = height + 10; // start slightly below canvas
+                this.angle = -Math.PI / 2; // point straight up
+                this.thickness = Math.random() * 4 + 2;
+                // Green shades
+                const g = Math.floor(Math.random() * 100 + 100);
+                this.color = `rgb(30, ${g}, 50)`;
+                this.growthSpeed = Math.random() * 0.5 + 0.1;
+                this.curve = (Math.random() - 0.5) * 0.1;
+                this.alive = true;
+                
+                this.leaves = [];
+            }
+
+            update() {
+                if (!this.alive) return;
+
+                const prevX = this.x;
+                const prevY = this.y;
+
+                // Wander slightly
+                this.angle += this.curve + (Math.random() - 0.5) * 0.1;
+
+                this.x += Math.cos(this.angle) * this.growthSpeed;
+                this.y += Math.sin(this.angle) * this.growthSpeed;
+
+                // Draw segment
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.thickness;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                // Chance to spawn a bud/leaf
+                if (Math.random() < 0.05) {
+                    this.drawLeaf(this.x, this.y);
+                }
+
+                // If it grows too high or thickness goes below 0, stops
+                this.thickness -= 0.005;
+                if (this.thickness <= 0.2 || this.y < 0) {
+                    this.alive = false;
+                    // If a vine dies, blossom a flower at the tip
+                    this.drawFlower(this.x, this.y);
+                }
+            }
+
+            drawLeaf(lx, ly) {
+                ctx.fillStyle = `rgb(50, ${Math.floor(Math.random()*100 + 150)}, 50)`;
+                ctx.beginPath();
+                ctx.arc(lx + (Math.random()-0.5)*10, ly + (Math.random()-0.5)*10, Math.random()*4+2, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            drawFlower(fx, fy) {
+                // Vibrant colors regardless of disaster
+                const colors = ['#FF69B4', '#FFA500', '#FFFF00', '#8A2BE2', '#FF4500'];
+                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Draw 5 petals
+                for(let i=0; i<5; i++) {
+                    const angle = (i/5) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.arc(fx + Math.cos(angle)*5, fy + Math.sin(angle)*5, 4, 0, Math.PI*2);
+                    ctx.fill();
+                }
+                // Center
+                ctx.fillStyle = '#FFF';
+                ctx.beginPath();
+                ctx.arc(fx, fy, 2, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        // Spawn a new vine every few seconds (constantly cultivating the garden)
+        function spawnVine() {
+            if (vines.length < 150) { // arbitrary cap to prevent extreme lag
+                vines.push(new Vine());
+            }
+            setTimeout(spawnVine, Math.random() * 2000 + 500);
+        }
+        
+        // Initial burst
+        for(let i=0; i<10; i++) spawnVine();
+
+        // We do *not* clear the canvas in the animation loop. 
+        // We let the vines accumulate permanently at the bottom.
+        function animateGarden() {
+            vines.forEach(v => v.update());
+            requestAnimationFrame(animateGarden);
+        }
+
+        animateGarden();
+
+    </script>
+</body>
+</html>
