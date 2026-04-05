@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House of Leaves Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=Courier+Prime&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f8f8;
+            --text: #1a1a1a;
+            --house-blue: #0000ff;
+            --minotaur-red: #8b0000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Crimson Text', serif;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .time-element {
+            position: absolute;
+            transition: all 2s cubic-bezier(0.25, 0.1, 0.25, 1);
+            white-space: nowrap;
+        }
+
+        #hours {
+            font-size: clamp(8rem, 20vw, 15rem);
+            font-weight: 700;
+            opacity: 0.9;
+        }
+
+        #minutes {
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: 400;
+            opacity: 0.8;
+            mix-blend-mode: multiply;
+        }
+
+        #seconds {
+            font-family: 'Courier Prime', monospace;
+            font-size: 2rem;
+            color: var(--minotaur-red);
+            font-weight: bold;
+            letter-spacing: 5px;
+            transition: all 0.5s ease-out; /* Seconds move faster/jumpier */
+        }
+
+        .footnote {
+            position: absolute;
+            font-size: 0.8rem;
+            color: #555;
+            width: 250px;
+            text-align: justify;
+            border-top: 1px solid #aaa;
+            padding-top: 5px;
+            opacity: 0.4;
+            transition: opacity 1s, transform 5s;
+        }
+
+        .house {
+            color: var(--house-blue);
+        }
+
+        /* The Void / Navidson Record */
+        .the-void {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0px;
+            height: 0px;
+            background-color: #000;
+            box-shadow: 0 0 50px #000;
+            transition: all 10s ease-in-out;
+            z-index: 0;
+        }
+
+        .quote-box {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 1rem;
+            max-width: 400px;
+            font-style: italic;
+            z-index: 100;
+            background: rgba(248, 248, 248, 0.8);
+            padding: 10px;
+            border-left: 3px solid var(--text);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="the-void" id="theVoid"></div>
+
+    <div class="time-element" id="hours">00</div>
+    <div class="time-element" id="minutes">00</div>
+    <div class="time-element" id="seconds">00</div>
+
+    <div class="quote-box">
+        "This is not for you." <br>
+        <span style="font-size: 0.8rem; font-style: normal;">- Zampanò</span>
+    </div>
+
+    <!-- Generated footnotes will append here -->
+
+    <script>
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+        const theVoid = document.getElementById('theVoid');
+        
+        let lastMinute = -1;
+        let lastSecond = -1;
+
+        // Arrays of nonsense academic footnotes referencing "house"
+        const footnoteFragments = [
+            "See Appendix C regarding the architectural impossibility of the <span class='house'>house</span>.",
+            "As Pelafina notes, the labyrinth grows when the <span class='house'>house</span> is observed.",
+            "Footnote 112: The hallway extends beyond the topological limits of any known <span class='house'>house</span>.",
+            "[Ed. Note: The preceding paragraph discussing the <span class='house'>house</span> was struck through in original manuscript.]",
+            "Refer to the Navidson Record. The dark consumes the <span class='house'>house</span>.",
+            "A <span class='house'>house</span> is a machine for living in, but this one is a machine for breathing."
+        ];
+
+        function getRandomPosition(elementWidth, elementHeight) {
+            const x = Math.random() * (window.innerWidth - elementWidth);
+            const y = Math.random() * (window.innerHeight - elementHeight);
+            return { x, y };
+        }
+
+        function createFootnote() {
+            const fn = document.createElement('div');
+            fn.className = 'footnote';
+            fn.innerHTML = `<sup>${Math.floor(Math.random() * 500)}</sup> ` + footnoteFragments[Math.floor(Math.random() * footnoteFragments.length)];
+            
+            const pos = getRandomPosition(250, 100);
+            fn.style.left = `${pos.x}px`;
+            fn.style.top = `${pos.y}px`;
+            
+            // Randomly rotate footnotes to simulate chaotic typesetting
+            const rotations = [0, 90, -90, 180];
+            const rotation = rotations[Math.floor(Math.random() * rotations.length)];
+            fn.style.transform = `rotate(${rotation}deg)`;
+
+            document.body.appendChild(fn);
+
+            // Remove slowly
+            setTimeout(() => {
+                fn.style.opacity = 0;
+                setTimeout(() => fn.remove(), 1000);
+            }, 10000 + Math.random() * 10000);
+        }
+
+        function jumpElement(el, maxRotation = 360) {
+            const rect = el.getBoundingClientRect();
+            const pos = getRandomPosition(rect.width || 100, rect.height || 100);
+            
+            // Random rotation (snapping to 90s or completely random depending on element)
+            const rotation = (Math.random() - 0.5) * maxRotation;
+            
+            el.style.left = `${pos.x}px`;
+            el.style.top = `${pos.y}px`;
+            el.style.transform = `rotate(${rotation}deg)`;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            
+            hoursEl.textContent = h;
+            minutesEl.textContent = m;
+            secondsEl.textContent = s;
+
+            // Every second, seconds jump nervously
+            if(lastSecond !== now.getSeconds()) {
+                lastSecond = now.getSeconds();
+                jumpElement(secondsEl, 30); // small irregular rotation
+
+                // Every 10 seconds, spawn a footnote
+                if (now.getSeconds() % 10 === 0) {
+                    createFootnote();
+                }
+
+                // The Void breathes
+                if (Math.random() > 0.8) {
+                    const voidSize = Math.random() * 300;
+                    theVoid.style.width = `${voidSize}px`;
+                    theVoid.style.height = `${voidSize}px`;
+                }
+            }
+
+            // Every minute, hours and minutes shift violently
+            if (lastMinute !== now.getMinutes()) {
+                lastMinute = now.getMinutes();
+                // Drastic re-layout
+                jumpElement(hoursEl, 180);
+                jumpElement(minutesEl, 360);
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        // Initial Layout
+        setTimeout(() => {
+            jumpElement(hoursEl, 90);
+            jumpElement(minutesEl, 90);
+            for(let i=0; i<3; i++) createFootnote();
+        }, 100);
+
+        updateClock();
+    </script>
+</body>
+</html>

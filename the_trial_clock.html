@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Trial - Bureaucratic Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-paper: #e8e6df;
+            --ink: #2b2b2b;
+            --ink-faded: #555555;
+            --stamp-red: #c0392b;
+            --stamp-blue: #2980b9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-paper);
+            color: var(--ink);
+            font-family: 'Courier Prime', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Paper texture */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* The Form Container */
+        .form-container {
+            width: clamp(320px, 90vw, 700px);
+            background-color: #f4f3ec;
+            border: 2px solid var(--ink);
+            padding: 40px;
+            position: relative;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            border-bottom: 3px double var(--ink);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .form-id {
+            font-size: 0.8rem;
+            color: var(--ink-faded);
+            position: absolute;
+            top: 10px;
+            right: 15px;
+        }
+        
+        .barcode {
+            font-family: 'Libre Barcode 39', cursive; /* Simulated with random pipes */
+            font-size: 1.2rem;
+            letter-spacing: -1px;
+            opacity: 0.7;
+        }
+
+        .field-group {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: flex-end;
+            position: relative;
+        }
+
+        .field-label {
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        .field-value {
+            flex-grow: 1;
+            border-bottom: 1px dotted var(--ink);
+            padding-bottom: 2px;
+            font-family: 'Special Elite', cursive;
+            font-size: 1.2rem;
+            color: var(--ink);
+        }
+
+        .bureaucratic-text {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin: 30px 0;
+            text-align: justify;
+            color: var(--ink-faded);
+        }
+
+        /* Dynamic Clock Fields */
+        .clock-declaration {
+            border: 2px solid var(--ink);
+            padding: 20px;
+            margin: 30px 0;
+            position: relative;
+            background: #eef; /* very faint blue tint indicating official area */
+            background-color: rgba(0, 0, 0, 0.02);
+            text-align: center;
+        }
+
+        .urgent-label {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: #f4f3ec;
+            padding: 0 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .time-display {
+            font-family: 'Special Elite', cursive;
+            font-size: 1.8rem;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .time-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-unit span {
+            font-size: 0.7rem;
+            font-family: 'Courier Prime', monospace;
+            text-transform: uppercase;
+            border-top: 1px solid var(--ink);
+            padding-top: 2px;
+            margin-top: 5px;
+        }
+
+        /* Randomized Stamps */
+        .stamp {
+            position: absolute;
+            font-family: 'Special Elite', cursive;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 4px solid;
+            padding: 5px 15px;
+            border-radius: 5px;
+            opacity: 0;
+            transform: rotate(-15deg) scale(2);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .stamp.stamp-red {
+            color: var(--stamp-red);
+            border-color: var(--stamp-red);
+        }
+        
+        .stamp.stamp-blue {
+            color: var(--stamp-blue);
+            border-color: var(--stamp-blue);
+        }
+
+        /* Form Footer */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            font-size: 0.8rem;
+        }
+        
+        .signature-line {
+            width: 200px;
+            border-bottom: 1px solid var(--ink);
+            position: relative;
+        }
+
+        .signature-line::after {
+            content: "Signatory (Illegible)";
+            position: absolute;
+            bottom: -15px;
+            left: 0;
+            font-size: 0.7rem;
+            color: var(--ink-faded);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="form-container" id="formContainer">
+        <div class="form-id">FORM 48-B/T</div>
+        
+        <div class="header">
+            <h1>Decree of Temporal Status</h1>
+            <div class="barcode">|| | ||| || || | ||| | || |</div>
+            <div style="font-size: 0.8rem; margin-top: 5px;">(Issued by the High Court of Chronology)</div>
+        </div>
+
+        <div class="field-group">
+            <span class="field-label">Subject ID:</span>
+            <span class="field-value" id="subjectId">K-9021</span>
+        </div>
+        
+        <div class="field-group">
+            <span class="field-label">Date of Filing:</span>
+            <span class="field-value" id="filingDate">PENDING AUTHORIZATION</span>
+        </div>
+
+        <div class="bureaucratic-text">
+            According to subsection IV, paragraph 8(c) of the Infinite Wait Protocol, the Subject is hereby required to acknowledge the exact temporal coordinates presented below. Failure to recognize the precise passing of these units may result in immediate and unexplained detention in the Court's endless corridors.
+        </div>
+
+        <div class="clock-declaration">
+            <div class="urgent-label">OFFICIAL TIME RULING</div>
+            <div class="time-display">
+                <div class="time-unit">
+                    <div id="hourDecl">00</div>
+                    <span>Hour Decree</span>
+                </div>
+                <div class="time-unit">
+                    <div id="minDecl">00</div>
+                    <span>Minute Code</span>
+                </div>
+                <div class="time-unit">
+                    <div id="secDecl">00</div>
+                    <span>Case Ref (Secs)</span>
+                </div>
+            </div>
+            <div style="font-size: 0.75rem; margin-top: 15px; font-style: italic;" id="quoteBox">
+                "Someone must have slandered Josef K., for one morning, without having done anything truly wrong, he was arrested."
+            </div>
+        </div>
+
+        <div class="footer">
+            <div>
+                Processed by: <strong>Clerk #448</strong><br>
+                Status: <strong>Awaiting Appeal</strong>
+            </div>
+            <div class="signature-line">
+                <!-- Signature goes on the line naturally -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quotes = [
+            "Someone must have slandered Josef K., for one morning, without having done anything truly wrong, he was arrested.",
+            "It is not necessary to accept everything as true, one must only accept it as necessary.",
+            "Logic may indeed be unshakeable, but it cannot withstand a man who is determined to live.",
+            "The right understanding of any matter and a misunderstanding of the same matter do not wholly exclude each other.",
+            "Paths are made by walking.",
+            "From a certain point onward there is no longer any turning back. That is the point that must be reached.",
+            "A book must be the axe for the frozen sea within us."
+        ];
+
+        const hourDecl = document.getElementById('hourDecl');
+        const minDecl = document.getElementById('minDecl');
+        const secDecl = document.getElementById('secDecl');
+        const filingDate = document.getElementById('filingDate');
+        const subjectId = document.getElementById('subjectId');
+        const quoteBox = document.getElementById('quoteBox');
+        const formContainer = document.getElementById('formContainer');
+
+        const stamps = ["DENIED", "REJECTED", "PENDING", "APPROVED", "VOID", "CONFIDENTIAL", "URGENT"];
+
+        let lastMinute = -1;
+        let lastSecond = -1;
+
+        // Init Form
+        const today = new Date();
+        filingDate.textContent = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        subjectId.textContent = "K-" + Math.floor(Math.random() * 9000 + 1000);
+
+        function triggerStamp() {
+            const stamp = document.createElement('div');
+            const isRed = Math.random() > 0.3;
+            stamp.className = `stamp ${isRed ? 'stamp-red' : 'stamp-blue'}`;
+            stamp.textContent = stamps[Math.floor(Math.random() * stamps.length)];
+            
+            // Random position inside the container
+            const top = Math.random() * 60 + 10;
+            const left = Math.random() * 60 + 10;
+            const rotation = (Math.random() - 0.5) * 60; // -30 to 30 deg
+            
+            stamp.style.top = `${top}%`;
+            stamp.style.left = `${left}%`;
+            
+            formContainer.appendChild(stamp);
+
+            // Animate In
+            stamp.animate([
+                { opacity: 0, transform: `rotate(${rotation}deg) scale(2)` },
+                { opacity: 0.8, transform: `rotate(${rotation}deg) scale(1)` }
+            ], {
+                duration: 150,
+                easing: 'ease-out',
+                fill: 'forwards'
+            });
+
+            // Fade Out slowly
+            setTimeout(() => {
+                stamp.animate([
+                    { opacity: 0.8 },
+                    { opacity: 0 }
+                ], {
+                    duration: 2000,
+                    easing: 'ease-in',
+                    fill: 'forwards'
+                }).onfinish = () => stamp.remove();
+            }, 3000);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            
+            hourDecl.textContent = h;
+            minDecl.textContent = m;
+            secDecl.textContent = s;
+
+            // Random bureaucratic action every few seconds
+            if(lastSecond !== now.getSeconds()) {
+                lastSecond = now.getSeconds();
+                
+                // 5% chance of a stamp per second
+                if (Math.random() < 0.05) {
+                    triggerStamp();
+                }
+            }
+
+            // Shuffle Quote Every Minute
+            if (lastMinute !== now.getMinutes()) {
+                lastMinute = now.getMinutes();
+                quoteBox.style.opacity = 0;
+                setTimeout(() => {
+                    quoteBox.textContent = `"${quotes[now.getMinutes() % quotes.length]}"`;
+                    quoteBox.style.opacity = 1;
+                }, 1000);
+            }
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

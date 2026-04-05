@@ -33,6 +33,9 @@ A collection of literary works that would make amazing time-based visualizations
 - ✅ **Don Quixote** - Miguel de Cervantes
 - ✅ **Ghost in the Shell** - Masamune Shirow
 - ✅ **The Lord of the Rings** - J.R.R. Tolkien
+- ✅ **The Great Gatsby** - F. Scott Fitzgerald
+- ✅ **The Trial** - Franz Kafka
+- ✅ **House of Leaves** - Mark Z. Danielewski
 
 ---
 
@@ -40,12 +43,6 @@ A collection of literary works that would make amazing time-based visualizations
 
 ### Kafka & Existential
 
-- **The Trial** - Josef K's bureaucratic nightmare
-  - Endless waiting rooms
-  - Absurd legal proceedings mapped to hours
-  - Mounting anxiety and confusion
-  - "Someone must have slandered Josef K..."
-  - Bureaucratic typography
 
 - **The Castle** - K's futile attempts to reach the authorities
   - Endless deferral and inaccessibility
@@ -109,12 +106,6 @@ A collection of literary works that would make amazing time-based visualizations
   - Metafictional asides
   - "Digressions, incontestably, are the sunshine"
 
-- **House of Leaves** - Mark Z. Danielewski
-  - Spatial typography
-  - Nested narratives (Zampanò, Johnny, editors)
-  - Footnotes within footnotes
-  - The house that's bigger inside
-  - Shifting layouts and orientations
 
 ### Latin American Magic Realism
 - **Pedro Páramo** - Juan Rulfo
