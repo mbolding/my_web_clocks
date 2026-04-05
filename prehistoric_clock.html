@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prehistoric Deep Time Clock</title>
+    <!-- A stark, primitive looking font for the bones/fossils -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            /* Deep, dark void before time */
+            background-color: #050403;
+            color: #fff;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #timelineCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            font-family: monospace;
+            color: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+            letter-spacing: 2px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="hud-overlay">EPOCH: HOLOCENE DEEP TIME SIMULATION</div>
+    <canvas id="timelineCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('timelineCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        
+        function initCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        initCanvas();
+        window.addEventListener('resize', initCanvas);
+
+        // --- Geological Mechanics ---
+        // Time moves slowly here. We physically raise the terrain very slightly every frame.
+        let globalYOffset = 0; 
+        const geologicalSpeed = 0.5; // Pixels per second of terrain rise
+        
+        let lastTime = performance.now();
+
+        // Previous minutes that have become fossils
+        let fossils = [];
+        let currentMinute = -1;
+
+        // Particle system for falling sediment
+        const dustParticles = [];
+        
+        class Dust {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = -10; // start above screen
+                this.speed = Math.random() * 20 + 10; // pixels per second
+                this.size = Math.random() * 2 + 0.5;
+                const c = Math.floor(Math.random() * 50 + 20);
+                this.color = `rgba(${c+30}, ${c+20}, ${c}, ${Math.random() * 0.5 + 0.1})`;
+            }
+
+            update(dt) {
+                this.y += this.speed * dt;
+                // If it hits the bottom (or terrain roughly), reset it
+                if (this.y > height) {
+                    this.y = -10;
+                    this.x = Math.random() * width;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        for (let i = 0; i < 200; i++) dustParticles.push(new Dust());
+
+        // Generate a random stable geological band color based on a seed/depth
+        function getStrataColor(depthIndex) {
+            // Earth tones: deep reds, browns, dark greys, ochres
+            const colors = [
+                '#1a1005', '#2a1a10', '#3b2516', '#141110', 
+                '#402517', '#2b1b11', '#1f130b', '#301815'
+            ];
+            // Pseudo-random based on depth
+            return colors[Math.abs(depthIndex) % colors.length];
+        }
+        
+        // Use a simple seeded pseudo-random engine for stable terrain generation
+        function pseudoRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        // Draw a single geologic layer
+        // We draw layers from the bottom up to the current rising surface
+        function drawStrata(topY, bottomY, seed) {
+            ctx.fillStyle = getStrataColor(seed);
+            ctx.beginPath();
+            
+            // To make it look like organic, eroded rock, we use sine waves modifying the top edge
+            ctx.moveTo(0, bottomY);
+            ctx.lineTo(0, topY + Math.sin(seed) * 20);
+            
+            for (let x = 0; x <= width; x += 50) {
+                let wave1 = Math.sin((x / 150) + seed) * 15;
+                let wave2 = Math.cos((x / 300) - seed * 2) * 25;
+                let finalY = topY + wave1 + wave2;
+                ctx.lineTo(x, finalY);
+            }
+            
+            ctx.lineTo(width, bottomY);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw a subtle dark line at the top boundary for separation
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function stampFossil(timeText, absoluteY) {
+            fossils.push({
+                text: timeText,
+                y: absoluteY,
+                x: width/2 + (Math.random() - 0.5) * (width * 0.4), // Randomish x position
+                rotation: (Math.random() - 0.5) * 0.2 // slight tilt
+            });
+        }
+
+        // Pre-populate with a few past hours to make it look ancient instantly
+        // Assuming 1 minute = roughly 60 * geologicalSpeed pixels of depth = 30px
+        const pixelsPerMinute = 60 * geologicalSpeed;
+        const now = new Date();
+        for (let i = 15; i >= 1; i--) {
+            let pastTime = new Date(now.getTime() - i * 60000);
+            let h = pastTime.getHours().toString().padStart(2, '0');
+            let m = pastTime.getMinutes().toString().padStart(2, '0');
+            // The depth is absolute relative to globalYOffset.
+            // Right now globalYOffset is 0, representing the "current" surface at roughly height * 0.8.
+            let depth = - (i * pixelsPerMinute); 
+            stampFossil(`${h}:${m}`, depth);
+        }
+
+        function drawFossil(f, currentSurfaceY) {
+            // Draw the time as a calcified, bone-white embedded fossil
+            // Absolute position converted to screen position:
+            let screenY = currentSurfaceY - f.y; 
+            
+            // If it's way below the screen, don't draw it
+            if (screenY > height + 100) return;
+
+            ctx.save();
+            ctx.translate(f.x, screenY);
+            ctx.rotate(f.rotation);
+            
+            // Depth effect: as it gets buried deeper (lower screenY relative to upper surface), 
+            // it gets darker, blurrier, and slowly becomes part of the rock.
+            let depthFromSurface = screenY - currentSurfaceY;
+            
+            // Base opacity
+            let opacity = 1.0;
+            let blur = 0;
+            
+            if (depthFromSurface > 0) {
+                // It is buried
+                opacity = Math.max(0.1, 1.0 - (depthFromSurface / 300));
+                blur = Math.min(5, depthFromSurface / 50);
+            }
+
+            ctx.font = '700 clamp(2rem, 5vw, 4rem) "Cinzel", serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            ctx.fillStyle = `rgba(230, 220, 200, ${opacity})`;
+            ctx.filter = `blur(${blur}px)`;
+            
+            // Fossil shadow/emboss
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            
+            ctx.fillText(f.text, 0, 0);
+
+            ctx.restore();
+        }
+
+        // Main Loop
+        function animate() {
+            let nowTime = performance.now();
+            let dt = (nowTime - lastTime) / 1000;
+            lastTime = nowTime;
+
+            ctx.clearRect(0, 0, width, height);
+            
+            // 1. Update Time Logic
+            const systemTime = new Date();
+            const min = systemTime.getMinutes();
+            let hStr = systemTime.getHours().toString().padStart(2, '0');
+            let mStr = min.toString().padStart(2, '0');
+            
+            // Handle minute turnover -> Stamp a new fossil
+            if (min !== currentMinute) {
+                // Only stamp if it's not the very first load initialization
+                if (currentMinute !== -1) {
+                     stampFossil(`${hStr}:${mStr}`, globalYOffset);
+                }
+                currentMinute = min;
+            }
+
+            // Move the global geological offset up
+            globalYOffset += geologicalSpeed * dt;
+
+            // 2. Draw falling dust
+            for (let p of dustParticles) {
+                p.update(dt);
+                p.draw();
+            }
+
+            // 3. Draw deep earth bounds (so the bottom is always solidly dark)
+            // We define the "current surface" screen Y position to be slowly dynamically shifting, 
+            // but for visual sake we lock the "camera" to follow the surface slightly.
+            // Let's lock the surface at roughly 80% down the screen, so you always see sky above.
+            let surfaceScreenY = height * 0.8;
+
+            // To map absolute geological offset to screen coordinates:
+            // Absolute Offset 0 = Surface 0. As Offset increases, older layers sink lower on screen.
+            
+            // Draw geological strata layers
+            // We draw from the deepest (oldest) up to the surface
+            let layerThickness = 40; // pixels
+            let maxLayersVisible = Math.ceil(height / layerThickness) + 1;
+            
+            // Calculate which absolute layer index is currently at the surface
+            let surfaceLayerIndex = Math.floor(globalYOffset / layerThickness);
+            
+            for (let i = surfaceLayerIndex + maxLayersVisible; i >= surfaceLayerIndex; i--) {
+                // Absolute Y of this layer's top boundary
+                let absoluteTopY = i * layerThickness;
+                
+                // Screen Y of this layer's top boundary
+                let layerScreenY = surfaceScreenY + (globalYOffset - absoluteTopY);
+                
+                // Draw down to the bottom of the screen
+                drawStrata(layerScreenY, height, i * 1337); 
+            }
+
+            // 4. Draw Fossils (Previous Times)
+            for (let f of fossils) {
+                drawFossil(f, surfaceScreenY + globalYOffset);
+            }
+
+            // 5. Draw the "Current" Time resting on the exact top surface, not yet buried
+            ctx.save();
+            ctx.font = '700 clamp(3rem, 7vw, 6rem) "Cinzel", serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            // Pulsing glow for the active time representing the fragile present moment
+            let glow = (Math.sin(nowTime/500) + 1) / 2;
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.8 + glow * 0.2})`;
+            ctx.shadowColor = `rgba(255, 255, 255, ${glow * 0.5})`;
+            ctx.shadowBlur = 20;
+
+            // Subtle bobbing on the surface of the loose dirt
+            let surfaceBob = Math.sin(nowTime/1000) * 2;
+            
+            // Real time seconds update for the current surface time
+            let sStr = systemTime.getSeconds().toString().padStart(2, '0');
+            
+            ctx.fillText(`${hStr}:${mStr}:${sStr}`, width/2, surfaceScreenY + surfaceBob);
+            ctx.restore();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+    </script>
+</body>
+</html>

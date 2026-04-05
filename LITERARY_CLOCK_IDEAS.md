@@ -45,6 +45,8 @@ A collection of literary works that would make amazing time-based visualizations
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
 - ✅ **Candide** - Voltaire
 - ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
+- ✅ **100 Years of Solitude** - Gabriel Garcia Marquez
+- ✅ **Prehistoric Deep Time Clock** - Conceptual
 
 ---
 
