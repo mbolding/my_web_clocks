@@ -36,6 +36,9 @@ A collection of literary works that would make amazing time-based visualizations
 - ✅ **The Great Gatsby** - F. Scott Fitzgerald
 - ✅ **The Trial** - Franz Kafka
 - ✅ **House of Leaves** - Mark Z. Danielewski
+- ✅ **The Sound and the Fury** - William Faulkner
+- ✅ **If on a winter's night a traveler** - Italo Calvino
+- ✅ **Finnegans Wake** - James Joyce
 
 ---
 
@@ -77,12 +80,6 @@ A collection of literary works that would make amazing time-based visualizations
 
 
 ### Experimental & Metafiction
-- **If on a winter's night a traveler** - Italo Calvino
-  - The Reader as protagonist
-  - Ten interrupted novels
-  - Second-person narration
-  - Self-reflexive structure
-  - "You are about to begin reading..."
 
 - **Hopscotch (Rayuela)** - Julio Cortázar
   - Multiple reading orders

@@ -1,682 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slaughterhouse-Five Clock</title>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Jost:wght@300;600&family=Monoton&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Base */
+            --bg: #111;
+            --text: #fff;
+            
+            /* State 1: Ilium 1968 (Suburban/Optometry) */
+            --bg-ilium: #f5fafd;
+            --text-ilium: #2c3e50;
+            --accent-ilium: #3498db;
+            
+            /* State 2: Dresden 1945 (War/Fire) */
+            --bg-dresden: #1a0a00;
+            --text-dresden: #e6b800;
+            --accent-dresden: #ff3300;
+
+            /* State 3: Tralfamadore 1976 (Alien Zoo) */
+            --bg-tralf: #2b0033;
+            --text-tralf: #00ffcc;
+            --accent-tralf: #ff00ff;
+        }
+
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            transition: background-color 0.1s, color 0.1s; /* Very snappy transitions for 'unstuck' effect */
         }
 
         body {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #2a3a4a 0%, #1a2530 100%);
+            background-color: var(--bg);
+            color: var(--text);
             font-family: 'Courier Prime', monospace;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            padding: 2rem;
-            color: #d8e0e8;
+            justify-content: center;
             overflow: hidden;
             position: relative;
         }
 
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
+        /* -------------------------------------
+           STATE THEMES 
+           ------------------------------------- */
+
+        /* 1: ILIUM 1968 */
+        body.mode-ilium {
+            background-color: var(--bg-ilium);
+            color: var(--text-ilium);
+            background-image: linear-gradient(0deg, transparent 24%, rgba(44, 62, 80, 0.05) 25%, rgba(44, 62, 80, 0.05) 26%, transparent 27%, transparent 74%, rgba(44, 62, 80, 0.05) 75%, rgba(44, 62, 80, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(44, 62, 80, 0.05) 25%, rgba(44, 62, 80, 0.05) 26%, transparent 27%, transparent 74%, rgba(44, 62, 80, 0.05) 75%, rgba(44, 62, 80, 0.05) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+        }
+        .mode-ilium .clock-display {
+            font-family: 'Jost', sans-serif;
+            font-weight: 300;
+            border: 2px solid var(--accent-ilium);
+            border-radius: 10px;
+            padding: 30px;
+            background: #fff;
+            box-shadow: 10px 10px 0px rgba(52, 152, 219, 0.2);
+        }
+        .mode-ilium .year-badge {
+            background: var(--accent-ilium);
+            color: #fff;
+            font-family: 'Jost', sans-serif;
         }
 
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #a8c8d8;
+        /* 2: DRESDEN 1945 */
+        body.mode-dresden {
+            background-color: var(--bg-dresden);
+            color: var(--text-dresden);
+            background-image: radial-gradient(circle at center, transparent 0%, #000 100%);
+        }
+        .mode-dresden .clock-display {
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            border: none;
+            text-shadow: 2px 2px 0px var(--accent-dresden), -2px -2px 0px #000;
+            animation: fireFlicker 0.1s infinite;
+        }
+        .mode-dresden .year-badge {
+            background: transparent;
+            color: var(--accent-dresden);
+            border-bottom: 2px solid var(--accent-dresden);
+            font-family: 'Courier Prime', monospace;
+        }
+        @keyframes fireFlicker {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            50% { transform: translate(-2px, 1px) scale(1.01); opacity: 0.9; }
+            100% { transform: translate(1px, -2px) scale(0.99); opacity: 1; }
+        }
+
+        /* 3: TRALFAMADORE 1976 */
+        body.mode-tralf {
+            background-color: var(--bg-tralf);
+            color: var(--text-tralf);
+            background-image: repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 20px, rgba(255,0,255,0.1) 21px, rgba(255,0,255,0.1) 22px);
+        }
+        .mode-tralf .clock-display {
+            font-family: 'Monoton', cursive;
+            font-size: clamp(3rem, 10vw, 5rem); /* Monoton is thick, needs scale down */
+            border: none;
+            padding: 40px;
             border-radius: 50%;
-            opacity: 0.6;
-            animation: twinkle 4s ease-in-out infinite;
+            background: rgba(0,0,0,0.5);
+            box-shadow: 0 0 40px var(--accent-tralf), inset 0 0 20px var(--text-tralf);
+            animation: floatZoo 4s ease-in-out infinite alternate;
+        }
+        .mode-tralf .year-badge {
+            background: var(--text-tralf);
+            color: var(--bg-tralf);
+            font-family: 'Courier Prime', monospace;
+            border-radius: 20px;
+        }
+        @keyframes floatZoo {
+            0% { transform: translateY(10px); }
+            100% { transform: translateY(-10px); }
         }
 
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
+        /* -------------------------------------
+           SHARED STRUCTURE
+           ------------------------------------- */
 
-        .container {
-            max-width: 1000px;
-            width: 100%;
-            background: rgba(30, 40, 50, 0.95);
-            border: 3px solid #5a7a8a;
-            padding: 3rem 2.5rem;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .header {
+        .title-bar {
+            position: absolute;
+            top: 30px;
             text-align: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid #4a6a7a;
-        }
-
-        .title {
-            font-family: 'Space Mono', monospace;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            color: #e8f0f8;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.1em;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            color: #a8c8d8;
-            margin-bottom: 0.5rem;
-        }
-
-        .vonnegut {
-            font-size: 0.95rem;
-            color: #8ab8c8;
-            font-style: italic;
-        }
-
-        .time-container {
-            position: relative;
-            margin-bottom: 2rem;
-        }
-
-        .unstuck-label {
-            text-align: center;
-            font-size: 0.8rem;
-            color: #6a8a9a;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin-bottom: 1rem;
         }
 
-        .time-displays {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .time-moment {
-            background: rgba(90, 122, 138, 0.2);
-            border: 2px solid #5a7a8a;
-            padding: 1rem;
-            text-align: center;
+        .clock-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             position: relative;
+            z-index: 10;
         }
 
-        .time-moment.current {
-            border-color: #a8c8d8;
-            background: rgba(168, 200, 216, 0.2);
-            box-shadow: 0 0 20px rgba(168, 200, 216, 0.3);
+        .year-badge {
+            font-size: 1.5rem;
+            padding: 5px 20px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            transition: all 0s; /* Instant snap */
+            letter-spacing: 4px;
         }
 
-        .time-moment-label {
-            font-size: 0.7rem;
-            color: #8ab8c8;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.5rem;
-        }
-
-        .time-moment-value {
-            font-family: 'Space Mono', monospace;
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
-            color: #e8f0f8;
-            font-weight: 700;
-        }
-
-        .narrative-container {
-            background: rgba(0, 0, 0, 0.3);
-            border-left: 4px solid #6a8a9a;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            min-height: 300px;
-            position: relative;
-        }
-
-        .moment-header {
-            margin-bottom: 1.5rem;
-        }
-
-        .moment-location {
-            font-size: 0.8rem;
-            color: #6a8a9a;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 0.5rem;
-        }
-
-        .moment-title {
-            font-family: 'Space Mono', monospace;
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            color: #a8c8d8;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        .moment-year {
-            font-size: 0.9rem;
-            color: #8ab8c8;
-            font-style: italic;
-        }
-
-        .narrative-text {
-            font-size: clamp(0.95rem, 2vw, 1.1rem);
-            line-height: 1.9;
-            color: #d8e0e8;
-            margin-bottom: 1.5rem;
-        }
-
-        .so-it-goes {
-            display: inline-block;
-            color: #6a9aaa;
-            font-style: italic;
-            font-size: 0.9em;
-            margin-left: 0.5rem;
-        }
-
-        .tralfamadore-wisdom {
-            background: rgba(106, 138, 154, 0.2);
-            border: 1px solid #6a8a9a;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-            font-style: italic;
-            color: #a8c8d8;
+        .clock-display {
+            font-size: clamp(4rem, 15vw, 8rem);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             text-align: center;
+            line-height: 1;
         }
 
-        .footer {
-            text-align: center;
-            padding-top: 1.5rem;
-            border-top: 1px solid #4a6a7a;
-            font-size: 0.9rem;
-            color: #6a8a9a;
-            font-style: italic;
+        .quote-box {
+            position: absolute;
+            bottom: 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: lowercase;
+            letter-spacing: 5px;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
-
-            .time-displays {
-                grid-template-columns: 1fr;
-            }
+        /* Glitch flash screen effect */
+        .flash-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #fff;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
         }
+        
+        .is-flashing {
+            animation: shutter 0.15s ease-out;
+        }
+
+        @keyframes shutter {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
     </style>
 </head>
+<body class="mode-ilium" id="bodyEl">
 
-<body>
-    <div class="stars" id="stars"></div>
+    <div class="flash-overlay" id="flashOverlay"></div>
 
-    <div class="container">
-        <div class="header">
-            <h1 class="title">SLAUGHTERHOUSE-FIVE</h1>
-            <div class="subtitle">or The Children's Crusade</div>
-            <div class="vonnegut">Kurt Vonnegut</div>
-        </div>
+    <div class="title-bar">
+        Billy Pilgrim has come unstuck in time.
+    </div>
 
-        <div class="time-container">
-            <div class="unstuck-label">Billy Pilgrim Has Become Unstuck In Time</div>
+    <div class="clock-container">
+        <div class="year-badge" id="yearBadge">1968</div>
+        <div class="clock-display" id="timeDisplay">00:00:00</div>
+    </div>
 
-            <div class="time-displays">
-                <div class="time-moment current">
-                    <div class="time-moment-label">Present Moment</div>
-                    <div class="time-moment-value" id="currentTime">00:00</div>
-                </div>
-                <div class="time-moment">
-                    <div class="time-moment-label">Unstuck To</div>
-                    <div class="time-moment-value" id="unstuckTime">--:--</div>
-                </div>
-                <div class="time-moment">
-                    <div class="time-moment-label">From Year</div>
-                    <div class="time-moment-value" id="unstuckYear">????</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="narrative-container">
-            <div class="moment-header">
-                <div class="moment-location" id="location">DRESDEN, GERMANY</div>
-                <div class="moment-title" id="momentTitle">The Firebombing</div>
-                <div class="moment-year" id="momentYear">February 13-14, 1945</div>
-            </div>
-
-            <div id="narrative">
-                <!-- Narrative injected here -->
-            </div>
-
-            <div class="tralfamadore-wisdom" id="wisdom">
-                "All moments, past, present and future, always have existed, always will exist."
-            </div>
-        </div>
-
-        <div class="footer">
-            Listen: Billy Pilgrim has come unstuck in time.
-        </div>
+    <div class="quote-box">
+        so it goes.
     </div>
 
     <script>
-        // Billy's moments mapped to hours - jumping through his life non-linearly
-        const moments = [
-            {
-                hour: 0,
-                location: "TRALFAMADORE",
-                title: "The Zoo",
-                year: "1967 (or always)",
-                unstuckYear: "∞",
-                unstuckTime: "All Times",
-                narrative: [
-                    "Billy Pilgrim is displayed in a Tralfamadorian zoo with Montana Wildhack, the movie star. They live in a geodesic dome, furnished with items from a Sears Roebuck warehouse.",
-                    "The Tralfamadorians observe him through invisible screens. They are shaped like plumber's friends, with one hand on top of a flexible shaft. The hand holds an eye.",
-                    "Time does not pass here the way it does on Earth. All moments exist simultaneously for the Tralfamadorians."
-                ],
-                wisdom: "All moments, past, present and future, always have existed, always will exist."
-            },
-            {
-                hour: 1,
-                location: "ILIUM, NEW YORK",
-                title: "Late Night Optometry",
-                year: "1964",
-                unstuckYear: "1964",
-                unstuckTime: "01:00",
-                narrative: [
-                    "Billy Pilgrim, prosperous optometrist, cannot sleep. He wanders his empty house in Ilium, New York, a city where almost everyone works for General Forge and Foundry Company.",
-                    "His daughter Barbara worries about him. His wife is dead. <span class='so-it-goes'>So it goes.</span>",
-                    "He knows he will be kidnapped by a Tralfamadorian flying saucer in an hour. He isn't worried about it."
-                ],
-                wisdom: "The most important thing I learned on Tralfamadore was that when a person dies he only appears to die."
-            },
-            {
-                hour: 2,
-                location: "LUXEMBOURG",
-                title: "The Bulge",
-                year: "December 1944",
-                unstuckYear: "1944",
-                unstuckTime: "02:00",
-                narrative: [
-                    "Billy and the other prisoners are marched through Luxembourg during the Battle of the Bulge. It is terribly cold. Billy's feet are swollen and blue.",
-                    "Roland Weary, the antitank gunner, hates Billy for getting them captured. Weary has beautiful boots. Billy has cheap civilian shoes.",
-                    "They are herded onto trains. The trains will take them to a prisoner-of-war camp. Many will die on the journey. <span class='so-it-goes'>So it goes.</span>"
-                ],
-                wisdom: "Why me?"
-            },
-            {
-                hour: 3,
-                location: "ILIUM, NEW YORK",
-                title: "Silver Anniversary",
-                year: "1964",
-                unstuckYear: "1964",
-                unstuckTime: "03:00",
-                narrative: [
-                    "Billy and his wife Valencia are celebrating their silver wedding anniversary. The Lions Club has a party for them.",
-                    "Valencia adores Billy, though he is not very responsive. She is enormously fat, and quite wealthy from her father's Ilium School of Optometry.",
-                    "Billy does not love her, but he married her for her father's business. This is not uncommon."
-                ],
-                wisdom: "God grant me the serenity to accept the things I cannot change, courage to change the things I can, and wisdom always to tell the difference."
-            },
-            {
-                hour: 4,
-                location: "SOMEWHERE IN GERMANY",
-                title: "The Boxcar",
-                year: "December 1944",
-                unstuckYear: "1944",
-                unstuckTime: "04:00",
-                narrative: [
-                    "Billy and the other prisoners of war are locked in boxcars. There are too many people in each car. There is almost no food or water.",
-                    "Roland Weary dies of gangrene. <span class='so-it-goes'>So it goes.</span> Before he dies, he blames Billy Pilgrim for his death.",
-                    "A hobo dies too. He was certain they would be rescued. <span class='so-it-goes'>So it goes.</span>"
-                ],
-                wisdom: "Everything was beautiful and nothing hurt."
-            },
-            {
-                hour: 5,
-                location: "ILIUM, NEW YORK",
-                title: "Before Sunrise",
-                year: "1968",
-                unstuckYear: "1968",
-                unstuckTime: "05:00",
-                narrative: [
-                    "Billy is working on a letter to the Ilium News Leader about his experiences on Tralfamadore. He knows people will think he is crazy.",
-                    "He wants to tell Earth about the Tralfamadorian view of time: that all moments exist forever, and death is just a bad moment among many good ones.",
-                    "He types: 'I have been to another planet and lived among beings who are shaped like plumber's friends.'"
-                ],
-                wisdom: "And Lot's wife, of course, was told not to look back where all those people and their homes had been. But she did look back, and I love her for that."
-            },
-            {
-                hour: 6,
-                location: "DRESDEN, GERMANY",
-                title: "Arrival at Slaughterhouse-Five",
-                year: "January 1945",
-                unstuckYear: "1945",
-                unstuckTime: "06:00",
-                narrative: [
-                    "Billy and the other American prisoners are marched through Dresden to their quarters: Slaughterhouse-Five, a building used for killing pigs and cattle.",
-                    "Dresden is beautiful, unlike any city Billy has ever seen. It is intact. The war has not touched it yet.",
-                    "The slaughterhouse is staffed by German civilians. There are four guards. One is an old man. One is a boy. <span class='so-it-goes'>So it goes.</span>"
-                ],
-                wisdom: "Dresden was like the moon now, nothing but minerals."
-            },
-            {
-                hour: 7,
-                location: "ILIUM, NEW YORK",
-                title: "Morning Optometry",
-                year: "1967",
-                unstuckYear: "1967",
-                unstuckTime: "07:00",
-                narrative: [
-                    "Billy sees patients at his optometry office. He fits them for glasses. He makes them see better.",
-                    "He is a good optometrist. He is terrible at being a husband and father. He knows this but cannot change it.",
-                    "Sometimes during an eye exam, he becomes unstuck in time and travels to Dresden. His patients don't notice."
-                ],
-                wisdom: "And so it goes."
-            },
-            {
-                hour: 8,
-                location: "ARDENNES FOREST",
-                title: "Lost Behind Enemy Lines",
-                year: "December 1944",
-                unstuckYear: "1944",
-                unstuckTime: "08:00",
-                narrative: [
-                    "Billy, three scouts, and Roland Weary are lost behind enemy lines during the Battle of the Bulge. The scouts want to leave Billy and Weary behind.",
-                    "Billy is not a good soldier. He has no helmet, no weapon, no proper coat. He wears a thin civilian coat and a blue toga.",
-                    "He keeps stopping to look at things. Weary keeps saving him, though he hates him for needing to be saved."
-                ],
-                wisdom: "The nicest veterans I know are the ones who are proudest of having killed people."
-            },
-            {
-                hour: 9,
-                location: "TRALFAMADORE",
-                title: "Montana Wildhack",
-                year: "1967 (or always)",
-                unstuckYear: "∞",
-                unstuckTime: "Always",
-                narrative: [
-                    "Montana Wildhack has been brought to keep Billy company in the zoo. She is terrified at first, but grows to accept her situation.",
-                    "She and Billy mate. The Tralfamadorians are pleased. They will have a child. The child will be displayed, too.",
-                    "Montana wears a locket that says 'God grant me the serenity to accept the things I cannot change.' Billy finds this amusing."
-                ],
-                wisdom: "If I hadn't spent so much time studying Earthlings, I wouldn't have any idea what was meant by 'free will.'"
-            },
-            {
-                hour: 10,
-                location: "DRESDEN, GERMANY",
-                title: "Before the Storm",
-                year: "February 13, 1945",
-                unstuckYear: "1945",
-                unstuckTime: "10:00",
-                narrative: [
-                    "It is morning in Dresden. The American prisoners are put to work digging for bodies and gathering valuables from destroyed buildings in other cities.",
-                    "They work for a contractor who has a wagon and horses. The contractor's name is Gluck. He is old and kind.",
-                    "Dresden is beautiful and undamaged. People go about their business. Tonight it will be destroyed. They don't know yet."
-                ],
-                wisdom: "There is nothing intelligent to say about a massacre."
-            },
-            {
-                hour: 11,
-                location: "ILIUM, NEW YORK",
-                title: "Valencia Drives",
-                year: "1968",
-                unstuckYear: "1968",
-                unstuckTime: "11:00",
-                narrative: [
-                    "Valencia hears that Billy has been in a plane crash. She drives frantically to the hospital. Her car is damaged but she keeps driving.",
-                    "Carbon monoxide is leaking into the car. She does not notice. She gets to the hospital but dies in the parking lot. <span class='so-it-goes'>So it goes.</span>",
-                    "Billy doesn't know yet. He is unconscious in the hospital, unstuck in time, visiting Dresden."
-                ],
-                wisdom: "She was dead. So it goes."
-            },
-            {
-                hour: 12,
-                location: "DRESDEN, GERMANY",
-                title: "Noon",
-                year: "February 13, 1945",
-                unstuckYear: "1945",
-                unstuckTime: "12:00",
-                narrative: [
-                    "The prisoners eat their midday meal: a thin soup and a slice of black bread. They are always hungry.",
-                    "Edgar Derby, the high school teacher, talks about the war, about democracy, about duty. He is the oldest prisoner. He is kind to everyone.",
-                    "In a month he will be shot for stealing a teapot from the ruins. <span class='so-it-goes'>So it goes.</span>"
-                ],
-                wisdom: "You guys have a lot of potential as a harmonious society, but you're still fighting over who gets to sit in the front of the bus."
-            },
-            {
-                hour: 13,
-                location: "NEW YORK CITY",
-                title: "The Radio Show",
-                year: "1968",
-                unstuckYear: "1968",
-                unstuckTime: "13:00",
-                narrative: [
-                    "Billy appears on a radio talk show to discuss his experiences on Tralfamadore. People call in. They think he is insane.",
-                    "He tries to explain the Tralfamadorian concept of time. How all moments exist simultaneously. How death is just one moment among many.",
-                    "The host is polite but patronizing. Billy doesn't mind. He knows what he knows."
-                ],
-                wisdom: "We are what we pretend to be, so we must be careful about what we pretend to be."
-            },
-            {
-                hour: 14,
-                location: "DRESDEN, GERMANY",
-                title: "Afternoon Work Detail",
-                year: "February 13, 1945",
-                unstuckYear: "1945",
-                unstuckTime: "14:00",
-                narrative: [
-                    "The prisoners work in a factory that makes malt syrup for pregnant women. Billy works alongside other prisoners and German workers.",
-                    "A German worker tells Billy he should be ashamed to be an American. Billy does not disagree.",
-                    "In a few hours, British planes will drop bombs on Dresden. Then American planes will follow. The city will burn."
-                ],
-                wisdom: "It had to be done."
-            },
-            {
-                hour: 15,
-                location: "ILIUM, NEW YORK",
-                title: "Barbara Visits",
-                year: "1968",
-                unstuckYear: "1968",
-                unstuckTime: "15:00",
-                narrative: [
-                    "Billy's daughter Barbara comes to check on him. She is worried. She thinks he is senile, or having a breakdown.",
-                    "Billy tries to tell her about Tralfamadore. She becomes upset. She tells him to stop talking nonsense.",
-                    "Billy knows she means well. He also knows she will never understand. He has seen things she hasn't seen."
-                ],
-                wisdom: "And what do the birds say? All there is to say about a massacre, things like 'Poo-tee-weet?'"
-            },
-            {
-                hour: 16,
-                location: "SOMEWHERE OVER GERMANY",
-                title: "The Planes Come",
-                year: "February 13, 1945 - Night",
-                unstuckYear: "1945",
-                unstuckTime: "22:00",
-                narrative: [
-                    "The British bombers arrive first. They drop high explosives to break open roofs and walls. Then they drop incendiaries.",
-                    "The city begins to burn. The Americans are locked in their meat locker three stories underground.",
-                    "The city above them burns and burns. The fire creates its own wind. People are sucked into it. <span class='so-it-goes'>So it goes.</span>"
-                ],
-                wisdom: "It was a fancy new watch that could supposedly determine its wearer's blood pressure, pulse, and heartbeat, and tell the time."
-            },
-            {
-                hour: 17,
-                location: "TRALFAMADORE",
-                title: "Learning to See",
-                year: "1967 (or always)",
-                unstuckYear: "∞",
-                unstuckTime: "All",
-                narrative: [
-                    "The Tralfamadorians teach Billy about time. They show him how to see all moments at once, like looking at a stretch of the Rocky Mountains.",
-                    "They ask him about free will. He explains it. They tell him that of all the inhabited planets in the universe, only Earth talks about free will.",
-                    "They have visited thirty-one other planets and studied reports on a hundred more. Only Earth has this curious delusion."
-                ],
-                wisdom: "All time is all time. It does not change. It does not lend itself to warnings or explanations. It simply is."
-            },
-            {
-                hour: 18,
-                location: "DRESDEN, GERMANY",
-                title: "Morning After",
-                year: "February 14, 1945",
-                unstuckYear: "1945",
-                unstuckTime: "08:00",
-                narrative: [
-                    "Billy and the other prisoners emerge from the slaughterhouse. Dresden is gone. The city is like the moon now, nothing but minerals.",
-                    "The guards tell them to start digging for bodies. There are bodies everywhere. More bodies than anyone can count. <span class='so-it-goes'>So it goes.</span>",
-                    "Billy watches a bird land on something. The bird says 'Poo-tee-weet?'"
-                ],
-                wisdom: "Everything is all right, and everybody has to do exactly what he does. I learned that on Tralfamadore."
-            },
-            {
-                hour: 19,
-                location: "ILIUM, NEW YORK",
-                title: "Anniversary Dinner",
-                year: "1961",
-                unstuckYear: "1961",
-                unstuckTime: "19:00",
-                narrative: [
-                    "Billy and Valencia attend a dinner party for their wedding anniversary. Everyone is cheerful and well-fed.",
-                    "A quartet sings barbershop. Billy cries. Not because he's happy, but because he has become unstuck in time and is also watching Dresden burn.",
-                    "Nobody notices his tears. The quartet keeps singing. Valencia squeezes his hand."
-                ],
-                wisdom: "Like so many Americans, she was trying to construct a life that made sense from things she found in gift shops."
-            },
-            {
-                hour: 20,
-                location: "DRESDEN, GERMANY",
-                title: "Digging for Bodies",
-                year: "February 1945",
-                unstuckYear: "1945",
-                unstuckTime: "Various",
-                narrative: [
-                    "The prisoners dig for corpses for weeks. The corpses are like statues of salts. They have become minerals. <span class='so-it-goes'>So it goes.</span>",
-                    "Eventually they stop digging. They use flamethrowers instead. They burn the bodies. The soldiers who do this are Russians and Germans.",
-                    "Edgar Derby finds a teapot in the ruins. It is pretty. He puts it in his pocket. He will be shot for this."
-                ],
-                wisdom: "So then I understood. It was war that made her so angry. She didn't want her babies or anybody else's babies killed in wars."
-            },
-            {
-                hour: 21,
-                location: "TRALFAMADORE",
-                title: "Questions About Earth",
-                year: "1967 (or always)",
-                unstuckYear: "∞",
-                unstuckTime: "∞",
-                narrative: [
-                    "Billy asks the Tralfamadorians about war. They tell him that war is inevitable. They have studied many planets and all of them have war.",
-                    "He asks if they know how the universe ends. They do. A Tralfamadorian test pilot pushes a button and the universe disappears.",
-                    "They have always known this. They cannot prevent it. So it goes."
-                ],
-                wisdom: "The moment is structured that way."
-            },
-            {
-                hour: 22,
-                location: "ILIUM, NEW YORK",
-                title: "Late Night Television",
-                year: "1968",
-                unstuckYear: "1968",
-                unstuckTime: "22:00",
-                narrative: [
-                    "Billy watches a war movie backwards. The planes fly backwards, suck the bombs back into their bellies. The bombs are taken apart, reduced to minerals.",
-                    "The minerals are returned to the ground. Young men are made whole. Hitler becomes a baby. All of humanity works backwards until everyone is Adam and Eve.",
-                    "Billy likes this version better."
-                ],
-                wisdom: "American planes, full of holes and wounded men and corpses took off backwards from an airfield in England."
-            },
-            {
-                hour: 23,
-                location: "DRESDEN, GERMANY",
-                title: "The Execution of Edgar Derby",
-                year: "May 1945",
-                unstuckYear: "1945",
-                unstuckTime: "Various",
-                narrative: [
-                    "Edgar Derby is brought before a firing squad. He stole a teapot. He is a good man, a high school teacher, kind to everyone.",
-                    "They shoot him. <span class='so-it-goes'>So it goes.</span>",
-                    "Billy is there, and then he isn't. He has become unstuck in time again. He is everywhere and everywhen. Listen: Billy Pilgrim has come unstuck in time."
-                ],
-                wisdom: "Poo-tee-weet?"
-            }
+        const bodyEl = document.getElementById('bodyEl');
+        const yearBadge = document.getElementById('yearBadge');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const flashOverlay = document.getElementById('flashOverlay');
+
+        // Three moments in Billy Pilgrim's life
+        const timeModes = [
+            { class: 'mode-ilium', year: '1968', desc: 'Optometry Practice' },
+            { class: 'mode-dresden', year: '1945', desc: 'Dresden' },
+            { class: 'mode-tralf', year: '1976', desc: 'Tralfamadore' }
         ];
 
-        const currentTimeEl = document.getElementById('currentTime');
-        const unstuckTimeEl = document.getElementById('unstuckTime');
-        const unstuckYearEl = document.getElementById('unstuckYear');
-        const locationEl = document.getElementById('location');
-        const momentTitleEl = document.getElementById('momentTitle');
-        const momentYearEl = document.getElementById('momentYear');
-        const narrativeEl = document.getElementById('narrative');
-        const wisdomEl = document.getElementById('wisdom');
-        const starsEl = document.getElementById('stars');
+        let currentModeIndex = 0;
 
-        let currentMomentIndex = -1;
+        function jumpTimeDirectionless() {
+            // Pick a random mode that is NOT the current mode
+            let nextModeIndex;
+            do {
+                nextModeIndex = Math.floor(Math.random() * timeModes.length);
+            } while (nextModeIndex === currentModeIndex);
 
-        // Create stars
-        function createStars() {
-            for (let i = 0; i < 50; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.animationDelay = Math.random() * 4 + 's';
-                star.style.animationDuration = (3 + Math.random() * 3) + 's';
-                starsEl.appendChild(star);
-            }
+            currentModeIndex = nextModeIndex;
+            const mode = timeModes[currentModeIndex];
+
+            // Flash effect
+            flashOverlay.classList.remove('is-flashing');
+            void flashOverlay.offsetWidth; // Trigger reflow
+            flashOverlay.classList.add('is-flashing');
+
+            // Apply new mode
+            bodyEl.className = mode.class;
+            yearBadge.textContent = mode.year;
+
+            // Schedule next jump (unpredictable, between 4 and 12 seconds)
+            const nextJumpMs = Math.floor(Math.random() * 8000) + 4000;
+            setTimeout(jumpTimeDirectionless, nextJumpMs);
         }
 
-        function getMomentForHour(hour) {
-            return moments[hour] || moments[0];
-        }
+        // Start the unstuck jumping loops
+        setTimeout(jumpTimeDirectionless, 5000);
 
-        function renderNarrative(paragraphs) {
-            narrativeEl.innerHTML = paragraphs.map(para =>
-                `<div class="narrative-text">${para}</div>`
-            ).join('');
-        }
-
+        // Core Clock Loop - ALWAYS ACCURATE
         function updateClock() {
             const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
+            
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            
+            timeDisplay.textContent = `${h}:${m}:${s}`;
 
-            // Update current time
-            currentTimeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-
-            // Get moment Billy is unstuck to
-            const moment = getMomentForHour(hour);
-            const momentIndex = moments.indexOf(moment);
-
-            // Update unstuck displays
-            unstuckTimeEl.textContent = moment.unstuckTime;
-            unstuckYearEl.textContent = moment.unstuckYear;
-
-            // Update content if changed
-            if (momentIndex !== currentMomentIndex) {
-                locationEl.textContent = moment.location;
-                momentTitleEl.textContent = moment.title;
-                momentYearEl.textContent = moment.year;
-                renderNarrative(moment.narrative);
-                wisdomEl.textContent = moment.wisdom;
-                currentMomentIndex = momentIndex;
-            }
+            requestAnimationFrame(updateClock);
         }
 
-        // Initialize
-        createStars();
         updateClock();
-        setInterval(updateClock, 1000);
     </script>
 </body>
-
 </html>

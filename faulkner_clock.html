@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Sound and the Fury Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700&family=Share+Tech+Mono&family=Nothing+You+Could+Do&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 50% 50%;
+            grid-template-rows: 50% 50%;
+            background: #000;
+        }
+
+        .quadrant {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+
+        .label {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 100;
+            opacity: 0.5;
+        }
+
+        /* -----------------------------------
+           Q1: BENJY (Top Left)
+           Non-linear, sensory, confused, honeysuckle
+           ----------------------------------- */
+        #q-benjy {
+            background-color: #f3f4e1; /* Faint pale yellow/green honey */
+            color: #4a5d23;
+            font-family: 'Nothing You Could Do', cursive;
+            filter: blur(0.5px);
+        }
+        
+        #q-benjy .label { color: #4a5d23; font-family: 'Cormorant Garamond', serif; }
+        
+        .benjy-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .b-time {
+            position: absolute;
+            font-size: clamp(3rem, 8vw, 6rem);
+            opacity: 0.8;
+            transition: all 0.5s ease;
+        }
+
+        /* -----------------------------------
+           Q2: QUENTIN (Top Right)
+           Obsession with exact time, overlapping hands, broken
+           ----------------------------------- */
+        #q-quentin {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        #q-quentin .label { color: #888; }
+        
+        .q-analog {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.1); /* Ghost of a watch */
+        }
+
+        .q-hand {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0 50%;
+            background: #fff;
+            height: 2px;
+            z-index: 10;
+        }
+
+        .q-hand-shadow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0 50%;
+            background: rgba(255,255,255,0.2);
+            height: 4px;
+            filter: blur(4px);
+            z-index: 5;
+        }
+
+        .q-hand-sec { width: 100px; background: #aa2222; height: 1px; }
+        .q-hand-min { width: 80px; height: 2px; }
+        .q-hand-hr  { width: 50px; height: 4px; }
+        
+        .q-center {
+            position: absolute;
+            top: calc(50% - 4px);
+            left: calc(50% - 4px);
+            width: 8px; height: 8px;
+            background: #fff;
+            border-radius: 50%;
+        }
+        
+        .busted-hand {
+            position: absolute;
+            width: 40px; height: 2px; background: #555;
+            top: 70%; left: 30%;
+            transform: rotate(45deg);
+        }
+
+        /* -----------------------------------
+           Q3: JASON (Bottom Left)
+           Cold, rational, calculating, fast
+           ----------------------------------- */
+        #q-jason {
+            background-color: #0b0202;
+            color: #ff3333;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        #q-jason .label { color: #ff3333; border-bottom: 1px solid #ff3333; }
+
+        .j-time {
+            font-size: clamp(4rem, 10vw, 7rem);
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
+            letter-spacing: -2px;
+        }
+        
+        .j-ms {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            opacity: 0.6;
+        }
+
+        /* -----------------------------------
+           Q4: DILSEY (Bottom Right)
+           Calm, ancient, circular, enduring
+           ----------------------------------- */
+        #q-dilsey {
+            background-color: #2c2520; /* Deep warm wood */
+            color: #d4af37; /* Faded gold */
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        #q-dilsey .label { color: #d4af37; border: 1px solid #d4af37; padding: 2px 5px; }
+
+        .d-quote {
+            font-style: italic;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+
+        .d-time {
+            font-size: clamp(3rem, 8vw, 5rem);
+            letter-spacing: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Benjy -->
+    <div class="quadrant" id="q-benjy">
+        <div class="label">April 7, 1928</div>
+        <div class="benjy-container" id="benjyContainer">
+            <!-- Populated by JS randomly -->
+        </div>
+    </div>
+
+    <!-- Quentin -->
+    <div class="quadrant" id="q-quentin">
+        <div class="label">June 2, 1910</div>
+        <div class="q-analog">
+            <!-- Shadows -->
+            <div class="q-hand-shadow q-hand-sec" id="qs-sec"></div>
+            <div class="q-hand-shadow q-hand-min" id="qs-min"></div>
+            <!-- Real Hands -->
+            <div class="busted-hand"></div>
+            <div class="q-hand q-hand-sec" id="q-sec"></div>
+            <div class="q-hand q-hand-min" id="q-min"></div>
+            <div class="q-hand q-hand-hr" id="q-hr"></div>
+            <div class="q-center"></div>
+        </div>
+    </div>
+
+    <!-- Jason -->
+    <div class="quadrant" id="q-jason">
+        <div class="label">April 6, 1928</div>
+        <div class="j-time">
+            <span id="j-h">00</span>:<span id="j-m">00</span>:<span id="j-s">00</span><span class="j-ms" id="j-ms">.000</span>
+        </div>
+    </div>
+
+    <!-- Dilsey -->
+    <div class="quadrant" id="q-dilsey">
+        <div class="label">April 8, 1928</div>
+        <div class="d-quote">"They endured."</div>
+        <div class="d-time" id="d-time">00:00:00</div>
+    </div>
+
+
+    <script>
+        // DOM Elements
+        const bContainer = document.getElementById('benjyContainer');
+        const qSec = document.getElementById('q-sec');
+        const qMin = document.getElementById('q-min');
+        const qHr = document.getElementById('q-hr');
+        const qsSec = document.getElementById('qs-sec');
+        const qsMin = document.getElementById('qs-min');
+        
+        const jH = document.getElementById('j-h');
+        const jM = document.getElementById('j-m');
+        const jS = document.getElementById('j-s');
+        const jMs = document.getElementById('j-ms');
+        
+        const dTime = document.getElementById('d-time');
+
+        // Benjy Logic setup
+        const bTexts = ['H', 'M', 'S'];
+        const bElements = [];
+        for(let i=0; i<3; i++) {
+            const el = document.createElement('div');
+            el.className = 'b-time';
+            bContainer.appendChild(el);
+            bElements.push(el);
+        }
+
+        let lastBSecond = -1;
+
+        function updateClock() {
+            const now = new Date();
+            const hrs = now.getHours();
+            const mins = now.getMinutes();
+            const secs = now.getSeconds();
+            const ms = now.getMilliseconds();
+            
+            // Format Strings
+            const hStr = hrs.toString().padStart(2, '0');
+            const mStr = mins.toString().padStart(2, '0');
+            const sStr = secs.toString().padStart(2, '0');
+
+            // ------------------
+            // 1. BENJY (Non-Linear Jitter)
+            // ------------------
+            if (lastBSecond !== secs) {
+                lastBSecond = secs;
+                
+                // Shuffle array of values so he confuses hours/mins/secs
+                const values = [hStr, mStr, sStr].sort(() => Math.random() - 0.5);
+                
+                bElements.forEach((el, index) => {
+                    el.textContent = values[index];
+                    // Random positions across the top left quadrant
+                    el.style.top = `${20 + Math.random() * 60}%`;
+                    el.style.left = `${10 + Math.random() * 70}%`;
+                    // Random rotation
+                    el.style.transform = `rotate(${(Math.random() - 0.5) * 45}deg)`;
+                });
+            }
+
+            // ------------------
+            // 2. QUENTIN (Analog ticking, slightly shifted shadows indicating anxiety/brokenness)
+            // ------------------
+            // -90 is to start at 12 o'clock because transform-origin is 0 50%
+            const secDeg = (secs + ms/1000) * 6 - 90;
+            const minDeg = mins * 6 + (secs/60)*6 - 90;
+            const hrDeg = (hrs%12) * 30 + (mins/60)*30 - 90;
+
+            qSec.style.transform = `rotate(${secDeg}deg)`;
+            qMin.style.transform = `rotate(${minDeg}deg)`;
+            qHr.style.transform = `rotate(${hrDeg}deg)`;
+            
+            // Shadows lag slightly, representing the past dragging
+            qsSec.style.transform = `rotate(${secDeg - 2}deg)`;
+            qsMin.style.transform = `rotate(${minDeg - 1}deg)`;
+
+            // ------------------
+            // 3. JASON (Calculated, fast)
+            // ------------------
+            jH.textContent = hStr;
+            jM.textContent = mStr;
+            jS.textContent = sStr;
+            jMs.textContent = '.' + ms.toString().padStart(3, '0');
+
+            // ------------------
+            // 4. DILSEY (Solid, Roman/Classic, enduring)
+            // ------------------
+            // Dilsey often represents standard, stable time (12-hour format)
+            const dH = hrs % 12 || 12;
+            dTime.textContent = `${dH}:${mStr}:${sStr}`;
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>

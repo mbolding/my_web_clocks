@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>If on a winter's night a traveler Clock</title>
+    <!-- We will let themes import fonts they need dynamically or hardcode them here -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=DM+Sans:wght@300;700&family=Playfair+Display:ital@0;1&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            transition: all 1s ease-in-out;
+            position: relative;
+        }
+
+        /* -------------------------------------
+           THE META-NARRATOR
+           ------------------------------------- */
+        .narrator-box {
+            position: absolute;
+            bottom: 50px;
+            width: clamp(300px, 80vw, 600px);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-left: 4px solid #333;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: #111;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .narrator-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .typewriter-text {
+            display: inline-block;
+            overflow: hidden;
+            border-right: .15em solid #333; 
+            white-space: pre-wrap; 
+            animation: typing 3s steps(40, end), blink-caret .75s step-end infinite;
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #333; }
+        }
+
+        /* -------------------------------------
+           GENERIC CLOCK CONTAINER
+           ------------------------------------- */
+        .clock-container {
+            position: relative;
+            z-index: 10;
+            transition: opacity 1s, filter 1s, transform 1s;
+        }
+
+        .interrupted {
+            opacity: 0;
+            filter: blur(10px);
+            transform: scale(0.9);
+        }
+
+        /* -------------------------------------
+           THEME 1: MINIMALIST (DM Sans)
+           ------------------------------------- */
+        body.theme-minimal { background: #fafafa; color: #111; }
+        .theme-minimal .col {
+            font-family: 'DM Sans', sans-serif;
+            font-size: clamp(4rem, 15vw, 10rem);
+            font-weight: 300;
+            letter-spacing: -5px;
+        }
+
+        /* -------------------------------------
+           THEME 2: TERMINAL (VT323)
+           ------------------------------------- */
+        body.theme-terminal { background: #0c0c0c; color: #0f0; }
+        .theme-terminal .col {
+            font-family: 'VT323', monospace;
+            font-size: clamp(5rem, 20vw, 12rem);
+            text-shadow: 0 0 10px #0f0;
+        }
+
+        /* -------------------------------------
+           THEME 3: TRAIN FLAP (Bebas Neue)
+           ------------------------------------- */
+        body.theme-train { background: #2a2a2a; color: #eee; }
+        .theme-train .clock-container {
+            display: flex;
+            gap: 10px;
+        }
+        .theme-train .col {
+            background: #111;
+            border: 2px solid #000;
+            border-radius: 8px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(4rem, 12vw, 8rem);
+            padding: 20px;
+            box-shadow: inset 0 20px 20px rgba(255,255,255,0.05), inset 0 -2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .theme-train .col::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 0; width: 100%; height: 2px;
+            background: #000;
+        }
+
+        /* -------------------------------------
+           THEME 4: ANTIQUE (Playfair)
+           ------------------------------------- */
+        body.theme-antique { 
+            background: #f4ecd8; 
+            color: #4a3b2c;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
+        }
+        .theme-antique .col {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: clamp(5rem, 15vw, 10rem);
+            border-bottom: 2px solid #4a3b2c;
+            border-top: 2px double #4a3b2c;
+            padding: 20px 0;
+        }
+
+    </style>
+</head>
+<body class="theme-minimal" id="bodyEl">
+
+    <div class="clock-container" id="clockContainer">
+        <span class="col" id="colH">00</span><span class="col" style="margin: 0 10px;">:</span><span class="col" id="colM">00</span><span class="col" style="margin: 0 10px;">:</span><span class="col" id="colS">00</span>
+    </div>
+
+    <div class="narrator-box" id="narratorBox">
+        <span id="narratorText"></span>
+    </div>
+
+    <script>
+        const bodyEl = document.getElementById('bodyEl');
+        const clockContainer = document.getElementById('clockContainer');
+        const narratorBox = document.getElementById('narratorBox');
+        const narratorText = document.getElementById('narratorText');
+        
+        const colH = document.getElementById('colH');
+        const colM = document.getElementById('colM');
+        const colS = document.getElementById('colS');
+
+        const themes = ['theme-minimal', 'theme-terminal', 'theme-train', 'theme-antique'];
+        
+        const interruptions = [
+            "You are about to begin watching a web clock. Relax. Concentrate. Let the seconds wash over you.",
+            "But wait. Just as you settle into the rhythm of the font, the page rips away. You are now watching a terminal.",
+            "Or perhaps you aren't. A printing error has occurred. The bound pages have jumped. You find yourself at a midnight train station.",
+            "This isn't the story of the station either. Another interruption. An antique manuscript takes its place.",
+            "You stare at the screen, expecting consistency. But reading is an act of constantly starting over. A new face emerges."
+        ];
+
+        let currentThemeIndex = 0;
+
+        function typeNarrator(text) {
+            narratorBox.classList.remove('narrator-visible');
+            setTimeout(() => {
+                narratorText.innerHTML = `<span class="typewriter-text">${text}</span>`;
+                narratorBox.classList.add('narrator-visible');
+            }, 500);
+        }
+
+        function interruptReading() {
+            // Clock fades/blurs out
+            clockContainer.classList.add('interrupted');
+            
+            // Advance theme
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            
+            setTimeout(() => {
+                // Apply new theme while invisible
+                bodyEl.className = themes[currentThemeIndex];
+                
+                // Clock fades back in
+                clockContainer.classList.remove('interrupted');
+                
+                // Narrator comments on the interruption
+                const textIndex = currentThemeIndex === 0 ? 4 : currentThemeIndex;
+                typeNarrator(interruptions[textIndex]);
+                
+            }, 1000);
+
+            // Schedule next interruption in 15 seconds
+            setTimeout(interruptReading, 15000);
+        }
+
+        // Start Clock Loop
+        function updateClock() {
+            const now = new Date();
+            colH.textContent = now.getHours().toString().padStart(2, '0');
+            colM.textContent = now.getMinutes().toString().padStart(2, '0');
+            colS.textContent = now.getSeconds().toString().padStart(2, '0');
+            requestAnimationFrame(updateClock);
+        }
+
+        // Init
+        updateClock();
+        typeNarrator(interruptions[0]);
+        setTimeout(interruptReading, 15000); // Trigger first interruption
+
+    </script>
+</body>
+</html>

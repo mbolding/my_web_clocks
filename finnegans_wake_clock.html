@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finnegans Wake Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --river-dark: #051614;
+            --river-green: #0a352a;
+            --river-light: #528a7b;
+            --foam: #dbebe6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--river-dark);
+            color: var(--foam);
+            font-family: 'Playfair Display', serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Murky River Background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, var(--river-green) 0%, var(--river-dark) 100%);
+            opacity: 0.6;
+            z-index: -2;
+        }
+
+        /* SVG Filters definition container (invisible) */
+        .svg-defs {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+
+        /* Container for the circular riverrun text */
+        .riverrun-container {
+            position: absolute;
+            width: clamp(300px, 80vmin, 800px);
+            height: clamp(300px, 80vmin, 800px);
+            animation: slowRotate 60s linear infinite;
+        }
+
+        @keyframes slowRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .riverrun-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .riverrun-text {
+            fill: var(--river-light);
+            font-size: 24px;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        /* The Dream Clock in the center */
+        .dream-clock-container {
+            position: relative;
+            z-index: 10;
+            filter: url(#waterRipple);
+        }
+
+        .dream-clock {
+            font-size: clamp(4rem, 15vw, 9rem);
+            font-weight: 700;
+            text-shadow: 0 0 20px var(--river-light);
+            color: var(--foam);
+            text-align: center;
+        }
+
+        /* Joycean Dream Subtext */
+        .subtext {
+            position: absolute;
+            bottom: 40px;
+            font-size: 1.2rem;
+            color: var(--river-light);
+            text-align: center;
+            max-width: 600px;
+            font-style: italic;
+            opacity: 0.7;
+            animation: pulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            100% { opacity: 0.8; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- SVG Filters for the melting/rippling dream logic -->
+    <svg class="svg-defs">
+        <defs>
+            <filter id="waterRipple">
+                <!-- Base turbulence that changes over time via JS -->
+                <feTurbulence type="fractalNoise" baseFrequency="0.01 0.05" numOctaves="2" result="noise" id="turbulenceNode">
+                    <animate attributeName="baseFrequency" values="0.01 0.05; 0.02 0.08; 0.01 0.05" dur="10s" repeatCount="indefinite"/>
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G">
+                    <animate attributeName="scale" values="10; 30; 10" dur="8s" repeatCount="indefinite"/>
+                </feDisplacementMap>
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- Circular Riverrun Text -->
+    <div class="riverrun-container">
+        <svg class="riverrun-svg" viewBox="0 0 500 500">
+            <defs>
+                <path id="circlePath" d="M 250, 250 m -220, 0 a 220,220 0 1,1 440,0 a 220,220 0 1,1 -440,0" />
+            </defs>
+            <text class="riverrun-text">
+                <textPath href="#circlePath" startOffset="0%">
+                    riverrun, past Eve and Adam's, from swerve of shore to bend of bay, brings us by a commodius vicus of recirculation back to Howth Castle and Environs. • 
+                </textPath>
+            </text>
+        </svg>
+    </div>
+
+    <!-- The actual time -->
+    <div class="dream-clock-container">
+        <div class="dream-clock" id="timeDisplay">00:00:00</div>
+    </div>
+
+    <div class="subtext">
+        a way a lone a last a loved a long the...
+    </div>
+
+    <script>
+        const timeDisplay = document.getElementById('timeDisplay');
+
+        function updateClock() {
+            const now = new Date();
+            
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            
+            timeDisplay.textContent = `${h}:${m}:${s}`;
+
+            requestAnimationFrame(updateClock);
+        }
+
+        updateClock();
+    </script>
+</body>
+</html>
