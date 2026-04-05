@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Library of Babel Clock</title>
+    <!-- Dark Academia aesthetic font -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;600&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0c0a08;
+            --hex-rim: #2d2417;
+            --parchment: #e6dfc8;
+            --ink: #1a1612;
+            --glow: rgba(230, 223, 200, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--parchment);
+            font-family: 'Cormorant Garamond', serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* The infinite Hexagonal Library Background using CSS gradients */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            opacity: 0.3;
+            z-index: 1;
+            /* Hexagon pattern */
+            background: 
+                linear-gradient(30deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 0 0,
+                linear-gradient(150deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 0 0,
+                linear-gradient(30deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 40px 69px,
+                linear-gradient(150deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 40px 69px;
+            background-size: 80px 138px;
+            pointer-events: none;
+        }
+        
+        /* Central lighting dropping down into the library shaft */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, transparent 0%, var(--bg-deep) 80%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .hexagon-pedestal {
+            position: relative;
+            z-index: 10;
+            width: clamp(300px, 60vw, 600px);
+            /* Creating a classic hexagon shape */
+            background: rgba(26, 22, 18, 0.8);
+            border: 2px solid var(--hex-rim);
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 30px var(--glow);
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .title {
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            color: #8c7355;
+            margin-bottom: 20px;
+        }
+
+        /* The chaotic text display */
+        .time-display {
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 600;
+            letter-spacing: 12px;
+            color: var(--parchment);
+            text-shadow: 0 0 10px rgba(230,223,200,0.2);
+            /* Monospace enforces exact width so letters don't shift layout */
+            font-family: monospace; 
+        }
+
+        .quote {
+            margin-top: 30px;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: #6a5843;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="hexagon-pedestal">
+        <div class="title">The Library of Babel</div>
+        <!-- 8 characters to match '00:00:00' -->
+        <div class="time-display" id="timeDisplay">x,q .lmz</div>
+        <div class="quote">"The Library is total and its shelves register all the possible combinations of the twenty-odd orthographical symbols..."</div>
+    </div>
+
+    <script>
+        const timeDisplay = document.getElementById('timeDisplay');
+        
+        // Borges explicitly designated exactly 25 characters for his infinite library:
+        // 22 lowercase letters of the alphabet (excluding some based on spanish), the space, the comma, and the period.
+        // For simplicity we'll just use the standard 26 english letters + space + comma + period.
+        const borgesAlphabet = "abcdefghijklmnopqrstuvwxyz ,.";
+
+        // We cycle between meaningless chaos and brief moments of total clarity (the exact time)
+        let mode = 'chaos'; // 'chaos', 'resolving', 'clarity'
+        let currentChaosString = "        ";
+        let targetTimeString = "00:00:00";
+        
+        // Very fast interval for generating chaos
+        let chaosInterval;
+        
+        function getRandomString(length) {
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += borgesAlphabet.charAt(Math.floor(Math.random() * borgesAlphabet.length));
+            }
+            return result;
+        }
+
+        function runLibraryLogic() {
+            // Re-fetch the target time continuously
+            const now = new Date();
+            let h = now.getHours().toString().padStart(2, '0');
+            let m = now.getMinutes().toString().padStart(2, '0');
+            let s = now.getSeconds().toString().padStart(2, '0');
+            targetTimeString = `${h}:${m}:${s}`;
+            
+            const ms = now.getMilliseconds();
+            
+            // Logic mapping the second to the state of the clock
+            // 0 - 500ms: Random infinite noise
+            // 500 - 900ms: Absolute Exact Time (Meaning found in the library)
+            // 900 - 1000ms: Dissolving back to noise
+            
+            if (ms < 500 || ms > 900) {
+                if (mode !== 'chaos') {
+                    // Switch to chaos
+                    mode = 'chaos';
+                }
+            } else {
+                if (mode !== 'clarity') {
+                    mode = 'clarity';
+                    // Meaning is found! Lock it in.
+                    timeDisplay.textContent = targetTimeString;
+                }
+            }
+            
+            requestAnimationFrame(runLibraryLogic);
+        }
+        
+        // Run a high-speed separate interval entirely dedicated to scrambling the DOM text 
+        // to make it look like pages of infinite books flying by, ONLY when in chaos mode.
+        setInterval(() => {
+            if (mode === 'chaos') {
+                timeDisplay.textContent = getRandomString(8);
+            }
+        }, 50); // Scrambles every 50ms!
+
+        // Start the master loop
+        requestAnimationFrame(runLibraryLogic);
+
+    </script>
+</body>
+</html>

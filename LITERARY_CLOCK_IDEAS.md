@@ -44,6 +44,7 @@ A collection of literary works that would make amazing time-based visualizations
 - ✅ **2001: A Space Odyssey** - Arthur C. Clarke
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
 - ✅ **Candide** - Voltaire
+- ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
 
 ---
 
