@@ -23,17 +23,17 @@ Each clock (`*.html`) is completely standalone:
 
 This project includes a variety of clocks, each with a different theme:
 
-- **ng26_clock.html**: A traditional analog clock with a countdown timer.
-- **circadian_clock.html**: A clock that shows 20 defined circadian periods throughout the day.
-- **binary_clock.html**: A clock that displays the time in binary format.
-- **flip_clock.html**: A clock that simulates a mechanical flip clock.
-- **particle_clock.html**: A clock that uses a particle system to display the time.
-- **polar_clock.html**: A clock that uses concentric circles to represent hours, minutes, and seconds.
-- **word_clock.html**: A clock that displays the time in written English.
-- **ng26_countdown.html**: A countdown timer.
-- **spectrum_clock.html**: A clock that represents the time as colors on a spectrum.
-- **hsv_clock.html**: A clock that maps the time to the HSV color model.
-- **sundial_clock.html**: A 3D sundial that uses Three.js.
+- **clocks/utility/ng26_clock.html**: A traditional analog clock with a countdown timer.
+- **clocks/nature/circadian_clock.html**: A clock that shows 20 defined circadian periods throughout the day.
+- **clocks/retro/binary_clock.html**: A clock that displays the time in binary format.
+- **clocks/retro/flip_clock.html**: A clock that simulates a mechanical flip clock.
+- **clocks/simulation/particle_clock.html**: A clock that uses a particle system to display the time.
+- **clocks/art/polar_clock.html**: A clock that uses concentric circles to represent hours, minutes, and seconds.
+- **clocks/art/word_clock.html**: A clock that displays the time in written English.
+- **clocks/utility/ng26_countdown.html**: A countdown timer.
+- **clocks/art/spectrum_clock.html**: A clock that represents the time as colors on a spectrum.
+- **clocks/art/hsv_clock.html**: A clock that maps the time to the HSV color model.
+- **clocks/nature/sundial_clock.html**: A 3D sundial that uses Three.js.
 
 ## Building and Running
 

@@ -209,9 +209,12 @@
     }
 
     function minutesToAngle(minutes) {
-        // 24-hour face: midnight at top, full rotation = 1440 minutes
-        return minutes / 1440 * 360; // degrees from 12 o'clock (midnight)
+        // solar noon at top
+        return (minutes - solarNoonMinutes) / 1440 * 360;
     }
+
+    // Solar noon in local minutes from midnight — updated by geolocation
+    let solarNoonMinutes = 720;
 
     // ─── SVG helpers ─────────────────────────────────────────────────────────────
     const CX = 250, CY = 250;
@@ -246,9 +249,9 @@
         const ticks = document.getElementById('ticks');
         const numerals = document.getElementById('numerals');
 
-        // 48 ticks: major every 15° (24 hours), minor every 7.5° (30 min)
+        // 48 ticks: major every hour, minor every 30 min
         for (let i = 0; i < 48; i++) {
-            const ang = i * 7.5;
+            const ang = minutesToAngle(i * 30);
             const isMajor = i % 2 === 0;
             const len = isMajor ? MAJOR_LEN : MINOR_LEN;
             const outerPt = polarXY(ang, TICK_OUTER);
@@ -262,9 +265,9 @@
             }));
         }
 
-        // 24-hour numerals: 0 at top (midnight), 12 at bottom (noon)
+        // 24-hour numerals positioned relative to solar noon
         for (let h = 0; h < 24; h++) {
-            const p = polarXY(h * 15, NUMERAL_R);
+            const p = polarXY(minutesToAngle(h * 60), NUMERAL_R);
             const t = svgEl('text', {
                 x: p.x, y: p.y,
                 'text-anchor': 'middle',
@@ -468,7 +471,7 @@
         const ss = s + ms / 1000;
         const secDeg  = ss * 6;
         const minDeg  = m * 6 + s * 0.1;
-        const hourDeg = (h * 60 + m + ss / 60) / 1440 * 360; // 24h: one revolution per day
+        const hourDeg = minutesToAngle(h * 60 + m + ss / 60); // 24h face, solar noon at top
 
         setHand('hour-hand',   hourDeg, HOUR_LEN);
         setHand('minute-hand', minDeg,  MIN_LEN);
@@ -504,6 +507,17 @@
         document.getElementById('location-info').textContent = locName;
         const today = new Date();
         const { sunrise, sunset, polar } = calcSunTimes(today, lat, lon);
+
+        // Recalculate solar noon and rebuild face with it at top
+        const n = today.getTime() / 86400000 + 2440587.5 - 2451545.0;
+        const B = toRad(360 / 365 * (n - 81));
+        const EoT = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+        const tzOffset = -today.getTimezoneOffset();
+        solarNoonMinutes = 720 - 4 * lon - EoT + tzOffset;
+
+        document.getElementById('ticks').innerHTML = '';
+        document.getElementById('numerals').innerHTML = '';
+        buildFace();
 
         if (polar) {
             document.getElementById('location-info').textContent =

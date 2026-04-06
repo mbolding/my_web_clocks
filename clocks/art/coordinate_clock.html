@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Coordinate Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:      #080b14;
+            --surface: #0d1220;
+            --border:  #1a2840;
+            --text:    #6a90b0;
+            --bright:  #b0cce0;
+            --dim:     #2a4060;
+            --active-bg:  #0e1f38;
+            --active-bdr: #4080b0;
+            --active-txt: #78b8d8;
+        }
+
+        body.light-mode {
+            --bg:      #f8fafc;
+            --surface: #ffffff;
+            --border:  #e2e8f0;
+            --text:    #64748b;
+            --bright:  #0f172a;
+            --dim:     #94a3b8;
+            --active-bg:  #eff6ff;
+            --active-bdr: #3b82f6;
+            --active-txt: #1d4ed8;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px 36px;
+            gap: 12px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h1 {
+            font-size: clamp(0.75rem, 2.5vw, 1rem);
+            font-weight: 300;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--bright);
+        }
+
+        /* ── Tabs ──────────────────────────────────────────── */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab {
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .tab:hover { border-color: #3a6090; color: var(--bright); }
+        .tab.active {
+            background: var(--active-bg);
+            border-color: var(--active-bdr);
+            color: var(--active-txt);
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            border-color: var(--active-bdr);
+            color: var(--bright);
+        }
+
+        /* ── Axis row ──────────────────────────────────────── */
+        .axis-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .axis-group { display: flex; align-items: center; gap: 6px; }
+
+        .axis-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--active-txt);
+            min-width: 20px;
+        }
+
+        .axis-sel {
+            background: #0b1525;
+            border: 1px solid var(--border);
+            color: var(--bright);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            outline: none;
+        }
+        .axis-sel:focus { border-color: var(--active-bdr); }
+
+        /* ── Canvas ────────────────────────────────────────── */
+        .canvas-wrap {
+            width: clamp(280px, min(92vw, 68vh), 520px);
+            aspect-ratio: 1;
+        }
+
+        #cvs {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            cursor: default;
+            touch-action: none;
+        }
+        #cvs.drag3d        { cursor: grab; }
+        #cvs.drag3d:active { cursor: grabbing; }
+
+        /* ── Time & hint ───────────────────────────────────── */
+        #time-txt {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.82rem, 2.5vw, 1rem);
+            color: var(--bright);
+            letter-spacing: 0.08em;
+        }
+
+        .hint {
+            font-size: 0.68rem;
+            color: var(--dim);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.1em;
+            display: none;
+        }
+        .hint.show { display: block; }
+
+        /* ── Component bars ────────────────────────────────── */
+        .comp-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px 24px;
+            width: clamp(280px, min(92vw, 520px), 520px);
+        }
+        @media (max-width: 380px) { .comp-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .comp-item { display: flex; flex-direction: column; gap: 3px; }
+
+        .comp-hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .comp-key {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+        }
+
+        .comp-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--dim);
+        }
+
+        .bar-track {
+            height: 2px;
+            background: #12203a;
+            border-radius: 1px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 1px;
+            width: 0%;
+            transition: width 0.25s linear;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Time Coordinate Explorer</h1>
+<div class="tabs"    id="tabs"></div>
+<div class="axis-row" id="axis-row"></div>
+
+<div class="canvas-wrap">
+    <canvas id="cvs"></canvas>
+</div>
+
+<div id="time-txt">—</div>
+<div class="hint" id="hint">drag canvas to rotate · 3d view</div>
+<div class="comp-grid" id="comp-grid"></div>
+
+<script>
+// ─── Definitions ─────────────────────────────────────────────────────────────
+
+const COMPS = [
+    { key: 'Y',  label: 'Year',  color: '#e8c547' },
+    { key: 'Mo', label: 'Month', color: '#47e8c5' },
+    { key: 'D',  label: 'Day',   color: '#e88c47' },
+    { key: 'H',  label: 'Hour',  color: '#4788e8' },
+    { key: 'Mi', label: 'Min',   color: '#a047e8' },
+    { key: 'S',  label: 'Sec',   color: '#47e870' },
+];
+
+const SYSTEMS = [
+    {
+        key: 'cartesian', name: 'Cartesian', is3D: false,
+        axes: ['X', 'Y'], defaults: ['H', 'Mi'],
+        desc: 'x = a   y = b',
+    },
+    {
+        key: 'polar', name: 'Polar', is3D: false,
+        axes: ['r', 'θ'], defaults: ['Mi', 'S'],
+        desc: 'r = a   θ = b · 2π',
+    },
+    {
+        key: 'parabolic', name: 'Parabolic', is3D: false,
+        axes: ['u', 'v'], defaults: ['H', 'Mi'],
+        desc: 'x = ½(u²−v²)   y = uv',
+    },
+    {
+        key: 'elliptic', name: 'Elliptic', is3D: false,
+        axes: ['μ', 'ν'], defaults: ['H', 'Mi'],
+        desc: 'x = cosh(μ)cos(ν)   y = sinh(μ)sin(ν)',
+    },
+    {
+        key: 'cylindrical', name: 'Cylindrical', is3D: true,
+        axes: ['r', 'θ', 'z'], defaults: ['H', 'Mi', 'S'],
+        desc: '( r·cos(θ·2π),  z,  r·sin(θ·2π) )',
+    },
+    {
+        key: 'spherical', name: 'Spherical', is3D: true,
+        axes: ['r', 'θ', 'φ'], defaults: ['H', 'Mi', 'S'],
+        desc: '( r·sin(φπ)cos(θ·2π),  r·cos(φπ),  r·sin(φπ)sin(θ·2π) )',
+    },
+    {
+        key: '4d', name: '4D Hyper', is3D: true,
+        axes: ['x', 'y', 'z', 'w'], defaults: ['D', 'H', 'Mi', 'S'],
+        desc: 'Orthographic projection of 4D space',
+    },
+    {
+        key: '5d', name: '5D Hyper', is3D: true,
+        axes: ['x', 'y', 'z', 'w', 'v'], defaults: ['Mo', 'D', 'H', 'Mi', 'S'],
+        desc: 'Orthographic projection of 5D space',
+    },
+    {
+        key: '6d', name: '6D Hyper', is3D: true,
+        axes: ['x', 'y', 'z', 'w', 'v', 'u'], defaults: ['Y', 'Mo', 'D', 'H', 'Mi', 'S'],
+        desc: 'Orthographic projection of 6D space',
+    },
+];
+
+const SYS_MAP = Object.fromEntries(SYSTEMS.map(s => [s.key, s]));
+const TRAIL_MAX = 360;
+const SAMPLE_MS = 250;
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+const st = {
+    sys:        SYSTEMS[0],
+    axes:       [...SYSTEMS[0].defaults],
+    trail:      [],
+    rotX:       0.40,
+    rotY:      -0.55,
+    drag:       null,
+    lastSample: 0,
+    size:       500,
+};
+
+// ─── Time ─────────────────────────────────────────────────────────────────────
+
+function getNow() {
+    const d   = new Date();
+    const ms  = d.getMilliseconds();
+    const sec = d.getSeconds() + ms  / 1000;
+    const mn  = d.getMinutes();
+    const hr  = d.getHours();
+    return {
+        Y:  (d.getFullYear() % 100) / 100,
+        Mo: (d.getMonth() + 1) / 12,
+        D:  Math.max(0, d.getDate() - 1) / 30,
+        H:  (hr  + (mn  + sec / 60) / 60) / 24,
+        Mi: (mn  +  sec / 60) / 60,
+        S:  sec / 60,
+        _d: d,
+    };
+}
+
+// ─── Geometry ─────────────────────────────────────────────────────────────────
+
+function geo() {
+    const s = st.size;
+    return { cx: s * 0.5, cy: s * 0.5, R: s * 0.43, s };
+}
+
+// ─── 3D Projection ───────────────────────────────────────────────────────────
+
+function proj3(x, y, z, g) {
+    const cy = Math.cos(st.rotY), sy = Math.sin(st.rotY);
+    const cx = Math.cos(st.rotX), sx = Math.sin(st.rotX);
+    const x1 =  x * cy + z * sy;
+    const z1 = -x * sy + z * cy;
+    const y2 =  y * cx - z1 * sx;
+    const z2 =  y * sx + z1 * cx;
+    const w  = 2.5 / (2.5 + z2 + 1.5);
+    return { px: g.cx + x1 * g.R * w, py: g.cy - y2 * g.R * w, depth: z2 };
+}
+
+// ─── Coordinate Transforms ───────────────────────────────────────────────────
+
+function toCoords(now, g) {
+    const [a, b, c] = st.axes.map(k => now[k]);
+    const { cx, cy, R } = g;
+
+    switch (st.sys.key) {
+
+        case 'cartesian': {
+            const S = R * 0.88;
+            return { px: cx + (a - 0.5) * 2 * S,
+                     py: cy - (b - 0.5) * 2 * S };
+        }
+
+        case 'polar': {
+            const radius = a * R * 0.92;
+            const angle  = b * 2 * Math.PI - Math.PI / 2;
+            return { px: cx + radius * Math.cos(angle),
+                     py: cy + radius * Math.sin(angle) };
+        }
+
+        case 'parabolic': {
+            const S  = R * 0.85;
+            const px = cx + (a * a - b * b) * S;           // x=½(u²-v²), scaled
+            const py = cy + S - 2 * a * b * S;             // y=uv, y=0 at bottom
+            return { px, py };
+        }
+
+        case 'elliptic': {
+            const mu = a * 1.5, nu = b * 2 * Math.PI;
+            const sc = R / 2.55;
+            return { px: cx + Math.cosh(mu) * Math.cos(nu) * sc,
+                     py: cy - Math.sinh(mu) * Math.sin(nu) * sc };
+        }
+
+        case 'cylindrical': {
+            const r  = a * 0.88;
+            const th = b * 2 * Math.PI;
+            const z  = (c - 0.5) * 1.6;
+            const x3 = r * Math.cos(th), z3 = r * Math.sin(th), y3 = z;
+            return { ...proj3(x3, y3, z3, g), x3, y3, z3 };
+        }
+
+        case 'spherical': {
+            const r  = a * 0.88;
+            const th = b * 2 * Math.PI;
+            const ph = c * Math.PI;
+            const x3 = r * Math.sin(ph) * Math.cos(th);
+            const z3 = r * Math.sin(ph) * Math.sin(th);
+            const y3 = r * Math.cos(ph);
+            return { ...proj3(x3, y3, z3, g), x3, y3, z3 };
+        }
+
+        case '4d':
+        case '5d':
+        case '6d': {
+            const vals = st.axes.map(k => (now[k] - 0.5) * 1.6);
+            // Basis vectors for 4D, 5D, 6D projection into 3D
+            // We'll use some fixed irrational numbers to make it look "rotated"
+            const bases = [
+                [1, 0, 0], [0, 1, 0], [0, 0, 1],
+                [0.7, 0.7, 0.2], [-0.4, 0.5, 0.8], [0.3, -0.8, 0.5]
+            ];
+            let x3 = 0, y3 = 0, z3 = 0;
+            vals.forEach((v, i) => {
+                x3 += v * bases[i][0];
+                y3 += v * bases[i][1];
+                z3 += v * bases[i][2];
+            });
+            // Normalize slightly to fit
+            const scale = st.sys.key === '4d' ? 0.7 : st.sys.key === '5d' ? 0.6 : 0.5;
+            x3 *= scale; y3 *= scale; z3 *= scale;
+            return { ...proj3(x3, y3, z3, g), x3, y3, z3 };
+        }
+    }
+}
+
+// ─── Grid Drawing ─────────────────────────────────────────────────────────────
+
+function gLine(ctx, x1, y1, x2, y2) {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+}
+
+function drawGrid(ctx, g) {
+    ctx.save();
+    switch (st.sys.key) {
+        case 'cartesian':   gridCartesian(ctx, g);   break;
+        case 'polar':       gridPolar(ctx, g);       break;
+        case 'parabolic':   gridParabolic(ctx, g);   break;
+        case 'elliptic':    gridElliptic(ctx, g);    break;
+        case 'cylindrical': gridCylindrical(ctx, g); break;
+        case 'spherical':   gridSpherical(ctx, g);   break;
+        case '4d':
+        case '5d':
+        case '6d':          gridHyper(ctx, g);       break;
+    }
+    ctx.restore();
+}
+
+// — Hyper (4D, 5D, 6D) —
+function gridHyper(ctx, g) {
+    const dim = st.sys.axes.length;
+    const bases = [
+        [1, 0, 0], [0, 1, 0], [0, 0, 1],
+        [0.7, 0.7, 0.2], [-0.4, 0.5, 0.8], [0.3, -0.8, 0.5]
+    ];
+    const scale = dim === 4 ? 0.7 : dim === 5 ? 0.6 : 0.5;
+
+    // Draw coordinate axes
+    for (let i = 0; i < dim; i++) {
+        const o = proj3(0, 0, 0, g);
+        const t = proj3(bases[i][0] * 0.8 * scale, bases[i][1] * 0.8 * scale, bases[i][2] * 0.8 * scale, g);
+        ctx.strokeStyle = `rgba(100, 150, 255, ${0.4 + (i < 3 ? 0.3 : 0)})`;
+        ctx.lineWidth = i < 3 ? 1.5 : 0.8;
+        gLine(ctx, o.px, o.py, t.px, t.py);
+        
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillText(st.sys.axes[i], t.px + 4, t.py + 4);
+    }
+
+    // Draw bounding wireframe (simplified for clarity)
+    const steps = 2;
+    for (let i = 0; i < dim; i++) {
+        for (let j = 0; j < dim; j++) {
+            if (i === j) continue;
+            // Draw a few "grid" lines to give volume
+            [-0.8, 0.8].forEach(val => {
+                const o3 = [0,0,0];
+                o3[0] = bases[i][0] * val * scale;
+                o3[1] = bases[i][1] * val * scale;
+                o3[2] = bases[i][2] * val * scale;
+                
+                const p1 = proj3(o3[0] - bases[j][0] * 0.8 * scale, o3[1] - bases[j][1] * 0.8 * scale, o3[2] - bases[j][2] * 0.8 * scale, g);
+                const p2 = proj3(o3[0] + bases[j][0] * 0.8 * scale, o3[1] + bases[j][1] * 0.8 * scale, o3[2] + bases[j][2] * 0.8 * scale, g);
+                
+                ctx.strokeStyle = 'rgba(20, 45, 78, 0.3)';
+                ctx.lineWidth = 0.5;
+                gLine(ctx, p1.px, p1.py, p2.px, p2.py);
+            });
+        }
+    }
+}
+
+// — Cartesian —
+function gridCartesian(ctx, { cx, cy, R }) {
+    const S = R * 0.88;
+    ctx.font = '9px JetBrains Mono, monospace';
+    [0, 0.25, 0.5, 0.75, 1].forEach(t => {
+        const bright = t === 0.5;
+        ctx.strokeStyle = bright ? 'rgba(40,80,130,0.9)' : 'rgba(22,48,80,0.6)';
+        ctx.lineWidth   = bright ? 1.2 : 0.6;
+        const px = cx + (t - 0.5) * 2 * S;
+        const py = cy - (t - 0.5) * 2 * S;
+        gLine(ctx, px, cy - S, px, cy + S);
+        gLine(ctx, cx - S, py, cx + S, py);
+    });
+    ctx.fillStyle = 'rgba(55,100,155,0.7)';
+    ctx.textAlign = 'center';
+    [0, 0.25, 0.5, 0.75, 1].forEach((t, i) => {
+        if (i === 0 || i === 4) return;
+        ctx.fillText(t.toFixed(2), cx + (t - 0.5) * 2 * S, cy + S + 13);
+    });
+    ctx.textAlign = 'right';
+    [0, 0.25, 0.5, 0.75, 1].forEach((t, i) => {
+        if (i === 0 || i === 4) return;
+        ctx.fillText(t.toFixed(2), cx - S - 5, cy - (t - 0.5) * 2 * S + 3);
+    });
+}
+
+// — Polar —
+function gridPolar(ctx, { cx, cy, R }) {
+    const mR = R * 0.92;
+    ctx.font = '9px JetBrains Mono, monospace';
+    [0.25, 0.5, 0.75, 1].forEach(r => {
+        ctx.strokeStyle = r === 0.5 ? 'rgba(40,80,130,0.8)' : 'rgba(22,48,80,0.55)';
+        ctx.lineWidth   = r === 0.5 ? 1.0 : 0.6;
+        ctx.beginPath(); ctx.arc(cx, cy, r * mR, 0, 2 * Math.PI); ctx.stroke();
+        ctx.fillStyle = 'rgba(55,100,155,0.65)';
+        ctx.textAlign = 'left';
+        ctx.fillText(r.toFixed(2), cx + r * mR + 4, cy - 3);
+    });
+    for (let i = 0; i < 12; i++) {
+        const ang = i / 12 * 2 * Math.PI - Math.PI / 2;
+        ctx.strokeStyle = i % 3 === 0 ? 'rgba(35,70,110,0.75)' : 'rgba(22,48,80,0.45)';
+        ctx.lineWidth   = i % 3 === 0 ? 0.8 : 0.5;
+        gLine(ctx, cx, cy, cx + mR * Math.cos(ang), cy + mR * Math.sin(ang));
+        if (i % 3 === 0) {
+            const lr = mR + 14;
+            ctx.fillStyle = 'rgba(55,100,155,0.65)';
+            ctx.textAlign = 'center';
+            ctx.fillText((i / 12).toFixed(2), cx + lr * Math.cos(ang), cy + lr * Math.sin(ang) + 3);
+        }
+    }
+}
+
+// — Parabolic —
+function gridParabolic(ctx, { cx, cy, R }) {
+    const S = R * 0.85;
+    const N = 64;
+
+    // Shared canvas mapping
+    const pt = (u, v) => [cx + (u * u - v * v) * S,
+                          cy + S - 2 * u * v * S];
+
+    for (let k = 0; k <= 5; k++) {
+        const t = k / 5;
+        const bright = k === 0 || k === 5;
+        ctx.strokeStyle = bright ? 'rgba(40,80,130,0.85)' : 'rgba(22,48,80,0.6)';
+        ctx.lineWidth   = bright ? 1.0 : 0.6;
+
+        // iso-u: fix u=t, sweep v
+        ctx.beginPath();
+        for (let i = 0; i <= N; i++) {
+            const [px, py] = pt(t, i / N);
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // iso-v: fix v=t, sweep u
+        ctx.beginPath();
+        for (let i = 0; i <= N; i++) {
+            const [px, py] = pt(i / N, t);
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+    }
+
+    // Label the axes
+    ctx.fillStyle = 'rgba(55,100,155,0.65)';
+    ctx.font = '9px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('u=0', cx - S - 2, cy + S + 13);
+    ctx.fillText('v=0', cx + S + 2, cy + S + 13);
+    ctx.fillText('u=v=1', cx, cy - S - 6);
+}
+
+// — Elliptic —
+function gridElliptic(ctx, { cx, cy, R }) {
+    const sc = R / 2.55;
+    const NE = 120, NH = 60;
+
+    // iso-μ: ellipses
+    [0.3, 0.6, 0.9, 1.2, 1.5].forEach(mu => {
+        const bright = mu === 0.9;
+        ctx.strokeStyle = bright ? 'rgba(40,80,130,0.85)' : 'rgba(22,48,80,0.6)';
+        ctx.lineWidth   = bright ? 1.0 : 0.6;
+        ctx.beginPath();
+        for (let i = 0; i <= NE; i++) {
+            const nu = i / NE * 2 * Math.PI;
+            const px = cx + Math.cosh(mu) * Math.cos(nu) * sc;
+            const py = cy - Math.sinh(mu) * Math.sin(nu) * sc;
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath(); ctx.stroke();
+    });
+
+    // iso-ν: hyperbola arms; skip near ν = 0 and π (sin ≈ 0)
+    for (let i = 0; i < 12; i++) {
+        const nu = i / 12 * 2 * Math.PI;
+        if (Math.abs(Math.sin(nu)) < 0.08) continue;
+        ctx.strokeStyle = i % 3 === 0 ? 'rgba(35,70,110,0.75)' : 'rgba(20,45,75,0.5)';
+        ctx.lineWidth = 0.55;
+        ctx.beginPath();
+        for (let j = 0; j <= NH; j++) {
+            const mu = j / NH * 1.5;
+            const px = cx + Math.cosh(mu) * Math.cos(nu) * sc;
+            const py = cy - Math.sinh(mu) * Math.sin(nu) * sc;
+            j === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+    }
+
+    // Interfocal segment (μ=0 degenerate ellipse)
+    ctx.strokeStyle = 'rgba(30,60,100,0.7)'; ctx.lineWidth = 0.7;
+    ctx.setLineDash([3, 4]);
+    gLine(ctx, cx - sc, cy, cx + sc, cy);
+    ctx.setLineDash([]);
+
+    // Foci
+    ctx.fillStyle = 'rgba(80,140,200,0.55)';
+    [-1, 1].forEach(fx => {
+        ctx.beginPath(); ctx.arc(cx + fx * sc, cy, 2.5, 0, 2 * Math.PI); ctx.fill();
+    });
+}
+
+// — 3D axes helper —
+function draw3DAxes(ctx, g) {
+    [
+        { d: [1,0,0], col: '#804040', l: 'x' },
+        { d: [0,1,0], col: '#407040', l: 'y' },
+        { d: [0,0,1], col: '#404878', l: 'z' },
+    ].forEach(({ d, col, l }) => {
+        const o = proj3(0,    0,    0,    g);
+        const t = proj3(d[0], d[1], d[2], g);
+        ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+        gLine(ctx, o.px, o.py, t.px, t.py);
+        ctx.fillStyle = col;
+        ctx.font = '11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(l, t.px, t.py - 5);
+    });
+}
+
+// — Cylindrical —
+function gridCylindrical(ctx, g) {
+    const N = 48;
+    [0.3, 0.6, 0.88].forEach(r => {
+        [-0.75, 0, 0.75].forEach(z => {
+            const bright = r === 0.88 && z === 0;
+            ctx.strokeStyle = bright ? 'rgba(38,78,128,0.85)' : 'rgba(20,45,78,0.5)';
+            ctx.lineWidth   = bright ? 0.9 : 0.5;
+            ctx.beginPath();
+            for (let i = 0; i <= N; i++) {
+                const th = i / N * 2 * Math.PI;
+                const p  = proj3(r * Math.cos(th), z, r * Math.sin(th), g);
+                i === 0 ? ctx.moveTo(p.px, p.py) : ctx.lineTo(p.px, p.py);
+            }
+            ctx.stroke();
+        });
+    });
+    // Vertical lines
+    ctx.strokeStyle = 'rgba(22,50,85,0.6)'; ctx.lineWidth = 0.5;
+    for (let i = 0; i < 8; i++) {
+        const th = i / 8 * 2 * Math.PI;
+        const x3 = 0.88 * Math.cos(th), z3 = 0.88 * Math.sin(th);
+        const p1 = proj3(x3, -0.75, z3, g);
+        const p2 = proj3(x3,  0.75, z3, g);
+        gLine(ctx, p1.px, p1.py, p2.px, p2.py);
+    }
+    draw3DAxes(ctx, g);
+}
+
+// — Spherical —
+function gridSpherical(ctx, g) {
+    const N = 60, r = 0.88;
+    // Latitude rings (fixed φ)
+    for (let pi = 1; pi <= 5; pi++) {
+        const phi = pi / 6 * Math.PI;
+        const eq  = pi === 3;
+        ctx.strokeStyle = eq ? 'rgba(38,78,128,0.85)' : 'rgba(20,45,78,0.5)';
+        ctx.lineWidth   = eq ? 0.9 : 0.5;
+        ctx.beginPath();
+        for (let ti = 0; ti <= N; ti++) {
+            const th = ti / N * 2 * Math.PI;
+            const p  = proj3(r * Math.sin(phi) * Math.cos(th),
+                              r * Math.cos(phi),
+                              r * Math.sin(phi) * Math.sin(th), g);
+            ti === 0 ? ctx.moveTo(p.px, p.py) : ctx.lineTo(p.px, p.py);
+        }
+        ctx.stroke();
+    }
+    // Longitude arcs (fixed θ)
+    for (let ti = 0; ti < 8; ti++) {
+        const th = ti / 8 * 2 * Math.PI;
+        ctx.strokeStyle = ti % 2 === 0 ? 'rgba(28,62,105,0.7)' : 'rgba(18,42,75,0.45)';
+        ctx.lineWidth   = ti % 2 === 0 ? 0.7 : 0.45;
+        ctx.beginPath();
+        for (let pi = 0; pi <= N; pi++) {
+            const phi = pi / N * Math.PI;
+            const p   = proj3(r * Math.sin(phi) * Math.cos(th),
+                               r * Math.cos(phi),
+                               r * Math.sin(phi) * Math.sin(th), g);
+            pi === 0 ? ctx.moveTo(p.px, p.py) : ctx.lineTo(p.px, p.py);
+        }
+        ctx.stroke();
+    }
+    draw3DAxes(ctx, g);
+}
+
+// ─── Trail ───────────────────────────────────────────────────────────────────
+
+function sampleTrail(now, g) {
+    const t = performance.now();
+    if (t - st.lastSample < SAMPLE_MS) return;
+    st.lastSample = t;
+    const c = toCoords(now, g);
+    if (st.sys.is3D) {
+        st.trail.push({ x3: c.x3, y3: c.y3, z3: c.z3 });
+    } else {
+        st.trail.push({ px: c.px, py: c.py });
+    }
+    if (st.trail.length > TRAIL_MAX) st.trail.shift();
+}
+
+function drawTrail(ctx, g) {
+    const n = st.trail.length;
+    if (n < 2) return;
+    const colors = getThemeColors();
+
+    if (st.sys.is3D) {
+        // Re-project and depth-sort
+        const pts = st.trail.map((p, i) => ({
+            ...proj3(p.x3, p.y3, p.z3, g),
+            age: i / n,
+        })).sort((a, b) => a.depth - b.depth);
+
+        pts.forEach(({ px, py, age }) => {
+            const alpha = age * age * 0.8;
+            ctx.fillStyle = colors.trail.replace('0.8', alpha.toFixed(3));
+            ctx.beginPath();
+            ctx.arc(px, py, 1.5 + age * 2, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    } else {
+        // Fading polyline
+        for (let i = 1; i < n; i++) {
+            const age = i / n;
+            ctx.strokeStyle = colors.trail.replace('0.8', (age * age * 0.8).toFixed(3));
+            ctx.lineWidth   = 0.7 + age * 2.5;
+            ctx.beginPath();
+            ctx.moveTo(st.trail[i - 1].px, st.trail[i - 1].py);
+            ctx.lineTo(st.trail[i].px,     st.trail[i].py);
+            ctx.stroke();
+        }
+    }
+}
+
+// ─── Current Point ────────────────────────────────────────────────────────────
+
+function drawPoint(ctx, px, py) {
+    const colors = getThemeColors();
+    const g = ctx.createRadialGradient(px, py, 0, px, py, 18);
+    g.addColorStop(0,    colors.trail.replace('0.8', '0.85'));
+    g.addColorStop(0.25, colors.trail.replace('0.8', '0.3'));
+    g.addColorStop(1,    colors.trail.replace('0.8', '0'));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(px, py, 18, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = colors.bright;
+    ctx.beginPath(); ctx.arc(px, py, 4.5, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = colors.surface;
+    ctx.beginPath(); ctx.arc(px - 1.3, py - 1.3, 1.5, 0, 2 * Math.PI); ctx.fill();
+}
+
+// ─── UI ──────────────────────────────────────────────────────────────────────
+
+function getThemeColors() {
+    const isLight = document.body.classList.contains('light-mode');
+    return {
+        surface: isLight ? '#ffffff' : '#0d1220',
+        text:    isLight ? '#64748b' : '#6a90b0',
+        bright:  isLight ? '#0f172a' : '#b0cce0',
+        dim:     isLight ? 'rgba(148,163,184,0.5)' : 'rgba(42,64,96,0.6)',
+        active:  isLight ? '#3b82f6' : '#4080b0',
+        trail:   isLight ? 'rgba(59,130,246,0.7)' : 'rgba(64,160,220,0.8)'
+    };
+}
+
+function buildTabs() {
+    const el = document.getElementById('tabs');
+    el.innerHTML = '';
+    SYSTEMS.forEach(sys => {
+        const b = document.createElement('button');
+        b.className   = 'tab' + (sys.key === st.sys.key ? ' active' : '');
+        b.textContent = sys.name;
+        b.onclick     = () => activate(sys.key);
+        el.appendChild(b);
+    });
+
+    // Theme toggle
+    const toggle = document.createElement('button');
+    toggle.className = 'theme-toggle';
+    toggle.id = 'theme-toggle';
+    toggle.innerHTML = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
+    toggle.title = 'Toggle Light/Dark Mode';
+    toggle.onclick = () => {
+        document.body.classList.toggle('light-mode');
+        localStorage.setItem('coordinate-clock-theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        toggle.innerHTML = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
+        st.trail = []; // Clear trail for color consistency
+    };
+    el.appendChild(toggle);
+}
+
+function buildAxisRow() {
+    const el = document.getElementById('axis-row');
+    el.innerHTML = '';
+    st.sys.axes.forEach((axName, i) => {
+        const grp = document.createElement('div');
+        grp.className = 'axis-group';
+
+        const lbl = document.createElement('span');
+        lbl.className   = 'axis-name';
+        lbl.textContent = axName + ' =';
+
+        const sel = document.createElement('select');
+        sel.className = 'axis-sel';
+        COMPS.forEach(c => {
+            const o = document.createElement('option');
+            o.value       = c.key;
+            o.textContent = c.label;
+            if (c.key === st.axes[i]) o.selected = true;
+            sel.appendChild(o);
+        });
+        sel.onchange = () => { st.axes[i] = sel.value; st.trail = []; };
+
+        grp.appendChild(lbl);
+        grp.appendChild(sel);
+        el.appendChild(grp);
+    });
+}
+
+function buildCompBars() {
+    const el = document.getElementById('comp-grid');
+    el.innerHTML = '';
+    COMPS.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'comp-item';
+        item.innerHTML =
+            `<div class="comp-hdr">
+                <span class="comp-key" style="color:${c.color}">${c.key}</span>
+                <span class="comp-val" id="cv-${c.key}">0.000</span>
+             </div>
+             <div class="bar-track">
+                <div class="bar-fill" id="cb-${c.key}" style="background:${c.color}"></div>
+             </div>`;
+        el.appendChild(item);
+    });
+}
+
+function activate(key) {
+    st.sys   = SYS_MAP[key];
+    st.axes  = [...st.sys.defaults];
+    st.trail = [];
+    buildTabs();
+    buildAxisRow();
+    document.getElementById('hint').classList.toggle('show', st.sys.is3D);
+    document.getElementById('cvs').classList.toggle('drag3d', st.sys.is3D);
+}
+
+function updateUI(now) {
+    const d = now._d;
+    const p = n => String(n).padStart(2, '0');
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('time-txt').textContent =
+        `${d.getFullYear()} ${M[d.getMonth()]} ${p(d.getDate())}  ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+
+    COMPS.forEach(c => {
+        const v = now[c.key];
+        document.getElementById(`cv-${c.key}`).textContent  = v.toFixed(3);
+        document.getElementById(`cb-${c.key}`).style.width  = (v * 100).toFixed(1) + '%';
+    });
+}
+
+// ─── Canvas / Interaction ────────────────────────────────────────────────────
+
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+
+function resizeCanvas() {
+    const sz = Math.round(cvs.parentElement.offsetWidth);
+    cvs.width = cvs.height = st.size = sz;
+    st.trail = [];
+}
+window.addEventListener('resize', resizeCanvas);
+
+cvs.addEventListener('mousedown', e => {
+    if (!st.sys.is3D) return;
+    st.drag = { x0: e.clientX, y0: e.clientY, rX: st.rotX, rY: st.rotY };
+});
+window.addEventListener('mousemove', e => {
+    if (!st.drag) return;
+    st.rotY = st.drag.rY + (e.clientX - st.drag.x0) * 0.012;
+    st.rotX = st.drag.rX + (e.clientY - st.drag.y0) * 0.012;
+});
+window.addEventListener('mouseup', () => { st.drag = null; });
+
+cvs.addEventListener('touchstart', e => {
+    if (!st.sys.is3D) return;
+    st.drag = { x0: e.touches[0].clientX, y0: e.touches[0].clientY,
+                rX: st.rotX, rY: st.rotY };
+}, { passive: true });
+cvs.addEventListener('touchmove', e => {
+    if (!st.drag) return;
+    e.preventDefault();
+    st.rotY = st.drag.rY + (e.touches[0].clientX - st.drag.x0) * 0.012;
+    st.rotX = st.drag.rX + (e.touches[0].clientY - st.drag.y0) * 0.012;
+}, { passive: false });
+cvs.addEventListener('touchend', () => { st.drag = null; });
+
+// ─── Render Loop ─────────────────────────────────────────────────────────────
+
+function render() {
+    requestAnimationFrame(render);
+
+    const now = getNow();
+    const g   = geo();
+    const colors = getThemeColors();
+
+    sampleTrail(now, g);
+
+    // Background
+    ctx.fillStyle = colors.surface;
+    ctx.fillRect(0, 0, st.size, st.size);
+
+    // Grid
+    drawGrid(ctx, g);
+
+    // Trail
+    drawTrail(ctx, g);
+
+    // Current point
+    const { px, py } = toCoords(now, g);
+    drawPoint(ctx, px, py);
+
+    // Bottom-left overlay: axis → component + value
+    ctx.fillStyle = colors.dim;
+    ctx.font      = '10px JetBrains Mono, monospace';
+    ctx.textAlign = 'left';
+    const lines = st.axes.map((k, i) =>
+        `${st.sys.axes[i]} = ${k}   ${now[k].toFixed(3)}`
+    );
+    lines.forEach((ln, i) => {
+        ctx.fillText(ln, 8, st.size - 8 - (lines.length - 1 - i) * 13);
+    });
+
+    updateUI(now);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+if (localStorage.getItem('coordinate-clock-theme') === 'light') {
+    document.body.classList.add('light-mode');
+}
+buildTabs();
+buildAxisRow();
+buildCompBars();
+resizeCanvas();
+render();
+</script>
+</body>
+</html>
