@@ -4,189 +4,83 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a collection of creative, self-contained web clock implementations. Each clock is a single HTML file with embedded CSS and JavaScript - no build process, dependencies, or external libraries required. Clocks can be opened directly in a browser.
+This is a collection of creative, self-contained web clock implementations. Each clock is a single HTML file with embedded CSS and JavaScript — no build process, no npm dependencies. External libraries (Three.js, Matter.js, SunCalc, etc.) are loaded from a CDN only when a specific clock needs them. Clocks open directly in a browser.
 
-## Architecture
+## Repository Structure
 
-### Self-Contained Design
-Each clock (`*.html`) is completely standalone:
-- All styles in `<style>` tags
-- All JavaScript in `<script>` tags
-- No build process required
-- External libraries loaded from CDN when needed (e.g., Three.js for 3D graphics)
-- Responsive design using CSS clamp() for flexible sizing
-- Dark mode support where appropriate (prefers-color-scheme media query)
+```
+/
+├── index.html                 # Landing page: tabbed/filterable gallery of all clocks
+├── clocks/
+│   ├── art/                   # Color/visual concept clocks + the literary clock series
+│   ├── nature/                # Sun, moon, circadian, sundial clocks
+│   ├── retro/                 # Binary, flip, ASCII, arcade, vintage-style clocks
+│   ├── simulation/            # Physics/particle/agent simulation clocks
+│   └── utility/                # Countdown timers, dial/desktop clocks, pomodoro
+├── LITERARY_CLOCK_IDEAS.md    # Backlog + tracker of literary/thematic clock concepts
+├── GEMINI.md                  # Equivalent guidance file for the Gemini CLI (keep in sync with this file)
+└── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
+```
 
-### Clock Implementations
-
-**ng26_clock.html** - NeuroGateways '26 Conference Clock
-- Traditional analog clock with Tufte-inspired design
-- Countdown timer to conference date (April 9-10, 2026)
-- Web Audio API for minute tick sounds
-- Trailing second hand with animated dots
-- Auto dark mode support
-
-**circadian_clock.html** - Natural Time Period Clock
-- 20 defined circadian periods throughout the day (e.g., "Golden Hour", "First Light", "Tea Time")
-- Dynamic background gradients that change based on time of day
-- Animated celestial bodies (sun and moon) that arc across the sky
-- SVG wheel visualization showing all periods
-- Contextual suggestions for each time period
-
-**binary_clock.html** - Binary LED Clock
-- Displays time in binary format (6 columns: hour tens/ones, minute tens/ones, second tens/ones)
-- LED-style visual with glow effects
-- 4-bit representation (8-4-2-1 pattern)
-- Pulsing separator dots
-
-**flip_clock.html** - Animated Flip Card Clock
-- Mechanical flip clock simulation
-- CSS 3D transforms for flip animations
-- Split-flap display effect with top/bottom card halves
-- Smooth transitions between digit changes
-
-**particle_clock.html** - Particle Physics Clock
-- Canvas-based particle system displaying time
-- Spring physics for smooth particle movement
-- Digit patterns defined as 7x7 character grids
-- Particles dynamically assigned to nearest target positions
-- Color transitions based on particle velocity
-
-**polar_clock.html** - Circular Progress Clock
-- Concentric circles representing hours, minutes, and seconds
-- Smooth arc animations showing time progress
-- Percentage-based display for each unit
-- Minimal, modern aesthetic
-
-**word_clock.html** - Natural Language Clock
-- Displays time in written English (e.g., "ten minutes past three")
-- Smooth word transitions with fade effects
-- Generates natural language strings from time values
-- Conversational time format
-
-**ng26_countdown.html** - Minimal Countdown Timer
-- Focused countdown to specific event date
-- Days, hours, minutes, seconds display
-- Clean typography and spacing
-
-**spectrum_clock.html** - Color Spectrum Clock
-- Time represented as colors mapped to hue spectrum (0-360°)
-- Three vertical bars showing hours, minutes, and seconds with color-coded fills
-- Animated spectrum strip with position indicator showing day progress
-- Dynamic background gradient that shifts throughout the day
-- Displays HSL, RGB, and Hex color values of current time color
-- Smooth color transitions using cubic-bezier easing
-
-**hsv_clock.html** - HSV Color Model Clock
-- Direct HSV mapping: Hours → Hue (0-360°), Seconds → Saturation (0-100%), Minutes → Value (0-100%)
-- Large circular color display showing the current HSV color
-- Three control panels with progress bars for H, S, and V components
-- Progress bars use gradients showing the current component's range
-- Displays color in HSV, RGB, and Hex formats
-- Dynamic text color adjustment for readability based on background luminance
-- Creates unique color every second (86,400 unique colors per day)
-
-**sundial_clock.html** - 3D Sundial Clock
-- Full 3D sundial built with Three.js
-- Real-time sun positioning based on actual time of day
-- Dynamic shadow casting from gnomon onto sundial face
-- Hour markers (6 AM - 6 PM) with Roman numerals
-- Interactive camera controls (drag to rotate, scroll to zoom)
-- Physically accurate sun arc across the sky
-- Responsive touch controls for mobile devices
+Each clock file lives in exactly one category directory, e.g. `clocks/retro/binary_clock.html`, `clocks/art/dune_clock.html`. There is no build output — the repo root and `clocks/` are served as-is.
 
 ## Development Workflow
 
-### Viewing Clocks
-Open `index.html` in a browser to see a landing page with links to all clocks, or open any individual clock file directly.
+### Viewing clocks
+Open `index.html` directly in a browser for the gallery, or open any clock file under `clocks/<category>/` directly.
 
-### Testing Changes
-Simply open the HTML file in a browser:
 ```bash
-# On Linux
-xdg-open binary_clock.html
+xdg-open clocks/retro/binary_clock.html   # Linux
+open clocks/retro/binary_clock.html       # macOS
 
-# On macOS
-open binary_clock.html
-
-# Or use Python's built-in server if needed
+# Or serve locally (needed for clocks that fetch/import cross-origin modules):
 python3 -m http.server 8000
-# Then navigate to http://localhost:8000/
+# then visit http://localhost:8000/
 ```
 
-### Common Patterns
+There is no build, lint, or test command in this repo — verify changes by loading the HTML file in a browser and checking the console for errors.
 
-**Time Updates**
-All clocks use `setInterval()` or `requestAnimationFrame()` for real-time updates:
-- Simple clocks: `setInterval(updateClock, 1000)` for 1-second updates
-- Smooth animations: `requestAnimationFrame(animate)` for 60fps
+### Deployment
+The site deploys as static assets via Cloudflare Workers (see `wrangler.jsonc`: `assets.directory` is `.`, `nodejs_compat` flag enabled). `wrangler deploy` serves the repo root as-is; there's no build step to run first.
 
-**Responsive Sizing**
-Consistent use of CSS `clamp()` for responsive typography and sizing:
+## Adding a New Clock
+
+1. Pick the right category directory under `clocks/` (`art`, `nature`, `retro`, `simulation`, `utility`); only create a new one if the clock genuinely doesn't fit an existing category.
+2. Name the file `descriptive_clock.html` (snake_case, ends in `_clock.html`).
+3. Keep the clock fully self-contained: styles in `<style>`, logic in `<script>`, no build step. Only pull in a CDN library (Three.js, Matter.js, SunCalc, etc.) when the concept genuinely needs it.
+4. Add an entry to `index.html`'s `.clock-grid`: an `<a>` with `href="clocks/<category>/<file>.html"`, `class="clock-card"`, and `data-category="<category>"` matching one of the nav tab filters, containing `.clock-name`, `.clock-description`, and `.clock-tag` children. Place it under the matching `<!-- Category -->` comment block so the file stays organized.
+5. If it's part of the literary series, add/update its entry in `LITERARY_CLOCK_IDEAS.md` (move it into "Currently Implemented" with a ✅ and one-line description).
+6. Implement responsive sizing with CSS `clamp()`. Add dark mode via `prefers-color-scheme` where it fits — not all clocks use it; many literary/art clocks are intentionally locked to one themed palette.
+7. If the change affects overall project structure or conventions, mirror it into `GEMINI.md`, which documents the same architecture for the Gemini CLI.
+
+## Common Implementation Patterns
+
+**Time updates**
+- Simple digit/text clocks: `setInterval(updateClock, 1000)`.
+- Smooth/physics/canvas animations: `requestAnimationFrame(animate)` loop.
+
+**Responsive sizing**
 ```css
 font-size: clamp(min, preferred, max);
-/* Example: clamp(1rem, 5vw, 3rem) */
 ```
 
-**Dark Mode**
-Implemented via CSS custom properties and media queries:
+**Dark mode** (where used)
 ```javascript
 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
     document.documentElement.classList.add('dark');
 }
 ```
 
-**Date Formatting**
-Most clocks include consistent date display logic:
+**Date formatting** — most clocks spell out day/month names locally rather than relying on `Intl`:
 ```javascript
 const days = ['Sunday', 'Monday', ...];
 const months = ['January', 'February', ...];
 ```
 
-### Adding New Clocks
+**`index.html` gallery** — a single static file with a `.tabs` nav (`data-filter` per button) and a `.clock-grid` of `.clock-card` links (`data-category` per card). An inline `<script>` toggles a `.hidden` class client-side by matching the active tab's `data-filter` against each card's `data-category`. When adding a card, match the existing markup exactly so filtering keeps working.
 
-When creating new clock implementations:
-1. Keep everything self-contained in a single HTML file
-2. Use CSS custom properties (variables) for theming
-3. Implement responsive design with clamp() or media queries
-4. Include both time display and current date
-5. Consider adding to index.html or creating a separate launcher page if needed
-6. Follow the naming pattern: descriptive_clock.html
+**CDN libraries in use** — Three.js + OrbitControls (3D sundial), Matter.js (physics/gravity clocks), SunCalc (sun/moon position clocks). Prefer these over adding a new dependency unless a clock's concept requires something else.
 
-### Animation Performance
+## Literary Clock Series
 
-For canvas-based clocks (particle_clock.html):
-- Clear/redraw each frame with semi-transparent fill for trail effects
-- Use `requestAnimationFrame` for smooth 60fps animation
-- Implement object pooling for particles to avoid garbage collection
-
-For CSS-based animations:
-- Prefer CSS transforms over position changes
-- Use `will-change` sparingly for performance hints
-- Leverage GPU acceleration with `transform: translate3d()`
-
-## File Structure
-
-```
-/
-├── index.html              # Landing page listing all clocks
-├── ng26_clock.html         # NeuroGateways conference clock
-├── circadian_clock.html    # Natural time period clock
-├── binary_clock.html       # Binary LED display
-├── flip_clock.html         # Mechanical flip animation
-├── particle_clock.html     # Canvas particle system
-├── polar_clock.html        # Circular progress rings
-├── word_clock.html         # Natural language time
-├── spectrum_clock.html     # Color spectrum visualization
-├── hsv_clock.html          # HSV color model clock
-├── sundial_clock.html      # 3D sundial with Three.js
-└── ng26_countdown.html     # Event countdown timer
-```
-
-## Design Philosophy
-
-- **No build step**: Everything runs directly in the browser
-- **No dependencies**: Pure HTML/CSS/JavaScript
-- **Self-contained**: Each file is complete and independent
-- **Responsive**: Works on mobile and desktop
-- **Creative exploration**: Each clock offers a unique way to display time
+`clocks/art/` contains a large, ongoing series of literature-themed clocks (Kafka, Dante, Ulysses, Infinite Jest, Dune, Hamlet, etc.), each reinterpreting a source work's structure or themes as a timekeeping device. `LITERARY_CLOCK_IDEAS.md` is the running backlog/tracker for this series — check it before starting a new literary clock to avoid duplicating a concept, and update it once a listed idea is implemented.
