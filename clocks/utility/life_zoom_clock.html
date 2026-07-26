@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoomable Life Clock (Memento Mori)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #111111;
+            --text: #eeeeee;
+            --text-muted: #888888;
+            --box-filled: #eeeeee;
+            --box-empty: #333333;
+            --box-current: #ff3333;
+            --years: 90;
+            --weeks-per-year: 52;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .setup-container {
+            margin-bottom: 40px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 15px 30px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        input[type="date"] {
+            background: #222;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            color-scheme: dark;
+        }
+
+        button {
+            background: #eee;
+            color: #111;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* The Grid */
+        .grid-viewport {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            aspect-ratio: 52 / 90;
+            margin-bottom: 12px;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid #222;
+            background: rgba(255,255,255,0.02);
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .grid-viewport.dragging {
+            cursor: grabbing;
+        }
+
+        .grid-container {
+            display: grid;
+            /* 52 columns for 52 weeks in a year */
+            grid-template-columns: repeat(var(--weeks-per-year), 1fr);
+            gap: clamp(1px, 0.3vw, 3px);
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        .week-box {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border-radius: 1px;
+            background-color: var(--box-empty);
+            transition: background-color 0.5s ease;
+        }
+
+        .week-filled {
+            background-color: var(--box-filled);
+        }
+
+        .week-current {
+            background-color: var(--box-current);
+            animation: pulse 1.5s infinite alternate;
+            box-shadow: 0 0 10px var(--box-current);
+            z-index: 10;
+        }
+
+        /* Day-level detail, shown once zoomed in far enough on a week */
+        .grid-container.show-days .week-box {
+            background-image: repeating-linear-gradient(
+                90deg,
+                rgba(0, 0, 0, 0.45) 0,
+                rgba(0, 0, 0, 0.45) 1px,
+                transparent 1px,
+                transparent calc(100% / 7)
+            );
+        }
+
+        .grid-container.show-days .week-current::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: calc(var(--today-day, 0) / 7 * 100%);
+            width: calc(100% / 7);
+            background: rgba(255, 255, 255, 0.55);
+            mix-blend-mode: overlay;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.3); opacity: 1; }
+        }
+
+        /* Zoom controls */
+        .zoom-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .zoom-controls button {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .zoom-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+            text-align: center;
+        }
+
+        .zoom-level {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            min-width: 48px;
+            text-align: center;
+        }
+
+        /* Tooltip */
+        .week-tooltip {
+            position: fixed;
+            pointer-events: none;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #eee;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            z-index: 100;
+        }
+
+        .week-tooltip.visible {
+            opacity: 1;
+        }
+
+        .week-tooltip .tt-label {
+            color: var(--text-muted);
+            margin-right: 6px;
+        }
+
+        /* Stats */
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(255,255,255,0.03);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #222;
+        }
+
+        .stat-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+        }
+
+        /* Continuous Timer */
+        .live-timer {
+            margin-top: 40px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .timer-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 300;
+            letter-spacing: -2px;
+            color: #ddd;
+        }
+
+        .timer-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .fraction-ms {
+            font-size: 0.5em;
+            opacity: 0.6;
+        }
+
+        /* Hidden states */
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Memento Mori</h1>
+        <div class="subtitle">A 90-Year Life Visualized — zoom in on any week</div>
+    </div>
+
+    <div class="setup-container" id="setupContainer">
+        <label for="birthdate" class="stat-label">Enter Date of Birth:</label>
+        <input type="date" id="birthdate">
+        <button id="saveBtn">Visualize</button>
+    </div>
+
+    <div class="zoom-controls hidden" id="zoomControls">
+        <button id="zoomOutBtn" title="Zoom out">&minus;</button>
+        <div class="zoom-level" id="zoomLevel">100%</div>
+        <button id="zoomInBtn" title="Zoom in">+</button>
+        <button id="zoomResetBtn" title="Reset view">Reset</button>
+    </div>
+
+    <!-- The 4680 Weeks Grid -->
+    <div class="grid-viewport hidden" id="gridViewport">
+        <div class="grid-container" id="gridContainer">
+            <!-- Boxes generated by JS -->
+        </div>
+    </div>
+    <div class="zoom-hint hidden" id="zoomHint">Scroll or pinch to zoom &middot; drag to pan &middot; zoom in past 400% to see individual days</div>
+
+    <!-- Detailed Stats -->
+    <div class="stats-container hidden" id="statsContainer">
+        <div class="stat-block">
+            <div class="stat-value" id="valPercent">0%</div>
+            <div class="stat-label">Time Lived</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-value" id="valWeeks">0</div>
+            <div class="stat-label">Weeks Past</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-value" id="valRemaining">0</div>
+            <div class="stat-label">Weeks Remaining</div>
+        </div>
+    </div>
+
+    <!-- Live Timer -->
+    <div class="live-timer hidden" id="liveTimer">
+        <div class="timer-value" id="timerValue">0<span class="fraction-ms">.000</span></div>
+        <div class="timer-label">Total Seconds Alive</div>
+    </div>
+
+    <div class="week-tooltip" id="weekTooltip"></div>
+
+    <script>
+        const setupContainer = document.getElementById('setupContainer');
+        const zoomControls = document.getElementById('zoomControls');
+        const gridViewport = document.getElementById('gridViewport');
+        const gridContainer = document.getElementById('gridContainer');
+        const zoomHint = document.getElementById('zoomHint');
+        const statsContainer = document.getElementById('statsContainer');
+        const liveTimer = document.getElementById('liveTimer');
+        const birthdateInput = document.getElementById('birthdate');
+        const saveBtn = document.getElementById('saveBtn');
+        const weekTooltip = document.getElementById('weekTooltip');
+
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomResetBtn = document.getElementById('zoomResetBtn');
+        const zoomLevelLabel = document.getElementById('zoomLevel');
+
+        const valPercent = document.getElementById('valPercent');
+        const valWeeks = document.getElementById('valWeeks');
+        const valRemaining = document.getElementById('valRemaining');
+        const timerValue = document.getElementById('timerValue');
+
+        const TOTAL_YEARS = 90;
+        const WEEKS_PER_YEAR = 52;
+        const TOTAL_WEEKS = TOTAL_YEARS * WEEKS_PER_YEAR; // 4680
+        const MS_PER_WEEK = 604800000;
+
+        const MIN_SCALE = 1;
+        const MAX_SCALE = 12;
+        const DAY_ZOOM_THRESHOLD = 4; // scale at which a week is large enough to break into days
+        const MS_PER_DAY = 86400000;
+        const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        let dobDate = null;
+        let animationFrameId = null;
+
+        // --- Pan/zoom state ---
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function clampPan() {
+            const viewportRect = gridViewport.getBoundingClientRect();
+            const contentW = viewportRect.width * scale;
+            const contentH = viewportRect.height * scale;
+
+            // Allow the scaled content to be dragged, but never leave empty space
+            // beyond its own bounds inside the viewport.
+            const minX = Math.min(0, viewportRect.width - contentW);
+            const minY = Math.min(0, viewportRect.height - contentH);
+            panX = clamp(panX, minX, 0);
+            panY = clamp(panY, minY, 0);
+        }
+
+        function applyTransform() {
+            clampPan();
+            gridContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            zoomLevelLabel.textContent = `${Math.round(scale * 100)}%`;
+            gridContainer.classList.toggle('show-days', scale >= DAY_ZOOM_THRESHOLD);
+        }
+
+        function zoomAt(clientX, clientY, factor) {
+            const rect = gridViewport.getBoundingClientRect();
+            const offsetX = clientX - rect.left;
+            const offsetY = clientY - rect.top;
+
+            const prevScale = scale;
+            scale = clamp(scale * factor, MIN_SCALE, MAX_SCALE);
+            const ratio = scale / prevScale;
+
+            panX = offsetX - (offsetX - panX) * ratio;
+            panY = offsetY - (offsetY - panY) * ratio;
+
+            applyTransform();
+        }
+
+        function resetZoom() {
+            scale = 1;
+            panX = 0;
+            panY = 0;
+            applyTransform();
+        }
+
+        // --- Wheel zoom (centered on cursor) ---
+        gridViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+            zoomAt(e.clientX, e.clientY, factor);
+        }, { passive: false });
+
+        // --- Mouse drag to pan ---
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+
+        gridViewport.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            gridViewport.classList.add('dragging');
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            panStartX = panX;
+            panStartY = panY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            panX = panStartX + (e.clientX - dragStartX);
+            panY = panStartY + (e.clientY - dragStartY);
+            applyTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            gridViewport.classList.remove('dragging');
+        });
+
+        // --- Touch: one-finger pan, two-finger pinch zoom ---
+        let touchStartDist = null;
+        let touchStartScale = 1;
+        let touchStartMidpoint = { x: 0, y: 0 };
+        let singleTouchStart = null;
+
+        function touchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.hypot(dx, dy);
+        }
+
+        function touchMidpoint(touches) {
+            return {
+                x: (touches[0].clientX + touches[1].clientX) / 2,
+                y: (touches[0].clientY + touches[1].clientY) / 2
+            };
+        }
+
+        gridViewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                touchStartDist = touchDistance(e.touches);
+                touchStartScale = scale;
+                touchStartMidpoint = touchMidpoint(e.touches);
+                singleTouchStart = null;
+            } else if (e.touches.length === 1) {
+                singleTouchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, panX, panY };
+                touchStartDist = null;
+            }
+        }, { passive: true });
+
+        gridViewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && touchStartDist) {
+                e.preventDefault();
+                const newDist = touchDistance(e.touches);
+                const factor = newDist / touchStartDist;
+                scale = clamp(touchStartScale * factor, MIN_SCALE, MAX_SCALE);
+                applyTransform();
+            } else if (e.touches.length === 1 && singleTouchStart) {
+                e.preventDefault();
+                panX = singleTouchStart.panX + (e.touches[0].clientX - singleTouchStart.x);
+                panY = singleTouchStart.panY + (e.touches[0].clientY - singleTouchStart.y);
+                applyTransform();
+            }
+        }, { passive: false });
+
+        gridViewport.addEventListener('touchend', () => {
+            touchStartDist = null;
+            singleTouchStart = null;
+        });
+
+        zoomInBtn.addEventListener('click', () => {
+            const rect = gridViewport.getBoundingClientRect();
+            zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1.4);
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            const rect = gridViewport.getBoundingClientRect();
+            zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1 / 1.4);
+        });
+
+        zoomResetBtn.addEventListener('click', resetZoom);
+
+        // --- Tooltip on hover over a week box ---
+        gridContainer.addEventListener('mousemove', (e) => {
+            const box = e.target.closest('.week-box');
+            if (!box || !dobDate) {
+                weekTooltip.classList.remove('visible');
+                return;
+            }
+
+            const weekIndex = parseInt(box.id.replace('week-', ''), 10);
+            const startDate = new Date(dobDate.getTime() + weekIndex * MS_PER_WEEK);
+            const fmt = (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+            if (scale >= DAY_ZOOM_THRESHOLD) {
+                // Zoomed in far enough on this week: report the specific day under the cursor.
+                const boxRect = box.getBoundingClientRect();
+                const relativeX = clamp((e.clientX - boxRect.left) / boxRect.width, 0, 0.9999);
+                const dayIndex = Math.floor(relativeX * 7);
+                const dayDate = new Date(startDate.getTime() + dayIndex * MS_PER_DAY);
+                const ageDays = weekIndex * 7 + dayIndex;
+
+                weekTooltip.innerHTML = `<span class="tt-label">${DAY_NAMES[dayDate.getDay()]}</span>${fmt(dayDate)}<br><span class="tt-label">Day of life</span>${(ageDays + 1).toLocaleString()}`;
+            } else {
+                const endDate = new Date(startDate.getTime() + 6 * MS_PER_DAY);
+                const ageYears = (weekIndex / WEEKS_PER_YEAR).toFixed(1);
+                weekTooltip.innerHTML = `<span class="tt-label">Week ${weekIndex + 1}</span>${fmt(startDate)} &ndash; ${fmt(endDate)}<br><span class="tt-label">Age</span>~${ageYears} yrs`;
+            }
+
+            weekTooltip.style.left = `${e.clientX + 16}px`;
+            weekTooltip.style.top = `${e.clientY + 16}px`;
+            weekTooltip.classList.add('visible');
+        });
+
+        gridContainer.addEventListener('mouseleave', () => {
+            weekTooltip.classList.remove('visible');
+        });
+
+        // Initialize grid
+        function initGrid() {
+            gridContainer.innerHTML = '';
+            for (let i = 0; i < TOTAL_WEEKS; i++) {
+                const box = document.createElement('div');
+                box.className = 'week-box';
+                box.id = `week-${i}`;
+                gridContainer.appendChild(box);
+            }
+        }
+
+        function calculateLife() {
+            if (!dobDate) return;
+
+            const now = new Date();
+            const msAlive = now.getTime() - dobDate.getTime();
+
+            // If future date, cap at 0
+            if (msAlive < 0) return;
+
+            // Calculate weeks lived
+            const absoluteWeeksLived = Math.floor(msAlive / MS_PER_WEEK);
+
+            // Constrain to our 90 year grid
+            const weeksLived = Math.min(absoluteWeeksLived, TOTAL_WEEKS);
+
+            // Update DOM Grid
+            for (let i = 0; i < TOTAL_WEEKS; i++) {
+                const box = gridContainer.children[i];
+                if (!box) continue;
+
+                if (i < weeksLived) {
+                    if (box.className !== 'week-box week-filled') box.className = 'week-box week-filled';
+                } else if (i === weeksLived) {
+                    if (box.className !== 'week-box week-current') box.className = 'week-box week-current';
+                    const dayOfWeekAlive = Math.floor((msAlive % MS_PER_WEEK) / MS_PER_DAY);
+                    box.style.setProperty('--today-day', dayOfWeekAlive);
+                } else {
+                    if (box.className !== 'week-box') box.className = 'week-box';
+                }
+            }
+
+            // Update stats
+            const weeksRemaining = TOTAL_WEEKS - weeksLived;
+            const percent = ((weeksLived / TOTAL_WEEKS) * 100).toFixed(2);
+
+            valWeeks.textContent = weeksLived.toLocaleString();
+            valRemaining.textContent = Math.max(0, weeksRemaining).toLocaleString();
+            valPercent.textContent = `${percent}%`;
+
+            // Update Live Timer (Total seconds alive)
+            const secondsAlive = Math.floor(msAlive / 1000);
+            const msFraction = (msAlive % 1000).toString().padStart(3, '0');
+            timerValue.innerHTML = `${secondsAlive.toLocaleString()}<span class="fraction-ms">.${msFraction}</span>`;
+
+            animationFrameId = requestAnimationFrame(calculateLife);
+        }
+
+        function startVisualization(dateString) {
+            dobDate = new Date(dateString);
+
+            // Save to local storage
+            localStorage.setItem('memento_dob', dateString);
+
+            // Show UI
+            zoomControls.classList.remove('hidden');
+            gridViewport.classList.remove('hidden');
+            zoomHint.classList.remove('hidden');
+            statsContainer.classList.remove('hidden');
+            liveTimer.classList.remove('hidden');
+
+            // Minimalize setup visually
+            setupContainer.style.opacity = '0.5';
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            calculateLife();
+        }
+
+        // On Load
+        initGrid();
+        zoomControls.classList.remove('hidden');
+        gridViewport.classList.remove('hidden'); // Show empty grid initially for visual impact
+        zoomHint.classList.remove('hidden');
+        applyTransform();
+
+        const savedDob = localStorage.getItem('memento_dob');
+        if (savedDob) {
+            birthdateInput.value = savedDob;
+            startVisualization(savedDob);
+        }
+
+        // Events
+        saveBtn.addEventListener('click', () => {
+            if (birthdateInput.value) {
+                startVisualization(birthdateInput.value);
+            }
+        });
+
+        birthdateInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && birthdateInput.value) {
+                startVisualization(birthdateInput.value);
+            }
+        });
+    </script>
+</body>
+</html>
