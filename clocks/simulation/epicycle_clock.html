@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epicycle Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #08080e;
+            --panel: #0e0e18;
+            --text: #eeeeee;
+            --text-muted: #8888a0;
+            --border: #22222e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+            max-width: 480px;
+            margin: 10px auto 0;
+            line-height: 1.5;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 24px 0 20px;
+        }
+
+        .controls-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-right: 4px;
+        }
+
+        .circle-count-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .circle-count-btn:hover {
+            border-color: #666;
+            color: var(--text);
+        }
+
+        .circle-count-btn.active {
+            background: #fff;
+            color: #111;
+            border-color: #fff;
+            font-weight: 700;
+        }
+
+        .canvas-wrap {
+            width: clamp(280px, 78vmin, 620px);
+            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .digital-time {
+            margin-top: 28px;
+            text-align: center;
+        }
+
+        .timer-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .date-value {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px 18px;
+            max-width: 620px;
+            margin-top: 28px;
+            padding: 18px 24px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .legend-item .legend-name {
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Epicycle Clock</h1>
+        <div class="subtitle">Nested circles, each turning at its own timescale, chained tip-to-center — the outer sweep is the hour, the inner ones spin down to hundredths of a second.</div>
+    </div>
+
+    <div class="controls">
+        <span class="controls-label">Circles</span>
+        <button class="circle-count-btn" data-count="3">3</button>
+        <button class="circle-count-btn" data-count="4">4</button>
+        <button class="circle-count-btn active" data-count="5">5</button>
+        <button class="circle-count-btn" data-count="6">6</button>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="epicycleCanvas"></canvas>
+    </div>
+
+    <div class="digital-time">
+        <div class="timer-value" id="timeValue">00:00:00</div>
+        <div class="date-value" id="dateValue">&mdash;</div>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <script>
+        const canvas = document.getElementById('epicycleCanvas');
+        const ctx = canvas.getContext('2d');
+        const legendEl = document.getElementById('legend');
+        const timeValueEl = document.getElementById('timeValue');
+        const dateValueEl = document.getElementById('dateValue');
+        const countButtons = document.querySelectorAll('.circle-count-btn');
+
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        // Each circle's arm rotates once per `period` ms. Radii decay geometrically,
+        // echoing how amplitude falls off across harmonics in a Fourier series —
+        // except here the "harmonics" are literal units of time.
+        const CIRCLE_DEFS = [
+            { label: 'Hour',        detail: '12h sweep',  period: 12 * 3600 * 1000, radiusFrac: 0.34,  color: '#ff5f6d' },
+            { label: 'Minute',      detail: '60min sweep', period: 60 * 60 * 1000,   radiusFrac: 0.220, color: '#ffc93c' },
+            { label: 'Second',      detail: '60s sweep',   period: 60 * 1000,        radiusFrac: 0.140, color: '#4ce0b3' },
+            { label: 'Pulse',       detail: '1s sweep',    period: 1000,             radiusFrac: 0.085, color: '#4cc9f0' },
+            { label: 'Decisecond',  detail: '0.1s sweep',  period: 100,              radiusFrac: 0.050, color: '#c77dff' },
+            { label: 'Centisecond', detail: '0.01s sweep', period: 10,               radiusFrac: 0.028, color: '#ff8fab' }
+        ];
+
+        const TRAIL_FADE = 0.09; // lower = longer-lingering trail
+        let circleCount = 5;
+
+        function loadSavedCount() {
+            const saved = parseInt(localStorage.getItem('epicycle_count'), 10);
+            if (saved >= 3 && saved <= 6) circleCount = saved;
+        }
+
+        function setCircleCount(n) {
+            circleCount = n;
+            localStorage.setItem('epicycle_count', String(n));
+            countButtons.forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.count, 10) === n);
+            });
+            buildLegend();
+            // Clear the canvas so the old trail doesn't linger under the new chain.
+            ctx.fillStyle = '#08080e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function buildLegend() {
+            legendEl.innerHTML = '';
+            for (let i = 0; i < circleCount; i++) {
+                const def = CIRCLE_DEFS[i];
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `<span class="legend-swatch" style="background:${def.color}"></span><span class="legend-name">${def.label}</span> ${def.detail}`;
+                legendEl.appendChild(item);
+            }
+        }
+
+        function resize() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            ctx.fillStyle = '#08080e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+
+        function computeChain(nowMs) {
+            let x = 0, y = 0;
+            const points = [{ x: 0, y: 0, def: null }];
+            const baseRadius = Math.min(canvas.width, canvas.height) / 2 * 0.94;
+
+            for (let i = 0; i < circleCount; i++) {
+                const def = CIRCLE_DEFS[i];
+                const phase = (nowMs % def.period) / def.period;
+                const angle = phase * Math.PI * 2 - Math.PI / 2;
+                const r = def.radiusFrac * baseRadius;
+                x += r * Math.cos(angle);
+                y += r * Math.sin(angle);
+                points.push({ x, y, def, r });
+            }
+            return points;
+        }
+
+        function draw() {
+            ctx.save();
+            ctx.fillStyle = `rgba(8, 8, 14, ${TRAIL_FADE})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+
+            const nowMs = Date.now();
+            const points = computeChain(nowMs);
+
+            for (let i = 1; i < points.length; i++) {
+                const prev = points[i - 1];
+                const cur = points[i];
+                const def = cur.def;
+
+                // Faint outline of the circle this arm sweeps around.
+                ctx.beginPath();
+                ctx.arc(prev.x, prev.y, cur.r, 0, Math.PI * 2);
+                ctx.strokeStyle = def.color + '33';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // The glowing arm itself.
+                ctx.beginPath();
+                ctx.moveTo(prev.x, prev.y);
+                ctx.lineTo(cur.x, cur.y);
+                ctx.strokeStyle = def.color;
+                ctx.lineWidth = 2;
+                ctx.shadowColor = def.color;
+                ctx.shadowBlur = 8;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Joint marker (bigger + brighter at the final tip).
+                const isTip = i === points.length - 1;
+                ctx.beginPath();
+                ctx.arc(cur.x, cur.y, isTip ? 4.5 : 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = isTip ? '#ffffff' : def.color;
+                if (isTip) {
+                    ctx.shadowColor = '#ffffff';
+                    ctx.shadowBlur = 12;
+                }
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // Origin marker.
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            ctx.restore();
+
+            updateDigitalReadout();
+            requestAnimationFrame(draw);
+        }
+
+        function updateDigitalReadout() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            timeValueEl.textContent = `${h}:${m}:${s}`;
+            dateValueEl.textContent = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+        }
+
+        countButtons.forEach(btn => {
+            btn.addEventListener('click', () => setCircleCount(parseInt(btn.dataset.count, 10)));
+        });
+
+        loadSavedCount();
+        countButtons.forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.count, 10) === circleCount);
+        });
+        buildLegend();
+        resize();
+        draw();
+    </script>
+</body>
+</html>
