@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dispossessed Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --stone: #1c1a16;
+            --ana-bg: #3a352c;
+            --ana-text: #e8e2d0;
+            --ana-accent: #c08552;
+            --urr-bg: #0f2318;
+            --urr-text: #ecead9;
+            --urr-accent: #d4af37;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--stone);
+            color: var(--ana-text);
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 60px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            color: #a89f8c;
+            margin-top: 8px;
+        }
+
+        .wall-frame {
+            display: flex;
+            width: 100%;
+            max-width: 900px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel {
+            flex: 1;
+            padding: clamp(20px, 4vw, 40px) clamp(16px, 3vw, 30px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .anarres {
+            background: radial-gradient(ellipse at 30% 20%, #453f34, var(--ana-bg));
+            color: var(--ana-text);
+        }
+
+        .urras {
+            background: radial-gradient(ellipse at 70% 20%, #163a27, var(--urr-bg));
+            color: var(--urr-text);
+        }
+
+        .panel-label {
+            font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        .anarres .panel-label { color: var(--ana-accent); }
+        .urras .panel-label { color: var(--urr-accent); font-family: 'Playfair Display', serif; }
+
+        .panel-tag {
+            font-size: 0.68rem;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            text-transform: uppercase;
+        }
+
+        .readout {
+            font-size: clamp(1.3rem, 4vw, 2rem);
+            margin-top: 10px;
+        }
+
+        .urras .readout {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+        }
+
+        .detail {
+            font-size: 0.78rem;
+            opacity: 0.75;
+            min-height: 1.2em;
+        }
+
+        .quote {
+            margin-top: 18px;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            font-style: italic;
+            opacity: 0.7;
+            max-width: 26ch;
+        }
+
+        .urras .quote { font-family: 'Playfair Display', serif; }
+
+        .wall {
+            position: relative;
+            width: clamp(10px, 1.6vw, 18px);
+            background: repeating-linear-gradient(
+                180deg,
+                #2a271f 0,
+                #2a271f 6px,
+                #322e24 6px,
+                #322e24 12px
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ansible-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #fff8e0;
+            box-shadow: 0 0 6px 2px rgba(255, 248, 224, 0.6);
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.15; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.4); }
+        }
+
+        .wall-caption {
+            position: absolute;
+            bottom: -26px;
+            left: 50%;
+            transform: translateX(-50%) rotate(90deg);
+            transform-origin: center;
+            font-size: 0.6rem;
+            letter-spacing: 3px;
+            color: #6a6455;
+            white-space: nowrap;
+        }
+
+        .true-time {
+            margin-top: 46px;
+            text-align: center;
+        }
+
+        .true-time-value {
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            letter-spacing: 2px;
+        }
+
+        .true-time-date {
+            font-size: 0.75rem;
+            color: #a89f8c;
+            margin-top: 6px;
+        }
+
+        .theory-note {
+            margin-top: 20px;
+            max-width: 460px;
+            text-align: center;
+            font-size: 0.72rem;
+            line-height: 1.6;
+            color: #8a8272;
+        }
+
+        .theory-note strong {
+            color: #c8c0aa;
+        }
+
+        .omelas-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.2s ease;
+            z-index: 50;
+        }
+
+        .omelas-overlay.visible {
+            opacity: 1;
+        }
+
+        .omelas-text {
+            max-width: 520px;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            color: #ece6d2;
+            line-height: 1.7;
+        }
+
+        .omelas-attrib {
+            display: block;
+            margin-top: 18px;
+            font-family: 'Space Mono', monospace;
+            font-style: normal;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            color: #999;
+        }
+
+        @media (max-width: 640px) {
+            .wall-frame {
+                flex-direction: column;
+            }
+
+            .wall {
+                width: 100%;
+                height: 14px;
+            }
+
+            .wall-caption {
+                transform: translateX(-50%) rotate(0deg);
+                bottom: auto;
+                top: 100%;
+                margin-top: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The Dispossessed</h1>
+        <div class="subtitle">An Ambiguous Chronometer &mdash; after Ursula K. Le Guin</div>
+    </header>
+
+    <div class="wall-frame">
+        <div class="panel anarres">
+            <div class="panel-label">Anarres</div>
+            <div class="panel-tag">Odonian Settlement &middot; Pravic Reckoning</div>
+            <div class="readout" id="anaReadout">Decad &mdash; &middot; Day &mdash;</div>
+            <div class="detail" id="anaDetail">&mdash;</div>
+            <div class="quote">&ldquo;The revolution is in the individual spirit, or it is nowhere.&rdquo;</div>
+        </div>
+
+        <div class="wall">
+            <div class="ansible-pulse"></div>
+            <div class="wall-caption">THE WALL &middot; ANSIBLE</div>
+        </div>
+
+        <div class="panel urras">
+            <div class="panel-label">Urras</div>
+            <div class="panel-tag">A-Io Mercantile Standard</div>
+            <div class="readout" id="urrReadout">00:00:00</div>
+            <div class="detail" id="urrDetail">&mdash;</div>
+            <div class="quote">&ldquo;To make a thief, make an owner; to create crime, create laws.&rdquo;</div>
+        </div>
+    </div>
+
+    <div class="true-time">
+        <div class="true-time-value" id="trueTimeValue">00:00:00</div>
+        <div class="true-time-date" id="trueTimeDate">&mdash;</div>
+    </div>
+
+    <div class="theory-note">
+        <strong>General Temporal Theory:</strong> Shevek's unification of Sequency &mdash; time as one thing after another, owned and spent, kept by Urras &mdash; and Simultaneity &mdash; time as a whole, always present, held in common on Anarres. Both faces above tell the same instant.
+    </div>
+
+    <div class="omelas-overlay" id="omelasOverlay">
+        <div class="omelas-text">
+            Every utopia has its price. Some walk away from Omelas, into the dark, and do not come back.
+            <span class="omelas-attrib">&mdash; after Le Guin, &ldquo;The Ones Who Walk Away from Omelas&rdquo;</span>
+        </div>
+    </div>
+
+    <script>
+        const anaReadout = document.getElementById('anaReadout');
+        const anaDetail = document.getElementById('anaDetail');
+        const urrReadout = document.getElementById('urrReadout');
+        const urrDetail = document.getElementById('urrDetail');
+        const trueTimeValue = document.getElementById('trueTimeValue');
+        const trueTimeDate = document.getElementById('trueTimeDate');
+        const omelasOverlay = document.getElementById('omelasOverlay');
+
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        function pad(n) {
+            return String(n).padStart(2, '0');
+        }
+
+        function dayOfYear(date) {
+            const start = new Date(date.getFullYear(), 0, 0);
+            return Math.floor((date - start) / 86400000);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+
+            // Urras: precise, owned, mercantile time.
+            urrReadout.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            urrDetail.textContent = h < 12 ? 'Morning Exchange' : h < 18 ? 'Afternoon Trade' : 'Evening Ledger';
+
+            // Anarres: communal reckoning by decad and rotating shift, not by owned minutes.
+            const doy = dayOfYear(now);
+            const decad = Math.floor((doy - 1) / 10) + 1;
+            const dayInDecad = ((doy - 1) % 10) + 1;
+            anaReadout.textContent = `Decad ${decad} · Day ${dayInDecad}`;
+
+            let shiftName, shiftStartHour;
+            if (h < 8) { shiftName = 'Dawn Shift'; shiftStartHour = 0; }
+            else if (h < 16) { shiftName = 'Day Shift'; shiftStartHour = 8; }
+            else { shiftName = 'Dusk Shift'; shiftStartHour = 16; }
+            const intoShiftMs = (h - shiftStartHour) * 3600000 + m * 60000 + s * 1000;
+            const intoH = Math.floor(intoShiftMs / 3600000);
+            const intoM = Math.floor((intoShiftMs % 3600000) / 60000);
+            anaDetail.textContent = `${intoH}h ${intoM}m into ${shiftName}`;
+
+            // The one true instant both worlds share.
+            trueTimeValue.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            trueTimeDate.textContent = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+
+            // An Omelas moment: a brief reminder, every quarter hour, that utopias have a cost.
+            const showOmelas = (m % 15 === 0) && (s < 8);
+            omelasOverlay.classList.toggle('visible', showOmelas);
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

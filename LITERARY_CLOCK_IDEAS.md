@@ -50,6 +50,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
 - ✅ **100 Years of Solitude** - Gabriel Garcia Marquez
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
+- ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
 
 ### To Build
 
@@ -275,12 +276,6 @@ A collection of literary, creative, and technical concepts for future web clock 
   - "Shall I project a world?"
 
 #### Science Fiction & Speculative
-- **The Dispossessed** - Ursula K. Le Guin
-  - Anarres vs. Urras
-  - Dual timeline
-  - Shevek's physics
-  - "The Ones Who Walk Away from Omelas" moments
-  - Anarchist time vs. capitalist time
 - **Neuromancer** - William Gibson
   - Cyberspace and the matrix
   - Case's runs
