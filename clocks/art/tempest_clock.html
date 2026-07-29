@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tempest Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --calm-sky-1: #0b2436;
+            --calm-sky-2: #123044;
+            --storm-sky-1: #0a141c;
+            --storm-sky-2: #1c2f3a;
+            --text: #e9edf0;
+            --text-muted: #93a5ae;
+            --gold: #c9a24a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'IM Fell English', serif;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 60px;
+            background: linear-gradient(180deg, var(--calm-sky-1), var(--calm-sky-2));
+            transition: background 3s ease;
+            overflow-x: hidden;
+        }
+
+        body.storm {
+            background: linear-gradient(180deg, var(--storm-sky-1), var(--storm-sky-2));
+        }
+
+        .lightning {
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .lightning.flash {
+            opacity: 0.22;
+            transition: opacity 90ms ease-out;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 400;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .clock-wrap {
+            position: relative;
+            width: clamp(240px, 52vmin, 400px);
+            aspect-ratio: 1 / 1;
+            margin-top: 10px;
+            z-index: 1;
+        }
+
+        .act-ring {
+            position: absolute;
+            inset: -16px;
+            border-radius: 50%;
+            -webkit-mask-image: radial-gradient(circle, transparent 0 61%, black 62% 77%, transparent 78% 100%);
+            mask-image: radial-gradient(circle, transparent 0 61%, black 62% 77%, transparent 78% 100%);
+            transition: background 1s ease;
+        }
+
+        .clock-face {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #16303f, #081620 75%);
+            border: 2px solid rgba(201, 162, 74, 0.35);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .numeral {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-size: clamp(0.75rem, 2vw, 1rem);
+            color: var(--text-muted);
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: 50% 100%;
+            border-radius: 4px;
+            background: var(--text);
+        }
+
+        .hand.hour {
+            width: 4px;
+            height: 26%;
+            margin-left: -2px;
+            background: var(--gold);
+        }
+
+        .hand.minute {
+            width: 3px;
+            height: 36%;
+            margin-left: -1.5px;
+        }
+
+        .hand.second {
+            width: 1.5px;
+            height: 40%;
+            margin-left: -0.75px;
+            background: #d95c4a;
+        }
+
+        .center-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            margin: -5px 0 0 -5px;
+            border-radius: 50%;
+            background: var(--gold);
+            z-index: 2;
+        }
+
+        .digital-time {
+            margin-top: 26px;
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+            z-index: 1;
+        }
+
+        .digital-value {
+            font-size: clamp(1.3rem, 3.5vw, 1.8rem);
+            letter-spacing: 2px;
+        }
+
+        .digital-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .glass-readout {
+            font-size: 0.72rem;
+            color: var(--gold);
+            margin-top: 8px;
+            letter-spacing: 1px;
+            min-height: 1em;
+        }
+
+        .act-panel {
+            margin-top: 30px;
+            max-width: 520px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .act-name {
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+
+        .act-quote {
+            font-style: italic;
+            font-size: clamp(1rem, 2.6vw, 1.25rem);
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .act-speaker {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .frame-note {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 18px;
+            max-width: 440px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lightning" id="lightning"></div>
+
+    <header>
+        <h1>The Tempest</h1>
+        <div class="subtitle">Prospero's isle, kept to a real clock &mdash; after William Shakespeare</div>
+    </header>
+
+    <div class="clock-wrap">
+        <div class="act-ring" id="actRing"></div>
+        <div class="clock-face"></div>
+        <div class="numerals" id="numerals"></div>
+        <div class="hand hour" id="hourHand"></div>
+        <div class="hand minute" id="minuteHand"></div>
+        <div class="hand second" id="secondHand"></div>
+        <div class="center-dot"></div>
+    </div>
+
+    <div class="digital-time">
+        <div class="digital-value" id="digitalValue">00:00:00</div>
+        <div class="digital-date" id="digitalDate">&mdash;</div>
+        <div class="glass-readout" id="glassReadout"></div>
+    </div>
+
+    <div class="act-panel">
+        <div class="act-name" id="actName">&mdash;</div>
+        <div class="act-quote" id="actQuote">&mdash;</div>
+        <div class="act-speaker" id="actSpeaker"></div>
+    </div>
+
+    <div class="frame-note">
+        The play's action keeps real time, from the storm at two o'clock to Prospero's deadline at &ldquo;the sixth hour.&rdquo; Watch the gold arc, two till six &mdash; the rest of the day, the isle simply waits.
+    </div>
+
+    <script>
+        const body = document.body;
+        const lightning = document.getElementById('lightning');
+        const numeralsEl = document.getElementById('numerals');
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const secondHand = document.getElementById('secondHand');
+        const actRing = document.getElementById('actRing');
+        const digitalValue = document.getElementById('digitalValue');
+        const digitalDate = document.getElementById('digitalDate');
+        const glassReadout = document.getElementById('glassReadout');
+        const actNameEl = document.getElementById('actName');
+        const actQuoteEl = document.getElementById('actQuote');
+        const actSpeakerEl = document.getElementById('actSpeaker');
+
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        const STORM_START_MIN = 14 * 60; // 2:00pm — the wreck
+        const STORM_END_MIN = 18 * 60;   // 6:00pm — "the sixth hour," Prospero's deadline
+
+        const ACTS = [
+            { name: 'Act I &mdash; The Tempest', color: '#3b6fa0', quote: '&ldquo;Hell is empty, and all the devils are here.&rdquo;', speaker: 'Ariel' },
+            { name: 'Act II &mdash; Conspiracies', color: '#3b8f7c', quote: '&ldquo;What&rsquo;s past is prologue.&rdquo;', speaker: 'Antonio' },
+            { name: 'Act III &mdash; The Isle&rsquo;s Noises', color: '#4a9e5e', quote: '&ldquo;Be not afeard; the isle is full of noises.&rdquo;', speaker: 'Caliban' },
+            { name: 'Act IV &mdash; The Masque', color: '#c99a3e', quote: '&ldquo;We are such stuff as dreams are made on.&rdquo;', speaker: 'Prospero' },
+            { name: 'Act V &mdash; Brave New World', color: '#c9673e', quote: '&ldquo;O brave new world, that has such people in&rsquo;t!&rdquo;', speaker: 'Miranda' }
+        ];
+
+        // Build the 12 clock numerals, placed radially around the face.
+        for (let i = 1; i <= 12; i++) {
+            const angle = i * 30;
+            const rad = (angle - 90) * Math.PI / 180;
+            const reach = 42; // percent of half-width
+            const x = 50 + reach * Math.cos(rad);
+            const y = 50 + reach * Math.sin(rad);
+
+            const numeral = document.createElement('div');
+            numeral.className = 'numeral';
+            numeral.textContent = i;
+            numeral.style.left = x + '%';
+            numeral.style.top = y + '%';
+            numeralsEl.appendChild(numeral);
+        }
+
+        function pad(n) {
+            return String(n).padStart(2, '0');
+        }
+
+        function buildActRing(activeIndex) {
+            const segAngle = 24; // 120deg storm arc / 5 acts
+            let stops = ['transparent 0deg 60deg'];
+            for (let i = 0; i < 5; i++) {
+                const from = 60 + i * segAngle;
+                const to = from + segAngle;
+                const isActive = i === activeIndex;
+                const color = ACTS[i].color;
+                stops.push(`${isActive ? color : color + '44'} ${from}deg ${to}deg`);
+            }
+            stops.push('transparent 180deg 360deg');
+            actRing.style.background = `conic-gradient(from 0deg, ${stops.join(', ')})`;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+            const totalMin = h * 60 + m + s / 60;
+
+            // Analog hands.
+            const hourDeg = ((h % 12) + m / 60) * 30;
+            const minuteDeg = (m + s / 60) * 6;
+            const secondDeg = s * 6;
+            hourHand.style.transform = `rotate(${hourDeg}deg)`;
+            minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
+            secondHand.style.transform = `rotate(${secondDeg}deg)`;
+
+            digitalValue.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            digitalDate.textContent = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+
+            const inStorm = totalMin >= STORM_START_MIN && totalMin < STORM_END_MIN;
+            body.classList.toggle('storm', inStorm);
+
+            if (inStorm) {
+                const elapsed = totalMin - STORM_START_MIN; // 0..240
+                const actIndex = Math.min(4, Math.floor(elapsed / 48));
+                const glass = Math.min(4, Math.floor(elapsed / 60) + 1);
+                const act = ACTS[actIndex];
+
+                buildActRing(actIndex);
+                actNameEl.innerHTML = act.name;
+                actQuoteEl.innerHTML = act.quote;
+                actSpeakerEl.textContent = act.speaker;
+                glassReadout.textContent = `${glass} of 4 glasses run since two o'clock`;
+
+                // Occasional lightning, more likely early in the tempest.
+                const flashChance = actIndex === 0 ? 0.12 : 0.03;
+                if (Math.random() < flashChance) {
+                    lightning.classList.add('flash');
+                    setTimeout(() => lightning.classList.remove('flash'), 90);
+                }
+            } else {
+                buildActRing(-1);
+                glassReadout.textContent = '';
+                if (totalMin < STORM_START_MIN) {
+                    const minsToStorm = Math.ceil(STORM_START_MIN - totalMin);
+                    actNameEl.textContent = 'Before the Tempest';
+                    actQuoteEl.textContent = 'The book lies closed. The sea is calm. The hour has not yet come.';
+                    actSpeakerEl.textContent = `the tempest begins in ${Math.floor(minsToStorm / 60)}h ${minsToStorm % 60}m`;
+                } else {
+                    const minsSince = Math.floor(totalMin - STORM_END_MIN);
+                    actNameEl.textContent = 'Epilogue';
+                    actQuoteEl.innerHTML = '&ldquo;Now my charms are all o&rsquo;erthrown, and what strength I have&rsquo;s mine own.&rdquo;';
+                    actSpeakerEl.textContent = minsSince < 1
+                        ? 'Prospero, as the sixth hour tolls'
+                        : `the charms broke ${Math.floor(minsSince / 60)}h ${minsSince % 60}m ago — the isle rests`;
+                }
+            }
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

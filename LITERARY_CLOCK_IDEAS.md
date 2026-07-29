@@ -51,6 +51,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **100 Years of Solitude** - Gabriel Garcia Marquez
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
 - ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
+- ✅ **The Tempest** - William Shakespeare (unity of time made literal: real 2-6pm storm window, five acts, Prospero's "sixth hour" deadline)
 
 ### To Build
 
@@ -171,12 +172,6 @@ A collection of literary, creative, and technical concepts for future web clock 
   - Puck's mischief
   - "Lord, what fools these mortals be"
   - Dream vs. reality
-- **The Tempest**
-  - Unity of time (action occurs in ~3 hours)
-  - Prospero's magic
-  - The island
-  - "We are such stuff as dreams are made on"
-  - Forgiveness and departure
 - **Romeo and Juliet**
   - Five days of passion
   - Day/night imagery
