@@ -4,100 +4,213 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LaTeX Clock</title>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
-        body {
-            background-color: #f0f0f0;
-            font-family: 'Source Serif Pro', serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        * {
+            box-sizing: border-box;
         }
 
-        .paper {
+        body {
+            background-color: #e6e6e6;
+            font-family: 'STIX Two Text', 'Times New Roman', serif;
+            color: #111;
+            margin: 0;
+            padding: 40px 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .page {
             background-color: #ffffff;
-            width: 80vw;
-            max-width: 800px;
-            height: 80vh;
-            padding: 50px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 720px;
+            padding: clamp(24px, 6vw, 64px);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
             border: 1px solid #ccc;
         }
 
-        .header {
+        .titleblock {
             text-align: center;
             border-bottom: 1px solid #000;
-            padding-bottom: 20px;
-            margin-bottom: 40px;
+            padding-bottom: 22px;
+            margin-bottom: 30px;
         }
 
-        .title {
-            font-size: 2.5rem;
-            font-weight: 700;
+        .doctitle {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 600;
         }
 
-        .author {
-            font-size: 1.2rem;
-            margin-top: 10px;
+        .latex-logo .a {
+            text-transform: uppercase;
+            font-size: 0.75em;
+            vertical-align: 0.24em;
+            margin-left: -0.36em;
+            margin-right: -0.15em;
         }
 
-        .date {
-            font-size: 1rem;
-            margin-top: 10px;
+        .latex-logo .e {
+            text-transform: uppercase;
+            vertical-align: -0.22em;
+            margin-left: -0.16em;
+            margin-right: -0.1em;
         }
 
-        .content {
+        .authorline {
+            margin-top: 12px;
+            font-size: clamp(1rem, 2.5vw, 1.1rem);
+        }
+
+        .dateline {
+            margin-top: 6px;
+            font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+            color: #333;
+        }
+
+        .abstract {
+            max-width: 62ch;
+            margin: 0 auto 32px;
+            text-align: justify;
+            font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+        }
+
+        .abstract-title {
+            font-weight: 600;
             text-align: center;
+            margin-bottom: 10px;
         }
 
-        .section {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 20px;
+        .keywords {
+            margin-top: 12px;
+            font-size: 0.85em;
         }
 
-        .time-display {
-            font-size: 4rem;
+        section h2 {
+            font-size: clamp(1rem, 3vw, 1.15rem);
+            font-weight: 600;
+            margin: 30px 0 12px;
+        }
+
+        section p {
+            text-align: justify;
+            line-height: 1.65;
+            font-size: clamp(0.9rem, 2.4vw, 1rem);
+        }
+
+        .theorem-title {
+            font-weight: 600;
+        }
+
+        .equation-row {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 22px 0;
+            min-height: 1.6em;
+        }
+
+        .equation-body {
+            font-size: clamp(1rem, 3.4vw, 1.3rem);
+            letter-spacing: 0.02em;
+        }
+
+        .equation-number {
+            position: absolute;
+            right: 0;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .qed {
+            margin-left: 6px;
+        }
+
+        .page-footer {
+            margin-top: 46px;
+            border-top: 1px solid #ccc;
+            padding-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        .page-number {
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
-    <div class="paper">
-        <div class="header">
-            <div class="title">Current Time</div>
-            <div class="author">Gemini</div>
-            <div id="date" class="date"></div>
-        </div>
-        <div class="content">
-            <div class="section">Time</div>
-            <div id="time" class="time-display"></div>
-        </div>
+    <div class="page">
+        <header class="titleblock">
+            <div class="doctitle"><span class="latex-logo">L<span class="a">a</span>T<span class="e">e</span>X</span> Clock</div>
+            <div class="authorline">The Present Author</div>
+            <div class="dateline" id="dateline">—</div>
+        </header>
+
+        <section class="abstract">
+            <div class="abstract-title">Abstract</div>
+            <p>We report a real-time determination of the present moment, accurate to the nearest second. The method requires no apparatus beyond a system clock, and the result is reproducible by any observer sharing the reader's time zone.</p>
+            <p class="keywords"><em>Keywords:</em> chronometry, real-time analysis, the present</p>
+        </section>
+
+        <section>
+            <h2>1&nbsp;&nbsp;Preliminaries</h2>
+            <p>Let <i>h</i>, <i>m</i>, <i>s</i> &isin; &#8484; denote the current hour, minute, and second respectively, each updated automatically as the ambient moment advances.</p>
+        </section>
+
+        <section>
+            <h2>2&nbsp;&nbsp;Main Result</h2>
+            <p><span class="theorem-title">Theorem 2.1</span> (The Present Moment). <em>At the time of reading, the following holds:</em></p>
+            <div class="equation-row">
+                <span class="equation-body" id="timeEquation">h : m : s = 00 : 00 : 00</span>
+                <span class="equation-number">(1)</span>
+            </div>
+            <p><em>Proof.</em> Immediate by observation of the system clock.<span class="qed">&#8718;</span></p>
+        </section>
+
+        <section>
+            <h2>3&nbsp;&nbsp;Corollary</h2>
+            <p><span class="theorem-title">Corollary 2.2</span> (The Present Date). <span id="dateCorollary">—</span>.</p>
+        </section>
+
+        <footer class="page-footer">
+            <div class="compiled-note">Typeset with LaTeX2&epsilon;. Compiled just now.</div>
+            <div class="page-number">1</div>
+        </footer>
     </div>
+
     <script>
-        const timeElement = document.getElementById('time');
-        const dateElement = document.getElementById('date');
+        const timeEquation = document.getElementById('timeEquation');
+        const dateline = document.getElementById('dateline');
+        const dateCorollary = document.getElementById('dateCorollary');
 
-        function formatTime(date) {
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
-        }
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-        function formatDate(date) {
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return date.toLocaleDateString('en-US', options);
+        function pad(n) {
+            return String(n).padStart(2, '0');
         }
 
         function updateClock() {
             const now = new Date();
-            timeElement.textContent = formatTime(now);
-            dateElement.textContent = formatDate(now);
+            const h = pad(now.getHours());
+            const m = pad(now.getMinutes());
+            const s = pad(now.getSeconds());
+
+            timeEquation.textContent = `h : m : s = ${h} : ${m} : ${s}`;
+
+            const monthName = MONTHS[now.getMonth()];
+            const day = now.getDate();
+            const year = now.getFullYear();
+            dateline.textContent = `${monthName} ${day}, ${year}`;
+            dateCorollary.textContent = `The current date is ${DAYS[now.getDay()]}, ${monthName} ${day}, ${year}`;
         }
 
+        updateClock();
         setInterval(updateClock, 1000);
-        updateClock(); // Initial call to display clock immediately
     </script>
 </body>
 </html>
