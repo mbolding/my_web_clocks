@@ -29,7 +29,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Hamlet** - William Shakespeare
 - ✅ **The Old Man and the Sea** - Ernest Hemingway
 - ✅ **The Stranger** - Albert Camus
-- ✅ **The Sisyphus Clock** - Albert Camus' "The Myth of Sisyphus," rendered as a Monty Python-style Terry Gilliam cutout, with a Giant Foot gag on the hour
+- ✅ **The Sisyphus Clock** - Albert Camus' "The Myth of Sisyphus," rendered as a flat cutout-collage, with a Giant Foot gag on the hour
 - ✅ **Crime and Punishment** - Fyodor Dostoevsky
 - ✅ **On the Road** - Jack Kerouac
 - ✅ **Catch-22** - Joseph Heller
