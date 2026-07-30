@@ -77,6 +77,7 @@
             border-radius: 50%;
             background: #f6b93b;
             box-shadow: 0 0 24px 6px rgba(246, 185, 59, 0.55);
+            transition: left 1s linear, top 1s linear;
         }
 
         .cloud {
@@ -270,7 +271,7 @@
 
     <div class="scene-wrap">
         <div class="scene" id="scene">
-            <div class="sun"></div>
+            <div class="sun" id="sun"></div>
             <div class="cloud c1"></div>
             <div class="cloud c2"></div>
             <div class="mountain"></div>
@@ -309,6 +310,7 @@
 
     <script>
         const scene = document.getElementById('scene');
+        const sun = document.getElementById('sun');
         const squashGroup = document.getElementById('squashGroup');
         const boulder = document.getElementById('boulder');
         const sisyphus = document.getElementById('sisyphus');
@@ -427,12 +429,22 @@
             requestAnimationFrame(animate);
         }
 
+        function updateSunPosition(h, m, s) {
+            const dayFraction = (h + m / 60 + s / 3600) / 24;
+            const arc = Math.sin(Math.PI * dayFraction); // 0 at midnight, 1 at noon
+            const x = 5 + 90 * dayFraction;
+            const y = 60 - 54 * arc; // high overhead at noon, low near the horizon at night
+            sun.style.left = x + '%';
+            sun.style.top = y + '%';
+        }
+
         function updateDigital() {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
             const s = now.getSeconds();
             digitalTime.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            updateSunPosition(h, m, s);
 
             const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${h}`;
             if (m === 0 && s === 0 && key !== lastGagKey && !gagInProgress) {
