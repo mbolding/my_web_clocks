@@ -118,14 +118,15 @@
             z-index: 3;
         }
 
-        .boulder.tumble {
-            animation: tumble 0.5s ease;
+        /* Rolling back down the hill: left/top ease-in like gravity, while it spins. */
+        .boulder.rolling-back {
+            transition: left 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19), top 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+            animation: boulder-spin 0.75s linear;
         }
 
-        @keyframes tumble {
-            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
-            40% { transform: translate(-50%, -50%) rotate(-140deg) scale(0.92); }
-            100% { transform: translate(-50%, -50%) rotate(-260deg) scale(1); }
+        @keyframes boulder-spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-960deg); }
         }
 
         .sisyphus {
@@ -135,11 +136,36 @@
             z-index: 2;
         }
 
+        .sisyphus.rolling-back {
+            transition: left 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19), top 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+        }
+
         .sisyphus svg {
             width: 100%;
             height: auto;
             display: block;
             fill: #2b1c14;
+        }
+
+        .leg-back {
+            transform-origin: 21.5px 54px;
+            animation: walk-back 0.65s ease-in-out infinite;
+        }
+
+        .leg-front {
+            transform-origin: 33.5px 54px;
+            animation: walk-front 0.65s ease-in-out infinite;
+            animation-delay: -0.325s;
+        }
+
+        @keyframes walk-back {
+            0%, 100% { transform: rotate(10deg); }
+            50% { transform: rotate(26deg); }
+        }
+
+        @keyframes walk-front {
+            0%, 100% { transform: rotate(-14deg); }
+            50% { transform: rotate(2deg); }
         }
 
         .giant-foot {
@@ -252,8 +278,8 @@
             <div class="squash-group" id="squashGroup">
                 <div class="sisyphus" id="sisyphus">
                     <svg viewBox="0 0 60 90">
-                        <rect x="17" y="54" width="9" height="34" rx="4" transform="rotate(18 21.5 54)"></rect>
-                        <rect x="29" y="54" width="9" height="34" rx="4" transform="rotate(-6 33.5 54)"></rect>
+                        <rect class="leg-back" x="17" y="54" width="9" height="34" rx="4"></rect>
+                        <rect class="leg-front" x="29" y="54" width="9" height="34" rx="4"></rect>
                         <path d="M13,58 Q8,34 24,14 L41,19 Q43,40 34,58 Z"></path>
                         <rect x="31" y="8" width="10" height="32" rx="5" transform="rotate(38 36 8)"></rect>
                         <circle cx="25" cy="10" r="9"></circle>
@@ -296,6 +322,7 @@
         const SLOPE_END = { x: 58, y: 15 };
 
         let gagInProgress = false;
+        let tumbling = false;
         let prevT = 0;
         let lastGagKey = null;
         let captionResetTimer = null;
@@ -326,13 +353,29 @@
         }
 
         function triggerTumble() {
-            boulder.classList.add('tumble');
-            setTimeout(() => boulder.classList.remove('tumble'), 500);
+            tumbling = true;
+            // The boulder and Sisyphus are already sitting near the peak (their
+            // last-set left/top). Adding the transition class, then moving the
+            // target back to the foot of the slope, animates them rolling/walking
+            // back down along that same line instead of teleporting.
+            boulder.classList.add('rolling-back');
+            sisyphus.classList.add('rolling-back');
+            setBoulderPosition(0);
             setCaption('...and down it goes again.', '', 1600);
+
+            setTimeout(() => {
+                boulder.classList.remove('rolling-back');
+                sisyphus.classList.remove('rolling-back');
+                prevT = 0;
+                tumbling = false;
+            }, 750);
         }
 
         function triggerFootGag() {
             gagInProgress = true;
+            tumbling = false;
+            boulder.classList.remove('rolling-back');
+            sisyphus.classList.remove('rolling-back');
             setBoulderPosition(0);
 
             giantFoot.classList.add('stomp');
@@ -371,14 +414,15 @@
         }
 
         function animate() {
-            if (!gagInProgress) {
+            if (!gagInProgress && !tumbling) {
                 const now = Date.now();
                 const t = (now % 60000) / 60000;
                 if (t < prevT - 0.5) {
                     triggerTumble();
+                } else {
+                    setBoulderPosition(t);
+                    prevT = t;
                 }
-                prevT = t;
-                setBoulderPosition(t);
             }
             requestAnimationFrame(animate);
         }
