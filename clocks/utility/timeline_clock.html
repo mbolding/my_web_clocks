@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <style>
+        :root {
+            --bg: #fafafa;
+            --text: #1a1a1a;
+            --text-muted: #888888;
+            --border: #e2e2e2;
+            --track-bg: #ffffff;
+            --night-band: rgba(30, 40, 80, 0.075);
+            --hour-band: rgba(0, 0, 0, 0.022);
+            --now-color: #e63946;
+            --crosshair-color: #1a1a1a;
+            --accent: #2563eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 0 50px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .location-status {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .zoom-btn {
+            background: var(--track-bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .zoom-btn:hover {
+            border-color: #bbb;
+            color: var(--text);
+        }
+
+        .zoom-btn.active {
+            background: var(--text);
+            color: #fff;
+            border-color: var(--text);
+        }
+
+        .viewport {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 220px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            background: var(--track-bg);
+            overflow: hidden;
+        }
+
+        .scroll-area {
+            position: absolute;
+            inset: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            cursor: grab;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-area.dragging {
+            cursor: grabbing;
+        }
+
+        .track {
+            position: relative;
+            height: 100%;
+        }
+
+        .night-band {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: var(--night-band);
+            pointer-events: none;
+        }
+
+        .hour-band {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: var(--hour-band);
+            pointer-events: none;
+        }
+
+        .baseline {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 46px;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .tick {
+            position: absolute;
+            bottom: 46px;
+            width: 1px;
+            background: #cccccc;
+            pointer-events: none;
+        }
+
+        .tick.tier-hour { height: 12px; background: #dddddd; }
+        .tick.tier-six { height: 22px; background: #bbbbbb; }
+        .tick.tier-day { height: 38px; background: #888888; width: 1.5px; }
+
+        .tick-label {
+            position: absolute;
+            bottom: 4px;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .tick-label.tier-day {
+            bottom: 8px;
+            font-weight: 700;
+            font-size: 0.72rem;
+            color: var(--text);
+        }
+
+        .track.zoom-week .tick.tier-hour,
+        .track.zoom-week .tick-label.tier-hour,
+        .track.zoom-week .tick.tier-six,
+        .track.zoom-week .tick-label.tier-six {
+            display: none;
+        }
+
+        .track.zoom-day .tick.tier-hour,
+        .track.zoom-day .tick-label.tier-hour {
+            display: none;
+        }
+
+        .solar-marker {
+            position: absolute;
+            transform: translateX(-50%);
+            cursor: default;
+            z-index: 2;
+            top: 68px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        .solar-marker.sunrise {
+            border-bottom: 7px solid #f0a93a;
+        }
+
+        .solar-marker.sunset {
+            border-top: 7px solid #d9622b;
+        }
+
+        .now-line {
+            position: absolute;
+            top: 0;
+            bottom: 46px;
+            width: 2px;
+            background: var(--now-color);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .now-flag {
+            position: absolute;
+            top: 6px;
+            transform: translateX(-50%);
+            background: var(--now-color);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .now-flag::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: var(--now-color);
+        }
+
+        .crosshair {
+            position: absolute;
+            top: 0;
+            bottom: 46px;
+            left: 50%;
+            width: 0;
+            border-left: 1px dashed var(--crosshair-color);
+            opacity: 0.55;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .crosshair-readout {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .crosshair-readout .rt-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            font-weight: 700;
+            background: var(--bg);
+            padding: 2px 10px;
+            border-radius: 6px;
+        }
+
+        .crosshair-readout.live .rt-time {
+            color: var(--now-color);
+        }
+
+        .crosshair-readout .rt-date {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .jump-now {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 24px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 20;
+        }
+
+        .jump-now.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+
+        .hint {
+            margin-top: 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Timeline Clock</h1>
+        <div class="subtitle">The center always tells you what moment you're looking at. Scroll right for the future, left for the past.</div>
+        <div class="location-status" id="locationStatus">Showing solar events for London (default) &mdash; allow location access for your own sky.</div>
+    </header>
+
+    <div class="zoom-controls" id="zoomControls">
+        <button class="zoom-btn" data-zoom="week">Weeks</button>
+        <button class="zoom-btn active" data-zoom="day">Days</button>
+        <button class="zoom-btn" data-zoom="hour">Hours</button>
+    </div>
+
+    <div class="viewport" id="viewport">
+        <div class="scroll-area" id="scrollArea">
+            <div class="track zoom-day" id="track"></div>
+        </div>
+        <div class="crosshair"></div>
+        <div class="crosshair-readout" id="crosshairReadout">
+            <div class="rt-time" id="rtTime">--:--:--</div>
+            <div class="rt-date" id="rtDate">&mdash;</div>
+        </div>
+    </div>
+
+    <div class="hint">Drag, scroll, or swipe the ruler. The red line marks the real current moment &mdash; small triangles mark sunrise/sunset. Shaded bands are night; a subtle stripe marks each hour.</div>
+
+    <button class="jump-now" id="jumpNowBtn">Jump to Now</button>
+
+    <script>
+        const scrollArea = document.getElementById('scrollArea');
+        const track = document.getElementById('track');
+        const crosshairReadout = document.getElementById('crosshairReadout');
+        const rtTime = document.getElementById('rtTime');
+        const rtDate = document.getElementById('rtDate');
+        const jumpNowBtn = document.getElementById('jumpNowBtn');
+        const zoomControls = document.getElementById('zoomControls');
+        const locationStatus = document.getElementById('locationStatus');
+
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        const PAST_DAYS = 3;
+        const FUTURE_DAYS = 90;
+        const TOTAL_HOURS = (PAST_DAYS + FUTURE_DAYS) * 24;
+
+        // Default to London until (if) real geolocation resolves.
+        let lat = 51.5074;
+        let lng = -0.1278;
+
+        const ZOOM_LEVELS = { week: 8, day: 45, hour: 130 };
+        let zoomKey = 'day';
+        let pxPerHour = ZOOM_LEVELS[zoomKey];
+
+        const RULER_START = new Date();
+        RULER_START.setHours(0, 0, 0, 0);
+        RULER_START.setDate(RULER_START.getDate() - PAST_DAYS);
+
+        let autoFollow = true;
+        let nowLineEl = null;
+        let nowFlagEl = null;
+        let programmaticScroll = false;
+
+        function pad(n) {
+            return String(n).padStart(2, '0');
+        }
+
+        function timeToPx(date) {
+            return ((date.getTime() - RULER_START.getTime()) / 3600000) * pxPerHour;
+        }
+
+        function pxToTime(px) {
+            return new Date(RULER_START.getTime() + (px / pxPerHour) * 3600000);
+        }
+
+        function formatDate(date) {
+            return `${DAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        }
+
+        function computeSolarEvents() {
+            const events = [];
+            for (let d = -PAST_DAYS; d <= FUTURE_DAYS; d++) {
+                const noon = new Date(RULER_START.getTime() + d * 86400000);
+                noon.setHours(12, 0, 0, 0);
+                const times = SunCalc.getTimes(noon, lat, lng);
+                // Near the poles sunrise/sunset can be Invalid Date (polar day/night).
+                if (times.sunrise instanceof Date && !isNaN(times.sunrise)) {
+                    events.push({ date: times.sunrise, type: 'sunrise' });
+                }
+                if (times.sunset instanceof Date && !isNaN(times.sunset)) {
+                    events.push({ date: times.sunset, type: 'sunset' });
+                }
+            }
+            return events;
+        }
+
+        function computeDayNightBands(solarEvents) {
+            // Sunrise/sunset events, chronologically, split the ruler into
+            // alternating day/night segments. The state right before the very
+            // first event is the opposite of what that event starts (a sunrise
+            // means night preceded it; a sunset — polar edge case — means day did).
+            const sorted = solarEvents.slice().sort((a, b) => a.date - b.date);
+            const rangeEnd = new Date(RULER_START.getTime() + TOTAL_HOURS * 3600000);
+
+            const bands = [];
+            let cursor = new Date(RULER_START.getTime());
+            let state = sorted.length && sorted[0].type === 'sunset' ? 'day' : 'night';
+
+            for (const ev of sorted) {
+                if (ev.date <= cursor) continue;
+                bands.push({ start: cursor, end: ev.date, state });
+                cursor = ev.date;
+                state = ev.type === 'sunrise' ? 'day' : 'night';
+            }
+            bands.push({ start: cursor, end: rangeEnd, state });
+            return bands;
+        }
+
+        function buildTrack() {
+            track.innerHTML = '';
+            track.style.width = TOTAL_HOURS * pxPerHour + 'px';
+
+            const solarEvents = computeSolarEvents();
+
+            // Shade night hours so the ruler reads day/night at a glance.
+            computeDayNightBands(solarEvents).forEach(band => {
+                if (band.state !== 'night') return;
+                const div = document.createElement('div');
+                div.className = 'night-band';
+                div.style.left = timeToPx(band.start) + 'px';
+                div.style.width = (timeToPx(band.end) - timeToPx(band.start)) + 'px';
+                track.appendChild(div);
+            });
+
+            // A subtle alternating stripe every other hour to help count hours at a glance.
+            for (let h = 0; h < TOTAL_HOURS; h += 2) {
+                const div = document.createElement('div');
+                div.className = 'hour-band';
+                div.style.left = (h * pxPerHour) + 'px';
+                div.style.width = pxPerHour + 'px';
+                track.appendChild(div);
+            }
+
+            const baseline = document.createElement('div');
+            baseline.className = 'baseline';
+            track.appendChild(baseline);
+
+            for (let h = 0; h <= TOTAL_HOURS; h++) {
+                const tickDate = new Date(RULER_START.getTime() + h * 3600000);
+                const hour = tickDate.getHours();
+                let tier = 'hour';
+                if (hour === 0) tier = 'day';
+                else if (hour % 6 === 0) tier = 'six';
+
+                const left = h * pxPerHour;
+
+                const tick = document.createElement('div');
+                tick.className = `tick tier-${tier}`;
+                tick.style.left = left + 'px';
+                track.appendChild(tick);
+
+                const label = document.createElement('div');
+                label.className = `tick-label tier-${tier}`;
+                label.style.left = left + 'px';
+                label.textContent = tier === 'day'
+                    ? `${DAYS[tickDate.getDay()].slice(0, 3)} ${MONTHS[tickDate.getMonth()].slice(0, 3)} ${tickDate.getDate()}`
+                    : `${pad(hour)}:00`;
+                track.appendChild(label);
+            }
+
+            solarEvents.forEach(ev => {
+                const marker = document.createElement('div');
+                marker.className = `solar-marker ${ev.type}`;
+                marker.style.left = timeToPx(ev.date) + 'px';
+                marker.title = `${ev.type === 'sunrise' ? 'Sunrise' : 'Sunset'} — ${pad(ev.date.getHours())}:${pad(ev.date.getMinutes())}`;
+                track.appendChild(marker);
+            });
+
+            nowLineEl = document.createElement('div');
+            nowLineEl.className = 'now-line';
+            track.appendChild(nowLineEl);
+
+            nowFlagEl = document.createElement('div');
+            nowFlagEl.className = 'now-flag';
+            track.appendChild(nowFlagEl);
+        }
+
+        function applyZoomClass() {
+            track.classList.remove('zoom-week', 'zoom-day', 'zoom-hour');
+            track.classList.add('zoom-' + zoomKey);
+        }
+
+        function rebuildPreservingCenter() {
+            // Keep whatever moment is currently centered in view centered after
+            // the track is rebuilt (used for both zoom changes and a location
+            // update moving the day/night shading and solar markers).
+            const centerDate = pxToTime(scrollArea.scrollLeft + scrollArea.clientWidth / 2);
+
+            buildTrack();
+            applyZoomClass();
+
+            const targetLeft = timeToPx(centerDate) - scrollArea.clientWidth / 2;
+            programmaticScroll = true;
+            scrollArea.scrollLeft = Math.max(0, targetLeft);
+            requestAnimationFrame(() => { programmaticScroll = false; });
+
+            updateNowLine();
+            updateCrosshairReadout();
+        }
+
+        function setZoom(key) {
+            if (key === zoomKey) return;
+            zoomKey = key;
+            pxPerHour = ZOOM_LEVELS[key];
+
+            zoomControls.querySelectorAll('.zoom-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.zoom === key);
+            });
+
+            rebuildPreservingCenter();
+        }
+
+        function requestLocation() {
+            if (!navigator.geolocation) {
+                locationStatus.textContent = 'Geolocation not supported — showing solar events for London.';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    lat = position.coords.latitude;
+                    lng = position.coords.longitude;
+                    locationStatus.textContent = `Solar events for ${lat.toFixed(1)}°, ${lng.toFixed(1)}°`;
+                    rebuildPreservingCenter();
+                },
+                () => {
+                    locationStatus.textContent = 'Location unavailable — showing solar events for London.';
+                }
+            );
+        }
+
+        function updateNowLine() {
+            const now = new Date();
+            const left = timeToPx(now);
+            nowLineEl.style.left = left + 'px';
+            nowFlagEl.style.left = left + 'px';
+            nowFlagEl.textContent = `NOW ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        }
+
+        function updateCrosshairReadout() {
+            const centerDate = pxToTime(scrollArea.scrollLeft + scrollArea.clientWidth / 2);
+            const now = new Date();
+            // "Live" whenever the crosshair sits within about half an hour-tick of the real now.
+            const pxDelta = Math.abs(timeToPx(now) - (scrollArea.scrollLeft + scrollArea.clientWidth / 2));
+            const live = pxDelta < Math.max(pxPerHour / 2, 20);
+
+            crosshairReadout.classList.toggle('live', live);
+            if (live) {
+                rtTime.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+                rtDate.innerHTML = `Right now &middot; ${formatDate(now)}`;
+            } else {
+                rtTime.textContent = `${pad(centerDate.getHours())}:${pad(centerDate.getMinutes())}`;
+                rtDate.textContent = formatDate(centerDate);
+            }
+        }
+
+        function centerOnNow(smooth) {
+            const target = Math.max(0, timeToPx(new Date()) - scrollArea.clientWidth / 2);
+            programmaticScroll = true;
+            scrollArea.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+            setTimeout(() => { programmaticScroll = false; }, smooth ? 500 : 0);
+        }
+
+        function setAutoFollow(on) {
+            autoFollow = on;
+            jumpNowBtn.classList.toggle('visible', !on);
+        }
+
+        function disengageFollow() {
+            if (!programmaticScroll && autoFollow) {
+                setAutoFollow(false);
+            }
+        }
+
+        // --- Drag to pan ---
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartScroll = 0;
+
+        scrollArea.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            scrollArea.classList.add('dragging');
+            dragStartX = e.clientX;
+            dragStartScroll = scrollArea.scrollLeft;
+            disengageFollow();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            scrollArea.scrollLeft = dragStartScroll - (e.clientX - dragStartX);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            scrollArea.classList.remove('dragging');
+        });
+
+        scrollArea.addEventListener('wheel', disengageFollow, { passive: true });
+        scrollArea.addEventListener('touchstart', disengageFollow, { passive: true });
+
+        scrollArea.addEventListener('scroll', () => {
+            updateCrosshairReadout();
+        });
+
+        jumpNowBtn.addEventListener('click', () => {
+            setAutoFollow(true);
+            centerOnNow(true);
+        });
+
+        zoomControls.addEventListener('click', (e) => {
+            const btn = e.target.closest('.zoom-btn');
+            if (btn) setZoom(btn.dataset.zoom);
+        });
+
+        function tick() {
+            updateNowLine();
+            if (autoFollow) {
+                centerOnNow(false);
+            }
+            updateCrosshairReadout();
+        }
+
+        buildTrack();
+        applyZoomClass();
+        updateNowLine();
+        centerOnNow(false);
+        updateCrosshairReadout();
+        requestLocation();
+
+        setInterval(tick, 1000);
+    </script>
+</body>
+</html>
