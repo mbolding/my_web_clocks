@@ -181,20 +181,39 @@
         .lunar-marker {
             position: absolute;
             transform: translateX(-50%);
-            line-height: 1;
             cursor: default;
             z-index: 2;
         }
 
         .solar-marker {
             top: 68px;
-            font-size: 0.9rem;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        .solar-marker.sunrise {
+            border-bottom: 7px solid #f0a93a;
+        }
+
+        .solar-marker.sunset {
+            border-top: 7px solid #d9622b;
         }
 
         .lunar-marker {
-            top: 90px;
-            font-size: 1rem;
+            top: 88px;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.25);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
         }
+
+        .lunar-marker.phase-new { background: #3a3f4a; }
+        .lunar-marker.phase-first-quarter { background: linear-gradient(90deg, #3a3f4a 50%, #f3ead7 50%); }
+        .lunar-marker.phase-full { background: #f3ead7; }
+        .lunar-marker.phase-last-quarter { background: linear-gradient(90deg, #f3ead7 50%, #3a3f4a 50%); }
 
         .now-line {
             position: absolute;
@@ -334,7 +353,7 @@
         </div>
     </div>
 
-    <div class="hint">Drag, scroll, or swipe the ruler. The red line marks the real current moment &mdash; 🌅/🌇 mark sunrise and sunset, 🌑🌓🌕🌗 mark moon phases. Hover a marker for details.</div>
+    <div class="hint">Drag, scroll, or swipe the ruler. The red line marks the real current moment &mdash; small triangles mark sunrise/sunset, small dots mark moon phases. Hover a marker for details.</div>
 
     <button class="jump-now" id="jumpNowBtn">Jump to Now</button>
 
@@ -360,10 +379,10 @@
         let lng = -0.1278;
 
         const MOON_PHASE_TARGETS = [
-            { value: 0, icon: '🌑', label: 'New Moon' },
-            { value: 0.25, icon: '🌓', label: 'First Quarter' },
-            { value: 0.5, icon: '🌕', label: 'Full Moon' },
-            { value: 0.75, icon: '🌗', label: 'Last Quarter' }
+            { value: 0, key: 'new', label: 'New Moon' },
+            { value: 0.25, key: 'first-quarter', label: 'First Quarter' },
+            { value: 0.5, key: 'full', label: 'Full Moon' },
+            { value: 0.75, key: 'last-quarter', label: 'Last Quarter' }
         ];
 
         const ZOOM_LEVELS = { week: 8, day: 45, hour: 130 };
@@ -436,7 +455,7 @@
                     const prev = circularDist(phases[i - 1], target.value);
                     const next = circularDist(phases[i + 1], target.value);
                     if (cur <= prev && cur < next) {
-                        events.push({ date: dates[i], icon: target.icon, label: target.label });
+                        events.push({ date: dates[i], key: target.key, label: target.label });
                     }
                 }
             }
@@ -488,18 +507,16 @@
 
             computeSolarEvents().forEach(ev => {
                 const marker = document.createElement('div');
-                marker.className = 'solar-marker';
+                marker.className = `solar-marker ${ev.type}`;
                 marker.style.left = timeToPx(ev.date) + 'px';
-                marker.textContent = ev.type === 'sunrise' ? '🌅' : '🌇';
                 marker.title = `${ev.type === 'sunrise' ? 'Sunrise' : 'Sunset'} — ${pad(ev.date.getHours())}:${pad(ev.date.getMinutes())}`;
                 track.appendChild(marker);
             });
 
             computeLunarEvents().forEach(ev => {
                 const marker = document.createElement('div');
-                marker.className = 'lunar-marker';
+                marker.className = `lunar-marker phase-${ev.key}`;
                 marker.style.left = timeToPx(ev.date) + 'px';
-                marker.textContent = ev.icon;
                 marker.title = `${ev.label} — ${formatDate(ev.date)}`;
                 track.appendChild(marker);
             });
