@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timeline Clock</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <style>
         :root {
             --bg: #fafafa;
@@ -51,6 +52,12 @@
             font-size: clamp(0.8rem, 2vw, 0.95rem);
             color: var(--text-muted);
             margin-top: 8px;
+        }
+
+        .location-status {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 6px;
         }
 
         .zoom-controls {
@@ -168,6 +175,25 @@
         .track.zoom-day .tick.tier-hour,
         .track.zoom-day .tick-label.tier-hour {
             display: none;
+        }
+
+        .solar-marker,
+        .lunar-marker {
+            position: absolute;
+            transform: translateX(-50%);
+            line-height: 1;
+            cursor: default;
+            z-index: 2;
+        }
+
+        .solar-marker {
+            top: 68px;
+            font-size: 0.9rem;
+        }
+
+        .lunar-marker {
+            top: 90px;
+            font-size: 1rem;
         }
 
         .now-line {
@@ -288,6 +314,7 @@
     <header>
         <h1>Timeline Clock</h1>
         <div class="subtitle">The center always tells you what moment you're looking at. Scroll right for the future, left for the past.</div>
+        <div class="location-status" id="locationStatus">Showing solar &amp; lunar events for London (default) &mdash; allow location access for your own sky.</div>
     </header>
 
     <div class="zoom-controls" id="zoomControls">
@@ -307,7 +334,7 @@
         </div>
     </div>
 
-    <div class="hint">Drag, scroll, or swipe the ruler. The red line marks the real current moment.</div>
+    <div class="hint">Drag, scroll, or swipe the ruler. The red line marks the real current moment &mdash; 🌅/🌇 mark sunrise and sunset, 🌑🌓🌕🌗 mark moon phases. Hover a marker for details.</div>
 
     <button class="jump-now" id="jumpNowBtn">Jump to Now</button>
 
@@ -319,6 +346,7 @@
         const rtDate = document.getElementById('rtDate');
         const jumpNowBtn = document.getElementById('jumpNowBtn');
         const zoomControls = document.getElementById('zoomControls');
+        const locationStatus = document.getElementById('locationStatus');
 
         const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -326,6 +354,17 @@
         const PAST_DAYS = 3;
         const FUTURE_DAYS = 90;
         const TOTAL_HOURS = (PAST_DAYS + FUTURE_DAYS) * 24;
+
+        // Default to London until (if) real geolocation resolves.
+        let lat = 51.5074;
+        let lng = -0.1278;
+
+        const MOON_PHASE_TARGETS = [
+            { value: 0, icon: '🌑', label: 'New Moon' },
+            { value: 0.25, icon: '🌓', label: 'First Quarter' },
+            { value: 0.5, icon: '🌕', label: 'Full Moon' },
+            { value: 0.75, icon: '🌗', label: 'Last Quarter' }
+        ];
 
         const ZOOM_LEVELS = { week: 8, day: 45, hour: 130 };
         let zoomKey = 'day';
@@ -354,6 +393,54 @@
 
         function formatDate(date) {
             return `${DAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        }
+
+        function computeSolarEvents() {
+            const events = [];
+            for (let d = -PAST_DAYS; d <= FUTURE_DAYS; d++) {
+                const noon = new Date(RULER_START.getTime() + d * 86400000);
+                noon.setHours(12, 0, 0, 0);
+                const times = SunCalc.getTimes(noon, lat, lng);
+                // Near the poles sunrise/sunset can be Invalid Date (polar day/night).
+                if (times.sunrise instanceof Date && !isNaN(times.sunrise)) {
+                    events.push({ date: times.sunrise, type: 'sunrise' });
+                }
+                if (times.sunset instanceof Date && !isNaN(times.sunset)) {
+                    events.push({ date: times.sunset, type: 'sunset' });
+                }
+            }
+            return events;
+        }
+
+        function circularDist(a, b) {
+            const d = Math.abs(a - b) % 1;
+            return Math.min(d, 1 - d);
+        }
+
+        function computeLunarEvents() {
+            // Sample one extra day on each side so days right at the edge of the
+            // visible range can still be judged as a local minimum (a real event).
+            const dates = [];
+            const phases = [];
+            for (let d = -PAST_DAYS - 1; d <= FUTURE_DAYS + 1; d++) {
+                const noon = new Date(RULER_START.getTime() + d * 86400000);
+                noon.setHours(12, 0, 0, 0);
+                dates.push(noon);
+                phases.push(SunCalc.getMoonIllumination(noon).phase);
+            }
+
+            const events = [];
+            for (let i = 1; i < phases.length - 1; i++) {
+                for (const target of MOON_PHASE_TARGETS) {
+                    const cur = circularDist(phases[i], target.value);
+                    const prev = circularDist(phases[i - 1], target.value);
+                    const next = circularDist(phases[i + 1], target.value);
+                    if (cur <= prev && cur < next) {
+                        events.push({ date: dates[i], icon: target.icon, label: target.label });
+                    }
+                }
+            }
+            return events;
         }
 
         function buildTrack() {
@@ -399,6 +486,24 @@
                 track.appendChild(label);
             }
 
+            computeSolarEvents().forEach(ev => {
+                const marker = document.createElement('div');
+                marker.className = 'solar-marker';
+                marker.style.left = timeToPx(ev.date) + 'px';
+                marker.textContent = ev.type === 'sunrise' ? '🌅' : '🌇';
+                marker.title = `${ev.type === 'sunrise' ? 'Sunrise' : 'Sunset'} — ${pad(ev.date.getHours())}:${pad(ev.date.getMinutes())}`;
+                track.appendChild(marker);
+            });
+
+            computeLunarEvents().forEach(ev => {
+                const marker = document.createElement('div');
+                marker.className = 'lunar-marker';
+                marker.style.left = timeToPx(ev.date) + 'px';
+                marker.textContent = ev.icon;
+                marker.title = `${ev.label} — ${formatDate(ev.date)}`;
+                track.appendChild(marker);
+            });
+
             nowLineEl = document.createElement('div');
             nowLineEl.className = 'now-line';
             track.appendChild(nowLineEl);
@@ -413,20 +518,14 @@
             track.classList.add('zoom-' + zoomKey);
         }
 
-        function setZoom(key) {
-            if (key === zoomKey) return;
-
-            // Keep whatever moment is currently centered in view centered after zooming.
+        function rebuildPreservingCenter() {
+            // Keep whatever moment is currently centered in view centered after
+            // the track is rebuilt (used for both zoom changes and a location
+            // update moving all the solar/lunar markers).
             const centerDate = pxToTime(scrollArea.scrollLeft + scrollArea.clientWidth / 2);
 
-            zoomKey = key;
-            pxPerHour = ZOOM_LEVELS[key];
             buildTrack();
             applyZoomClass();
-
-            zoomControls.querySelectorAll('.zoom-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.zoom === key);
-            });
 
             const targetLeft = timeToPx(centerDate) - scrollArea.clientWidth / 2;
             programmaticScroll = true;
@@ -435,6 +534,36 @@
 
             updateNowLine();
             updateCrosshairReadout();
+        }
+
+        function setZoom(key) {
+            if (key === zoomKey) return;
+            zoomKey = key;
+            pxPerHour = ZOOM_LEVELS[key];
+
+            zoomControls.querySelectorAll('.zoom-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.zoom === key);
+            });
+
+            rebuildPreservingCenter();
+        }
+
+        function requestLocation() {
+            if (!navigator.geolocation) {
+                locationStatus.textContent = 'Geolocation not supported — showing solar & lunar events for London.';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    lat = position.coords.latitude;
+                    lng = position.coords.longitude;
+                    locationStatus.textContent = `Solar & lunar events for ${lat.toFixed(1)}°, ${lng.toFixed(1)}°`;
+                    rebuildPreservingCenter();
+                },
+                () => {
+                    locationStatus.textContent = 'Location unavailable — showing solar & lunar events for London.';
+                }
+            );
         }
 
         function updateNowLine() {
@@ -533,6 +662,7 @@
         updateNowLine();
         centerOnNow(false);
         updateCrosshairReadout();
+        requestLocation();
 
         setInterval(tick, 1000);
     </script>
