@@ -19,10 +19,13 @@ This is a collection of creative, self-contained web clock implementations. Each
 │   └── utility/                # Countdown timers, dial/desktop clocks, pomodoro
 ├── LITERARY_CLOCK_IDEAS.md    # Backlog + tracker of literary/thematic clock concepts
 ├── CLAUDE.md                  # Equivalent guidance file for Claude Code (keep in sync with this file)
+├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
 ```
 
 Each clock file lives in exactly one category directory, e.g. `clocks/retro/binary_clock.html`, `clocks/art/dune_clock.html`. There is no build output — the repo root and `clocks/` are served as-is.
+
+`plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and isn't part of `index.html`'s gallery. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
 
 ## Building and Running
 

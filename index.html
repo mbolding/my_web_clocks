@@ -88,7 +88,8 @@
             margin-bottom: 48px;
         }
 
-        .clock-card {
+        .clock-card,
+        .app-card {
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
@@ -103,7 +104,8 @@
             height: 100%;
         }
 
-        .clock-card:hover {
+        .clock-card:hover,
+        .app-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 24px var(--shadow-hover);
             border-color: transparent;
@@ -132,6 +134,27 @@
             color: var(--text-muted);
             opacity: 0.6;
             margin-top: auto;
+        }
+
+        /* Other Apps section — separate from the clock gallery/tabs above */
+        .other-apps {
+            margin-top: 24px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .other-apps h2 {
+            font-size: clamp(1.3rem, 3vw, 1.8rem);
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .other-apps .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
         }
     </style>
 </head>
@@ -577,6 +600,18 @@
                 <div class="clock-tag">Utility</div>
             </a>
         </div>
+
+        <section class="other-apps">
+            <h2>Other Apps</h2>
+            <p class="section-subtitle">Standalone tools hosted alongside the clocks &mdash; not part of the gallery above.</p>
+            <div class="clock-grid">
+                <a href="plate/" class="app-card">
+                    <div class="clock-name">Plate</div>
+                    <div class="clock-description">An installable, offline QR code generator. Everything runs on your device; nothing you type is sent anywhere.</div>
+                    <div class="clock-tag">PWA</div>
+                </a>
+            </div>
+        </section>
     </div>
 
     <script>
