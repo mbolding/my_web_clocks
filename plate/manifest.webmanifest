@@ -1,0 +1,29 @@
+{
+  "name": "Plate — QR code generator",
+  "short_name": "Plate",
+  "description": "Make QR codes on your device. Works offline, sends nothing anywhere.",
+  "start_url": "./",
+  "scope": "./",
+  "id": "plate-qr",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0E1116",
+  "theme_color": "#0E1116",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": {
+      "title": "name",
+      "text": "text",
+      "url": "link"
+    }
+  }
+}
