@@ -1,15 +1,16 @@
 /* Plate — service worker.
-   The whole app is a handful of static files, so precache all of them and
-   serve from cache first. Bump CACHE when you change any file.
+   The whole app is a handful of static files, so precache all of them.
+   Page navigations are network-first (falling back to the cached shell
+   offline); every other same-origin GET is cache-first. Bump CACHE when you
+   change any file.
 
    Note the 'plate-' prefix: this origin may host other apps with their own
    service workers, so cleanup only ever touches caches belonging to Plate. */
 
 const PREFIX = 'plate-';
-const CACHE = PREFIX + 'v1';
+const CACHE = PREFIX + 'v2';
 
 const SHELL = [
-  './',
   'index.html',
   'manifest.webmanifest',
   'icon.svg',
@@ -23,7 +24,13 @@ const SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
+      .then((cache) => Promise.all(
+        // cache.addAll() is all-or-nothing: one flaky fetch fails the whole
+        // precache silently, leaving the installed app with no offline shell
+        // even though installation otherwise "succeeded". Cache each file on
+        // its own so a single miss doesn't sink the rest.
+        SHELL.map((url) => cache.add(url).catch(() => {}))
+      ))
       .then(() => self.skipWaiting())
   );
 });
@@ -43,12 +50,21 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   if (new URL(req.url).origin !== self.location.origin) return;
 
-  // Navigations: serve the app shell, so a shared link or a cold start works offline.
+  // Navigations: network-first, so an installed launch (which goes through
+  // this handler even when online) always gets the live page rather than
+  // depending on the precache having succeeded. Falls back to the cached
+  // shell when offline, and to index.html itself as a last resort so this
+  // never resolves with no response at all.
   if (req.mode === 'navigate') {
     event.respondWith(
-      caches.match('index.html', { ignoreSearch: true })
-        .then((hit) => hit || fetch(req))
-        .catch(() => caches.match('index.html'))
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put('index.html', copy));
+          return res;
+        })
+        .catch(() => caches.match('index.html', { ignoreSearch: true }))
+        .then((res) => res || caches.match('index.html'))
     );
     return;
   }
