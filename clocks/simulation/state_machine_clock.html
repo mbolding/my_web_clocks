@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Machine Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e14;
+            --panel: #10151d;
+            --border: #1c2430;
+            --text: #e6e9ef;
+            --text-muted: #7d8797;
+            --hour-color: #a78bfa;
+            --minute-color: #22d3ee;
+            --second-color: #fbbf24;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 36px 20px 50px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 22px;
+            max-width: 560px;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+            color: var(--text-muted);
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .canvas-wrap {
+            width: clamp(280px, 82vmin, 620px);
+            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .digital-time {
+            margin-top: 22px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            letter-spacing: 2px;
+        }
+
+        .notation-panel {
+            margin-top: 20px;
+            width: clamp(280px, 82vmin, 620px);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+        }
+
+        .notation-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 0;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+
+        .notation-line .val {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .notation-line.flash {
+            color: var(--text);
+        }
+
+        .ring-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .notation-line.hours .ring-dot { background: var(--hour-color); }
+        .notation-line.minutes .ring-dot { background: var(--minute-color); }
+        .notation-line.seconds .ring-dot { background: var(--second-color); }
+
+        .carry-tag {
+            margin-left: auto;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .notation-line.hours .carry-tag { text-shadow: 0 0 8px var(--hour-color); }
+        .notation-line.minutes .carry-tag { text-shadow: 0 0 8px var(--minute-color); }
+
+        .notation-line.carrying .carry-tag {
+            opacity: 1;
+        }
+
+        .legend {
+            margin-top: 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 560px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>State Machine Clock</h1>
+        <div class="subtitle">A clock is three nested finite state machines: a mod-60 seconds counter feeding a mod-60 minutes counter, feeding a mod-24 hours counter &mdash; each ring only advances when the ring inside it carries.</div>
+    </header>
+
+    <div class="canvas-wrap">
+        <canvas id="fsmCanvas"></canvas>
+    </div>
+
+    <div class="digital-time" id="digitalTime">00:00:00</div>
+
+    <div class="notation-panel">
+        <div class="notation-line hours" id="hoursLine">
+            <span class="ring-dot"></span>
+            H = <span class="val" id="hourVal">00</span>&nbsp;(mod 24, increments on minutes carry)
+            <span class="carry-tag">&#9889; CARRY</span>
+        </div>
+        <div class="notation-line minutes" id="minutesLine">
+            <span class="ring-dot"></span>
+            M = <span class="val" id="minVal">00</span>&nbsp;(mod 60, increments on seconds carry)
+            <span class="carry-tag">&#9889; CARRY</span>
+        </div>
+        <div class="notation-line seconds" id="secondsLine">
+            <span class="ring-dot"></span>
+            S = <span class="val" id="secVal">00</span>&nbsp;(mod 60, increments every tick)
+        </div>
+    </div>
+
+    <div class="legend">Outer ring: hours &middot; middle ring: minutes &middot; inner ring: seconds. The glowing arc is the most recent transition; the line between rings is a carry.</div>
+
+    <script>
+        const canvas = document.getElementById('fsmCanvas');
+        const ctx = canvas.getContext('2d');
+        const digitalTime = document.getElementById('digitalTime');
+        const hourVal = document.getElementById('hourVal');
+        const minVal = document.getElementById('minVal');
+        const secVal = document.getElementById('secVal');
+        const hoursLine = document.getElementById('hoursLine');
+        const minutesLine = document.getElementById('minutesLine');
+
+        const HOURS_N = 24;
+        const MINUTES_N = 60;
+        const SECONDS_N = 60;
+
+        const COLORS = {
+            hours: '#a78bfa',
+            minutes: '#22d3ee',
+            seconds: '#fbbf24'
+        };
+
+        const FLASH_DURATION = 500;
+        const CARRY_DURATION = 700;
+
+        let cx, cy, R_HOURS, R_MINUTES, R_SECONDS;
+
+        let lastSecond = -1, lastMinute = -1, lastHour = -1;
+        let prevSecond = 0, prevMinute = 0, prevHour = 0;
+        let secFlashStart = 0, minFlashStart = 0, hourFlashStart = 0;
+        let carryPulses = [];
+
+        function pad(n) {
+            return String(n).padStart(2, '0');
+        }
+
+        function resize() {
+            const size = canvas.clientWidth;
+            canvas.width = size;
+            canvas.height = canvas.clientHeight;
+            cx = canvas.width / 2;
+            cy = canvas.height / 2;
+            R_HOURS = canvas.width * 0.44;
+            R_MINUTES = canvas.width * 0.31;
+            R_SECONDS = canvas.width * 0.18;
+        }
+        window.addEventListener('resize', resize);
+
+        function nodePos(index, n, radius) {
+            const angle = -Math.PI / 2 + (index / n) * Math.PI * 2;
+            return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+        }
+
+        function drawRing(n, radius, activeIndex, prevIndex, color, flashStart, nodeR, labelEvery) {
+            const now = performance.now();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            for (let i = 0; i < n; i++) {
+                const p = nodePos(i, n, radius);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, nodeR, 0, Math.PI * 2);
+                ctx.fillStyle = i === activeIndex ? color : 'rgba(255,255,255,0.18)';
+                ctx.fill();
+
+                if (labelEvery && i % labelEvery === 0) {
+                    const lp = nodePos(i, n, radius + nodeR + 12);
+                    ctx.fillStyle = 'rgba(230,233,239,0.5)';
+                    ctx.font = '10px "JetBrains Mono", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(i), lp.x, lp.y);
+                }
+            }
+
+            // Active state glow.
+            const ap = nodePos(activeIndex, n, radius);
+            ctx.beginPath();
+            ctx.arc(ap.x, ap.y, nodeR * 1.9, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 14;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Transition arc: always a single forward step from the previous
+            // state, regardless of wraparound (e.g. 59 -> 0 is one step, not
+            // almost a full lap around the ring).
+            if (flashStart && now - flashStart < FLASH_DURATION && prevIndex !== activeIndex) {
+                const t = 1 - (now - flashStart) / FLASH_DURATION;
+                const startAngle = -Math.PI / 2 + (prevIndex / n) * Math.PI * 2;
+                const endAngle = startAngle + (Math.PI * 2 / n);
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, endAngle);
+                ctx.strokeStyle = color;
+                ctx.globalAlpha = t;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function triggerCarry(fromRing, toRing) {
+            carryPulses.push({ fromRing, toRing, start: performance.now() });
+        }
+
+        function drawCarryPulses() {
+            const now = performance.now();
+            carryPulses = carryPulses.filter((p) => now - p.start < CARRY_DURATION);
+
+            for (const p of carryPulses) {
+                const t = 1 - (now - p.start) / CARRY_DURATION;
+                const fromRadius = p.fromRing === 'seconds' ? R_SECONDS : R_MINUTES;
+                const fromN = p.fromRing === 'seconds' ? SECONDS_N : MINUTES_N;
+                const toRadius = p.toRing === 'minutes' ? R_MINUTES : R_HOURS;
+                const toN = p.toRing === 'minutes' ? MINUTES_N : HOURS_N;
+                const toIndex = p.toRing === 'minutes' ? lastMinute : lastHour;
+
+                const fromPos = nodePos(0, fromN, fromRadius);
+                const toPos = nodePos(toIndex, toN, toRadius);
+
+                ctx.beginPath();
+                ctx.moveTo(fromPos.x, fromPos.y);
+                ctx.lineTo(toPos.x, toPos.y);
+                ctx.strokeStyle = COLORS[p.toRing];
+                ctx.globalAlpha = t;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function flashLine(el, active) {
+            el.classList.toggle('carrying', active);
+        }
+
+        function tick() {
+            const now = new Date();
+            const s = now.getSeconds();
+            const m = now.getMinutes();
+            const h = now.getHours();
+            const nowMs = performance.now();
+
+            if (s !== lastSecond) {
+                if (lastSecond === SECONDS_N - 1 && s === 0) {
+                    triggerCarry('seconds', 'minutes');
+                    flashLine(minutesLine, true);
+                    setTimeout(() => flashLine(minutesLine, false), CARRY_DURATION);
+                }
+                prevSecond = lastSecond === -1 ? s : lastSecond;
+                lastSecond = s;
+                secFlashStart = nowMs;
+            }
+
+            if (m !== lastMinute) {
+                if (lastMinute === MINUTES_N - 1 && m === 0) {
+                    triggerCarry('minutes', 'hours');
+                    flashLine(hoursLine, true);
+                    setTimeout(() => flashLine(hoursLine, false), CARRY_DURATION);
+                }
+                prevMinute = lastMinute === -1 ? m : lastMinute;
+                lastMinute = m;
+                minFlashStart = nowMs;
+            }
+
+            if (h !== lastHour) {
+                prevHour = lastHour === -1 ? h : lastHour;
+                lastHour = h;
+                hourFlashStart = nowMs;
+            }
+
+            digitalTime.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            hourVal.textContent = pad(h);
+            minVal.textContent = pad(m);
+            secVal.textContent = pad(s);
+        }
+
+        function draw() {
+            tick();
+
+            ctx.fillStyle = '#0a0e14';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawRing(HOURS_N, R_HOURS, lastHour, prevHour, COLORS.hours, hourFlashStart, 5, 3);
+            drawRing(MINUTES_N, R_MINUTES, lastMinute, prevMinute, COLORS.minutes, minFlashStart, 3, 5);
+            drawRing(SECONDS_N, R_SECONDS, lastSecond, prevSecond, COLORS.seconds, secFlashStart, 2.5, 5);
+
+            drawCarryPulses();
+
+            requestAnimationFrame(draw);
+        }
+
+        resize();
+        requestAnimationFrame(draw);
+    </script>
+</body>
+</html>
