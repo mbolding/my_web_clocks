@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>State Machine Clock</title>
+    <meta name="description" content="A live clock rendered as three nested finite state machines, installable as a standalone app.">
+    <meta name="theme-color" content="#0a0e14">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="favicon-32.png" sizes="32x32">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="apple-touch-icon-180.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -138,6 +144,13 @@
             text-align: center;
             max-width: 560px;
         }
+
+        .install-hint {
+            margin-top: 10px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -171,6 +184,7 @@
     </div>
 
     <div class="legend">Outer ring: hours &middot; middle ring: minutes &middot; inner ring: seconds. The glowing arc is the most recent transition; the line between rings is a carry.</div>
+    <div class="install-hint">Installable &mdash; works offline once loaded once.</div>
 
     <script>
         const canvas = document.getElementById('fsmCanvas');
@@ -368,6 +382,12 @@
 
         resize();
         requestAnimationFrame(draw);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
     </script>
 </body>
 </html>
