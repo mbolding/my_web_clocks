@@ -44,3 +44,7 @@ Deploys as static assets via Cloudflare Workers (see `wrangler.jsonc`) — the r
 ## For AI coding assistants
 
 This repo includes [`CLAUDE.md`](./CLAUDE.md) and [`GEMINI.md`](./GEMINI.md), which document the architecture and conventions for Claude Code and the Gemini CLI respectively. Keep them in sync when project structure or conventions change.
+
+## License
+
+[MIT](./LICENSE)

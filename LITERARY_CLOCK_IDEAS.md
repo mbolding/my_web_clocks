@@ -329,6 +329,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 
 - ✅ **Multi-Dimensional Systems** - Added 4, 5, and 6 dimensional coordinate projections to Coordinate Clock.
 - ✅ **Epicycle Clock** - 3 to 6 nested circles (Fourier series style), each turning at its own timescale.
+- ✅ **State Machine Clock** - Three nested finite state machines (seconds/minutes/hours) drawn as concentric rings of states, with carries between rings visualized as pulses.
 
 ---
 

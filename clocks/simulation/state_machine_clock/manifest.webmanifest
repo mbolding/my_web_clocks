@@ -1,0 +1,20 @@
+{
+  "name": "State Machine Clock",
+  "short_name": "FSM Clock",
+  "description": "A live clock rendered as three nested finite state machines: seconds, minutes, and hours as concentric rings, with carries between them animated as pulses.",
+  "start_url": "./",
+  "scope": "./",
+  "id": "state-machine-clock",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0a0e14",
+  "theme_color": "#0a0e14",
+  "categories": ["utilities", "education"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
