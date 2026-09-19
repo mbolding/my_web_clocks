@@ -20,6 +20,7 @@
             --shadow: rgba(0,0,0,0.07);
             --radius: 14px;
         }
+
         .dark {
             --bg: #0e1018;
             --surface: #181b28;
@@ -369,12 +370,30 @@
 window.addEventListener('load', function () {
 
 // ── Theme ─────────────────────────────────────────────────
-let dark = false;
-document.getElementById('themeBtn').addEventListener('click', function () {
-    dark = !dark;
+// Start from the system preference, then let the button override it.
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+let dark = prefersDark.matches;
+const themeBtn = document.getElementById('themeBtn');
+
+function applyTheme() {
     document.documentElement.classList.toggle('dark', dark);
-    this.textContent = dark ? '🌙' : '☀️';
+    themeBtn.textContent = dark ? '🌙' : '☀️';
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+}
+
+let followSystem = true;
+themeBtn.addEventListener('click', function () {
+    dark = !dark;
+    followSystem = false;
+    applyTheme();
 });
+// Keep following the system until the button has been used.
+prefersDark.addEventListener('change', e => {
+    if (!followSystem) return;
+    dark = e.matches;
+    applyTheme();
+});
+applyTheme();
 
 // ── Audio ─────────────────────────────────────────────────
 let ac = null;

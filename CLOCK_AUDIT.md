@@ -26,7 +26,7 @@ corrected in place below and flagged **Correction**.
 | Canvas clocks scaling for HiDPI | 26 of 26 (was 3) |
 | Clocks whose decorative motion stands down for `prefers-reduced-motion` | 14 (was 0) |
 | Clocks with `aria-*` markup | 22 (was 0) |
-| Clocks honouring `prefers-color-scheme` | 0 of 83 (the 2 that did are archived) |
+| Clocks that follow the OS colour scheme | 4 (was 0) |
 | Clocks loading Google Fonts | 65 (all 65 now `preconnect`, was 0) |
 
 ---
@@ -108,9 +108,23 @@ pattern for these ("simple digit/text clocks: `setInterval(updateClock, 1000)`")
 Worth a quick pass over `bach`, `clarke`, `finnegans_wake`,
 `slaughterhouse_five` and `macos` to see which can drop to an interval.
 
-**Dark mode. STILL OPEN.** The collection now has no dark-mode-aware clock at
-all, since the two that were are archived. The pattern is preserved in
-`archive/README.md`. Original finding follows.
+**Dark mode. DONE for the utility tier.** Four clocks now follow the system
+setting: `conference_clock` and `timeline_clock` gained a dark palette keyed off
+`prefers-color-scheme`, and `dial_clock` and `utility_clock` now seed their
+existing theme from it.
+
+**Correction.** The original finding said only the two NG26 clocks responded to
+`prefers-color-scheme`, which was true but missed the more interesting case:
+`utility_clock` and `dial_clock` already had complete dark palettes and a manual
+toggle button, they just never consulted the OS, and their toggle icon always
+started on the sun whatever the theme. Layering a `prefers-color-scheme` palette
+over that would have created two competing systems, with the component-level
+`.dark` rules firing in only one of them. They now start from the system
+preference and keep following it until the button is used.
+
+`desktop_clock` is deliberately left light: its gallery entry names light mode as
+part of the design. The literary and art clocks stay locked to their palettes, as
+`CLAUDE.md` intends. Original finding follows.
 
 Only `ng26_clock` and `ng26_countdown` respond to
 `prefers-color-scheme`, and both are archive candidates (see 2.1), which would
@@ -429,6 +443,6 @@ The backlog lists Space Invaders, Windows 95 and NeXTSTEP. Not listed:
 6. ~~Fix the 4,680-week grid arithmetic and the `macos_clock` description.~~ Done.
 7. ~~Correct the CDN inventory in `CLAUDE.md` and `GEMINI.md`.~~ Done.
 8. ~~Rewrite the ~20 thin gallery descriptions.~~ Done, 29 of them.
-9. Give the collection a dark-mode-aware clock again, starting with the
-   palette-neutral utility and retro tiers.
+9. ~~Give the collection a dark-mode-aware clock again, starting with the
+   palette-neutral utility tier.~~ Done, four of them.
 10. Then build: World Clock first, it fills the largest gap.

@@ -19,7 +19,29 @@
             --arc-break: #ffcc00;
             --hand-color: #1d1d1f;
             --second-hand: #ff3b30;
+            --panel: #ffffff;
+            --divider: #eeeeee;
+            --badge-idle: #eeeeee;
         }
+
+        /* Apple's dark system palette, so the arcs keep their meaning at night. */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #1c1c1e;
+                --clock-face: #2c2c2e;
+                --text-main: #f5f5f7;
+                --text-sub: #98989d;
+                --arc-talk: #0a84ff;
+                --arc-qa: #30d158;
+                --arc-break: #ffd60a;
+                --hand-color: #f5f5f7;
+                --second-hand: #ff453a;
+                --panel: #2c2c2e;
+                --divider: #3a3a3c;
+                --badge-idle: #3a3a3c;
+            }
+        }
+
 
         body {
             margin: 0;
@@ -52,7 +74,7 @@
         .info-panel {
             width: 300px;
             padding: 24px;
-            background: white;
+            background: var(--panel);
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
             display: flex;
@@ -164,7 +186,7 @@
         }
 
         .next-up {
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--divider);
             padding-top: 16px;
             font-size: 0.9rem;
             color: var(--text-sub);
@@ -193,7 +215,7 @@
         </div>
 
         <div class="info-panel">
-            <div id="status-badge" class="status-badge" style="background: #eee;">Waiting</div>
+            <div id="status-badge" class="status-badge" style="background: var(--badge-idle);">Waiting</div>
             <div>
                 <h2 class="current-title" id="current-title">Conference Schedule</h2>
                 <p class="speaker-name" id="speaker-name">Today's Session</p>
@@ -413,7 +435,7 @@
 
             } else {
                 badge.innerText = "No Session";
-                badge.style.background = "#eee";
+                badge.style.background = "var(--badge-idle)";
                 badge.style.color = "#888";
                 title.innerText = "Conference Paused";
                 speaker.innerText = "-";
