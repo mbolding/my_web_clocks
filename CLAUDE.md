@@ -18,12 +18,22 @@ This is a collection of creative, self-contained web clock implementations. Each
 │   ├── simulation/            # Physics/particle/agent simulation clocks
 │   └── utility/                # Countdown timers, dial/desktop clocks, pomodoro
 ├── LITERARY_CLOCK_IDEAS.md    # Backlog + tracker of literary/thematic clock concepts
+├── CLOCK_AUDIT.md             # Collection-wide review: what to improve, archive, add
 ├── GEMINI.md                  # Equivalent guidance file for the Gemini CLI (keep in sync with this file)
+├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
 ```
 
 Each clock file lives in exactly one category directory, e.g. `clocks/retro/binary_clock.html`, `clocks/art/dune_clock.html`. There is no build output — the repo root and `clocks/` are served as-is.
+
+`archive/` holds clocks that have been retired from the gallery, currently the
+two expired NeuroGateways '26 event clocks. The files stay in the repo and stay
+reachable by direct URL, but they are not listed in `index.html`, not counted in
+the collection, and not maintained. Retire a clock by `git mv`-ing it here,
+deleting its `.clock-row` from `index.html`, and adding a short entry to
+`archive/README.md` saying why. Don't apply the clock-file conventions below to
+anything in here.
 
 `plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and isn't part of `index.html`'s gallery. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
 
@@ -66,6 +76,25 @@ The site deploys as static assets via Cloudflare Workers (see `wrangler.jsonc`: 
 ```css
 font-size: clamp(min, preferred, max);
 ```
+
+**Canvas sizing (HiDPI)** — size the backing store in device pixels and scale the
+context once, so the canvas stays sharp on Retina and 4K displays. Keep CSS-pixel
+`width`/`height` variables for the drawing code to use; reading `canvas.width`
+after this returns device pixels, not layout pixels.
+```javascript
+function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+```
+Read `devicePixelRatio` inside the handler rather than once at load, so dragging
+the window to a display with a different ratio re-scales correctly.
 
 **Dark mode** (where used)
 ```javascript

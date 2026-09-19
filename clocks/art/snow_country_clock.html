@@ -153,10 +153,19 @@
         const canvas = document.getElementById('snowCanvas');
         const ctx = canvas.getContext('2d');
         
-        let width = window.innerWidth;
-        let height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
+        let width, height;
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resizeCanvas();
 
         const snowflakes = [];
         const numFlakes = 250;
@@ -214,10 +223,7 @@
 
         // Handle resize
         window.addEventListener('resize', () => {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
+            resizeCanvas();
         });
     </script>
 </body>

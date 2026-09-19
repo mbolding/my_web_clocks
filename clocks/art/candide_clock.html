@@ -240,8 +240,12 @@
             width = window.innerWidth;
             // The canvas is positioned at bottom, but its internal coordinate system spans from 0 to height
             height = canvas.getBoundingClientRect().height; 
-            canvas.width = width;
-            canvas.height = height;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
         initCanvas();
         window.addEventListener('resize', initCanvas);

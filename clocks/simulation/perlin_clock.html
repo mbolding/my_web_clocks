@@ -55,8 +55,14 @@
         const digitalTimeElement = document.getElementById('digitalTime');
         const noise = new SimplexNoise();
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         class Vector {
             constructor(x, y) { this.x = x; this.y = y; }
@@ -72,7 +78,7 @@
 
         class Boid {
             constructor() {
-                this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
+                this.position = new Vector(Math.random() * width, Math.random() * height);
                 this.velocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1);
                 this.acceleration = new Vector(0, 0);
             }
@@ -130,10 +136,10 @@
             }
 
             edges() {
-                if (this.position.x > canvas.width) this.position.x = 0;
-                else if (this.position.x < 0) this.position.x = canvas.width;
-                if (this.position.y > canvas.height) this.position.y = 0;
-                else if (this.position.y < 0) this.position.y = canvas.height;
+                if (this.position.x > width) this.position.x = 0;
+                else if (this.position.x < 0) this.position.x = width;
+                if (this.position.y > height) this.position.y = 0;
+                else if (this.position.y < 0) this.position.y = height;
             }
 
             draw() {
@@ -155,7 +161,7 @@
 
         function animate() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
 
             const now = new Date();
             const timeForNoise = now.getTime() * 0.00005; // Time for noise evolution

@@ -887,7 +887,12 @@ const ctx = cvs.getContext('2d');
 
 function resizeCanvas() {
     const sz = Math.round(cvs.parentElement.offsetWidth);
-    cvs.width = cvs.height = st.size = sz;
+    const dpr = window.devicePixelRatio || 1;
+    st.size = sz;
+    cvs.style.width = sz + 'px';
+    cvs.style.height = sz + 'px';
+    cvs.width = cvs.height = Math.round(sz * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     st.trail = [];
 }
 window.addEventListener('resize', resizeCanvas);

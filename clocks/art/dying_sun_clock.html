@@ -183,9 +183,17 @@
         let particles = [];
 
         // Canvas setup
+        let width, height;
+
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -239,20 +247,20 @@
 
             // Sun position - arc across the sky
             const sunAngle = Math.PI * dayProgress * 2 - Math.PI / 2;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height * 0.7;
-            const radiusX = canvas.width * 0.45;
-            const radiusY = canvas.height * 0.4;
+            const centerX = width / 2;
+            const centerY = height * 0.7;
+            const radiusX = width * 0.45;
+            const radiusY = height * 0.4;
 
             const sunX = centerX + Math.cos(sunAngle) * radiusX;
             const sunY = centerY + Math.sin(sunAngle) * radiusY;
 
             // Sun size - larger and more bloated
-            const baseSunSize = Math.min(canvas.width, canvas.height) * 0.15;
+            const baseSunSize = Math.min(width, height) * 0.15;
             const sunSize = baseSunSize * (1 + Math.sin(dayProgress * Math.PI) * 0.2);
 
             // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, width, height);
 
             // Draw sun glow
             const gradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunSize * 2);
@@ -260,7 +268,7 @@
             gradient.addColorStop(0.5, period.colors.sun + '10');
             gradient.addColorStop(1, 'transparent');
             ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
 
             // Draw sun body
             const sunGradient = ctx.createRadialGradient(sunX, sunY, sunSize * 0.3, sunX, sunY, sunSize);

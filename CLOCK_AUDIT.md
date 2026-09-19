@@ -6,19 +6,22 @@ what could be archived, and what could be added.
 Every count and claim below was verified against the files in the repo at the
 time of writing.
 
+**Status:** two items are done, the HiDPI sweep (1.1) and the NG26 archival
+(2.1). Both are marked inline below. Everything else is still open.
+
 **Collection at a glance**
 
 | Metric | Value |
 |---|---|
-| Clock files | 85 (all 85 linked from `index.html`, no orphans, no dead links) |
-| By gallery section | literary 41, art 10, simulation 11, retro 8, nature 5, utility 10 |
+| Clock files | 83 (all 83 linked from `index.html`, no orphans, no dead links) |
+| By gallery section | literary 41, art 10, simulation 11, retro 8, nature 5, utility 8 |
 | Canvas-based | 26 |
 | `requestAnimationFrame` loops | 53 |
-| Canvas clocks scaling for HiDPI | 3 of 26 |
-| Clocks honouring `prefers-reduced-motion` | 0 of 85 |
-| Clocks with any `aria-*` attribute | 0 of 85 |
-| Clocks honouring `prefers-color-scheme` | 2 of 85 |
-| Clocks loading Google Fonts | 67 (none with `preconnect`) |
+| Canvas clocks scaling for HiDPI | 26 of 26 (was 3) |
+| Clocks honouring `prefers-reduced-motion` | 0 of 83 |
+| Clocks with any `aria-*` attribute | 0 of 83 |
+| Clocks honouring `prefers-color-scheme` | 0 of 83 (the 2 that did are archived) |
+| Clocks loading Google Fonts | 65 (none with `preconnect`) |
 
 ---
 
@@ -26,7 +29,14 @@ time of writing.
 
 ### 1.1 Cross-cutting, worth a single sweep
 
-**HiDPI canvas blur, 23 of 26 canvas clocks.** Only `desktop_clock`,
+**HiDPI canvas blur, 23 of 26 canvas clocks. DONE.** All 23 now size their
+backing store in device pixels and scale the context once on resize; the shared
+pattern is documented in `CLAUDE.md` under "Canvas sizing (HiDPI)". Verified in
+headless Chromium at `deviceScaleFactor: 2`: all 23 went from a backing-store to
+CSS ratio of 1.0 to 2.0, with no JS errors, including across a viewport resize.
+Original finding follows.
+
+Only `desktop_clock`,
 `dial_clock` and `utility_clock` touch `devicePixelRatio`. The other 23 size
 their backing store to CSS pixels, so every one of them renders soft on a
 Retina or 4K display. Affected files include the whole `simulation/` set plus
@@ -118,6 +128,13 @@ remove the div and the clock is unreadable. Compare `epicycle_clock` or
 one of them legible as a clock, for instance boids settling into digit shapes
 or the flock's centroid acting as an hour hand, would lift the whole group.
 
+**The four flocking clocks never handle window resize.** Surfaced while doing
+the HiDPI sweep: `flocking`, `perlin`, `predator` and `obstacle` size their
+canvas once at load and register no `resize` listener, so the drawing area stays
+at its original dimensions when the window changes and the boids wrap against
+invisible edges. Left as-is by the HiDPI work, which deliberately preserved
+existing resize behaviour. Best fixed as part of consolidating them (2.5).
+
 **`nature/circadian_clock.html` has an undocumented network dependency.** It
 POSTs the user's exact coordinates to `nominatim.openstreetmap.org` for
 reverse geocoding. The call is correctly wrapped in `.catch()` and degrades to
@@ -153,7 +170,11 @@ section already sets.
 
 ## 2. Clocks that could be archived
 
-### 2.1 `utility/ng26_countdown.html` and `utility/ng26_clock.html`, expired
+### 2.1 `utility/ng26_countdown.html` and `utility/ng26_clock.html`, expired. DONE
+
+Both moved to `archive/` and removed from the gallery. The dark-mode pattern they
+carried is preserved in `archive/README.md`. Original finding follows.
+
 
 Both are branded "NeuroGateways '26" and hardcode
 `new Date('2026-04-09T00:00:00')` for an event dated "April 9–10, 2026". That
@@ -217,7 +238,7 @@ genuinely distinct work in that section (`epicycle`, `pendulum`,
 fix: one clock, a mode switch for noise field, predator and obstacles.
 
 **Net effect if all of the above is actioned:** 85 clocks to 78, with no
-concept lost.
+concept lost. 2.1 is done, so the collection currently stands at 83.
 
 ---
 
@@ -310,11 +331,11 @@ The backlog lists Space Invaders, Windows 95 and NeXTSTEP. Not listed:
 
 ## Suggested order of work
 
-1. Archive the two expired NG26 clocks (lift their dark mode pattern first).
+1. ~~Archive the two expired NG26 clocks (lift their dark mode pattern first).~~ Done.
 2. Resolve the three duplicate pairs: the two Márquez clocks, the two life
    clocks, `xyz_clock` against `coordinate_clock`.
 3. Consolidate the flocking quartet.
-4. Sweep HiDPI scaling across the 23 canvas clocks.
+4. ~~Sweep HiDPI scaling across the 23 canvas clocks.~~ Done.
 5. Add `prefers-reduced-motion` handling to the 53 animated clocks.
 6. Fix the 4,680-week grid arithmetic and the `macos_clock` description.
 7. Correct the CDN inventory in `CLAUDE.md` and `GEMINI.md`.

@@ -75,8 +75,14 @@
         const digitalTimeElement = document.getElementById('digitalTime');
         const noise = new SimplexNoise();
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         class Vector {
             constructor(x, y) { this.x = x; this.y = y; }
@@ -92,7 +98,7 @@
         
         class Obstacle {
             constructor(radius, noiseOffset) {
-                this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
+                this.position = new Vector(Math.random() * width, Math.random() * height);
                 this.radius = radius;
                 this.noiseOffset = noiseOffset; // To give each obstacle a different path
             }
@@ -107,16 +113,16 @@
                 const drift = new Vector(Math.cos(angle), Math.sin(angle));
                 this.position.add(drift);
 
-                if (this.position.x > canvas.width + this.radius) this.position.x = -this.radius;
-                if (this.position.x < -this.radius) this.position.x = canvas.width + this.radius;
-                if (this.position.y > canvas.height + this.radius) this.position.y = -this.radius;
-                if (this.position.y < -this.radius) this.position.y = canvas.height + this.radius;
+                if (this.position.x > width + this.radius) this.position.x = -this.radius;
+                if (this.position.x < -this.radius) this.position.x = width + this.radius;
+                if (this.position.y > height + this.radius) this.position.y = -this.radius;
+                if (this.position.y < -this.radius) this.position.y = height + this.radius;
             }
         }
 
         class Boid {
             constructor() {
-                this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
+                this.position = new Vector(Math.random() * width, Math.random() * height);
                 this.velocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1);
                 this.acceleration = new Vector(0, 0);
             }
@@ -188,10 +194,10 @@
             }
 
             edges() {
-                if (this.position.x > canvas.width) this.position.x = 0;
-                else if (this.position.x < 0) this.position.x = canvas.width;
-                if (this.position.y > canvas.height) this.position.y = 0;
-                else if (this.position.y < 0) this.position.y = canvas.height;
+                if (this.position.x > width) this.position.x = 0;
+                else if (this.position.x < 0) this.position.x = width;
+                if (this.position.y > height) this.position.y = 0;
+                else if (this.position.y < 0) this.position.y = height;
             }
 
             draw() {
@@ -217,7 +223,7 @@
 
         function animate() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
 
             const now = new Date();
             const time = now.getTime() * 0.0001; // Time for noise evolution

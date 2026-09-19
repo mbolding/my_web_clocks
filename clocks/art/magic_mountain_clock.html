@@ -401,17 +401,25 @@ const canvas = document.getElementById('snowCanvas');
 const ctx    = canvas.getContext('2d');
 let flakes   = [];
 
+let width, height;
+
 function resizeCanvas() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    width  = window.innerWidth;
+    height = window.innerHeight;
+    canvas.style.width  = width + 'px';
+    canvas.style.height = height + 'px';
+    canvas.width  = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function initFlakes() {
     flakes = [];
     for (let i = 0; i < 90; i++) {
         flakes.push({
-            x:       Math.random() * canvas.width,
-            y:       Math.random() * canvas.height,
+            x:       Math.random() * width,
+            y:       Math.random() * height,
             r:       Math.random() * 1.8 + 0.4,
             speed:   Math.random() * 0.45 + 0.1,
             drift:   (Math.random() - 0.5) * 0.25,
@@ -421,7 +429,7 @@ function initFlakes() {
 }
 
 function animateSnow() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, width, height);
     flakes.forEach(f => {
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
@@ -429,9 +437,9 @@ function animateSnow() {
         ctx.fill();
         f.y += f.speed;
         f.x += f.drift;
-        if (f.y > canvas.height + 4) { f.y = -4; f.x = Math.random() * canvas.width; }
-        if (f.x > canvas.width + 4)  f.x = -4;
-        if (f.x < -4)                 f.x = canvas.width + 4;
+        if (f.y > height + 4) { f.y = -4; f.x = Math.random() * width; }
+        if (f.x > width + 4)  f.x = -4;
+        if (f.x < -4)                 f.x = width + 4;
     });
     requestAnimationFrame(animateSnow);
 }
