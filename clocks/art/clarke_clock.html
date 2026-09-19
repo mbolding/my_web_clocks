@@ -233,10 +233,12 @@
                 }
             }
 
-            requestAnimationFrame(updateClock);
+            // Everything here is gated on the second changing, so a 10Hz poll
+            // keeps the eye pulse punctual at a sixth of the work.
         }
 
         updateClock();
+        setInterval(updateClock, 100);
 
         // --- Mouse Tracking Logic for HAL 9000 Pupil ---
         const halEye = document.getElementById('halEye');

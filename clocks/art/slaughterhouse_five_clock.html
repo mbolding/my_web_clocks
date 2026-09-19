@@ -262,11 +262,10 @@
             let s = now.getSeconds().toString().padStart(2, '0');
             
             timeDisplay.textContent = `${h}:${m}:${s}`;
-
-            requestAnimationFrame(updateClock);
         }
 
         updateClock();
+        setInterval(updateClock, 1000);
     </script>
 </body>
 </html>

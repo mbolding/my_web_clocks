@@ -6,8 +6,14 @@ what could be archived, and what could be added.
 Every count and claim below was verified against the files in the repo at the
 time of writing.
 
-**Status:** two items are done, the HiDPI sweep (1.1) and the NG26 archival
-(2.1). Both are marked inline below. Everything else is still open.
+**Status:** every improvement in section 1 is done, along with the NG26
+archival (2.1) and the `xyz_clock` rebuild that resolves (2.4). What remains is
+section 2's remaining archive decisions, which are judgement calls about which
+of a duplicate pair to keep, and section 3, which is new work rather than
+fixes. Items are marked inline.
+
+Two findings in the original audit turned out to be wrong once tested; both are
+corrected in place below and flagged **Correction**.
 
 **Collection at a glance**
 
@@ -18,10 +24,10 @@ time of writing.
 | Canvas-based | 26 |
 | `requestAnimationFrame` loops | 53 |
 | Canvas clocks scaling for HiDPI | 26 of 26 (was 3) |
-| Clocks honouring `prefers-reduced-motion` | 0 of 83 |
-| Clocks with any `aria-*` attribute | 0 of 83 |
+| Clocks whose decorative motion stands down for `prefers-reduced-motion` | 14 (was 0) |
+| Clocks with `aria-*` markup | 22 (was 0) |
 | Clocks honouring `prefers-color-scheme` | 0 of 83 (the 2 that did are archived) |
-| Clocks loading Google Fonts | 65 (none with `preconnect`) |
+| Clocks loading Google Fonts | 65 (all 65 now `preconnect`, was 0) |
 
 ---
 
@@ -47,7 +53,18 @@ Retina or 4K display. Affected files include the whole `simulation/` set plus
 6-line resize helper, applied 23 times, visibly sharpens a quarter of the
 collection.
 
-**No reduced-motion support anywhere, 0 of 85.** 53 clocks run continuous
+**No reduced-motion support anywhere, 0 of 85. DONE, for decorative motion.**
+The canvas backdrops in 11 clocks now hold a single frame when reduced motion is
+requested, and the `glitch`, `calvino` and `house_of_leaves` CSS animations stand
+down (glitch keeps its chromatic split and loses only the movement). Where the
+readout is written from inside a frozen loop, it keeps ticking on an interval.
+Verified by loading each under both `reducedMotion` settings and diffing the
+canvas pixels: decoration static under reduce, moving otherwise, clock ticking in
+both. Animations that *carry* the time (a sweeping hand, a turning epicycle) are
+deliberately left running, since freezing those stops the clock. Original finding
+follows.
+
+ 53 clocks run continuous
 `requestAnimationFrame` loops, and several are deliberately aggressive
 (`glitch_clock`, `house_of_leaves`, `calvino_clock` re-themes itself every 15
 seconds, `candide_clock` runs "violent CSS disasters"). None check
@@ -55,19 +72,34 @@ seconds, `candide_clock` runs "violent CSS disasters"). None check
 clearest accessibility gap. A reasonable default: keep the clock readable and
 correct, drop the decorative motion.
 
-**No screen-reader affordance, 0 of 85.** No clock carries an `aria-label`,
-`role` or `aria-live` region. Adding `aria-live="polite"` plus a plain-text
-time to the readout element would make the collection usable non-visually
-without changing any visual design. Worth doing on the utility clocks at
-minimum, where people actually depend on the time.
+**No screen-reader affordance, 0 of 85. DONE.** 13 backdrop canvases are now
+`aria-hidden`, and 10 primary readouts carry `role="timer"` with a label.
 
-**Google Fonts without `preconnect`, 67 files.** 67 clocks pull webfonts from
+**Correction.** The original recommendation here was to add `aria-live="polite"`
+to the readout. That is wrong for a clock: a polite live region on an element
+that changes every second makes a screen reader announce the time every second,
+which is worse than no markup at all. `role="timer"` is the right choice, as it
+is a live region whose implicit `aria-live` is `off`, so assistive tech can find
+and query the clock without being read it continuously.
+
+**Google Fonts without `preconnect`, 67 files. DONE** for all 65 in the
+gallery; the two in `archive/` are left alone as unmaintained. Original finding
+follows.
+
+ 67 clocks pull webfonts from
 `fonts.googleapis.com`, none with a `preconnect` hint to
 `fonts.gstatic.com`. Two lines per file removes a round trip on first paint.
 Some clocks request three or four families at several weights each, which is
 worth trimming where the design does not use them all.
 
-**rAF driving once-per-second text.** 29 DOM-only clocks (no canvas) run an
+**rAF driving once-per-second text. DONE.** The pass suggested below was run.
+`macos_clock`, `finnegans_wake` and `slaughterhouse_five` were pure 1Hz text and
+now use `setInterval`. `clarke_clock` gates everything on the second changing, so
+it polls at 10Hz instead of 60. `bach_clock` keeps its rAF loop: it uses
+milliseconds to sweep its hands smoothly, so the frame rate is doing real work.
+Original finding follows.
+
+ 29 DOM-only clocks (no canvas) run an
 rAF loop. Many genuinely animate and should stay, but some only repaint whole
 seconds. `retro/macos_clock` is the clear-cut case: it calls
 `toLocaleDateString` and rewrites two elements 60 times a second to display a
@@ -76,7 +108,11 @@ pattern for these ("simple digit/text clocks: `setInterval(updateClock, 1000)`")
 Worth a quick pass over `bach`, `clarke`, `finnegans_wake`,
 `slaughterhouse_five` and `macos` to see which can drop to an interval.
 
-**Dark mode.** Only `ng26_clock` and `ng26_countdown` respond to
+**Dark mode. STILL OPEN.** The collection now has no dark-mode-aware clock at
+all, since the two that were are archived. The pattern is preserved in
+`archive/README.md`. Original finding follows.
+
+Only `ng26_clock` and `ng26_countdown` respond to
 `prefers-color-scheme`, and both are archive candidates (see 2.1), which would
 take the collection to zero. `CLAUDE.md` is right that literary and art clocks
 are intentionally locked to a themed palette, so this is really a note about
@@ -86,7 +122,21 @@ support both schemes.
 
 ### 1.2 Specific clocks
 
-**`art/xyz_clock.html` needs the most work of any single file.** Four issues:
+**`art/xyz_clock.html` needs the most work of any single file. DONE, all four.**
+It now carries a small inline orbit control, so nothing is loaded from Skypack
+and only one copy of Three.js is fetched; the trail is chronological and seeded
+with the preceding 12 hours at load, fading from dim to bright so the direction
+of time reads; and the readout uses `clamp()`.
+
+**Correction** to point 2 below: the wrap really did misorder the buffer, and
+replaying it past capacity shows all 43,200 slots rotated the moment it wraps,
+which the fix removes. But calling the result a visible "spurious segment
+straight across the box" overstated it. The mapping already jumps the full width
+of the cube 720 times in 12 hours, whenever the minute rolls over, and once a day
+at midnight, so one more arbitrary segment was not distinguishable. The valuable
+part of this fix is the dependency removal and the seeding, not the wrap.
+
+Original finding follows. Four issues:
 
 1. It loads Three.js r128 as a global script from cdnjs, then imports
    `OrbitControls` from `cdn.skypack.dev/three@0.128.0`. Skypack resolves
@@ -103,14 +153,25 @@ support both schemes.
    immediately.
 4. No `clamp()`; the readout is a fixed `1.5rem`.
 
-**`retro/macos_clock.html` is described inaccurately in the gallery.**
+**`retro/macos_clock.html` is described inaccurately in the gallery. DONE.**
+It now has the window: a striped System 6 title bar with a close box and resize
+grip, dragging anywhere on the desktop and clamped so the title bar stays
+reachable. The gallery description is true as written. Original finding follows.
+
+
 `index.html` sells it as "A System 6 tribute with draggable windows." The file
 contains no `mousedown`, no drag logic and no window chrome at all, just one
 static centred `.clock-screen` div. Either build the draggable window (the
 better outcome, it is a good idea) or correct the description. It also uses
 `background-attachment: fixed`, which iOS Safari ignores.
 
-**The two "life" clocks miscount the grid.** Both `life_clock` and
+**The two "life" clocks miscount the grid. DONE.** Rows are years of life, so
+the fill now follows birthdays while the headline stats follow real elapsed time.
+At 90-minus-16-weeks the grid reads 4,664 of 4,680 with 16 weeks remaining, where
+before it read full with none left. The zoom clock's tooltips and current-week
+shading use the same per-year basis. Original finding follows.
+
+ Both `life_clock` and
 `life_zoom_clock` build a 4,680-box grid from `TOTAL_YEARS * 52`, but compute
 progress as real elapsed time (`msAlive / 604800000`). Ninety real years is
 about 4,696 weeks, so the grid runs out roughly 15 weeks before the person's
@@ -128,14 +189,22 @@ remove the div and the clock is unreadable. Compare `epicycle_clock` or
 one of them legible as a clock, for instance boids settling into digit shapes
 or the flock's centroid acting as an hour hand, would lift the whole group.
 
-**The four flocking clocks never handle window resize.** Surfaced while doing
+**The four flocking clocks never handle window resize. DONE.** All four now
+register a resize handler. Original finding follows.
+
+ Surfaced while doing
 the HiDPI sweep: `flocking`, `perlin`, `predator` and `obstacle` size their
 canvas once at load and register no `resize` listener, so the drawing area stays
 at its original dimensions when the window changes and the boids wrap against
 invisible edges. Left as-is by the HiDPI work, which deliberately preserved
 existing resize behaviour. Best fixed as part of consolidating them (2.5).
 
-**`nature/circadian_clock.html` has an undocumented network dependency.** It
+**`nature/circadian_clock.html` has an undocumented network dependency. DONE**,
+in the sense asked for: it is now documented in `CLAUDE.md` and `GEMINI.md`, with
+a note not to copy the pattern. The call itself is left in place, since removing
+it would cost the place name for no correctness gain. Original finding follows.
+
+ It
 POSTs the user's exact coordinates to `nominatim.openstreetmap.org` for
 reverse geocoding. The call is correctly wrapped in `.catch()` and degrades to
 raw coordinates, so it is not a bug, but it is a third-party service not listed
@@ -144,20 +213,33 @@ not really written for anonymous browser traffic from a static site. At minimum
 it deserves a line in `CLAUDE.md`; ideally the clock would say where the name is
 coming from, or drop the lookup and show coordinates.
 
-**`CLAUDE.md`'s CDN inventory is wrong in two ways.** It states "Three.js +
+**`CLAUDE.md`'s CDN inventory is wrong in two ways. DONE.** Both files now list
+the real consumers of each library and note that neither Three.js clock uses
+OrbitControls. Original finding follows.
+
+ It states "Three.js +
 OrbitControls (3D sundial)". The 3D sundial (`nature/sundial_clock.html`) does
 **not** load OrbitControls at all; the only OrbitControls user is
 `art/xyz_clock.html`, and it loads it from Skypack rather than the documented
 CDN. Three.js is also pinned to r128, which is several major versions behind.
 Worth correcting the doc and deciding whether to bump the pin.
 
-**Unoptimised raster assets.** `retro/os6.png` is 398 KB and
-`retro/old_clock_face.jpg` is 172 KB, 570 KB of images for two clocks in a repo
-whose next-largest file is a 54 KB HTML page. Both compress substantially at no
-visible cost; `os6.png` in particular is a flat-colour System 6 desktop that
-should be a fraction of that size.
+**Unoptimised raster assets. DONE for the PNG.** `os6.png` turned out to be a
+3066x2050 RGBA image holding exactly two distinct colours over a fully opaque
+alpha channel. Re-encoded as 1-bit it is pixel-identical to the original and
+drops from 398 KB to 8.8 KB, a 97.8% saving for no visible change at all.
 
-**Thin gallery descriptions.** The literary rows read well ("Meursault's
+**Correction.** The original claim that *both* files compress substantially at no
+visible cost was wrong. `old_clock_face.jpg` is a photograph and is already
+sensibly encoded: re-encoding at quality 90 saves about 15% while adding
+generational loss (PSNR 38.7 dB), and higher quality settings make the file
+larger than the original. It is left as it is.
+
+**Thin gallery descriptions. DONE.** All 29 rows under 62 characters were
+rewritten against what the clock actually does, not what its name suggested.
+Original finding follows.
+
+ The literary rows read well ("Meursault's
 indifference, the Algerian sun, the murder on the beach"). Much of `art`,
 `simulation` and `retro` does not: "A clock that periodically glitches and
 distorts", "A particle system based clock", "Time displayed in binary format",
@@ -211,7 +293,13 @@ buttons and per-week date tooltips. There is nothing `life_clock` does that
 `life_zoom_clock` does not. Two adjacent gallery rows for the same grid is
 mostly a choice the visitor should not have to make.
 
-### 2.4 `art/xyz_clock.html`, superseded concept
+### 2.4 `art/xyz_clock.html`, superseded concept. RESOLVED BY FIXING IT
+
+The finding offered a choice: retire it, or give it the reason to exist that
+`coordinate_clock` does not cover, namely the 12-hour trail. The trail was
+rebuilt and seeded, so it now does something `coordinate_clock` does not, and the
+clock earns its place. Original finding follows.
+
 
 Setting aside the bugs in 1.2, the concept is "time mapped to X, Y, Z
 coordinates", which `art/coordinate_clock.html` already contains as one mode
@@ -336,8 +424,11 @@ The backlog lists Space Invaders, Windows 95 and NeXTSTEP. Not listed:
    clocks, `xyz_clock` against `coordinate_clock`.
 3. Consolidate the flocking quartet.
 4. ~~Sweep HiDPI scaling across the 23 canvas clocks.~~ Done.
-5. Add `prefers-reduced-motion` handling to the 53 animated clocks.
-6. Fix the 4,680-week grid arithmetic and the `macos_clock` description.
-7. Correct the CDN inventory in `CLAUDE.md` and `GEMINI.md`.
-8. Rewrite the ~20 thin gallery descriptions.
-9. Then build: World Clock first, it fills the largest gap.
+5. ~~Add `prefers-reduced-motion` handling to the animated clocks.~~ Done for
+   decorative motion.
+6. ~~Fix the 4,680-week grid arithmetic and the `macos_clock` description.~~ Done.
+7. ~~Correct the CDN inventory in `CLAUDE.md` and `GEMINI.md`.~~ Done.
+8. ~~Rewrite the ~20 thin gallery descriptions.~~ Done, 29 of them.
+9. Give the collection a dark-mode-aware clock again, starting with the
+   palette-neutral utility and retro tiers.
+10. Then build: World Clock first, it fills the largest gap.
