@@ -10,7 +10,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 
 ```
 /
-├── index.html                 # Landing page: tabbed/filterable gallery of all clocks
+├── index.html                 # Landing page: searchable, category-grouped index of all clocks
 ├── clocks/
 │   ├── art/                   # Color/visual concept clocks + the literary clock series
 │   ├── nature/                # Sun, moon, circadian, sundial clocks
@@ -55,7 +55,7 @@ The site deploys as static assets via Cloudflare Workers (see `wrangler.jsonc`: 
 1. Pick the right category directory under `clocks/` (`art`, `nature`, `retro`, `simulation`, `utility`); only create a new one if the clock genuinely doesn't fit an existing category.
 2. Name the file `descriptive_clock.html` (snake_case, ends in `_clock.html`).
 3. Keep the clock fully self-contained: styles in `<style>`, logic in `<script>`, no build step. Only pull in a CDN library (Three.js, Matter.js, SunCalc, etc.) when the concept genuinely needs it.
-4. Add an entry to `index.html`'s `.clock-grid`: an `<a>` with `href="clocks/<category>/<file>.html"`, `class="clock-card"`, and `data-category="<category>"` matching one of the nav tab filters, containing `.clock-name`, `.clock-description`, and `.clock-tag` children. Place it under the matching `<!-- Category -->` comment block so the file stays organized.
+4. Add an entry to `index.html`: an `<a class="clock-row">` with `href="clocks/<dir>/<file>.html"`, a `title` attribute holding the full description, and `.clock-name` + `.clock-description` spans. Place it in the `.clock-list` of the matching `<section class="category">` — and for a literary clock, in the `.clock-list` under the right `.group-title` sub-group. Add `data-keywords="<author> <source work>"` so the clock is findable by author as well as by title. Counts in the tabs, headings and tagline are derived from the DOM at load, so there is nothing to bump by hand.
 5. If it's part of the literary series, add/update its entry in `LITERARY_CLOCK_IDEAS.md` (move it into "Currently Implemented" with a ✅ and one-line description).
 6. Implement responsive sizing with CSS `clamp()`. Add dark mode via `prefers-color-scheme` where it fits — not all clocks use it; many literary/art clocks are intentionally locked to one themed palette.
 7. If the change affects overall project structure or conventions, mirror it into `CLAUDE.md`, which documents the same architecture for Claude Code.
@@ -84,7 +84,11 @@ const days = ['Sunday', 'Monday', ...];
 const months = ['January', 'February', ...];
 ```
 
-**`index.html` gallery** — a single static file with a `.tabs` nav (`data-filter` per button) and a `.clock-grid` of `.clock-card` links (`data-category` per card). An inline `<script>` toggles a `.hidden` class client-side by matching the active tab's `data-filter` against each card's `data-category`. When adding a card, match the existing markup exactly so filtering keeps working.
+**`index.html` gallery** — a single static file. A sticky `.controls` bar holds a `#search` box and a `.tabs` nav (`data-filter` per button). Below it sits one `<section class="category" data-category="...">` per category, each holding one or more `.clock-list` grids of `.clock-row` links. The Literary section splits its list into sub-groups, each introduced by a `.group-title` `<h3>` immediately before its `.clock-list`.
+
+The inline `<script>` builds a cached search index per row from the row text, its `data-keywords`, its group heading and its category heading — so "kafka" finds The Trial and "shakespeare" finds all three plays. It then toggles a `.hidden` class on non-matching rows, and on any group heading, list or category left empty. The tab filter and the search box combine with AND. `/` focuses the search box and Escape clears it. Descriptions are truncated to a single line in CSS; the full text stays in the DOM (so search still matches it) and in `title=` for hover.
+
+**Gallery category vs. directory** — these are deliberately not the same. `clocks/art/` holds both the literary series and the abstract/colour clocks; in the gallery the literary ones appear under the `literary` section and the rest under `art`. The directory is where a file lives; the section is how it is browsed. Don't move files to make the two line up.
 
 **CDN libraries in use** — Three.js + OrbitControls (3D sundial), Matter.js (physics/gravity clocks), SunCalc (sun/moon position clocks). Prefer these over adding a new dependency unless a clock's concept requires something else.
 
