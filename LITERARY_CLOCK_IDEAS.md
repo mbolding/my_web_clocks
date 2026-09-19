@@ -329,6 +329,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Multi-Dimensional Systems** - Added 4, 5, and 6 dimensional coordinate projections to Coordinate Clock.
 - ✅ **Epicycle Clock** - 3 to 6 nested circles (Fourier series style), each turning at its own timescale.
 - ✅ **State Machine Clock** - Three nested finite state machines (seconds/minutes/hours) drawn as concentric rings of states, with carries between rings visualized as pulses.
+- ✅ **DSL Clock** - A tiny embedded language (tokenizer, recursive-descent parser, tree-walking evaluator, no `eval`) re-run every frame. Programs assign to `text`, `sub`, `color`, `background`, `size` and `spin`; the parsed syntax tree is shown next to the editor. No loops and no user-defined functions, so every program terminates.
 
 ---
 
