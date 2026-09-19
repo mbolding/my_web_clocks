@@ -179,11 +179,14 @@
         }
 
         .zoom-controls button {
-            width: 32px;
+            /* min-width rather than width, so the +/- stay square but the
+               text-labelled Reset can size to its own content. */
+            min-width: 32px;
             height: 32px;
-            padding: 0;
+            padding: 0 10px;
             font-size: 1.1rem;
             line-height: 1;
+            white-space: nowrap;
         }
 
         .zoom-hint {

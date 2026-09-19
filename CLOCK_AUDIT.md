@@ -6,22 +6,23 @@ what could be archived, and what could be added.
 Every count and claim below was verified against the files in the repo at the
 time of writing.
 
-**Status:** every improvement in section 1 is done, along with the NG26
-archival (2.1) and the `xyz_clock` rebuild that resolves (2.4). What remains is
-section 2's remaining archive decisions, which are judgement calls about which
-of a duplicate pair to keep, and section 3, which is new work rather than
-fixes. Items are marked inline.
+**Status:** sections 1 and 2 are done. Section 3 is new work rather than fixes
+and is still open. Items are marked inline.
 
-Two findings in the original audit turned out to be wrong once tested; both are
-corrected in place below and flagged **Correction**.
+Four findings turned out to be wrong once tested, including one where the right
+answer was to keep both clocks rather than retire either. All are corrected in
+place below and flagged **Correction**.
+
+The collection stands at 79 clocks, down from 85, with six files in `archive/`
+and no concept lost.
 
 **Collection at a glance**
 
 | Metric | Value |
 |---|---|
-| Clock files | 83 (all 83 linked from `index.html`, no orphans, no dead links) |
-| By gallery section | literary 41, art 10, simulation 11, retro 8, nature 5, utility 8 |
-| Canvas-based | 26 |
+| Clock files | 79 (all 79 linked from `index.html`, no orphans, no dead links) |
+| By gallery section | literary 41, art 10, simulation 8, retro 8, nature 5, utility 7 |
+| Canvas-based | 23 |
 | `requestAnimationFrame` loops | 53 |
 | Canvas clocks scaling for HiDPI | 26 of 26 (was 3) |
 | Clocks whose decorative motion stands down for `prefers-reduced-motion` | 14 (was 0) |
@@ -283,7 +284,23 @@ artifacts whose event has passed. Worth noting they are also the only two
 clocks with dark mode support, so it is worth lifting that pattern out before
 retiring them.
 
-### 2.2 `art/solitude_clock.html` or `art/one_hundred_years_clock.html`, duplicates
+### 2.2 The two García Márquez clocks. CORRECTED, both kept
+
+**Correction.** This finding was wrong, and looking at the two clocks rendered
+rather than at their file sizes is what showed it. They are not duplicates, they
+are two different devices built from one novel. `solitude_clock` is the
+atmospheric reading: the time blurs and dissolves into memory under the yellow
+butterflies, with the famous opening line beneath. `one_hundred_years_clock` is
+the structural one: Macondo's circular time drawn as concentric rings, naming
+which generation of Buendías the hour belongs to. Retiring either would have
+thrown away a distinct piece of work on the strength of a shared author and a
+shared motif.
+
+What was actually wrong is that nothing said so. Both rows now name which reading
+they are, they share keywords so either search finds both, and
+`LITERARY_CLOCK_IDEAS.md` records them as one novel implemented twice on purpose
+rather than as two unrelated ticks. Original finding follows.
+
 
 Two clocks for the same novel. `solitude_clock` is "100 Years of Solitude"
 (sepia palette, yellow butterflies); `one_hundred_years_clock` is
@@ -298,7 +315,13 @@ Thematic Works. Keep the stronger one (`one_hundred_years_clock` is the more
 developed at 422 lines versus 244), fold across anything worth keeping, and
 collapse the tracker to one entry.
 
-### 2.3 `utility/life_clock.html`, strict subset
+### 2.3 `utility/life_clock.html`, strict subset. DONE
+
+Archived. Seen side by side the two pages are the same design, one of them with a
+zoom control row. Fixing the grid arithmetic in both (1.2) also surfaced a small
+bug in the survivor: `.zoom-controls button` forced a 32px width on every button,
+clipping the text-labelled Reset to "Res". Original finding follows.
+
 
 `life_zoom_clock` is a superset: identical `TOTAL_YEARS`/`WEEKS_PER_YEAR`/
 `TOTAL_WEEKS` constants, identical week arithmetic, the same date input and the
@@ -323,7 +346,20 @@ parabolic, elliptic, cylindrical and spherical space, in 969 lines to
 `coordinate_clock` does not cover, namely the 12-hour trail, which is genuinely
 distinctive and is currently the broken part.
 
-### 2.5 Consolidate the flocking quartet, four files to one
+### 2.5 Consolidate the flocking quartet, four files to one. DONE
+
+`flocking_clock.html` now carries all four as modes, each keeping the exact time
+mapping it had as a standalone file, with one shared copy of SimplexNoise instead
+of two inline duplicates. `perlin`, `predator` and `obstacle` are archived, and
+the gallery row keeps all four names as keywords so anyone looking for "the
+predator one" still finds it.
+
+While consolidating, the deeper complaint in 1.2 was also addressed: the clock
+now draws the 12-hour dial the flock is steered around, so the hour reads off the
+simulation instead of only off the digital readout pasted over it. Verified in
+all four modes, in both motion settings, at `deviceScaleFactor: 2`. Original
+finding follows.
+
 
 `flocking`, `perlin`, `predator` and `obstacle` are one clock with four
 settings. All four share the same `flockingCanvas` element id, the same
@@ -339,8 +375,8 @@ genuinely distinct work in that section (`epicycle`, `pendulum`,
 `state_machine`, `oscilloscope`). `coordinate_clock` is the precedent for the
 fix: one clock, a mode switch for noise field, predator and obstacles.
 
-**Net effect if all of the above is actioned:** 85 clocks to 78, with no
-concept lost. 2.1 is done, so the collection currently stands at 83.
+**Net effect:** 85 clocks to 79, with no concept lost. The estimate of 78
+assumed one of the Márquez pair would go; it stayed, correctly.
 
 ---
 
@@ -434,9 +470,11 @@ The backlog lists Space Invaders, Windows 95 and NeXTSTEP. Not listed:
 ## Suggested order of work
 
 1. ~~Archive the two expired NG26 clocks (lift their dark mode pattern first).~~ Done.
-2. Resolve the three duplicate pairs: the two Márquez clocks, the two life
-   clocks, `xyz_clock` against `coordinate_clock`.
-3. Consolidate the flocking quartet.
+2. ~~Resolve the three duplicate pairs: the two Márquez clocks, the two life
+   clocks, `xyz_clock` against `coordinate_clock`.~~ Done: the life clocks
+   collapsed to one, `xyz_clock` earned its place by being fixed, and the Márquez
+   pair turned out not to be a duplicate at all.
+3. ~~Consolidate the flocking quartet.~~ Done, four modes in one clock.
 4. ~~Sweep HiDPI scaling across the 23 canvas clocks.~~ Done.
 5. ~~Add `prefers-reduced-motion` handling to the animated clocks.~~ Done for
    decorative motion.

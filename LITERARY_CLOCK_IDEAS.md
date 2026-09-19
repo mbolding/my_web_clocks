@@ -16,7 +16,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Bloomsday** - James Joyce's Ulysses (18 episodes through June 16, 1904)
 - ✅ **The Waste Land** - T.S. Eliot (five sections with fragmentary voices)
 - ✅ **Mrs Dalloway** - Virginia Woolf (single June day in London with Big Ben)
-- ✅ **Cien Años de Soledad** - Gabriel García Márquez (cyclical generations)
+- ✅ **One Hundred Years of Solitude** - Gabriel García Márquez, implemented twice on purpose: `one_hundred_years_clock.html` takes the structural reading (Macondo's circular time as concentric rings, Buendía generations) and `solitude_clock.html` the atmospheric one (the time dissolving into memory among the yellow butterflies). Two readings, one novel; don't add a third without a distinct angle.
 - ✅ **Infinite Jest** - David Foster Wallace (subsidized years, footnotes, E.T.A./Ennet House)
 - ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes, involuntary memory)
 
@@ -49,7 +49,6 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
 - ✅ **Candide** - Voltaire
 - ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
-- ✅ **100 Years of Solitude** - Gabriel Garcia Marquez
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
 - ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
 - ✅ **The Tempest** - William Shakespeare (unity of time made literal: real 2-6pm storm window, five acts, Prospero's "sixth hour" deadline)
