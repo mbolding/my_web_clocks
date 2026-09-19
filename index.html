@@ -12,9 +12,19 @@
             --text: #000000;
             --text-muted: #888888;
             --border: #eeeeee;
-            --shadow: rgba(0, 0, 0, 0.08);
-            --shadow-hover: rgba(0, 0, 0, 0.12);
+            --hover: rgba(0, 0, 0, 0.04);
             --accent: #000;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0e0e10;
+                --text: #f2f2f2;
+                --text-muted: #8a8a90;
+                --border: #232327;
+                --hover: rgba(255, 255, 255, 0.06);
+                --accent: #f2f2f2;
+            }
         }
 
         * {
@@ -28,133 +38,225 @@
             background: var(--bg);
             color: var(--text);
             font-family: 'Inter', sans-serif;
-            padding: 48px 24px;
+            padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px);
             line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
         header {
             text-align: center;
-            margin-bottom: 48px;
+            margin-bottom: clamp(20px, 4vw, 32px);
         }
 
         h1 {
             font-size: clamp(2rem, 5vw, 3.5rem);
             font-weight: 600;
-            margin-bottom: 16px;
         }
 
-        /* Tabs */
+        .tagline {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Sticky control bar: search + category tabs */
+        .controls {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg);
+            padding: 12px 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-wrap {
+            position: relative;
+            max-width: 420px;
+            margin: 0 auto 12px;
+        }
+
+        #search {
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text);
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 9px 36px 9px 16px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        #search:focus {
+            border-color: var(--text-muted);
+        }
+
+        #search::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-hint {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        #search:focus + .search-hint,
+        #search:not(:placeholder-shown) + .search-hint {
+            opacity: 0;
+        }
+
         .tabs {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 48px;
+            gap: 6px;
         }
 
         .tab-btn {
             background: transparent;
             border: 1px solid transparent;
-            padding: 8px 16px;
+            padding: 5px 12px;
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: var(--text-muted);
             cursor: pointer;
             border-radius: 20px;
-            transition: all 0.2s ease;
+            transition: color 0.15s ease, background 0.15s ease;
         }
 
         .tab-btn:hover {
             color: var(--text);
-            background: rgba(0, 0, 0, 0.03);
+            background: var(--hover);
         }
 
         .tab-btn.active {
             color: var(--bg);
-            background: var(--text);
+            background: var(--accent);
             font-weight: 500;
         }
 
-        /* Grid */
-        .clock-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 48px;
+        .tab-count,
+        .category-count,
+        .group-count {
+            font-size: 0.75em;
+            opacity: 0.55;
+            font-variant-numeric: tabular-nums;
         }
 
-        .clock-card,
-        .app-card {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: var(--bg);
-            height: 100%;
+        /* Category sections */
+        .category {
+            margin-top: 40px;
         }
 
-        .clock-card:hover,
-        .app-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px var(--shadow-hover);
-            border-color: transparent;
-        }
-
-        .clock-card.hidden {
+        .category.hidden,
+        .group-title.hidden,
+        .clock-list.hidden,
+        .clock-row.hidden {
             display: none;
         }
 
-        .clock-name {
-            font-size: 1.4rem;
+        .category-head {
+            margin-bottom: 12px;
+        }
+
+        .category-head h2 {
+            font-size: 1.5rem;
             font-weight: 600;
-            margin-bottom: 8px;
         }
 
-        .clock-description {
-            font-size: 0.95rem;
+        .category-blurb {
             color: var(--text-muted);
-            line-height: 1.6;
+            font-size: 0.9rem;
         }
 
-        .clock-tag {
+        .group-title {
             font-size: 0.75rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             color: var(--text-muted);
-            opacity: 0.6;
-            margin-top: auto;
+            margin: 24px 0 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
         }
 
-        /* Other Apps section — separate from the clock gallery/tabs above */
+        /* Dense two-column list — the rows replace the old card grid */
+        .clock-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            column-gap: 24px;
+        }
+
+        .clock-row {
+            display: block;
+            padding: 8px 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s ease;
+            min-width: 0;
+        }
+
+        .clock-row:hover {
+            background: var(--hover);
+        }
+
+        .clock-name {
+            display: block;
+            font-size: 0.98rem;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        /* One line, ellipsised — keeps rows uniform and scannable.
+           The full text stays in the DOM for search and in title= for hover. */
+        .clock-description {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .no-results {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 64px 0;
+            font-size: 0.95rem;
+        }
+
+        .no-results.hidden {
+            display: none;
+        }
+
+        /* Other Apps — separate from the clock gallery above */
         .other-apps {
-            margin-top: 24px;
-            padding-top: 40px;
+            margin-top: 64px;
+            padding-top: 32px;
             border-top: 1px solid var(--border);
         }
 
         .other-apps h2 {
-            font-size: clamp(1.3rem, 3vw, 1.8rem);
+            font-size: 1.5rem;
             font-weight: 600;
-            text-align: center;
-            margin-bottom: 8px;
         }
 
         .other-apps .section-subtitle {
-            text-align: center;
             color: var(--text-muted);
             font-size: 0.9rem;
-            margin-bottom: 24px;
+            margin-bottom: 12px;
         }
     </style>
 </head>
@@ -163,494 +265,560 @@
     <div class="container">
         <header>
             <h1>Web Clocks</h1>
+            <p class="tagline"><span id="total">85</span> self-contained clocks. Pick one.</p>
         </header>
 
-        <nav class="tabs">
-            <button class="tab-btn active" data-filter="all">All</button>
-            <button class="tab-btn" data-filter="simulation">Simulation</button>
-            <button class="tab-btn" data-filter="retro">Retro</button>
-            <button class="tab-btn" data-filter="art">Art</button>
-            <button class="tab-btn" data-filter="nature">Nature</button>
-            <button class="tab-btn" data-filter="utility">Utility</button>
-        </nav>
-
-        <div class="clock-grid">
-            <!-- Retro -->
-            <a href="clocks/retro/arcade_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">Arcade Clock</div>
-                <div class="clock-description">A clock inspired by classic arcade games.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-            <a href="clocks/retro/asteroids_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">Asteroids Clock</div>
-                <div class="clock-description">A vector monitor tribute to the arcade classic.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-            <a href="clocks/retro/flip_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">Flip Clock</div>
-                <div class="clock-description">A mechanical flip-style clock.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-            <a href="clocks/retro/binary_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">Binary Clock</div>
-                <div class="clock-description">Time displayed in binary format.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-            <a href="clocks/retro/latex_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">LaTeX Clock</div>
-                <div class="clock-description">A clock inspired by the LaTeX typesetting system.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-            <a href="clocks/retro/vintage_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">Vintage Clock</div>
-                <div class="clock-description">A photo-realistic clock face with overlaid dynamic hands.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-            <a href="clocks/retro/macos_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">Mac OS Clock</div>
-                <div class="clock-description">A System 6 tribute with draggable windows.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-            <a href="clocks/retro/ascii_clock.html" class="clock-card" data-category="retro">
-                <div class="clock-name">ASCII Clock</div>
-                <div class="clock-description">A clock rendered in pure ASCII art.</div>
-                <div class="clock-tag">Retro</div>
-            </a>
-
-            <!-- Simulation -->
-            <a href="clocks/simulation/gravity_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Gravity Clock</div>
-                <div class="clock-description">A physics-based clock where time falls.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/perlin_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Perlin Clock</div>
-                <div class="clock-description">A flocking simulation guided by a noise field.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/predator_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Predator-Prey Clock</div>
-                <div class="clock-description">A flocking simulation where a predator chases the flock.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/obstacle_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Obstacle Clock</div>
-                <div class="clock-description">A flocking simulation with moving obstacles.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/flocking_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Flocking Clock</div>
-                <div class="clock-description">A simulation of flocking behavior.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/oscilloscope_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Oscilloscope Clock</div>
-                <div class="clock-description">An analog XY-mode oscilloscope simulation.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/ode_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">ODE Clock</div>
-                <div class="clock-description">A clock based on ordinary differential equations.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/particle_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Particle Clock</div>
-                <div class="clock-description">A particle system based clock.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/epicycle_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Epicycle Clock</div>
-                <div class="clock-description">3 to 6 nested rotating circles, one per timescale from hours down to hundredths of a second, tracing a glowing Fourier-style rosette.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/pendulum_clock.html" class="clock-card" data-category="simulation">
-                <div class="clock-name">Chaos Pendulum Clock</div>
-                <div class="clock-description">60 double pendulums forked by a hair, seeded by the hour and minute, blooming into a fresh rainbow of chaos every 60 seconds.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-            <a href="clocks/simulation/state_machine_clock/" class="clock-card" data-category="simulation">
-                <div class="clock-name">State Machine Clock</div>
-                <div class="clock-description">Three nested finite state machines &mdash; seconds, minutes, hours &mdash; drawn as concentric rings, with each carry visualized as a pulse between rings. Installable as its own offline app.</div>
-                <div class="clock-tag">Simulation</div>
-            </a>
-
-            <!-- Nature -->
-            <a href="clocks/nature/sun_moon_clock.html" class="clock-card" data-category="nature">
-                <div class="clock-name">Sun & Moon Clock</div>
-                <div class="clock-description">Real-time sky position based on your location.</div>
-                <div class="clock-tag">Nature</div>
-            </a>
-            <a href="clocks/nature/mealtime_clock.html" class="clock-card" data-category="nature">
-                <div class="clock-name">The Mealtime Clock</div>
-                <div class="clock-description">Tells time by Second Breakfast, Elevenses, and more.</div>
-                <div class="clock-tag">Nature</div>
-            </a>
-            <a href="clocks/nature/sundial_clock.html" class="clock-card" data-category="nature">
-                <div class="clock-name">Sundial Clock</div>
-                <div class="clock-description">A 3D sundial using Three.js.</div>
-                <div class="clock-tag">Nature</div>
-            </a>
-            <a href="clocks/nature/sunrise_clock.html" class="clock-card" data-category="nature">
-                <div class="clock-name">Solar Clock</div>
-                <div class="clock-description">Analog clock with sunrise and sunset marked on the dial, calculated from your location.</div>
-                <div class="clock-tag">Nature</div>
-            </a>
-            <a href="clocks/nature/circadian_clock.html" class="clock-card" data-category="nature">
-                <div class="clock-name">Circadian Clock</div>
-                <div class="clock-description">A clock based on natural circadian rhythms.</div>
-                <div class="clock-tag">Nature</div>
-            </a>
-
-            <!-- Art -->
-            <a href="clocks/art/xyz_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">XYZ Clock</div>
-                <div class="clock-description">Time mapped to X, Y, Z coordinates.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/hsv_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">HSV Clock</div>
-                <div class="clock-description">Time mapped to the HSV color model.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/spectrum_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Spectrum Clock</div>
-                <div class="clock-description">Time represented as a color spectrum.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/word_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Word Clock</div>
-                <div class="clock-description">Time displayed in written English.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/polar_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Polar Clock</div>
-                <div class="clock-description">Time shown on a polar coordinate system.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/dying_sun_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Dying Sun</div>
-                <div class="clock-description">A baroque chronometer from the Dying Earth, with exotic time periods and a bloated crimson sun.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/spell_preparation_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Spell Preparation Clock</div>
-                <div class="clock-description">An illuminated grimoire showing Vancian spells memorizing throughout the day.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/cutz_chronometer.html" class="clock-card" data-category="art">
-                <div class="clock-name">Cutz Chronometer</div>
-                <div class="clock-description">Baroque clockwork with invented time units: Grand Chimes, Lesser Bells, Sestinas, and Jiffies.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/deodand_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Deodand Clock</div>
-                <div class="clock-description">Each hour governed by a supernatural entity from the Overworld, with glowing runes and summoning circles.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/ulysses_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Bloomsday Clock</div>
-                <div class="clock-description">Follow the 18 episodes of Joyce's Ulysses through June 16, 1904, with stream of consciousness and Dublin locations.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/waste_land_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Waste Land Clock</div>
-                <div class="clock-description">T.S. Eliot's five sections with fragmentary voices, drifting text, and modernist typography.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/mrs_dalloway_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Mrs Dalloway Clock</div>
-                <div class="clock-description">Virginia Woolf's single June day in London 1923, with Big Ben chimes and stream of consciousness.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/one_hundred_years_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Cien Años de Soledad</div>
-                <div class="clock-description">García Márquez's cyclical time in Macondo, with generations of Buendías and yellow butterflies.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/infinite_jest_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Infinite Jest Clock</div>
-                <div class="clock-description">Wallace's subsidized years with footnotes, entertainment cartridges, and E.T.A./Ennet House narratives.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/proust_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">À la recherche du temps perdu</div>
-                <div class="clock-description">Proust's seven volumes with involuntary memory, madeleines, and time regained.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/slaughterhouse_five_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Slaughterhouse-Five</div>
-                <div class="clock-description">Billy Pilgrim unstuck in time, jumping between Dresden, Tralfadore, and Ilium. So it goes.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/metamorphosis_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Metamorphosis</div>
-                <div class="clock-description">Gregor Samsa's transformation through stages of the day. Kafka's sparse nightmare of isolation.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/divine_comedy_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Divine Comedy</div>
-                <div class="clock-description">Dante's journey through Inferno, Purgatorio, and Paradiso. 24 hours descending and ascending.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/canterbury_tales_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Canterbury Tales</div>
-                <div class="clock-description">24 pilgrims, 24 hours. Each tells their tale on the road to Canterbury. Medieval manuscript aesthetic.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/hamlet_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Hamlet</div>
-                <div class="clock-description">"The time is out of joint." Soliloquies through the hours. The ghost appears at midnight.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/tempest_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Tempest</div>
-                <div class="clock-description">Shakespeare's unity of time made literal: a live analog dial with the storm's real 2-to-6 window highlighted and split into five acts.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/old_man_sea_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Old Man and the Sea</div>
-                <div class="clock-description">Santiago's three-day struggle with the marlin. Hemingway's spare prose, ocean waves, endurance.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/stranger_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Stranger</div>
-                <div class="clock-description">Meursault's indifference, the Algerian sun, the murder on the beach. "It was because of the sun."</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/sisyphus_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Sisyphus Clock</div>
-                <div class="clock-description">Camus' eternal boulder, pushed uphill every minute in a flat cutout-collage style &mdash; and squashed by a giant foot on the hour.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/odyssey_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Odyssey</div>
-                <div class="clock-description">24 books, 24 hours. From the Cyclops to the Sirens to home. Wine-dark seas and ancient Greek glory.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/crime_punishment_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Crime and Punishment</div>
-                <div class="clock-description">Raskolnikov's feverish days, the murder, guilt, confession. Guilt meter tracks psychological torment.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/catch_22_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Catch-22 Clock</div>
-                <div class="clock-description">Yossarian's missions and recursive time loops. The required missions always increment.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/dune_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Dune Clock</div>
-                <div class="clock-description">Arrakis Standard Time with spice motes, water discipline tracking, and Prescience.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/dispossessed_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Dispossessed</div>
-                <div class="clock-description">Anarres and Urras split by a wall, telling the same instant two ways &mdash; communal decads versus mercantile minutes.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/don_quixote_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Don Quixote</div>
-                <div class="clock-description">A sweeping windmill clock featuring a "Lower Visor" toggle that plunges reality into chivalric madness.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/ghost_in_the_shell_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Ghost in the Shell</div>
-                <div class="clock-description">A tactical cyber-brain interface with high-precision time tracking, data streams, and "Ghost Noise" glitches.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/bach_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Bach Clock</div>
-                <div class="clock-description">A Baroque fugue of time featuring concentric musical staves and glowing notes weaving through counterpoint.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/lotr_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">LOTR Clock</div>
-                <div class="clock-description">The One Ring resting in the fires of Mount Doom, featuring a glowing Tengwar inscription that crawls with animated fire.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/great_gatsby_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Great Gatsby</div>
-                <div class="clock-description">A rich, 1920s Art Deco clock where the iconic Green Light pulses relentlessly with every passing second.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/the_trial_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Trial</div>
-                <div class="clock-description">A confusing bureaucratic nightmare where reading the time requires deciphering infinite official forms and denied status appeals.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/house_of_leaves_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">House of Leaves</div>
-                <div class="clock-description">A spatially erratic layout where massive disjointed time numbers violently shift across the screen above endless footnotes.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/faulkner_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Sound and the Fury</div>
-                <div class="clock-description">A four-quadrant clock displaying the exact same time through the vastly different, conflicting psychological states of four narrators.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/calvino_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">If on a winter's night a traveler</div>
-                <div class="clock-description">A meta-narrative clock that directly addresses the Reader, constantly interrupting and completely changing its own visual theme every 15 seconds.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/finnegans_wake_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Finnegans Wake</div>
-                <div class="clock-description">A circular dream-logic clock shrouded in the murky waters of the River Liffey, where the time endlessly ripples and melts.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/snow_country_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Snow Country</div>
-                <div class="clock-description">A pristine, quiet aesthetic where the time reflects against a dark train window as endless snow gently drifts through a long night.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/macbeth_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Macbeth</div>
-                <div class="clock-description">A creeping, gothic horror clock where the seconds tick down mercilessly as physical blood slowly drips and pools from the digits.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/clarke_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Arthur C. Clarke</div>
-                <div class="clock-description">A 2001: A Space Odyssey inspired clock featuring a massive HAL 9000 eye that pulses to the seconds and physically tracks your cursor.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/eames_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Eames / Nelson Ball</div>
-                <div class="clock-description">A faithful CSS recreation of George Nelson's iconic mid-century modern atomic ball clock.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/candide_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Candide</div>
-                <div class="clock-description">A relentlessly optimistic clock that ignores the violent CSS disasters happening behind it, while you quietly cultivate a procedural canvas garden.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/babel_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Library of Babel</div>
-                <div class="clock-description">Set inside an infinite hexagonal grid, exactly one true moment of time is decoded from absolute random alphanumeric chaos every second.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/solitude_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">100 Years of Solitude</div>
-                <div class="clock-description">A magical realism clock where the time periodically dissolves into memory, surrounded by Mauricio Babilonia's endless swarm of yellow butterflies.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/prehistoric_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Prehistoric Deep Time</div>
-                <div class="clock-description">A conceptual simulation of pre-human deep time. Read the time by tracking beautiful calcified text fossils as they are slowly buried beneath layers of falling sediment.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/magic_mountain_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">The Magic Mountain</div>
-                <div class="clock-description">Thomas Mann's sanatorium where time distorts. A mercury thermometer tracks each hour, while Hans Castorp passes through seven years above the flatlands.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/coordinate_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Coordinate Clock</div>
-                <div class="clock-description">Assign Y, Mo, D, H, Mi, S to coordinate axes and plot time as a point in Cartesian, Polar, Parabolic, Elliptic, Cylindrical, or Spherical space.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/glitch_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">Glitch Clock</div>
-                <div class="clock-description">A clock that periodically glitches and distorts.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-            <a href="clocks/art/on_the_road_clock.html" class="clock-card" data-category="art">
-                <div class="clock-name">On the Road</div>
-                <div class="clock-description">Kerouac's fast-paced, jazz-inflected prose tracking a journey across America.</div>
-                <div class="clock-tag">Art</div>
-            </a>
-
-            <!-- Utility -->
-            <a href="clocks/utility/life_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Entire Life Clock</div>
-                <div class="clock-description">A stark "Memento Mori" visualization mapping out 4,680 weeks of a 90-year lifespan.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/life_zoom_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Zoomable Life Clock</div>
-                <div class="clock-description">The 4,680-week "Memento Mori" grid with scroll/pinch zoom, drag-to-pan, and per-week date tooltips.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/dial_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Dial Clock</div>
-                <div class="clock-description">Click the dial to set alarms and timers. Hover to preview, click to confirm.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/timeline_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Timeline Clock</div>
-                <div class="clock-description">A scrollable ruler of the next three months. The center always reads out whatever moment you're looking at.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/desktop_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Desktop Clock</div>
-                <div class="clock-description">Large analog clock with soft hourly chimes. Light mode, designed to keep open on your desktop.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/random_pomodoro_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Random Pomodoro</div>
-                <div class="clock-description">Focus timer with randomized intervals.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/conference_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Conference Clock</div>
-                <div class="clock-description">Speaker timer with schedule visualization.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/ng26_countdown.html" class="clock-card" data-category="utility">
-                <div class="clock-name">NG26 Countdown</div>
-                <div class="clock-description">A countdown timer.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/ng26_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">NG26 Clock</div>
-                <div class="clock-description">A traditional analog clock.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
-            <a href="clocks/utility/utility_clock.html" class="clock-card" data-category="utility">
-                <div class="clock-name">Utility Clock</div>
-                <div class="clock-description">Analog clock with timer, stopwatch, and alarm.</div>
-                <div class="clock-tag">Utility</div>
-            </a>
+        <div class="controls">
+            <div class="search-wrap">
+                <input type="search" id="search" placeholder="Search clocks&hellip;" autocomplete="off"
+                    aria-label="Search clocks">
+                <span class="search-hint">/</span>
+            </div>
+            <nav class="tabs">
+            <button class="tab-btn active" data-filter="all">All <span class="tab-count">85</span></button>
+            <button class="tab-btn" data-filter="literary">Literary <span class="tab-count">41</span></button>
+            <button class="tab-btn" data-filter="art">Art <span class="tab-count">10</span></button>
+            <button class="tab-btn" data-filter="simulation">Simulation <span class="tab-count">11</span></button>
+            <button class="tab-btn" data-filter="retro">Retro <span class="tab-count">8</span></button>
+            <button class="tab-btn" data-filter="nature">Nature <span class="tab-count">5</span></button>
+            <button class="tab-btn" data-filter="utility">Utility <span class="tab-count">10</span></button>
+            </nav>
         </div>
+
+        <!-- Literary -->
+        <section class="category" data-category="literary">
+            <div class="category-head">
+                <h2>Literary <span class="category-count">41</span></h2>
+                <p class="category-blurb">Works of literature reinterpreted as timekeeping devices.</p>
+            </div>
+                <h3 class="group-title">Modernist <span class="group-count">8</span></h3>
+                <div class="clock-list">
+                    <a href="clocks/art/ulysses_clock.html" class="clock-row" data-keywords="James Joyce Ulysses" title="Follow the 18 episodes of Joyce&#x27;s Ulysses through June 16, 1904, with stream of consciousness and Dublin locations.">
+                        <span class="clock-name">Bloomsday Clock</span>
+                        <span class="clock-description">Follow the 18 episodes of Joyce's Ulysses through June 16, 1904, with stream of consciousness and Dublin locations.</span>
+                    </a>
+                    <a href="clocks/art/finnegans_wake_clock.html" class="clock-row" data-keywords="James Joyce" title="A circular dream-logic clock shrouded in the murky waters of the River Liffey, where the time endlessly ripples and melts.">
+                        <span class="clock-name">Finnegans Wake</span>
+                        <span class="clock-description">A circular dream-logic clock shrouded in the murky waters of the River Liffey, where the time endlessly ripples and melts.</span>
+                    </a>
+                    <a href="clocks/art/waste_land_clock.html" class="clock-row" data-keywords="T.S. Eliot" title="T.S. Eliot&#x27;s five sections with fragmentary voices, drifting text, and modernist typography.">
+                        <span class="clock-name">The Waste Land Clock</span>
+                        <span class="clock-description">T.S. Eliot's five sections with fragmentary voices, drifting text, and modernist typography.</span>
+                    </a>
+                    <a href="clocks/art/mrs_dalloway_clock.html" class="clock-row" data-keywords="Virginia Woolf" title="Virginia Woolf&#x27;s single June day in London 1923, with Big Ben chimes and stream of consciousness.">
+                        <span class="clock-name">Mrs Dalloway Clock</span>
+                        <span class="clock-description">Virginia Woolf's single June day in London 1923, with Big Ben chimes and stream of consciousness.</span>
+                    </a>
+                    <a href="clocks/art/proust_clock.html" class="clock-row" data-keywords="Marcel Proust In Search of Lost Time" title="Proust&#x27;s seven volumes with involuntary memory, madeleines, and time regained.">
+                        <span class="clock-name">À la recherche du temps perdu</span>
+                        <span class="clock-description">Proust's seven volumes with involuntary memory, madeleines, and time regained.</span>
+                    </a>
+                    <a href="clocks/art/faulkner_clock.html" class="clock-row" data-keywords="William Faulkner" title="A four-quadrant clock displaying the exact same time through the vastly different, conflicting psychological states of four narrators.">
+                        <span class="clock-name">The Sound and the Fury</span>
+                        <span class="clock-description">A four-quadrant clock displaying the exact same time through the vastly different, conflicting psychological states of four narrators.</span>
+                    </a>
+                    <a href="clocks/art/snow_country_clock.html" class="clock-row" data-keywords="Yasunari Kawabata Japanese" title="A pristine, quiet aesthetic where the time reflects against a dark train window as endless snow gently drifts through a long night.">
+                        <span class="clock-name">Snow Country</span>
+                        <span class="clock-description">A pristine, quiet aesthetic where the time reflects against a dark train window as endless snow gently drifts through a long night.</span>
+                    </a>
+                    <a href="clocks/art/magic_mountain_clock.html" class="clock-row" data-keywords="Thomas Mann German" title="Thomas Mann&#x27;s sanatorium where time distorts. A mercury thermometer tracks each hour, while Hans Castorp passes through seven years above the flatlands.">
+                        <span class="clock-name">The Magic Mountain</span>
+                        <span class="clock-description">Thomas Mann's sanatorium where time distorts. A mercury thermometer tracks each hour, while Hans Castorp passes through seven years above the flatlands.</span>
+                    </a>
+                </div>
+                <h3 class="group-title">Existential &amp; Absurd <span class="group-count">7</span></h3>
+                <div class="clock-list">
+                    <a href="clocks/art/metamorphosis_clock.html" class="clock-row" data-keywords="Franz Kafka" title="Gregor Samsa&#x27;s transformation through stages of the day. Kafka&#x27;s sparse nightmare of isolation.">
+                        <span class="clock-name">The Metamorphosis</span>
+                        <span class="clock-description">Gregor Samsa's transformation through stages of the day. Kafka's sparse nightmare of isolation.</span>
+                    </a>
+                    <a href="clocks/art/the_trial_clock.html" class="clock-row" data-keywords="Franz Kafka" title="A confusing bureaucratic nightmare where reading the time requires deciphering infinite official forms and denied status appeals.">
+                        <span class="clock-name">The Trial</span>
+                        <span class="clock-description">A confusing bureaucratic nightmare where reading the time requires deciphering infinite official forms and denied status appeals.</span>
+                    </a>
+                    <a href="clocks/art/stranger_clock.html" class="clock-row" data-keywords="Albert Camus L'Etranger" title="Meursault&#x27;s indifference, the Algerian sun, the murder on the beach. &quot;It was because of the sun.&quot;">
+                        <span class="clock-name">The Stranger</span>
+                        <span class="clock-description">Meursault's indifference, the Algerian sun, the murder on the beach. "It was because of the sun."</span>
+                    </a>
+                    <a href="clocks/art/sisyphus_clock.html" class="clock-row" data-keywords="Albert Camus Myth of Sisyphus" title="Camus&#x27; eternal boulder, pushed uphill every minute in a flat cutout-collage style — and squashed by a giant foot on the hour.">
+                        <span class="clock-name">The Sisyphus Clock</span>
+                        <span class="clock-description">Camus' eternal boulder, pushed uphill every minute in a flat cutout-collage style &mdash; and squashed by a giant foot on the hour.</span>
+                    </a>
+                    <a href="clocks/art/crime_punishment_clock.html" class="clock-row" data-keywords="Fyodor Dostoevsky Russian" title="Raskolnikov&#x27;s feverish days, the murder, guilt, confession. Guilt meter tracks psychological torment.">
+                        <span class="clock-name">Crime and Punishment</span>
+                        <span class="clock-description">Raskolnikov's feverish days, the murder, guilt, confession. Guilt meter tracks psychological torment.</span>
+                    </a>
+                    <a href="clocks/art/catch_22_clock.html" class="clock-row" data-keywords="Joseph Heller" title="Yossarian&#x27;s missions and recursive time loops. The required missions always increment.">
+                        <span class="clock-name">Catch-22 Clock</span>
+                        <span class="clock-description">Yossarian's missions and recursive time loops. The required missions always increment.</span>
+                    </a>
+                    <a href="clocks/art/candide_clock.html" class="clock-row" data-keywords="Voltaire French" title="A relentlessly optimistic clock that ignores the violent CSS disasters happening behind it, while you quietly cultivate a procedural canvas garden.">
+                        <span class="clock-name">Candide</span>
+                        <span class="clock-description">A relentlessly optimistic clock that ignores the violent CSS disasters happening behind it, while you quietly cultivate a procedural canvas garden.</span>
+                    </a>
+                </div>
+                <h3 class="group-title">Shakespeare &amp; the Classics <span class="group-count">7</span></h3>
+                <div class="clock-list">
+                    <a href="clocks/art/hamlet_clock.html" class="clock-row" data-keywords="William Shakespeare" title="&quot;The time is out of joint.&quot; Soliloquies through the hours. The ghost appears at midnight.">
+                        <span class="clock-name">Hamlet</span>
+                        <span class="clock-description">"The time is out of joint." Soliloquies through the hours. The ghost appears at midnight.</span>
+                    </a>
+                    <a href="clocks/art/macbeth_clock.html" class="clock-row" data-keywords="William Shakespeare" title="A creeping, gothic horror clock where the seconds tick down mercilessly as physical blood slowly drips and pools from the digits.">
+                        <span class="clock-name">Macbeth</span>
+                        <span class="clock-description">A creeping, gothic horror clock where the seconds tick down mercilessly as physical blood slowly drips and pools from the digits.</span>
+                    </a>
+                    <a href="clocks/art/tempest_clock.html" class="clock-row" data-keywords="William Shakespeare" title="Shakespeare&#x27;s unity of time made literal: a live analog dial with the storm&#x27;s real 2-to-6 window highlighted and split into five acts.">
+                        <span class="clock-name">The Tempest</span>
+                        <span class="clock-description">Shakespeare's unity of time made literal: a live analog dial with the storm's real 2-to-6 window highlighted and split into five acts.</span>
+                    </a>
+                    <a href="clocks/art/odyssey_clock.html" class="clock-row" data-keywords="Homer Greek epic" title="24 books, 24 hours. From the Cyclops to the Sirens to home. Wine-dark seas and ancient Greek glory.">
+                        <span class="clock-name">The Odyssey</span>
+                        <span class="clock-description">24 books, 24 hours. From the Cyclops to the Sirens to home. Wine-dark seas and ancient Greek glory.</span>
+                    </a>
+                    <a href="clocks/art/divine_comedy_clock.html" class="clock-row" data-keywords="Dante Alighieri Inferno" title="Dante&#x27;s journey through Inferno, Purgatorio, and Paradiso. 24 hours descending and ascending.">
+                        <span class="clock-name">The Divine Comedy</span>
+                        <span class="clock-description">Dante's journey through Inferno, Purgatorio, and Paradiso. 24 hours descending and ascending.</span>
+                    </a>
+                    <a href="clocks/art/canterbury_tales_clock.html" class="clock-row" data-keywords="Geoffrey Chaucer" title="24 pilgrims, 24 hours. Each tells their tale on the road to Canterbury. Medieval manuscript aesthetic.">
+                        <span class="clock-name">The Canterbury Tales</span>
+                        <span class="clock-description">24 pilgrims, 24 hours. Each tells their tale on the road to Canterbury. Medieval manuscript aesthetic.</span>
+                    </a>
+                    <a href="clocks/art/don_quixote_clock.html" class="clock-row" data-keywords="Miguel de Cervantes Spanish" title="A sweeping windmill clock featuring a &quot;Lower Visor&quot; toggle that plunges reality into chivalric madness.">
+                        <span class="clock-name">Don Quixote</span>
+                        <span class="clock-description">A sweeping windmill clock featuring a "Lower Visor" toggle that plunges reality into chivalric madness.</span>
+                    </a>
+                </div>
+                <h3 class="group-title">The American Century <span class="group-count">5</span></h3>
+                <div class="clock-list">
+                    <a href="clocks/art/great_gatsby_clock.html" class="clock-row" data-keywords="F. Scott Fitzgerald" title="A rich, 1920s Art Deco clock where the iconic Green Light pulses relentlessly with every passing second.">
+                        <span class="clock-name">The Great Gatsby</span>
+                        <span class="clock-description">A rich, 1920s Art Deco clock where the iconic Green Light pulses relentlessly with every passing second.</span>
+                    </a>
+                    <a href="clocks/art/old_man_sea_clock.html" class="clock-row" data-keywords="Ernest Hemingway" title="Santiago&#x27;s three-day struggle with the marlin. Hemingway&#x27;s spare prose, ocean waves, endurance.">
+                        <span class="clock-name">The Old Man and the Sea</span>
+                        <span class="clock-description">Santiago's three-day struggle with the marlin. Hemingway's spare prose, ocean waves, endurance.</span>
+                    </a>
+                    <a href="clocks/art/on_the_road_clock.html" class="clock-row" data-keywords="Jack Kerouac Beat" title="Kerouac&#x27;s fast-paced, jazz-inflected prose tracking a journey across America.">
+                        <span class="clock-name">On the Road</span>
+                        <span class="clock-description">Kerouac's fast-paced, jazz-inflected prose tracking a journey across America.</span>
+                    </a>
+                    <a href="clocks/art/slaughterhouse_five_clock.html" class="clock-row" data-keywords="Kurt Vonnegut" title="Billy Pilgrim unstuck in time, jumping between Dresden, Tralfadore, and Ilium. So it goes.">
+                        <span class="clock-name">Slaughterhouse-Five</span>
+                        <span class="clock-description">Billy Pilgrim unstuck in time, jumping between Dresden, Tralfadore, and Ilium. So it goes.</span>
+                    </a>
+                    <a href="clocks/art/infinite_jest_clock.html" class="clock-row" data-keywords="David Foster Wallace" title="Wallace&#x27;s subsidized years with footnotes, entertainment cartridges, and E.T.A./Ennet House narratives.">
+                        <span class="clock-name">Infinite Jest Clock</span>
+                        <span class="clock-description">Wallace's subsidized years with footnotes, entertainment cartridges, and E.T.A./Ennet House narratives.</span>
+                    </a>
+                </div>
+                <h3 class="group-title">Magic Realism &amp; Metafiction <span class="group-count">5</span></h3>
+                <div class="clock-list">
+                    <a href="clocks/art/solitude_clock.html" class="clock-row" data-keywords="Gabriel Garcia Marquez" title="A magical realism clock where the time periodically dissolves into memory, surrounded by Mauricio Babilonia&#x27;s endless swarm of yellow butterflies.">
+                        <span class="clock-name">100 Years of Solitude</span>
+                        <span class="clock-description">A magical realism clock where the time periodically dissolves into memory, surrounded by Mauricio Babilonia's endless swarm of yellow butterflies.</span>
+                    </a>
+                    <a href="clocks/art/one_hundred_years_clock.html" class="clock-row" data-keywords="Gabriel Garcia Marquez" title="García Márquez&#x27;s cyclical time in Macondo, with generations of Buendías and yellow butterflies.">
+                        <span class="clock-name">Cien Años de Soledad</span>
+                        <span class="clock-description">García Márquez's cyclical time in Macondo, with generations of Buendías and yellow butterflies.</span>
+                    </a>
+                    <a href="clocks/art/babel_clock.html" class="clock-row" data-keywords="Jorge Luis Borges Ficciones" title="Set inside an infinite hexagonal grid, exactly one true moment of time is decoded from absolute random alphanumeric chaos every second.">
+                        <span class="clock-name">The Library of Babel</span>
+                        <span class="clock-description">Set inside an infinite hexagonal grid, exactly one true moment of time is decoded from absolute random alphanumeric chaos every second.</span>
+                    </a>
+                    <a href="clocks/art/calvino_clock.html" class="clock-row" data-keywords="Italo Calvino" title="A meta-narrative clock that directly addresses the Reader, constantly interrupting and completely changing its own visual theme every 15 seconds.">
+                        <span class="clock-name">If on a winter's night a traveler</span>
+                        <span class="clock-description">A meta-narrative clock that directly addresses the Reader, constantly interrupting and completely changing its own visual theme every 15 seconds.</span>
+                    </a>
+                    <a href="clocks/art/house_of_leaves_clock.html" class="clock-row" data-keywords="Mark Z. Danielewski" title="A spatially erratic layout where massive disjointed time numbers violently shift across the screen above endless footnotes.">
+                        <span class="clock-name">House of Leaves</span>
+                        <span class="clock-description">A spatially erratic layout where massive disjointed time numbers violently shift across the screen above endless footnotes.</span>
+                    </a>
+                </div>
+                <h3 class="group-title">Science Fiction &amp; Fantasy <span class="group-count">5</span></h3>
+                <div class="clock-list">
+                    <a href="clocks/art/dune_clock.html" class="clock-row" data-keywords="Frank Herbert Arrakis" title="Arrakis Standard Time with spice motes, water discipline tracking, and Prescience.">
+                        <span class="clock-name">Dune Clock</span>
+                        <span class="clock-description">Arrakis Standard Time with spice motes, water discipline tracking, and Prescience.</span>
+                    </a>
+                    <a href="clocks/art/dispossessed_clock.html" class="clock-row" data-keywords="Ursula K. Le Guin" title="Anarres and Urras split by a wall, telling the same instant two ways — communal decads versus mercantile minutes.">
+                        <span class="clock-name">The Dispossessed</span>
+                        <span class="clock-description">Anarres and Urras split by a wall, telling the same instant two ways &mdash; communal decads versus mercantile minutes.</span>
+                    </a>
+                    <a href="clocks/art/ghost_in_the_shell_clock.html" class="clock-row" data-keywords="Masamune Shirow anime" title="A tactical cyber-brain interface with high-precision time tracking, data streams, and &quot;Ghost Noise&quot; glitches.">
+                        <span class="clock-name">Ghost in the Shell</span>
+                        <span class="clock-description">A tactical cyber-brain interface with high-precision time tracking, data streams, and "Ghost Noise" glitches.</span>
+                    </a>
+                    <a href="clocks/art/clarke_clock.html" class="clock-row" data-keywords="Arthur C. Clarke 2001 Space Odyssey HAL" title="A 2001: A Space Odyssey inspired clock featuring a massive HAL 9000 eye that pulses to the seconds and physically tracks your cursor.">
+                        <span class="clock-name">Arthur C. Clarke</span>
+                        <span class="clock-description">A 2001: A Space Odyssey inspired clock featuring a massive HAL 9000 eye that pulses to the seconds and physically tracks your cursor.</span>
+                    </a>
+                    <a href="clocks/art/lotr_clock.html" class="clock-row" data-keywords="J.R.R. Tolkien Lord of the Rings" title="The One Ring resting in the fires of Mount Doom, featuring a glowing Tengwar inscription that crawls with animated fire.">
+                        <span class="clock-name">LOTR Clock</span>
+                        <span class="clock-description">The One Ring resting in the fires of Mount Doom, featuring a glowing Tengwar inscription that crawls with animated fire.</span>
+                    </a>
+                </div>
+                <h3 class="group-title">The Vancian Quartet <span class="group-count">4</span></h3>
+                <div class="clock-list">
+                    <a href="clocks/art/dying_sun_clock.html" class="clock-row" data-keywords="Jack Vance Dying Earth" title="A baroque chronometer from the Dying Earth, with exotic time periods and a bloated crimson sun.">
+                        <span class="clock-name">The Dying Sun</span>
+                        <span class="clock-description">A baroque chronometer from the Dying Earth, with exotic time periods and a bloated crimson sun.</span>
+                    </a>
+                    <a href="clocks/art/spell_preparation_clock.html" class="clock-row" data-keywords="Jack Vance Vancian magic" title="An illuminated grimoire showing Vancian spells memorizing throughout the day.">
+                        <span class="clock-name">Spell Preparation Clock</span>
+                        <span class="clock-description">An illuminated grimoire showing Vancian spells memorizing throughout the day.</span>
+                    </a>
+                    <a href="clocks/art/cutz_chronometer.html" class="clock-row" data-keywords="Jack Vance Vancian" title="Baroque clockwork with invented time units: Grand Chimes, Lesser Bells, Sestinas, and Jiffies.">
+                        <span class="clock-name">Cutz Chronometer</span>
+                        <span class="clock-description">Baroque clockwork with invented time units: Grand Chimes, Lesser Bells, Sestinas, and Jiffies.</span>
+                    </a>
+                    <a href="clocks/art/deodand_clock.html" class="clock-row" data-keywords="Jack Vance Dying Earth" title="Each hour governed by a supernatural entity from the Overworld, with glowing runes and summoning circles.">
+                        <span class="clock-name">The Deodand Clock</span>
+                        <span class="clock-description">Each hour governed by a supernatural entity from the Overworld, with glowing runes and summoning circles.</span>
+                    </a>
+                </div>
+        </section>
+
+        <!-- Art -->
+        <section class="category" data-category="art">
+            <div class="category-head">
+                <h2>Art <span class="category-count">10</span></h2>
+                <p class="category-blurb">Colour, coordinate and concept clocks.</p>
+            </div>
+                <div class="clock-list">
+                    <a href="clocks/art/xyz_clock.html" class="clock-row" title="Time mapped to X, Y, Z coordinates.">
+                        <span class="clock-name">XYZ Clock</span>
+                        <span class="clock-description">Time mapped to X, Y, Z coordinates.</span>
+                    </a>
+                    <a href="clocks/art/hsv_clock.html" class="clock-row" title="Time mapped to the HSV color model.">
+                        <span class="clock-name">HSV Clock</span>
+                        <span class="clock-description">Time mapped to the HSV color model.</span>
+                    </a>
+                    <a href="clocks/art/spectrum_clock.html" class="clock-row" title="Time represented as a color spectrum.">
+                        <span class="clock-name">Spectrum Clock</span>
+                        <span class="clock-description">Time represented as a color spectrum.</span>
+                    </a>
+                    <a href="clocks/art/word_clock.html" class="clock-row" title="Time displayed in written English.">
+                        <span class="clock-name">Word Clock</span>
+                        <span class="clock-description">Time displayed in written English.</span>
+                    </a>
+                    <a href="clocks/art/polar_clock.html" class="clock-row" title="Time shown on a polar coordinate system.">
+                        <span class="clock-name">Polar Clock</span>
+                        <span class="clock-description">Time shown on a polar coordinate system.</span>
+                    </a>
+                    <a href="clocks/art/bach_clock.html" class="clock-row" data-keywords="Johann Sebastian Bach fugue" title="A Baroque fugue of time featuring concentric musical staves and glowing notes weaving through counterpoint.">
+                        <span class="clock-name">Bach Clock</span>
+                        <span class="clock-description">A Baroque fugue of time featuring concentric musical staves and glowing notes weaving through counterpoint.</span>
+                    </a>
+                    <a href="clocks/art/eames_clock.html" class="clock-row" data-keywords="George Nelson mid-century modern" title="A faithful CSS recreation of George Nelson&#x27;s iconic mid-century modern atomic ball clock.">
+                        <span class="clock-name">Eames / Nelson Ball</span>
+                        <span class="clock-description">A faithful CSS recreation of George Nelson's iconic mid-century modern atomic ball clock.</span>
+                    </a>
+                    <a href="clocks/art/prehistoric_clock.html" class="clock-row" data-keywords="deep time geology" title="A conceptual simulation of pre-human deep time. Read the time by tracking beautiful calcified text fossils as they are slowly buried beneath layers of falling sediment.">
+                        <span class="clock-name">Prehistoric Deep Time</span>
+                        <span class="clock-description">A conceptual simulation of pre-human deep time. Read the time by tracking beautiful calcified text fossils as they are slowly buried beneath layers of falling sediment.</span>
+                    </a>
+                    <a href="clocks/art/coordinate_clock.html" class="clock-row" title="Assign Y, Mo, D, H, Mi, S to coordinate axes and plot time as a point in Cartesian, Polar, Parabolic, Elliptic, Cylindrical, or Spherical space.">
+                        <span class="clock-name">Coordinate Clock</span>
+                        <span class="clock-description">Assign Y, Mo, D, H, Mi, S to coordinate axes and plot time as a point in Cartesian, Polar, Parabolic, Elliptic, Cylindrical, or Spherical space.</span>
+                    </a>
+                    <a href="clocks/art/glitch_clock.html" class="clock-row" title="A clock that periodically glitches and distorts.">
+                        <span class="clock-name">Glitch Clock</span>
+                        <span class="clock-description">A clock that periodically glitches and distorts.</span>
+                    </a>
+                </div>
+        </section>
+
+        <!-- Simulation -->
+        <section class="category" data-category="simulation">
+            <div class="category-head">
+                <h2>Simulation <span class="category-count">11</span></h2>
+                <p class="category-blurb">Physics, particle and agent systems that keep time.</p>
+            </div>
+                <div class="clock-list">
+                    <a href="clocks/simulation/gravity_clock.html" class="clock-row" title="A physics-based clock where time falls.">
+                        <span class="clock-name">Gravity Clock</span>
+                        <span class="clock-description">A physics-based clock where time falls.</span>
+                    </a>
+                    <a href="clocks/simulation/perlin_clock.html" class="clock-row" title="A flocking simulation guided by a noise field.">
+                        <span class="clock-name">Perlin Clock</span>
+                        <span class="clock-description">A flocking simulation guided by a noise field.</span>
+                    </a>
+                    <a href="clocks/simulation/predator_clock.html" class="clock-row" title="A flocking simulation where a predator chases the flock.">
+                        <span class="clock-name">Predator-Prey Clock</span>
+                        <span class="clock-description">A flocking simulation where a predator chases the flock.</span>
+                    </a>
+                    <a href="clocks/simulation/obstacle_clock.html" class="clock-row" title="A flocking simulation with moving obstacles.">
+                        <span class="clock-name">Obstacle Clock</span>
+                        <span class="clock-description">A flocking simulation with moving obstacles.</span>
+                    </a>
+                    <a href="clocks/simulation/flocking_clock.html" class="clock-row" title="A simulation of flocking behavior.">
+                        <span class="clock-name">Flocking Clock</span>
+                        <span class="clock-description">A simulation of flocking behavior.</span>
+                    </a>
+                    <a href="clocks/simulation/oscilloscope_clock.html" class="clock-row" title="An analog XY-mode oscilloscope simulation.">
+                        <span class="clock-name">Oscilloscope Clock</span>
+                        <span class="clock-description">An analog XY-mode oscilloscope simulation.</span>
+                    </a>
+                    <a href="clocks/simulation/ode_clock.html" class="clock-row" title="A clock based on ordinary differential equations.">
+                        <span class="clock-name">ODE Clock</span>
+                        <span class="clock-description">A clock based on ordinary differential equations.</span>
+                    </a>
+                    <a href="clocks/simulation/particle_clock.html" class="clock-row" title="A particle system based clock.">
+                        <span class="clock-name">Particle Clock</span>
+                        <span class="clock-description">A particle system based clock.</span>
+                    </a>
+                    <a href="clocks/simulation/epicycle_clock.html" class="clock-row" title="3 to 6 nested rotating circles, one per timescale from hours down to hundredths of a second, tracing a glowing Fourier-style rosette.">
+                        <span class="clock-name">Epicycle Clock</span>
+                        <span class="clock-description">3 to 6 nested rotating circles, one per timescale from hours down to hundredths of a second, tracing a glowing Fourier-style rosette.</span>
+                    </a>
+                    <a href="clocks/simulation/pendulum_clock.html" class="clock-row" title="60 double pendulums forked by a hair, seeded by the hour and minute, blooming into a fresh rainbow of chaos every 60 seconds.">
+                        <span class="clock-name">Chaos Pendulum Clock</span>
+                        <span class="clock-description">60 double pendulums forked by a hair, seeded by the hour and minute, blooming into a fresh rainbow of chaos every 60 seconds.</span>
+                    </a>
+                    <a href="clocks/simulation/state_machine_clock/" class="clock-row" title="Three nested finite state machines — seconds, minutes, hours — drawn as concentric rings, with each carry visualized as a pulse between rings. Installable as its own offline app.">
+                        <span class="clock-name">State Machine Clock</span>
+                        <span class="clock-description">Three nested finite state machines &mdash; seconds, minutes, hours &mdash; drawn as concentric rings, with each carry visualized as a pulse between rings. Installable as its own offline app.</span>
+                    </a>
+                </div>
+        </section>
+
+        <!-- Retro -->
+        <section class="category" data-category="retro">
+            <div class="category-head">
+                <h2>Retro <span class="category-count">8</span></h2>
+                <p class="category-blurb">Binary, flip, ASCII and vintage-computing tributes.</p>
+            </div>
+                <div class="clock-list">
+                    <a href="clocks/retro/arcade_clock.html" class="clock-row" title="A clock inspired by classic arcade games.">
+                        <span class="clock-name">Arcade Clock</span>
+                        <span class="clock-description">A clock inspired by classic arcade games.</span>
+                    </a>
+                    <a href="clocks/retro/asteroids_clock.html" class="clock-row" title="A vector monitor tribute to the arcade classic.">
+                        <span class="clock-name">Asteroids Clock</span>
+                        <span class="clock-description">A vector monitor tribute to the arcade classic.</span>
+                    </a>
+                    <a href="clocks/retro/flip_clock.html" class="clock-row" title="A mechanical flip-style clock.">
+                        <span class="clock-name">Flip Clock</span>
+                        <span class="clock-description">A mechanical flip-style clock.</span>
+                    </a>
+                    <a href="clocks/retro/binary_clock.html" class="clock-row" title="Time displayed in binary format.">
+                        <span class="clock-name">Binary Clock</span>
+                        <span class="clock-description">Time displayed in binary format.</span>
+                    </a>
+                    <a href="clocks/retro/latex_clock.html" class="clock-row" title="A clock inspired by the LaTeX typesetting system.">
+                        <span class="clock-name">LaTeX Clock</span>
+                        <span class="clock-description">A clock inspired by the LaTeX typesetting system.</span>
+                    </a>
+                    <a href="clocks/retro/vintage_clock.html" class="clock-row" title="A photo-realistic clock face with overlaid dynamic hands.">
+                        <span class="clock-name">Vintage Clock</span>
+                        <span class="clock-description">A photo-realistic clock face with overlaid dynamic hands.</span>
+                    </a>
+                    <a href="clocks/retro/macos_clock.html" class="clock-row" title="A System 6 tribute with draggable windows.">
+                        <span class="clock-name">Mac OS Clock</span>
+                        <span class="clock-description">A System 6 tribute with draggable windows.</span>
+                    </a>
+                    <a href="clocks/retro/ascii_clock.html" class="clock-row" title="A clock rendered in pure ASCII art.">
+                        <span class="clock-name">ASCII Clock</span>
+                        <span class="clock-description">A clock rendered in pure ASCII art.</span>
+                    </a>
+                </div>
+        </section>
+
+        <!-- Nature -->
+        <section class="category" data-category="nature">
+            <div class="category-head">
+                <h2>Nature <span class="category-count">5</span></h2>
+                <p class="category-blurb">Sun, moon, circadian and sundial clocks.</p>
+            </div>
+                <div class="clock-list">
+                    <a href="clocks/nature/sun_moon_clock.html" class="clock-row" title="Real-time sky position based on your location.">
+                        <span class="clock-name">Sun &amp; Moon Clock</span>
+                        <span class="clock-description">Real-time sky position based on your location.</span>
+                    </a>
+                    <a href="clocks/nature/mealtime_clock.html" class="clock-row" title="Tells time by Second Breakfast, Elevenses, and more.">
+                        <span class="clock-name">The Mealtime Clock</span>
+                        <span class="clock-description">Tells time by Second Breakfast, Elevenses, and more.</span>
+                    </a>
+                    <a href="clocks/nature/sundial_clock.html" class="clock-row" title="A 3D sundial using Three.js.">
+                        <span class="clock-name">Sundial Clock</span>
+                        <span class="clock-description">A 3D sundial using Three.js.</span>
+                    </a>
+                    <a href="clocks/nature/sunrise_clock.html" class="clock-row" title="Analog clock with sunrise and sunset marked on the dial, calculated from your location.">
+                        <span class="clock-name">Solar Clock</span>
+                        <span class="clock-description">Analog clock with sunrise and sunset marked on the dial, calculated from your location.</span>
+                    </a>
+                    <a href="clocks/nature/circadian_clock.html" class="clock-row" title="A clock based on natural circadian rhythms.">
+                        <span class="clock-name">Circadian Clock</span>
+                        <span class="clock-description">A clock based on natural circadian rhythms.</span>
+                    </a>
+                </div>
+        </section>
+
+        <!-- Utility -->
+        <section class="category" data-category="utility">
+            <div class="category-head">
+                <h2>Utility <span class="category-count">10</span></h2>
+                <p class="category-blurb">Timers, dials and desktop clocks you would actually use.</p>
+            </div>
+                <div class="clock-list">
+                    <a href="clocks/utility/life_clock.html" class="clock-row" title="A stark &quot;Memento Mori&quot; visualization mapping out 4,680 weeks of a 90-year lifespan.">
+                        <span class="clock-name">Entire Life Clock</span>
+                        <span class="clock-description">A stark "Memento Mori" visualization mapping out 4,680 weeks of a 90-year lifespan.</span>
+                    </a>
+                    <a href="clocks/utility/life_zoom_clock.html" class="clock-row" title="The 4,680-week &quot;Memento Mori&quot; grid with scroll/pinch zoom, drag-to-pan, and per-week date tooltips.">
+                        <span class="clock-name">Zoomable Life Clock</span>
+                        <span class="clock-description">The 4,680-week "Memento Mori" grid with scroll/pinch zoom, drag-to-pan, and per-week date tooltips.</span>
+                    </a>
+                    <a href="clocks/utility/dial_clock.html" class="clock-row" title="Click the dial to set alarms and timers. Hover to preview, click to confirm.">
+                        <span class="clock-name">Dial Clock</span>
+                        <span class="clock-description">Click the dial to set alarms and timers. Hover to preview, click to confirm.</span>
+                    </a>
+                    <a href="clocks/utility/timeline_clock.html" class="clock-row" title="A scrollable ruler of the next three months. The center always reads out whatever moment you&#x27;re looking at.">
+                        <span class="clock-name">Timeline Clock</span>
+                        <span class="clock-description">A scrollable ruler of the next three months. The center always reads out whatever moment you're looking at.</span>
+                    </a>
+                    <a href="clocks/utility/desktop_clock.html" class="clock-row" title="Large analog clock with soft hourly chimes. Light mode, designed to keep open on your desktop.">
+                        <span class="clock-name">Desktop Clock</span>
+                        <span class="clock-description">Large analog clock with soft hourly chimes. Light mode, designed to keep open on your desktop.</span>
+                    </a>
+                    <a href="clocks/utility/random_pomodoro_clock.html" class="clock-row" title="Focus timer with randomized intervals.">
+                        <span class="clock-name">Random Pomodoro</span>
+                        <span class="clock-description">Focus timer with randomized intervals.</span>
+                    </a>
+                    <a href="clocks/utility/conference_clock.html" class="clock-row" title="Speaker timer with schedule visualization.">
+                        <span class="clock-name">Conference Clock</span>
+                        <span class="clock-description">Speaker timer with schedule visualization.</span>
+                    </a>
+                    <a href="clocks/utility/ng26_countdown.html" class="clock-row" title="A countdown timer.">
+                        <span class="clock-name">NG26 Countdown</span>
+                        <span class="clock-description">A countdown timer.</span>
+                    </a>
+                    <a href="clocks/utility/ng26_clock.html" class="clock-row" title="A traditional analog clock.">
+                        <span class="clock-name">NG26 Clock</span>
+                        <span class="clock-description">A traditional analog clock.</span>
+                    </a>
+                    <a href="clocks/utility/utility_clock.html" class="clock-row" title="Analog clock with timer, stopwatch, and alarm.">
+                        <span class="clock-name">Utility Clock</span>
+                        <span class="clock-description">Analog clock with timer, stopwatch, and alarm.</span>
+                    </a>
+                </div>
+        </section>
+
+        <p class="no-results hidden" id="no-results">No clocks match that search.</p>
 
         <section class="other-apps">
             <h2>Other Apps</h2>
-            <p class="section-subtitle">Standalone tools hosted alongside the clocks &mdash; not part of the gallery above.</p>
-            <div class="clock-grid">
-                <a href="plate/" class="app-card">
-                    <div class="clock-name">Plate</div>
-                    <div class="clock-description">An installable, offline QR code generator. Everything runs on your device; nothing you type is sent anywhere.</div>
-                    <div class="clock-tag">PWA</div>
+            <p class="section-subtitle">Standalone tools hosted alongside the clocks &mdash; not part of the gallery
+                above.</p>
+            <div class="clock-list">
+                <a href="plate/" class="clock-row"
+                    title="An installable, offline QR code generator. Everything runs on your device; nothing you type is sent anywhere.">
+                    <span class="clock-name">Plate</span>
+                    <span class="clock-description">An installable, offline QR code generator. Everything runs on your
+                        device; nothing you type is sent anywhere.</span>
                 </a>
             </div>
         </section>
     </div>
 
     <script>
+        const search = document.getElementById('search');
+        const noResults = document.getElementById('no-results');
         const tabs = document.querySelectorAll('.tab-btn');
-        const cards = document.querySelectorAll('.clock-card');
+        const categories = document.querySelectorAll('.category');
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active class from all tabs
-                tabs.forEach(t => t.classList.remove('active'));
-                // Add active to clicked
-                tab.classList.add('active');
-
-                const filter = tab.getAttribute('data-filter');
-
-                cards.forEach(card => {
-                    const category = card.getAttribute('data-category');
-
-                    if (filter === 'all' || category === filter) {
-                        card.classList.remove('hidden');
-                        // Small animation reset
-                        card.style.opacity = '0';
-                        setTimeout(() => card.style.opacity = '1', 10);
-                    } else {
-                        card.classList.add('hidden');
-                    }
-                });
-            });
+        // Cache each row's searchable text once, rather than re-reading the DOM on every keystroke.
+        // The category and group headings are folded in, so searching "shakespeare" or "retro"
+        // finds every clock filed under them, not just the ones that spell it out in their blurb.
+        const rows = [...document.querySelectorAll('.category .clock-row')].map(el => {
+            const category = el.closest('.category');
+            const list = el.closest('.clock-list');
+            const heading = list.previousElementSibling;
+            const group = heading && heading.classList.contains('group-title') ? heading.textContent : '';
+            return {
+                el,
+                category: category.dataset.category,
+                text: [el.textContent, el.dataset.keywords || '', group, category.querySelector('h2').textContent]
+                    .join(' ').toLowerCase()
+            };
         });
+
+        let filter = 'all';
+
+        // Derive every count from the DOM so adding a clock never means hand-editing
+        // the tagline, the tab, the category heading and the group heading to match.
+        function stampCounts() {
+            for (const category of categories) {
+                const key = category.dataset.category;
+                const n = category.querySelectorAll('.clock-row').length;
+                category.querySelector('.category-count').textContent = n;
+                const tab = document.querySelector(`.tab-btn[data-filter="${key}"] .tab-count`);
+                if (tab) tab.textContent = n;
+                for (const heading of category.querySelectorAll('.group-title')) {
+                    const count = heading.querySelector('.group-count');
+                    if (count) count.textContent = heading.nextElementSibling.querySelectorAll('.clock-row').length;
+                }
+            }
+            document.querySelector('.tab-btn[data-filter="all"] .tab-count').textContent = rows.length;
+            document.getElementById('total').textContent = rows.length;
+        }
+
+        function render() {
+            const query = search.value.trim().toLowerCase();
+            let visible = 0;
+
+            for (const row of rows) {
+                const match = (filter === 'all' || row.category === filter) &&
+                    (query === '' || row.text.includes(query));
+                row.el.classList.toggle('hidden', !match);
+                if (match) visible++;
+            }
+
+            // Hide any group heading or list that has nothing left in it, then the
+            // whole category if every one of its lists is empty.
+            for (const category of categories) {
+                let anyInCategory = false;
+
+                for (const list of category.querySelectorAll('.clock-list')) {
+                    const anyInList = !!list.querySelector('.clock-row:not(.hidden)');
+                    list.classList.toggle('hidden', !anyInList);
+
+                    // A group's <h3> is the list's immediate previous sibling, when it has one.
+                    const heading = list.previousElementSibling;
+                    if (heading && heading.classList.contains('group-title')) {
+                        heading.classList.toggle('hidden', !anyInList);
+                    }
+                    if (anyInList) anyInCategory = true;
+                }
+
+                category.classList.toggle('hidden', !anyInCategory);
+            }
+
+            noResults.classList.toggle('hidden', visible > 0);
+        }
+
+        tabs.forEach(tab => tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            filter = tab.dataset.filter;
+            render();
+        }));
+
+        search.addEventListener('input', render);
+
+        document.addEventListener('keydown', e => {
+            if (e.key === '/' && document.activeElement !== search) {
+                e.preventDefault();
+                search.focus();
+            } else if (e.key === 'Escape' && document.activeElement === search) {
+                search.value = '';
+                render();
+                search.blur();
+            }
+        });
+
+        stampCounts();
+        render();
     </script>
 </body>
 
