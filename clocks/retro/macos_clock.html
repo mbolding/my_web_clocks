@@ -5,12 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classic Mac Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         body {
             /* Full Desktop Background */
-            background: url('os6.png') no-repeat center center fixed;
+            background: url('os6.png') no-repeat center center;
             background-size: cover;
+            background-attachment: scroll; /* iOS Safari ignores `fixed` */
             background-color: #777;
             /* Fallback */
             image-rendering: pixelated;
@@ -18,26 +21,80 @@
             margin: 0;
             padding: 0;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             font-family: sans-serif;
             overflow: hidden;
         }
 
-        /* The Clock Container */
-        .clock-screen {
+        /* The window, absolutely placed so it can be dragged around the desktop */
+        .window {
+            position: absolute;
             background: #ffffff;
-            border: 3px solid #000;
-            padding: 40px 60px;
+            border: 1px solid #000;
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+            user-select: none;
+            touch-action: none;
+        }
+
+        /* System 6 title bar: six racing stripes with a gap for the title */
+        .title-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            height: 20px;
+            padding: 0 5px;
+            border-bottom: 1px solid #000;
+            background: repeating-linear-gradient(
+                to bottom,
+                #000 0 1px,
+                #fff 1px 3px
+            );
+            cursor: grab;
+        }
+
+        .window.dragging .title-bar {
+            cursor: grabbing;
+        }
+
+        .close-box {
+            width: 11px;
+            height: 11px;
+            flex: 0 0 auto;
+            background: #fff;
+            border: 1px solid #000;
+            cursor: default;
+        }
+
+        .close-box:active {
+            background: #000;
+        }
+
+        .title-text {
+            flex: 1 1 auto;
+            text-align: center;
+            font-family: 'VT323', monospace;
+            font-size: 15px;
+            line-height: 1;
+            color: #000;
+            background: #fff;
+            padding: 2px 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* A dead zone so the stripes never run right to the resize corner */
+        .title-spacer {
+            width: 11px;
+            flex: 0 0 auto;
+        }
+
+        .clock-screen {
+            padding: clamp(18px, 5vw, 40px) clamp(24px, 7vw, 60px);
             font-family: 'VT323', monospace;
             color: #000000;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.5);
-            /* Hard shadow */
             position: relative;
         }
 
@@ -54,40 +111,55 @@
         }
 
         .time-display {
-            font-size: 15vw;
-            /* Large and responsive */
+            font-size: clamp(3rem, 15vw, 120px);
             line-height: 0.9;
         }
 
         .date-display {
-            font-size: 5vw;
+            font-size: clamp(1rem, 5vw, 40px);
             margin-top: 10px;
             font-weight: bold;
             opacity: 0.8;
         }
 
-        @media (min-width: 800px) {
-            .time-display {
-                font-size: 120px;
-            }
-
-            .date-display {
-                font-size: 40px;
-            }
+        /* Bottom-right resize grip, drawn the way System 6 did */
+        .resize-grip {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 13px;
+            height: 13px;
+            border-left: 1px solid #000;
+            border-top: 1px solid #000;
+            background:
+                linear-gradient(to bottom right, transparent 45%, #000 45%, #000 55%, transparent 55%) no-repeat,
+                #fff;
+            pointer-events: none;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="clock-screen" id="clockScreen">
-        <div class="time-display" id="timeDisplay">00:00:00</div>
-        <div class="date-display" id="dateDisplay">JAN 01 1984</div>
+    <div class="window" id="window">
+        <div class="title-bar" id="titleBar">
+            <span class="close-box" aria-hidden="true"></span>
+            <span class="title-text">Alarm Clock</span>
+            <span class="title-spacer" aria-hidden="true"></span>
+        </div>
+        <div class="clock-screen">
+            <div class="time-display" id="timeDisplay" role="timer" aria-live="polite" aria-label="Current time">00:00:00</div>
+            <div class="date-display" id="dateDisplay">JAN 01 1984</div>
+            <span class="resize-grip" aria-hidden="true"></span>
+        </div>
     </div>
 
     <script>
         const timeDisplay = document.getElementById('timeDisplay');
         const dateDisplay = document.getElementById('dateDisplay');
+
+        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+            'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
         // Clock Logic
         function updateClock() {
@@ -97,15 +169,57 @@
             const s = String(now.getSeconds()).padStart(2, '0');
 
             timeDisplay.textContent = `${h}:${m}:${s}`;
-
-            const options = { year: 'numeric', month: 'short', day: 'numeric' };
-            dateDisplay.textContent = now.toLocaleDateString('en-US', options).toUpperCase();
-
-            requestAnimationFrame(updateClock);
+            dateDisplay.textContent = `${months[now.getMonth()]} ${now.getDate()} ${now.getFullYear()}`;
         }
 
         updateClock();
+        setInterval(updateClock, 1000);
 
+        // Drag the window by its title bar, the way the Finder does.
+        const win = document.getElementById('window');
+        const titleBar = document.getElementById('titleBar');
+        let dragging = false;
+        let grabX = 0;
+        let grabY = 0;
+
+        function centreWindow() {
+            win.style.left = Math.max(0, (window.innerWidth - win.offsetWidth) / 2) + 'px';
+            win.style.top = Math.max(0, (window.innerHeight - win.offsetHeight) / 2) + 'px';
+        }
+
+        // Keep the window on the desktop, always leaving the title bar grabbable.
+        function placeWindow(x, y) {
+            const maxX = window.innerWidth - win.offsetWidth;
+            const maxY = window.innerHeight - win.offsetHeight;
+            win.style.left = Math.min(Math.max(x, Math.min(0, maxX)), Math.max(0, maxX)) + 'px';
+            win.style.top = Math.min(Math.max(y, 0), Math.max(0, maxY)) + 'px';
+        }
+
+        titleBar.addEventListener('pointerdown', e => {
+            dragging = true;
+            grabX = e.clientX - win.offsetLeft;
+            grabY = e.clientY - win.offsetTop;
+            win.classList.add('dragging');
+            titleBar.setPointerCapture(e.pointerId);
+        });
+
+        titleBar.addEventListener('pointermove', e => {
+            if (!dragging) return;
+            placeWindow(e.clientX - grabX, e.clientY - grabY);
+        });
+
+        const endDrag = e => {
+            dragging = false;
+            win.classList.remove('dragging');
+            if (titleBar.hasPointerCapture(e.pointerId)) titleBar.releasePointerCapture(e.pointerId);
+        };
+        titleBar.addEventListener('pointerup', endDrag);
+        titleBar.addEventListener('pointercancel', endDrag);
+
+        centreWindow();
+        window.addEventListener('resize', () => {
+            placeWindow(win.offsetLeft, win.offsetTop);
+        });
     </script>
 </body>
 

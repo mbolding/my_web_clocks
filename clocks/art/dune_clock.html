@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dune Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Jura:wght@300;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -149,7 +151,7 @@
 </head>
 <body>
 
-    <canvas id="spice-canvas"></canvas>
+    <canvas aria-hidden="true" id="spice-canvas"></canvas>
 
     <div class="ui-container">
         <div class="title">Arrakis Standard</div>
@@ -173,6 +175,10 @@
     </div>
 
     <script>
+        // Decorative motion only: with reduced motion requested the scene is drawn
+        // once and then left still; the clock itself keeps updating.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         // Quotes array
         const quotes = [
             "I must not fear. Fear is the mind-killer.",
@@ -260,7 +266,7 @@
                 p.update();
                 p.draw();
             });
-            requestAnimationFrame(animateCanvas);
+            if (!reduceMotion.matches) requestAnimationFrame(animateCanvas);
         }
         animateCanvas();
 

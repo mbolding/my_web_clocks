@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ghost in the Shell Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Aldrich&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -212,7 +214,7 @@
         <span class="ghost-status" id="ghostStatus">> ANOMALY DETECTED: GHOST NOISE</span>
     </div>
 
-    <canvas id="data-stream"></canvas>
+    <canvas aria-hidden="true" id="data-stream"></canvas>
 
     <div class="cyber-brain-interface">
         <div class="ring ring-1"></div>
@@ -229,6 +231,10 @@
     </div>
 
     <script>
+        // Decorative motion only: with reduced motion requested the scene is drawn
+        // once and then left still; the clock itself keeps updating.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         const quotes = [
             "Just a whisper. I hear it in my ghost.",
             "There are countless ingredients that make up the human body and mind, like all the components that make up me as an individual with my own personality.",
@@ -292,7 +298,9 @@
 
         window.addEventListener('resize', resizeCanvas);
 
-        setInterval(drawDataStream, 50);
+        // One still frame under reduced motion instead of a 20fps data stream.
+        if (reduceMotion.matches) drawDataStream();
+        else setInterval(drawDataStream, 50);
 
         // Clock and Ghost Noise Logic
         function updateClock() {

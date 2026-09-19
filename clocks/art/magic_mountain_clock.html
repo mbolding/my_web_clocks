@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Der Zauberberg — The Magic Mountain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -271,7 +273,7 @@
 </head>
 <body>
 
-<canvas id="snowCanvas"></canvas>
+<canvas aria-hidden="true" id="snowCanvas"></canvas>
 
 <!-- Alpine mountains -->
 <svg class="mountains" viewBox="0 0 1440 220" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
@@ -355,6 +357,10 @@
 </div>
 
 <script>
+// Decorative motion only: with reduced motion requested the scene is drawn
+// once and then left still; the clock itself keeps updating.
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 // ── Quotes ────────────────────────────────────────────────────────────────────
 const QUOTES = [
     "Time has no divisions to mark its passage; there is never a thunderstorm to announce the beginning of a new year.",
@@ -441,7 +447,7 @@ function animateSnow() {
         if (f.x > width + 4)  f.x = -4;
         if (f.x < -4)                 f.x = width + 4;
     });
-    requestAnimationFrame(animateSnow);
+    if (!reduceMotion.matches) requestAnimationFrame(animateSnow);
 }
 
 resizeCanvas();

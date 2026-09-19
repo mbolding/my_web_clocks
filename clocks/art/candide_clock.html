@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Candide Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -180,10 +182,14 @@
         <div class="clock-subtitle">The Best of All Possible Times!</div>
     </div>
 
-    <canvas id="gardenCanvas"></canvas>
+    <canvas aria-hidden="true" id="gardenCanvas"></canvas>
     <div class="quote-garden">"Il faut cultiver notre jardin."</div>
 
     <script>
+        // Decorative motion only: with reduced motion requested the scene is drawn
+        // once and then left still; the clock itself keeps updating.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         // --- Clock Core ---
         const timeDisplay = document.getElementById('timeDisplay');
         
@@ -346,7 +352,7 @@
         // We let the vines accumulate permanently at the bottom.
         function animateGarden() {
             vines.forEach(v => v.update());
-            requestAnimationFrame(animateGarden);
+            if (!reduceMotion.matches) requestAnimationFrame(animateGarden);
         }
 
         animateGarden();

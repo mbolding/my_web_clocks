@@ -26,21 +26,31 @@
     </style>
 </head>
 <body>
-    <canvas id="flockingCanvas"></canvas>
-    <div id="digitalTime"></div>
+    <canvas aria-hidden="true" id="flockingCanvas"></canvas>
+    <div id="digitalTime" role="timer" aria-label="Current time"></div>
     <script>
+        // Decorative motion only: with reduced motion requested the scene is drawn
+        // once and then left still; the clock itself keeps updating.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         const canvas = document.getElementById('flockingCanvas');
         const ctx = canvas.getContext('2d');
         const digitalTimeElement = document.getElementById('digitalTime');
 
-        const dpr = window.devicePixelRatio || 1;
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
-        canvas.width = Math.round(width * dpr);
-        canvas.height = Math.round(height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        let width, height;
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
         class Vector {
             constructor(x, y) { this.x = x; this.y = y; }
@@ -262,10 +272,18 @@
             }
             
             digitalTimeElement.textContent = now.toLocaleTimeString();
-            requestAnimationFrame(animate);
+            if (!reduceMotion.matches) requestAnimationFrame(animate);
         }
 
         animate();
+
+        // The readout is written from inside the loop, so when the flock is held
+        // still the time still has to keep ticking.
+        if (reduceMotion.matches) {
+            setInterval(() => {
+                digitalTimeElement.textContent = new Date().toLocaleTimeString();
+            }, 1000);
+        }
     </script>
 </body>
 </html>

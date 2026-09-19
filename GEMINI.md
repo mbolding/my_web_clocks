@@ -119,7 +119,19 @@ The inline `<script>` builds a cached search index per row from the row text, it
 
 **Gallery category vs. directory** — these are deliberately not the same. `clocks/art/` holds both the literary series and the abstract/colour clocks; in the gallery the literary ones appear under the `literary` section and the rest under `art`. The directory is where a file lives; the section is how it is browsed. Don't move files to make the two line up.
 
-**CDN libraries in use** — Three.js + OrbitControls (3D sundial), Matter.js (physics/gravity clocks), SunCalc (sun/moon position clocks). Prefer these over adding a new dependency unless a clock's concept requires something else.
+**CDN libraries in use** — Three.js (`sundial_clock`, `xyz_clock`), Matter.js (`gravity_clock`), SunCalc (`sun_moon_clock`, `timeline_clock`), all from cdnjs. Prefer these over adding a new dependency unless a clock's concept requires something else, and load them from cdnjs so there is one CDN to trust. Neither Three.js clock uses OrbitControls: `xyz_clock` carries a small inline orbit control instead, which avoids pulling a second copy of Three.js through a module CDN.
+
+**Other network calls** — `circadian_clock` reverse-geocodes the browser's coordinates through `nominatim.openstreetmap.org` to name the user's location. It is the only clock that sends location data off-device, it degrades to plain coordinates when the call fails, and OpenStreetMap's usage policy is not written for anonymous static-site traffic. Don't copy the pattern into new clocks without a reason.
+
+**Reduced motion** — clocks whose motion is decorative rather than timekeeping should hold still when the visitor asks them to. For a canvas layer, stop scheduling the loop so one frame stays on screen; where the readout is written from inside that loop, keep it ticking on an interval.
+```javascript
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+function animateSnow() {
+    // ...
+    if (!reduceMotion.matches) requestAnimationFrame(animateSnow);
+}
+```
+Animations that carry the time (a sweeping second hand, a turning epicycle) are not decoration and should keep running.
 
 ## Literary Clock Series
 

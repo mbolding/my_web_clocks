@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snow Country Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300;0,400;1,300&family=Noto+Serif+JP:wght@200;300&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -112,7 +114,7 @@
 </head>
 <body>
 
-    <canvas id="snowCanvas"></canvas>
+    <canvas aria-hidden="true" id="snowCanvas"></canvas>
 
     <div class="clock-container">
         <div class="time-display" id="timeDisplay">
@@ -126,6 +128,10 @@
     </div>
 
     <script>
+        // Decorative motion only: with reduced motion requested the scene is drawn
+        // once and then left still; the clock itself keeps updating.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         // --- Clock Logic ---
         const tH = document.getElementById('t-h');
         const tM = document.getElementById('t-m');
@@ -217,7 +223,7 @@
                 flake.draw();
             }
             
-            requestAnimationFrame(animateSnow);
+            if (!reduceMotion.matches) requestAnimationFrame(animateSnow);
         }
         animateSnow();
 

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>100 Years of Solitude Clock</title>
     <!-- Elegant, warm serif font for magic realism -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -101,7 +103,7 @@
 </head>
 <body>
 
-    <canvas id="butterflyCanvas"></canvas>
+    <canvas aria-hidden="true" id="butterflyCanvas"></canvas>
 
     <div class="clock-container" id="clockContainer">
         <div class="time-display" id="timeDisplay">00:00:00</div>
@@ -112,6 +114,10 @@
     </div>
 
     <script>
+        // Decorative motion only: with reduced motion requested the scene is drawn
+        // once and then left still; the clock itself keeps updating.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         // --- Clock & Distortion Logic ---
         const timeDisplay = document.getElementById('timeDisplay');
         
@@ -240,7 +246,7 @@
                 b.draw();
             }
             
-            requestAnimationFrame(animateButterflies);
+            if (!reduceMotion.matches) requestAnimationFrame(animateButterflies);
         }
 
         animateButterflies();
