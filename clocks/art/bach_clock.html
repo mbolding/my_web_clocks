@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,8 +13,10 @@
             --mahogany: #3a1c0d;
             --mahogany-light: #5e2c14;
             --gold: #dfb239;
+            --gold-dim: rgba(223, 178, 57, 0.35);
             --gold-glow: rgba(223, 178, 57, 0.4);
             --parchment: #f9eac5;
+            --parchment-dim: rgba(249, 234, 197, 0.28);
         }
 
         * {
@@ -24,10 +27,10 @@
 
         body {
             background-color: var(--mahogany);
-            background-image: 
-                radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%),
-                linear-gradient(rgba(0,0,0,0.1) 2px, transparent 2px),
-                linear-gradient(90deg, rgba(0,0,0,0.1) 2px, transparent 2px);
+            background-image:
+                radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.82) 100%),
+                linear-gradient(rgba(0, 0, 0, 0.1) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.1) 2px, transparent 2px);
             background-size: 100% 100%, 100px 100px, 100px 100px;
             color: var(--gold);
             font-family: 'Cinzel', serif;
@@ -36,237 +39,490 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            gap: clamp(12px, 2.4vh, 26px);
+            padding: clamp(12px, 3vw, 28px);
+            overflow-x: hidden;
             position: relative;
         }
 
         /* Subtle wood noise overlay */
         body::before {
             content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            position: fixed;
+            inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
             pointer-events: none;
             mix-blend-mode: overlay;
+            z-index: 1;
         }
 
-        .clock-container {
+        .barrel {
             position: relative;
-            width: clamp(300px, 90vw, 600px);
-            height: clamp(300px, 90vw, 600px);
+            width: clamp(290px, 82vmin, 620px);
+            height: clamp(290px, 82vmin, 620px);
             border-radius: 50%;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.8);
-            background: radial-gradient(circle, var(--mahogany-light) 0%, var(--mahogany) 70%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.85), inset 0 0 30px rgba(0, 0, 0, 0.8);
+            background: radial-gradient(circle, var(--mahogany-light) 0%, var(--mahogany) 72%);
             border: 4px solid var(--gold);
-        }
-
-        /* The central cryptogram B-A-C-H */
-        .bach-monogram {
-            position: absolute;
-            font-family: 'Great Vibes', cursive;
-            font-size: clamp(3rem, 10vw, 6rem);
-            color: var(--parchment);
-            text-shadow: 0 0 15px var(--gold-glow);
-            z-index: 10;
-            text-align: center;
-            line-height: 1;
-        }
-
-        .bach-monogram span {
-            display: block;
-            font-size: 0.8rem;
-            font-family: 'Cinzel', serif;
-            letter-spacing: 5px;
-            color: var(--gold);
-            margin-top: 10px;
-            opacity: 0.8;
-            font-style: normal;
+            z-index: 2;
         }
 
         svg {
             width: 100%;
             height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 5;
-            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+            display: block;
         }
 
+        /* ── Engraved staves ─────────────────────────────────────────── */
         .staff-line {
             fill: none;
             stroke: var(--gold);
-            stroke-width: 0.5px;
-            opacity: 0.5;
+            stroke-width: 0.5;
+            opacity: 0.32;
         }
 
-        .clef {
+        .staff-label {
             fill: var(--gold);
-            opacity: 0.6;
+            opacity: 0.55;
+            font-size: 11px;
+            letter-spacing: 3px;
+        }
+
+        /* ── Notes engraved on the barrel ────────────────────────────── */
+        .note {
+            fill: var(--parchment);
+            opacity: 0.26;
         }
 
         .note-stem {
             stroke: var(--parchment);
-            stroke-width: 2px;
+            stroke-width: 1.4;
+            opacity: 0.26;
         }
 
-        .note-head {
+        .accidental {
             fill: var(--parchment);
+            opacity: 0.26;
+            font-size: 13px;
+            font-family: serif;
         }
 
-        .note-flag {
+        /* The note the playhead is standing on. */
+        .voice-now .note,
+        .voice-now .note-stem,
+        .voice-now .accidental {
+            opacity: 1;
+        }
+
+        .voice-now .note {
+            filter: drop-shadow(0 0 7px var(--parchment));
+        }
+
+        /* Notes already sounded in this pass through the subject. */
+        .voice-past .note,
+        .voice-past .note-stem,
+        .voice-past .accidental {
+            opacity: 0.62;
+        }
+
+        /* ── Playheads: one per voice ────────────────────────────────── */
+        .playhead {
+            stroke: var(--gold);
+            stroke-width: 1.6;
+            opacity: 0.85;
+            filter: drop-shadow(0 0 5px var(--gold-glow));
+        }
+
+        .playhead-dot {
+            fill: var(--gold);
+            filter: drop-shadow(0 0 6px var(--gold-glow));
+        }
+
+        /* ── Centre: the B-A-C-H motif, as notes ─────────────────────── */
+        .motif-note {
             fill: var(--parchment);
+            opacity: 0.72;
         }
 
-        .note-group {
-            transition: transform 0.1s linear; /* Smooth visual sweep for seconds */
+        .motif-letter {
+            fill: var(--gold);
+            font-size: 16px;
+            letter-spacing: 1px;
+            text-anchor: middle;
+        }
+
+        .motif-caption {
+            fill: var(--gold);
+            opacity: 0.7;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-anchor: middle;
+        }
+
+        .motif-firing .motif-note {
+            opacity: 1;
             filter: drop-shadow(0 0 8px var(--parchment));
         }
 
-        .quote-box {
-            margin-top: 40px;
-            text-align: center;
-            font-style: italic;
-            font-size: 1.1rem;
+        /* ── Chrome ──────────────────────────────────────────────────── */
+        .readout {
+            font-size: clamp(1.4rem, 5vw, 2.4rem);
+            letter-spacing: clamp(2px, 1vw, 8px);
             color: var(--parchment);
-            opacity: 0.8;
-            max-width: 800px;
-            letter-spacing: 1px;
+            text-shadow: 0 0 18px var(--gold-glow);
+            z-index: 2;
         }
 
+        .caption {
+            text-align: center;
+            font-size: clamp(0.66rem, 2vw, 0.8rem);
+            line-height: 1.8;
+            color: var(--parchment);
+            opacity: 0.68;
+            max-width: 62ch;
+            letter-spacing: 0.06em;
+            z-index: 2;
+        }
+
+        .caption em {
+            color: var(--gold);
+            font-style: italic;
+        }
+
+        .sound-btn {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.62rem, 1.8vw, 0.72rem);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--gold);
+            background: transparent;
+            border: 1px solid var(--gold-dim);
+            border-radius: 999px;
+            padding: 8px 20px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+            z-index: 2;
+        }
+
+        .sound-btn:hover {
+            color: var(--parchment);
+            border-color: var(--gold);
+            background: rgba(223, 178, 57, 0.08);
+        }
+
+        .sound-btn[aria-pressed="true"] {
+            color: var(--mahogany);
+            background: var(--gold);
+            border-color: var(--gold);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .sound-btn {
+                transition: none;
+            }
+
+            .voice-now .note {
+                filter: none;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-    <div class="clock-container">
-        
-        <div class="bach-monogram">
-            B A C H
-            <span>Johann Sebastian</span>
-        </div>
-
-        <svg viewBox="0 0 600 600" id="clockSVG">
-            <!-- Staves Generation -->
-            <g id="stavesGroup"></g>
-            
-            <!-- Notes -->
-            <!-- SECONDS NOTE (Sixteenth Note) placed on outer staff R=220 -->
-            <g class="note-group" id="secondsNote">
-                <!-- Rotate center is 300, 300. We place note at top (300, 80) -->
-                <!-- Note Head -->
-                <ellipse cx="300" cy="80" rx="6" ry="4" transform="rotate(-15, 300, 80)" class="note-head"/>
-                <!-- Stem -->
-                <line x1="305" y1="80" x2="305" y2="45" class="note-stem"/>
-                <!-- Flags (Two for sixteenth) -->
-                <path d="M305,45 Q315,55 315,70 Q310,60 305,53" class="note-flag"/>
-                <path d="M305,55 Q315,65 315,80 Q310,70 305,63" class="note-flag"/>
-            </g>
-
-            <!-- MINUTES NOTE (Quarter Note) placed on middle staff R=160 -->
-            <g class="note-group" id="minutesNote">
-                <!-- We place note at top (300, 140) -->
-                <!-- Note Head -->
-                <ellipse cx="300" cy="140" rx="7" ry="5" transform="rotate(-15, 300, 140)" class="note-head"/>
-                <!-- Stem -->
-                <line x1="306" y1="140" x2="306" y2="105" class="note-stem"/>
-            </g>
-
-            <!-- HOURS NOTE (Whole Note) placed on inner staff R=100 -->
-            <g class="note-group" id="hoursNote">
-                <!-- We place note at top (300, 200) -->
-                <!-- Whole note requires an empty center. We use double ellipse inside. -->
-                <!-- Note Head (Outer) -->
-                <ellipse cx="300" cy="200" rx="9" ry="6" transform="rotate(-15, 300, 200)" fill="var(--parchment)"/>
-                <!-- Note Head (Inner Hole) -->
-                <ellipse cx="300" cy="200" rx="4" ry="2" transform="rotate(-15, 300, 200)" fill="transparent" class="note-head-inner"/>
-                <!-- Hack since inner hole fill needs to be background color. Let's just use a path for the whole note ring. -->
-            </g>
-
+    <div class="barrel">
+        <svg viewBox="0 0 640 640" id="barrel" aria-hidden="true">
+            <g id="staves"></g>
+            <g id="voices"></g>
+            <g id="playheads"></g>
+            <g id="motif"></g>
         </svg>
     </div>
 
-    <div class="quote-box">
-        "It's easy to play any musical instrument: all you have to do is touch the right key at the right time and the instrument will play itself."
-    </div>
+    <div class="readout" id="readout" role="timer" aria-label="Current time">&nbsp;</div>
+
+    <button class="sound-btn" id="soundBtn" type="button" aria-pressed="false">Sound off</button>
+
+    <p class="caption">
+        A barrel organ engraved with the subject of <em>Die Kunst der Fuge</em>. Three voices read the
+        same twelve notes at three speeds, one note per second, per minute and per hour, so the outer
+        voice states the subject five times a minute while the inner one takes half a day to state it
+        once. That is canon by augmentation, and it is also just a clock. On the hour the barrel plays
+        <em>B&#9837;&ndash;A&ndash;C&ndash;B&#9838;</em>, the four notes Bach spelled his name with.
+    </p>
 
     <script>
-        const svgNS = "http://www.w3.org/2000/svg";
-        const stavesGroup = document.getElementById('stavesGroup');
+        // ════════════════════════════════════════════════════════════════
+        //  Three concentric staves, engraved with one subject, read by
+        //  three playheads at 1x, 60x and 720x. Because the voices share
+        //  the subject and differ only in speed, they are a canon by
+        //  augmentation, which is also the ratio an analogue clock already
+        //  has between its hands.
+        //
+        //  A note's distance from its staff's centre line is its pitch, so
+        //  the staves carry information rather than decoration.
+        // ════════════════════════════════════════════════════════════════
 
-        // Draw the concentric staves
-        // Staff details: R=220 (Seconds), R=160 (Minutes), R=100 (Hours)
-        const staffRadii = [220, 160, 100];
-        
-        staffRadii.forEach(r => {
-            // A musical staff has 5 lines. Let's use spacing of 4 units.
-            // Offsets: -8, -4, 0, 4, 8
-            const offsets = [-8, -4, 0, 4, 8];
-            offsets.forEach(offset => {
-                const circle = document.createElementNS(svgNS, 'circle');
-                circle.setAttribute('cx', '300');
-                circle.setAttribute('cy', '300');
-                circle.setAttribute('r', r + offset);
-                circle.setAttribute('class', 'staff-line');
-                stavesGroup.appendChild(circle);
+        const SVG = 'http://www.w3.org/2000/svg';
+        const CX = 320, CY = 320;
+        const STEP = 3.5;   // half a staff space, so one diatonic step
+        const SPACING = 7;  // between staff lines
+
+        // The subject of Contrapunctus I from The Art of Fugue, in D minor:
+        // D A F D C# D E F G F E D. `step` is the diatonic distance from D,
+        // which places the note head on the staff; `semi` is the distance in
+        // semitones, which gives it a pitch.
+        const SUBJECT = [
+            { name: 'D', step: 0, semi: 0 },
+            { name: 'A', step: 4, semi: 7 },
+            { name: 'F', step: 2, semi: 3 },
+            { name: 'D', step: 0, semi: 0 },
+            { name: 'C', step: -1, semi: -1, accidental: '♯' },
+            { name: 'D', step: 0, semi: 0 },
+            { name: 'E', step: 1, semi: 2 },
+            { name: 'F', step: 2, semi: 3 },
+            { name: 'G', step: 3, semi: 5 },
+            { name: 'F', step: 2, semi: 3 },
+            { name: 'E', step: 1, semi: 2 },
+            { name: 'D', step: 0, semi: 0 }
+        ];
+
+        // B-A-C-H in German note names: B is B flat, H is B natural.
+        const BACH = [
+            { letter: 'B', semi: 8, step: 5, accidental: '♭' },
+            { letter: 'A', semi: 7, step: 4 },
+            { letter: 'C', semi: 10, step: 6 },
+            { letter: 'H', semi: 9, step: 5, accidental: '♮' }
+        ];
+
+        const D4 = 293.6648;
+        const pitch = (semi, octave) => D4 * Math.pow(2, semi / 12 + octave);
+
+        // Outermost voice is the fastest and highest, which is how a chorale
+        // prelude stacks its figuration above a slow cantus firmus.
+        const VOICES = [
+            { id: 'seconds', radius: 258, slots: 60, octave: 1, gain: 0.16, label: 'SECONDS' },
+            { id: 'minutes', radius: 182, slots: 60, octave: 0, gain: 0.22, label: 'MINUTES' },
+            { id: 'hours', radius: 106, slots: 12, octave: -1, gain: 0.30, label: 'HOURS' }
+        ];
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const el = (name, attrs) => {
+            const node = document.createElementNS(SVG, name);
+            for (const k in attrs) node.setAttribute(k, attrs[k]);
+            return node;
+        };
+        // Slot 0 sits at the top, and angles run clockwise like a clock face.
+        const angleFor = (index, slots) => (index / slots) * 360;
+
+        const stavesGroup = document.getElementById('staves');
+        const voicesGroup = document.getElementById('voices');
+        const playheadsGroup = document.getElementById('playheads');
+
+        // ── Engrave the barrel ──────────────────────────────────────────
+        for (const voice of VOICES) {
+            for (const offset of [-2, -1, 0, 1, 2]) {
+                stavesGroup.appendChild(el('circle', {
+                    cx: CX, cy: CY, r: voice.radius + offset * SPACING, class: 'staff-line'
+                }));
+            }
+
+            const group = el('g', { id: `voice-${voice.id}` });
+            voice.notes = [];
+
+            for (let slot = 0; slot < voice.slots; slot++) {
+                const note = SUBJECT[slot % SUBJECT.length];
+                // Higher pitch sits further from the centre, the circular
+                // equivalent of higher up the staff.
+                const r = voice.radius + note.step * STEP;
+                const spin = angleFor(slot, voice.slots);
+                const cell = el('g', { transform: `rotate(${spin}, ${CX}, ${CY})` });
+
+                cell.appendChild(el('ellipse', {
+                    cx: CX, cy: CY - r, rx: 5.2, ry: 3.8,
+                    transform: `rotate(-18, ${CX}, ${CY - r})`, class: 'note'
+                }));
+                cell.appendChild(el('line', {
+                    x1: CX + 5, y1: CY - r, x2: CX + 5, y2: CY - r - 11, class: 'note-stem'
+                }));
+                if (note.accidental) {
+                    cell.appendChild(el('text', {
+                        x: CX - 15, y: CY - r + 4.5, class: 'accidental'
+                    })).textContent = note.accidental;
+                }
+
+                group.appendChild(cell);
+                voice.notes.push(cell);
+            }
+            voicesGroup.appendChild(group);
+
+            // Staff name, sitting in the gap just inside its own ring at the
+            // foot of the barrel, so the three never run together.
+            const label = el('text', {
+                x: CX, y: CY + voice.radius - 4 * SPACING, class: 'staff-label', 'text-anchor': 'middle'
             });
-        });
+            label.textContent = voice.label;
+            stavesGroup.appendChild(label);
 
-        // Special fix for the Whole Note: 
-        const hoursGroup = document.getElementById('hoursNote');
-        hoursGroup.innerHTML = '';
-        const wholeNotePath = document.createElementNS(svgNS, 'path');
-        // Simple "O" shape tilted
-        wholeNotePath.setAttribute('d', `
-            M 300 193 
-            C 310 193 313 198 313 200 
-            C 313 207 300 207 300 207 
-            C 290 207 287 202 287 200 
-            C 287 193 300 193 300 193 Z 
-            M 301 195 
-            C 305 195 307 198 307 200 
-            C 307 205 299 205 299 205 
-            C 295 205 293 202 293 200 
-            C 293 195 301 195 301 195 Z
-        `);
-        wholeNotePath.setAttribute('fill', 'var(--parchment)');
-        wholeNotePath.setAttribute('transform', 'rotate(-15, 300, 200)');
-        hoursGroup.appendChild(wholeNotePath);
-
-
-        // Animation Logic
-        const secondsNote = document.getElementById('secondsNote');
-        const minutesNote = document.getElementById('minutesNote');
-        
-        function updateClock() {
-            const now = new Date();
-            
-            const ms = now.getMilliseconds();
-            const s = now.getSeconds();
-            const m = now.getMinutes();
-            const h = now.getHours();
-
-            // Calculate degrees (0 is at 12 o'clock, which maps to top. Our SVG note is initially at top)
-            // Sweep seconds smoothly
-            const secDeg = ((s + (ms/1000)) / 60) * 360;
-            // Sweep minutes smoothly
-            const minDeg = ((m + (s/60)) / 60) * 360;
-            // Sweep hours smoothly
-            const hrDeg = (((h % 12) + (m/60)) / 12) * 360;
-
-            secondsNote.setAttribute('transform', `rotate(${secDeg}, 300, 300)`);
-            minutesNote.setAttribute('transform', `rotate(${minDeg}, 300, 300)`);
-            hoursGroup.setAttribute('transform', `rotate(${hrDeg}, 300, 300)`);
-
-            requestAnimationFrame(updateClock);
+            // Playhead: a radial bar across the staff, with a dot on the note.
+            const head = el('g', { class: 'playhead-group' });
+            head.appendChild(el('line', {
+                x1: CX, y1: CY - voice.radius + 2.4 * SPACING,
+                x2: CX, y2: CY - voice.radius - 2.4 * SPACING, class: 'playhead'
+            }));
+            head.appendChild(el('circle', {
+                cx: CX, cy: CY - voice.radius - 2.4 * SPACING, r: 2.6, class: 'playhead-dot'
+            }));
+            playheadsGroup.appendChild(head);
+            voice.playhead = head;
         }
 
-        updateClock();
+        // ── The B-A-C-H motif at the centre ─────────────────────────────
+        const motifGroup = document.getElementById('motif');
+        {
+            const baseY = CY - 6;
+            const spread = 26;
+            const left = CX - spread * 1.5;
+            motifGroup.appendChild(el('line', {
+                x1: left - 20, y1: baseY, x2: left + spread * 3 + 20, y2: baseY,
+                class: 'staff-line'
+            }));
+            BACH.forEach((note, i) => {
+                const x = left + i * spread;
+                const y = baseY - (note.step - 5) * STEP * 2;
+                motifGroup.appendChild(el('ellipse', {
+                    cx: x, cy: y, rx: 5.6, ry: 4.1,
+                    transform: `rotate(-18, ${x}, ${y})`, class: 'motif-note'
+                }));
+                if (note.accidental) {
+                    motifGroup.appendChild(el('text', {
+                        x: x - 13, y: y + 4.5, class: 'accidental', style: 'opacity:0.72'
+                    })).textContent = note.accidental;
+                }
+                motifGroup.appendChild(el('text', {
+                    x, y: baseY + 26, class: 'motif-letter'
+                })).textContent = note.letter;
+            });
+            motifGroup.appendChild(el('text', {
+                x: CX, y: baseY + 48, class: 'motif-caption'
+            })).textContent = 'J. S. BACH';
+        }
+
+        // ── Sound ───────────────────────────────────────────────────────
+        // A plain additive pipe: a fundamental and two quiet harmonics under
+        // one envelope. Off until asked, because a clock that starts making
+        // noise on load is a bad guest.
+        let audio = null;
+        let soundOn = false;
+
+        function voiceTone(freq, gain, duration) {
+            if (!audio || audio.state !== 'running') return;
+            const now = audio.currentTime;
+            const master = audio.createGain();
+            master.gain.setValueAtTime(0, now);
+            master.gain.linearRampToValueAtTime(gain, now + 0.02);
+            master.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            master.connect(audio.destination);
+
+            [[1, 1], [2, 0.34], [3, 0.16]].forEach(([mult, amp]) => {
+                const osc = audio.createOscillator();
+                const level = audio.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq * mult, now);
+                level.gain.setValueAtTime(amp, now);
+                osc.connect(level).connect(master);
+                osc.start(now);
+                osc.stop(now + duration + 0.05);
+            });
+        }
+
+        function playMotif() {
+            if (!audio || audio.state !== 'running') return;
+            BACH.forEach((note, i) => {
+                setTimeout(() => voiceTone(pitch(note.semi, 0), 0.2, 0.9), i * 260);
+            });
+        }
+
+        const soundBtn = document.getElementById('soundBtn');
+        soundBtn.addEventListener('click', async () => {
+            if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+            if (audio.state === 'suspended') await audio.resume();
+            soundOn = !soundOn;
+            soundBtn.textContent = soundOn ? 'Sound on' : 'Sound off';
+            soundBtn.setAttribute('aria-pressed', String(soundOn));
+            if (soundOn) voiceTone(pitch(SUBJECT[0].semi, 0), 0.18, 0.7);
+        });
+
+        // ── Running the barrel ──────────────────────────────────────────
+        const readout = document.getElementById('readout');
+        const pad = n => String(n).padStart(2, '0');
+        let lastIndex = { seconds: -1, minutes: -1, hours: -1 };
+        let lastReadout = '';
+
+        function markVoice(voice, index) {
+            for (let slot = 0; slot < voice.slots; slot++) {
+                const cell = voice.notes[slot];
+                // "Past" means earlier in this statement of the subject, so the
+                // shading restarts every twelve notes rather than every lap.
+                const withinStatement = slot <= index
+                    && Math.floor(slot / SUBJECT.length) === Math.floor(index / SUBJECT.length);
+                cell.setAttribute('class',
+                    slot === index ? 'voice-now' : withinStatement ? 'voice-past' : '');
+            }
+        }
+
+        function tick() {
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const ms = reduceMotion.matches ? 0 : now.getMilliseconds();
+
+            // Playheads sweep continuously; the barrel is turning, not stepping.
+            const sweep = [
+                (s + ms / 1000) / 60,
+                (m + (s + ms / 1000) / 60) / 60,
+                ((h % 12) + m / 60) / 12
+            ];
+            VOICES.forEach((voice, i) => {
+                voice.playhead.setAttribute('transform', `rotate(${sweep[i] * 360}, ${CX}, ${CY})`);
+            });
+
+            const index = { seconds: s, minutes: m, hours: h % 12 };
+            for (const voice of VOICES) {
+                const at = index[voice.id];
+                if (at === lastIndex[voice.id]) continue;
+                lastIndex[voice.id] = at;
+                markVoice(voice, at);
+                if (soundOn) {
+                    const note = SUBJECT[at % SUBJECT.length];
+                    voiceTone(pitch(note.semi, voice.octave), voice.gain,
+                        voice.id === 'seconds' ? 0.55 : voice.id === 'minutes' ? 1.6 : 3.2);
+                }
+            }
+
+            // Top of the hour: the barrel signs its maker's name.
+            if (m === 0 && s === 0 && lastReadout.slice(0, 5) !== `${pad(h)}:00`) {
+                motifGroup.classList.add('motif-firing');
+                setTimeout(() => motifGroup.classList.remove('motif-firing'), 1600);
+                if (soundOn) playMotif();
+            }
+
+            const shown = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            if (shown !== lastReadout) {
+                readout.textContent = shown;
+                readout.setAttribute('aria-label', `${pad(h)}:${pad(m)}`);
+                lastReadout = shown;
+            }
+        }
+
+        function frame() {
+            tick();
+            if (!reduceMotion.matches) requestAnimationFrame(frame);
+        }
+
+        frame();
+        // Held still, the barrel still has to keep time.
+        if (reduceMotion.matches) setInterval(tick, 1000);
     </script>
 </body>
+
 </html>

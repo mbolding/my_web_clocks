@@ -47,6 +47,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Macbeth** - William Shakespeare
 - ✅ **2001: A Space Odyssey** - Arthur C. Clarke
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
+- ✅ **Bach Clock** - J. S. Bach. Three concentric staves engraved with the subject of Contrapunctus I from *Die Kunst der Fuge*, read by three playheads at one note per second, minute and hour. Because the voices share one subject and differ only in speed, the clock's 1:60:720 hand ratio is literally a canon by augmentation. Optional Web Audio plays the three voices an octave apart; the hour is marked with B♭–A–C–B♮.
 - ✅ **Candide** - Voltaire
 - ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
