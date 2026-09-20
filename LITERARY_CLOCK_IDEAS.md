@@ -54,6 +54,21 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
 - ✅ **The Tempest** - William Shakespeare (unity of time made literal: real 2-6pm storm window, five acts, Prospero's "sixth hour" deadline)
 
+#### Original Fiction
+
+The series has so far reinterpreted existing works. This is the first entry written as
+literature in its own right: a clock that is also the novella it is telling.
+
+- ✅ **The Slow Post** - Original, `slow_post_clock.html`. An interactive novella in hypertext
+  lexia, roughly ten thousand words over thirty-three passages and three endings. A keeper and a
+  cataloguer correspond across a library too large to cross, by an internal post that pays its
+  runners by weight, so a heavy letter overtakes a thin one and answers routinely outrun their
+  questions. The real date decides which of the ten letters have arrived, the real hour sets the
+  lamp band the page is read under, and the post keeps a record of the reader because the daybook
+  is still ruled and somebody has to be counted in it. Five passages are locked to an hour or to
+  the last day of the month. Takes up the "interactive reading paths" idea listed under Hopscotch
+  below, without taking Cortázar's novel, which is still open.
+
 ### To Build
 
 #### Kafka & Existential
