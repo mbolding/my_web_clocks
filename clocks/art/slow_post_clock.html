@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="en" data-band="iii">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#D5CEBD">
+    <meta name="description" content="A hypertext novella and a clock. A keeper and a cataloguer write across years of postal delay in a library too large to cross. The real date decides which letters have arrived; the hour decides the light.">
+    <title>The Slow Post</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+/* ===================================================================
+   THE SLOW POST: presentation layer
+   The page is a sheet on a table. No chrome, no nav, no buttons.
+   Light is an administrative decision here, so the palette follows the
+   Survey's lamp schedule and deliberately ignores prefers-color-scheme.
+   =================================================================== */
+
+:root {
+    --surround: #E2DAC7;
+    --page:     #EAE3D2;
+    --ink:      #2A241C;
+    --mark:     #8A7A5C;
+    --rule:     rgba(138, 122, 92, 0.38);
+    --panel:    #F0EADC;
+    --measure:  62ch;
+    --glow:     0;
+    --underink: transparent;
+}
+
+/* i LAMPS UP, 06:00 to 11:59 */
+html[data-band="i"] {
+    --surround: #E2DAC7; --page: #EAE3D2; --ink: #2A241C;
+    --mark: #8A7A5C; --rule: rgba(138, 122, 92, 0.38); --panel: #F1EBDD;
+}
+
+/* ii THE DROP, 12:00 to 12:59. One hour. Half lamp everywhere in the House. */
+html[data-band="ii"] {
+    --surround: #D3CCBA; --page: #DDD6C4; --ink: #2E2820;
+    --mark: #6E7A78; --rule: rgba(110, 122, 120, 0.40); --panel: #E4DDCC;
+    --underink: #7C4B2E;
+}
+
+/* iii TRIMMED, 13:00 to 17:59 */
+html[data-band="iii"] {
+    --surround: #D5CEBD; --page: #DFD8C7; --ink: #332D25;
+    --mark: #857759; --rule: rgba(133, 119, 89, 0.38); --panel: #E6DFCF;
+}
+
+/* iv EVENING RATION, 18:00 to 21:59 */
+html[data-band="iv"] {
+    --surround: #241E17; --page: #CBBA97; --ink: #2B2219;
+    --mark: #8A5A28; --rule: rgba(138, 90, 40, 0.55); --panel: #D4C4A3;
+    --glow: 1;
+}
+
+/* v LAMPS DOWN, 22:00 to 05:59. One lamp in a dark room. */
+html[data-band="v"] {
+    --surround: #100E0B; --page: #100E0B; --ink: #B8AD93;
+    --mark: #6E6455; --rule: rgba(184, 173, 147, 0.70); --panel: #16130F;
+    --measure: 54ch; --glow: 1;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: var(--surround);
+    color: var(--ink);
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: clamp(1.02rem, 0.92rem + 0.42vw, 1.24rem);
+    line-height: 1.64;
+    min-height: 100vh;
+    transition: background-color 1.2s ease, color 1.2s ease;
+    overflow-x: hidden;
+}
+
+/* Fibre, not parchment cliche. Two gradients at three percent. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.03;
+    background:
+        repeating-linear-gradient(94deg, transparent 0 2px, var(--ink) 2px 3px),
+        repeating-linear-gradient(6deg, transparent 0 3px, var(--ink) 3px 4px);
+}
+
+/* The lamp. Present only in the two banded-dark states. */
+.lamp {
+    position: fixed;
+    left: 50%;
+    top: 42%;
+    width: min(150vh, 165vw);
+    height: min(110vh, 120vw);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+    opacity: calc(var(--glow) * 1);
+    background: radial-gradient(ellipse at center,
+        rgba(255, 228, 176, 0.16) 0%,
+        rgba(255, 220, 160, 0.07) 38%,
+        transparent 72%);
+    animation: breathe 7s ease-in-out infinite;
+    transition: opacity 1.2s ease;
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: calc(var(--glow) * 0.965); }
+    50%      { opacity: calc(var(--glow) * 1); }
+}
+
+main {
+    position: relative;
+    z-index: 1;
+    max-width: min(62ch, 100% - 2rem);
+    margin: 0 auto;
+    padding: clamp(1.4rem, 4vw, 3rem) 1rem clamp(4rem, 12vh, 7rem);
+    background: transparent;
+    transition: max-width 1.2s ease;
+}
+
+/* Bands iv and v put the column on lit paper against a dark room. */
+html[data-band="iv"] main,
+html[data-band="v"] main {
+    background: linear-gradient(var(--page), var(--page));
+    background-clip: padding-box;
+}
+html[data-band="v"] main { background: transparent; }
+html[data-band="iv"] main {
+    padding-left: clamp(1rem, 4vw, 2.4rem);
+    padding-right: clamp(1rem, 4vw, 2.4rem);
+    box-shadow: 0 0 60px 30px rgba(203, 186, 151, 0.18);
+}
+
+/* --- the stamp: clock face and document header in one object -------- */
+
+.stamp {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: clamp(0.68rem, 0.62rem + 0.2vw, 0.78rem);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    text-align: right;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: clamp(1.6rem, 4vh, 2.6rem);
+    line-height: 1.9;
+}
+.stamp .clock { font-weight: 700; opacity: 1; letter-spacing: 0.12em; }
+.stamp .sep { opacity: 0.45; padding: 0 0.15em; }
+@media (max-width: 30rem) {
+    .stamp { text-align: left; }
+    .stamp .fold { display: block; }
+    .stamp .fold + .fold .sep:first-child { display: none; }
+}
+
+/* --- prose registers ------------------------------------------------ */
+
+#passage {
+    max-width: var(--measure);
+    margin: 0 auto;
+    transition: max-width 1.2s ease;
+}
+
+h1.passage-title {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.05rem, 0.98rem + 0.3vw, 1.2rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.62;
+    margin-bottom: 1.6rem;
+}
+
+p { margin-bottom: 1.05rem; }
+p:last-of-type { margin-bottom: 0; }
+
+hr.gap {
+    border: 0;
+    height: 1px;
+    background: var(--rule);
+    width: 4rem;
+    margin: 2rem auto;
+    opacity: 0.6;
+}
+
+/* Letters: typeset objects on a panel, first-line indent after the first. */
+.letter {
+    background: var(--panel);
+    border-left: 2px solid var(--mark);
+    padding: clamp(1rem, 3vw, 1.6rem) clamp(1rem, 3.4vw, 1.8rem);
+    margin: 1.4rem 0;
+}
+.letter p + p { text-indent: 1.4em; margin-bottom: 0.6rem; }
+
+/* Wrapper stamp above a letter: route, drops, walking days, weight. */
+.wrapper {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.66;
+    line-height: 1.8;
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px dotted var(--rule);
+}
+.wrapper .struck { text-decoration: line-through; opacity: 0.55; }
+
+/* Daybook and carbons: institutional hand, ruled paper, narrow measure. */
+.ledger {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 0.88em;
+    line-height: 1.85;
+    max-width: 46ch;
+    padding: clamp(0.9rem, 2.6vw, 1.4rem) 0 clamp(0.9rem, 2.6vw, 1.4rem) clamp(0.9rem, 3vw, 1.5rem);
+    margin: 1.4rem 0;
+    border-left: 1px solid var(--rule);
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(1.85em - 1px),
+        var(--rule) calc(1.85em - 1px),
+        var(--rule) 1.85em
+    );
+    background-size: 100% 1.85em;
+}
+.ledger p { margin-bottom: 0; text-indent: 0; }
+.ledger .ruled { text-decoration: line-through; text-decoration-thickness: 1px; opacity: 0.78; }
+
+/* The filing hand. Never identified, used four times in the whole piece. */
+.filing {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 0.8em;
+    opacity: 0.62;
+    margin: 1.2rem 0;
+}
+
+blockquote {
+    margin: 1.2rem 0 1.2rem 1.2rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--rule);
+    font-style: italic;
+}
+
+/* --- lexia: pressure in the page, never a hyperlink ----------------- */
+
+.lexia {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    letter-spacing: 0.012em;
+    border-bottom: 1px dotted var(--rule);
+    transition: border-bottom-color 140ms ease, background-color 140ms ease;
+    border-radius: 2px;
+    padding: 0 0.06em;
+}
+.lexia:hover,
+.lexia:focus-visible {
+    border-bottom: 1px solid var(--mark);
+    background: color-mix(in srgb, var(--mark) 8%, transparent);
+}
+.lexia:focus-visible { outline: 1px solid var(--mark); outline-offset: 2px; }
+
+html[data-band="v"] .lexia { letter-spacing: 0.02em; }
+
+/* Followed: the page keeps its own record of where you have been. */
+.lexia.been {
+    opacity: 0.92;
+    border-bottom-style: solid;
+    border-bottom-color: color-mix(in srgb, var(--rule) 60%, transparent);
+}
+
+/* Visible but unlit: the door is there and it is shut. */
+.shut {
+    opacity: 0.74;
+    cursor: default;
+    border-bottom: 0;
+}
+.shut-line {
+    display: block;
+    font-style: italic;
+    opacity: 0.72;
+    margin: 0.5rem 0 0.9rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--rule);
+}
+
+/* A Thresh number you cannot yet read. Visibly inert. */
+.dead-type {
+    opacity: 0.35;
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    letter-spacing: 0.04em;
+}
+
+/* --- the only navigation object in the piece ------------------------ */
+
+.return {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 0.76rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-top: clamp(2.4rem, 6vh, 3.6rem);
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+}
+.return a { color: inherit; text-decoration: none; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+.return a:hover, .return a:focus-visible { border-bottom: 1px solid var(--mark); }
+
+#passage { animation: arrive 900ms ease both; }
+@keyframes arrive {
+    from { opacity: 0; transform: translateY(1.5%); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #passage { animation: none; }
+    .lamp { animation: none; opacity: calc(var(--glow) * 1); }
+    body, main, .lamp { transition: none; }
+}
+
+/* --- late additions ------------------------------------------------- */
+
+.cold-exits { margin-top: 1.6rem; opacity: 0.9; }
+.ledger.cold { background-image: none; border-left-style: dashed; }
+
+.lexia.trim, .lexia.act { cursor: pointer; }
+
+.reset {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    opacity: 0.45;
+    margin-top: 2.4rem;
+}
+.reset a { color: inherit; cursor: pointer; border-bottom: 1px dotted var(--rule); }
+.reset a:hover, .reset a:focus-visible { opacity: 0.85; }
+.reset a.armed { letter-spacing: 0.06em; text-transform: none; opacity: 0.8; border-bottom: 0; }
+
+.wrapper .sep { opacity: 0.4; }
+    </style>
+</head>
+<body>
+    <div class="lamp" aria-hidden="true"></div>
+    <main>
+        <div class="stamp" id="stamp" role="status" aria-label="Post, day, lamp band, time, and the tally on the table"></div>
+        <article id="passage"></article>
+    </main>
+    <script>
+const PASSAGES = {
+ "deep_stacks": {
+  "title": "What It Smells Of",
+  "kind": "letter",
+  "day": 1,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 66 | WALKING DAYS 1,388 | WEIGHT 58 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "Dear Ilse,\n\nCold glue, iron, and dust that has never been outdoors. That is the answer. I am sorry to have taken so long over three nouns.\n\nThe glue is the binders' and it is going off slowly in every direction at once, which is not a failure in the glue but the ordinary behaviour of glue given time. The iron is the standards, the stair treads, and what is left of the gutters on the ninth landing. The dust is the part I would like you to have. Dust that has been out of doors has weather in it and comes off the hand grey; this comes off the hand the colour of the paper it left. I have weighed it off a shelf top at a little under a drachm to the metre, if that is any use to you.\n\nThere is one exception on this floor and I cannot account for it. Range Six smells of apples. Not of something like apples: of apples, in the fifth bay, at about shoulder height, and more in the cold season than out of it. Three survey parties have recorded the fact and entered it under conditions observed. None of them has established why, and the last party wrote underneath that the matter was not within the scope of the survey, which I have copied out and kept.\n\nI am told [[the galleries at your end smell of nothing at all, which I refuse to believe->long_gallery]]. A room of that length is never neutral. Stand in it at the eighth hour and tell me I am wrong, and I will accept the correction and go on believing it.\n\nI owe you [[an account of why I write at such length, when a shorter letter would say the same thing->paid_by_weight]], and it will not fit under the weight I have left myself.\n\n[[The question you put to me, which I have here and you do not->what_i_asked]] has been pinned above this desk for four years. I have replaced the pin twice. The paper has gone the colour of the desk and I no longer take it down to read. It is the oldest thing on this desk that is not furniture.\n\nA. Vey\nSub-Cataloguer, Unassigned Matter"
+   }
+  ],
+  "returnLine": "You fold the sheets back along their old creases and set them down on the table.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "wrapper_wear_tier1",
+    "register": "ledger",
+    "text": "Delivered. Read at the post."
+   },
+   {
+    "key": "wrapper_wear_tier2",
+    "register": "ledger",
+    "text": "Read at the post, second time."
+   },
+   {
+    "key": "wrapper_wear_tier4plus",
+    "register": "ledger",
+    "text": "Read at the post. The folds are going soft and the third sheet has parted at the crease."
+   }
+  ]
+ },
+ "paid_by_weight": {
+  "title": "An Act of Haste",
+  "kind": "letter",
+  "day": 4,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 53 | WALKING DAYS 917 | WEIGHT 92 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "Dear Ilse,\n\nThe runners are paid by weight. There is no field on the docket for urgency and there has never been one, so a heavy item is worth a runner's day and goes out on the day it is offered, and a thin one is set down at the first drop and waits for somebody who was going that way in any case. The longest wait I can document on this circuit is four years and seven months, for a three drachm note requesting lamp oil. The oil was delivered, refused as the wrong grade, and delivered again before the note was handed over. Nobody at the post finds the arrangement remarkable, and when I put it to the clerk he asked me what else a man could be paid for.\n\nSo I write long, and on the heavy stock, and past the point at which I have anything further to say; and I would ask you to understand every tedious page of this as an act of haste.\n\nI have left a standing instruction with the post at this end. Anything addressed to Eleven-Forty travels at my own expense and is not to be entered against the Division's account.\n\nThe weight does not buy one runner's day. It buys a good many in sequence, and I have never established [[how many hands hold a sheet between this desk and your table->hands_that_carried]]; you are at the receiving end of the run and will have the better figure.\n\nAt your end the thin ones wait in [[the iron box at the stair head, where a letter stands on its edge until somebody is going that way->relay_box]]. I have [[a single line in there somewhere, sent early, at no weight worth the scale, which you have never answered->one_line]].\n\n[[The query I once put to you about a discrepancy in your shelf-list->dear_keeper]] went at its own weight, which was nothing much, because I was then a man who believed the post was a means of conveyance. I have improved on that since, at some cost in paper and in the patience of the officer who franks it.\n\nA. Vey"
+   }
+  ],
+  "returnLine": "You weigh the sheets in one hand for a moment, then put them back on the pile.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "wrapper_wear_tier1",
+    "register": "ledger",
+    "text": "Delivered. Read at the post."
+   },
+   {
+    "key": "wrapper_wear_tier2",
+    "register": "ledger",
+    "text": "Read at the post, second time."
+   },
+   {
+    "key": "wrapper_wear_tier4plus",
+    "register": "ledger",
+    "text": "Read at the post. The folds are going soft and the third sheet has parted at the crease."
+   }
+  ]
+ },
+ "dear_keeper": {
+  "title": "Dear Keeper",
+  "kind": "letter",
+  "day": 6,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 88 | WALKING DAYS 2,167 | WEIGHT 21 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "To the Keeper, Post 11-40.\n\nA discrepancy has been raised against your shelf-list return and requires correction at your end.\n\nRange Nine, bay 3, shelf 4. Your return enters seventeen volumes at that shelf. The Division's transcription of the same shelf, taken from your predecessor's return and not amended since, enters sixteen. The difference is one volume and it has stood over three rulings, which is why the query has come to this Division and not been settled between the returns.\n\nThe Division does not assume an error at your end. Three causes are ordinarily responsible, in the order of their frequency. A volume shelved out of its run at a neighbouring bay and counted twice at the turn. A Thresh number whose third field cannot be read, entered under two readings by two hands. A volume taken down and left lying flat on the shelf top, which is not a fault but is not a count either.\n\nYour return for the current ruling is in order in all other particulars. The transcription is a record of a return and is not evidence of the shelf, which is why the count is asked for standing and not from the book.\n\nYou are requested to walk the run, count it standing, and return a note confirming the correction in whichever direction it falls. A note is required whether or not a correction is made. If the seventeen is correct the transcription will be amended here and you need do nothing further. Failing a return note within the ruling, the query is carried forward and re-entered, and this Division is obliged to raise it again in the same terms.\n\nThe query is entered under its date of writing, which is [[the order the transcription volume is bound in->the_manifest]] and the order it will be read in afterwards.\n\nNo further action is required of you.\n\n9-64\nDivision of Unassigned Matter, Ninth Interior"
+   },
+   {
+    "register": "frame",
+    "text": "It is the first of them and it came third. No note came back against this copy, so the query was raised again in the same terms and the copy she answered was a later one in the same words, this one having gone outstanding and never come off the route. [[What she was still writing back, fourteen years on, when she borrowed a docket and counted the hands->hands_that_carried]]. The scheme he will spend his service enforcing has not been drafted yet, and [[the letter in which he sets it out from the inside->the_fourth_consolidation]] is further down the bundle."
+   }
+  ],
+  "returnLine": "You slide it under the wrapper again and square the edge against the table.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "filing_order_noticed_hands_that_carried",
+    "register": "filing",
+    "text": "[Filed under its date of writing. It is the earliest matter in the accession and the third the post has handed over. Whoever is standing here has already read further than the man who wrote it had written.]"
+   }
+  ]
+ },
+ "the_fourth_consolidation": {
+  "title": "Height in Millimetres",
+  "kind": "letter",
+  "day": 9,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 62 | WALKING DAYS 1,231 | WEIGHT 71 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "Varn,\n\nThe new fields reached the Ninth Interior in the third week and I have had my hands in them since, and I find, to my own surprise, that I like the work. Four of them, and every one a thing a man can put a rule against: height in millimetres, binding material, shelf-load in kilogrammes, date of accession. No inference. No precedent. Two officers in two ranges on two days will write down the same four facts about the same volume, and the fourth appendix will not have to concede again that no range has ever been counted twice with the same result. It is perfectly legible. I have written that in three reports now and meant it as praise every time.\n\nMy work this month is retiring conditions. I take the old number, read its three fields at the drop, which is the only hour they will show, and enter the four new ones in its place. Yesterday I retired VI.318 / iii / draw / standing, a volume to be read at the trimmed hour, in the draw, by a reader on his feet. Then VII.61 / i / fog / not before, which forbids it before its hour and is silent about after. Then a third whose condition is in company, which requires only that somebody else be in the room with you.\n\nI can give that one's height to the millimetre. I cannot give in company.\n\nThere is no field for it, and there is no field behind the fields. I put the question to the Division and was told, correctly, that conditions of reading are not accession facts, so I entered the height. The work is going well. I have begun to think about [[what a scheme that counts everything countable does to a four range room with two readers in it->threshold]], which you wrote to me about a season ago and which I have not answered as I should have. If there is a range at your end still standing in the old numbers, [[leave it standing and do not report it->the_thresh]].\n\nA. Vey, Sub-Cataloguer, Unassigned Matter"
+   },
+   {
+    "register": "frame",
+    "text": "He has filled every page to the foot except the last, which stops halfway. The next thing the post brought was [[his own account of what he has been doing with the books he cannot bear to lose->somewhere_safe]], three days further into the month than this one."
+   }
+  ],
+  "returnLine": "You square the sheets and set them back beside the wrapper.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "wear_1_day",
+    "register": "ledger",
+    "text": "Delivered. Read at the post."
+   },
+   {
+    "key": "wear_2_days",
+    "register": "ledger",
+    "text": "Read at the post, second time."
+   },
+   {
+    "key": "wear_4_or_more_days",
+    "register": "ledger",
+    "text": "Read at the post. The folds are going soft and the third sheet has parted at the crease."
+   }
+  ]
+ },
+ "somewhere_safe": {
+  "title": "A Class With Nothing In It",
+  "kind": "letter",
+  "day": 12,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 57 | WALKING DAYS 1,043 | WEIGHT 84 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "Varn,\n\nI would rather you had this from me than off the standing lists.\n\nThere is a class in the Ninth Interior written XI.407 / ii / dry / . I made it. Behind the first field is a range that does not exist; the third field is in the under-ink, I put it there myself, and I am not going to write it down for you. The number is open in the form you know, the solidus and then the space, and half of what either of us handles is open, so a man sees a field he cannot read and passes on. If you want to see it, [[go and stand at your own back range and read what one of those numbers is actually telling you->the_thresh]].\n\nFour volumes stand under it, none of which I could have entered honestly without losing:\n\nA report on the draining of the lower galleries, in two parts, the second part not present.\n\nKessel's tables of paper weights, third edition, interleaved in pencil.\n\nA bound run of relay box inventories for a circuit closed before I came.\n\nAn unsigned account of the second survey, in a hand nobody in the Division has placed.\n\nNot one of them has an accession fact worth keeping. Two are the wrong height, one is nine millimetres thick and will not hold a label, and the fourth would be reduced on binding material alone. Under the new scheme they go to the Hold, where they continue to exist and occupy floor.\n\nThe condition in the third field is one that nobody in this building can meet at present. That is the whole of the design. A holding whose conditions of call cannot all be met is not called for, a class that is never called for is never audited, and so XI.407 / ii / dry / holds four books that are safe.\n\nIf it is found, I am the entering officer and it is a false accession, and the Division has a form for that too. So do you. [[The one that puts a thing under a class asks eight things and a date->the_slip]].\n\nA. Vey"
+   },
+   {
+    "register": "frame",
+    "text": "The four are listed in a hand that ruled itself a margin and kept inside it. The next thing the post brought was [[his account of where a class with nothing in it is held->holding_location]]."
+   }
+  ],
+  "returnLine": "You fold it along its own creases and lay it down.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "holding_location": {
+  "title": "Eleven Volumes",
+  "kind": "letter",
+  "day": 15,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 48 | WALKING DAYS 795 | WEIGHT 108 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "Ilse,\n\nA small administrative matter, which I will put at the top so that it cannot sit at the foot of the page pretending to be an afterthought.\n\nI have entered eleven volumes of XI.407 / ii / dry / into the catalogue as held at Post Eleven-Forty. The entry went up on the accession run last quarter with two hundred and forty others and was countersigned without comment, because a holding location is a fact about where a thing stands, and nobody audits a fact about where a thing stands. The regulation is in the twelfth schedule and I have copied out the part of it that matters: a post that holds catalogued material cannot be struck.\n\nEleven volumes is not a figure anybody looks at twice. Four would have read light for a class of that age; forty would have wanted a shelf survey; this wants nothing at all.\n\nThe draught in the corridor outside the accession office has been rerouted and now arrives at the ankles instead of the neck, which I am assured is an improvement.\n\nI should say the rest of it plainly, since you will see your own post number in the standing list before the season is out. The list goes to every division and every relay office in the House, so the address will be printed and carried forward, by people with no reason whatever to care about it, for as long as the catalogue is printed at all.\n\nThe catalogue never asks what a holding is made of. [[It asks only where the thing stands, and it takes the keeper's word for that->the_slip]].\n\nYour runner's boots: I enquired, and the ration on a circuit of that length is two pairs a year, which seems to me thin. Ask for three and cite the stair count.\n\nI would not have you think this cost me anything. It took an afternoon and a pen.\n\nA. Vey\nEntering officer, 9-64"
+   },
+   {
+    "register": "frame",
+    "text": "[[What she worked out off the standing list, and the one correction she put on a form about it->daybook_collision]] is nineteen days into that ruling, in the ruled book on the shelf behind you. The next thing the post brought was [[the letter in which a query is raised against exactly this->bad_season]]."
+   }
+  ],
+  "returnLine": "You slide it back into the bundle and let the others settle on it.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "bad_season": {
+  "title": "About the Roof",
+  "kind": "letter",
+  "day": 19,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 51 | WALKING DAYS 868 | WEIGHT 96 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "Varn,\n\nThree items, in the order the Division served them and not in the order of their weight.\n\nThe survey party came through Unassigned Matter on the ninth and audited seven hundred and sixty entries in four days. A query has been raised against XI.407 / ii / dry / , numbered 4-6631, on the ground that a class of that age ought to have generated a call and has generated none. A transfer order is pending against me, out of the Ninth Interior to a division not yet stated, which the clerk called routine. I signed for it in front of him, and he waited out the coughing with great patience, and took his pen back.\n\nIf the query is upheld the class is dissolved and the volumes under it cease to be catalogued, and uncatalogued matter [[goes down the north stair and goes on existing->hold_door]]. There is a form for that too. I am not going to ask you for anything, because you would send it, and it would walk four years, and it would arrive the wrong size.\n\nI would rather know about your roof.\n\nYou wrote in the spring that the stain over the third bay in Range Four was the shape of nothing in particular. I have thought about that sentence more than a man with a transfer order in his tray ought to. Is it the shape of nothing in particular still, or has it taken an edge? A stain that has stopped working has a hard brown rim, dry to the knuckle. A stain that is still working has a pale margin you can feel before you can see it.\n\nIf there is a pale margin, do not go up. Go under. Tack a sheet of oilcloth to the underside of the joists, a foot clear of the stain on all four sides, leave one corner slack so that it sags, and stand a can under the sag. The water then arrives in one place and you empty the can, which is tedious and is not a repair, and keeps it off the fore edges of Range Four. Oilcloth holds about three years. Report it as a lamp fitting. They come and look at lamp fittings.\n\nWrite and tell me the shape.\n\nA. Vey, Sub-Cataloguer, Unassigned Matter"
+   },
+   {
+    "register": "frame",
+    "text": "[[The correction she had already put on a form against this holding, years before the Division numbered a query to it->daybook_collision]] is in the ruled book behind you, with a carbon pinned facing it. Five days passed before the post brought the next of these, [[in which he answers the sum she sent him, itemised back to her->the_channel]]."
+   }
+  ],
+  "returnLine": "You put it back under the wrapper and weight it with the ruler.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "the_channel": {
+  "title": "The Only Thing That Moves in a Straight Line",
+  "kind": "letter",
+  "day": 24,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 46 | WALKING DAYS 702 | WEIGHT 148 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "Ilse,\n\nYour sum came up in the spring sack. I have done [[the whole of it again twice, item by item down to the boots->arithmetic_of_walking]], my own way, and got your figures both times. You have costed your own knees as equipment and rounded the weight of my letters down, which I noticed.\n\nI am going to say no, and the reason is not the number of days.\n\nI have been to the Sixth Gallery. Six years ago, before you ever asked, on a fortnight's leave I spent walking outward with a lamp because I wanted to know. It is shut. Shut and left, the doors set into two centuries of settle, and the way round it the charts show is sixty walks of unlit stair. I did not tell you. I have held it against a question I hoped you would not put, and you have put it.\n\nThat is not the argument. Here it is.\n\nYou would not be coming toward me, you would be going into the building. At the far end of twelve hundred days there is a filing number and a desk, and the man it belongs to may by then have been reassigned inward, retired, or moved a range over, and the desk will not know which. There is no office in this library whose business is forwarding. The catalogue records where a book stands. Nothing in the House records where a person went.\n\nSo you would arrive, and ask, and be met with great courtesy, and you would have spent your knees, your ration, and [[the address that is the only thing still reaching me, and you have already told me what leaving it costs->threshold]].\n\nThe post is the only thing in this building that has ever moved in a straight line. It is not the second best way to reach me. It is the only way.\n\nI am asking you to stay at a cold desk and write to a man you will never meet and call that a life. I ask it because it is true and not because it is bearable.\n\nNow the logistics, which are also the answer. Keep to the heavy stock. Your last one took twenty-two months post to post; a thin one would be sitting in a relay box between us yet, and I would be answering a thing you had forgotten writing. Write long. Write heavy. That is the whole of my advice and worth more than the rest of this letter.\n\nA. Vey"
+   },
+   {
+    "register": "frame",
+    "text": "Five sheets, written close, no room left at the foot of any of them. [[The last thing the keeper he is answering ever put in the ruled book at this post->daybook_last]] is nine leaves from the back. The next thing the post brought was [[written to the post itself and not to the woman keeping it->to_the_post]]."
+   }
+  ],
+  "returnLine": "You gather the sheets back into their order and lay them down.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "to_the_post": {
+  "title": "To the Post",
+  "kind": "letter",
+  "day": 29,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 59 | WALKING DAYS 1,118 | WEIGHT 79 DRACHMS",
+  "blocks": [
+   {
+    "register": "letter",
+    "text": "To Post Eleven-Forty. Not to the keeper of it: to the post, because the post is what the regulations recognise and the post will outlast us both.\n\nI will give the reason at the top, which is where I always put it, so that it is not sitting at the foot of the page pretending to be an afterthought. In the spring a Form 7 came back to me with the receiving frank of Eleven-Thirty-Nine on it and Eleven-Forty struck out in pencil. A post is worked from its neighbour when there is nobody in it. I have known what that frank means since I was a junior. I have never before had to read it off an address I write to every week.\n\nWhoever is standing at this table: you are not the person I was writing to, and you are the person the order provides for, and the order is not wrong. Letters are addressed to posts and not to people, and we are all told that this is good practice, and it is. [[You wrote to me once that the office knows an address and not a person->threshold]]. You meant it as the thing you were afraid of. I am using it as the thing I can rely on.\n\nI am not asking for a reply. There is no address I could give that would still be one by the time a reply was written. I ask instead that Standing Order Four be complied with, in both its parts, by whoever is standing there as the rest of this comes in, and it will come in for some time yet, because I have been writing ahead of the runners for fourteen years and they have not caught me up.\n\nThe bundle: keep it flat in its wrapper and do not tie it with string, which cuts the folds. [[Anything loose in the wrapper stays in the wrapper, including the one form that was never lodged->the_slip]]. Store it at the range end, off the floor, and not under Range Four.\n\nA. Vey, Sub-Cataloguer, Unassigned Matter, 9-64"
+   },
+   {
+    "register": "frame",
+    "text": "It is on the light stock, and it is the only one in the bundle that is. [[The last entry anybody completed in the ruled book at this post->daybook_last]] stands on the shelf behind you. The post brought one thing after this, at the reconciling, and [[it weighs almost nothing and has been walking the whole time->one_line]]."
+   }
+  ],
+  "returnLine": "You lay it flat in the wrapper, unfolded, the way it asks.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "wear_1_day",
+    "register": "ledger",
+    "text": "Delivered. Read at the post."
+   },
+   {
+    "key": "wear_2_days",
+    "register": "ledger",
+    "text": "Read at the post, second time."
+   },
+   {
+    "key": "wear_4_or_more_days",
+    "register": "ledger",
+    "text": "Read at the post. The light stock has taken the grain of the table and will not lie flat now."
+   }
+  ]
+ },
+ "one_line": {
+  "title": "One Line",
+  "kind": "fragment",
+  "day": 31,
+  "wrapper": "ROUTE 9-64 TO 11-40 | DROPS 806 | WALKING DAYS 23,417 | WEIGHT 2 DRACHMS",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "A scrap, cut from the foot of a larger sheet and trimmed square. It weighs two drachms. The runners are paid by weight, so nothing was ever paid to carry this, and nothing ever carried it on purpose; it moved when somebody happened to be going that way. The wrapper is larger than the thing inside it and counts eight hundred and six drops."
+   },
+   {
+    "register": "letter",
+    "text": "To the Keeper, Post 11-40.\n\nNothing to report at this end and no query; I should like only to know how long this takes to reach you.\n\n9-64"
+   },
+   {
+    "register": "frame",
+    "text": "[[What he sent after this was a query about a shelf-list, and it took him two more years to send->dear_keeper]]. A scrap with a hand on it and no class on it goes [[where a thing like this gets filed, which is with whatever it was found in->the_slip]]. The order has two parts, and you have done the first to everything here, and you can [[do the second with the whole of it on the table->ending_standing]]."
+   }
+  ],
+  "returnLine": "You set it down on the table.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "wear_1_day",
+    "register": "ledger",
+    "text": "Delivered. Read at the post."
+   },
+   {
+    "key": "wear_2_days",
+    "register": "ledger",
+    "text": "Read at the post, second time."
+   },
+   {
+    "key": "wear_4_or_more_days",
+    "register": "ledger",
+    "text": "Read at the post. The scrap has gone soft at the corners and the trimmed edge is furring."
+   }
+  ]
+ },
+ "what_i_asked": {
+  "title": "What I Asked",
+  "kind": "carbon",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "CARBON. POST 11-40 TO POST 9-64. STANDING ORDER NINE. DISPATCH WEIGHT 74 DRACHMS. OVERWEIGHT 30 DRACHMS, PAID FROM RATION.\n\nRETENTION NOT REQUIRED AT THIS DISPATCH. COPY RETAINED."
+   },
+   {
+    "register": "ledger",
+    "text": "Vey,\n\nThe roof went into Range Four on the second, into the third bay, which is where it goes. I moved six volumes and stood them on their fore edges to dry, which is forbidden, and they are dry. Ration sixteen lamp hours. I burned nineteen and will make it up out of next week. Mail in, one. Mail out, this.\n\nTwo readers. One of them was Pell, who came in out of the draw and stood at the table for the length of a cup, and I wrote him down in the column with the hour, because the column asks for readers and does not ask what they came for.\n\nNine years I have kept this post. I can give you the height of every shelf in four ranges, the load on each of them, and the weight of the door. I have all the figures there are about this room and I have checked most of them twice.\n\nSo here is a request with no form behind it.\n\nTell me one thing about where you are that is not a number. Not the range count, not the shelf load, not how many volumes you placed this quarter. What the air does down there at the trimmed hour. What it smells of. Anything I could not get off a return.\n\nI. Varn, Keeper, 11-40"
+   },
+   {
+    "register": "frame",
+    "text": "The carbon is a flimsy and her pen has gone through it in two places. [[The answer to that last paragraph is on this table, and it reached here before the question did->deep_stacks]]. Two readers in a week is a figure the ruled book keeps as well, [[counted into a column with the notice pasted under it that says what the Survey does with a figure like that->daybook_survey]]."
+   }
+  ],
+  "returnLine": "You lay the carbon flat and square it to the edge of the table.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "hands_that_carried": {
+  "title": "Forty Pairs of Hands",
+  "kind": "carbon",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "CARBON. POST 11-40 TO POST 9-64. STANDING ORDER NINE. DISPATCH WEIGHT 96 DRACHMS. OVERWEIGHT 52 DRACHMS, PAID FROM RATION.\n\nRETENTION NOT REQUIRED AT THIS DISPATCH. COPY RETAINED."
+   },
+   {
+    "register": "ledger",
+    "text": "Vey,\n\nFog to the eighth hour all week. Seventeen lamp hours burned on the ration of sixteen, and the wick at the Range Two end is going.\n\nI asked Pell for the loan of the docket and copied the circuit list off it, the sack between us. Thirty-nine circuits between this post and the Ninth Interior. One runner to a circuit, and at the end of each one the thing is put down and somebody else picks it up. The one standing in front of me walks the first of them. The fortieth pair of hands is not on the docket at all: it is whoever lifts it out of the sack at your end and carries it to your desk, and the docket has no field for him.\n\nThe wrappers on this desk say seventy-three drops, and ninety-one, and sixty-four. That is not the same count, and the hands are forty every time. A box is not a pair of hands. A letter can sit in one box twice, set down both times by the same runner, and the box takes the credit for both. The first of the forty is here, at this end, in [[the iron box at the stair head, where a thin letter waits until it is worth a runner's back->relay_box]].\n\nSo: forty. By the time this is in your hands it will have been in forty other pairs first, none of them told what they were holding. That is as near as either of us is going to come to being touched by the other, and I would rather have the figure than not.\n\nOil came short again on the quarter and I have asked for the shortfall carried forward, which they will refuse. I will ask again at the turn, a refusal not being a ruling."
+   },
+   {
+    "register": "ledger",
+    "text": "COPY ENDS AT THE FOOT OF THE SECOND SHEET. NO SIGNATURE ON THE RETAINED COPY."
+   },
+   {
+    "register": "frame",
+    "text": "She stopped there and did not sign, and the flimsy holds the blank as plainly as the writing. All forty pairs of hands are walking toward [[an address the Survey can strike, and it does not need her name to strike it->threshold]]. [[The first thing he ever sent her, and what was in it->dear_keeper]] is somewhere in the bundle at your elbow."
+   }
+  ],
+  "returnLine": "You slide the copy back under the others.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "order_noticed_dear_keeper_read",
+    "register": "filing",
+    "text": "[ You have read the first thing he sent her and then this. That is the order of writing, which is not the order she had them in, and not the order the post has brought them in either. Whether having the order is better is not a question the file can settle, and nobody has put it to the file. ]"
+   }
+  ]
+ },
+ "threshold": {
+  "title": "Four Readers a Month",
+  "kind": "carbon",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "CARBON. POST 11-40 TO POST 9-64. STANDING ORDER NINE. DISPATCH WEIGHT 81 DRACHMS. OVERWEIGHT 37 DRACHMS, PAID FROM RATION.\n\nRETENTION NOT REQUIRED AT THIS DISPATCH. COPY RETAINED."
+   },
+   {
+    "register": "ledger",
+    "text": "Vey,\n\nBook-rain in the Long Gallery on the fourth and again on the sixth, Condition Three both times, and nothing of mine took harm.\n\nA notice came up with the sack, and I will copy the two sentences of it that decide the matter, as they are written, since they put the thing better than I would. Posts recording fewer than four readers in a calendar month over three consecutive months are struck. Keepers of struck posts are reassigned inward.\n\nThe reassignment is not the part I want you to have. I can work anywhere. They can set me in a stack at the Fourth Interior and I will keep a column there as well as I keep one here, and the oil will be better.\n\nThis is the part. The post office holds no record of me. It holds a record of Eleven-Forty. Letters are addressed to posts and not to people, which is good practice and is the reason anything of ours outlasts us, and it is also the reason that if this post is struck, every letter of yours now walking toward it, including the ones you sent three years ago and have forgotten the contents of, arrives at a dead address, is held one season, and is reduced. I would not be at the address. I would be alive, at some other address, and there is no form anywhere in the House on which that second address gets written.\n\nThe Eleven-Thirty-Nine keeper has offered me her spare gasket for the range lamp. It is two millimetres out and I am taking it."
+   },
+   {
+    "register": "frame",
+    "text": "[[The notice itself is pasted square into the ruled book->daybook_survey]], a week deeper in. [[How a keeper reaches four readers in a month that brought her two->daybook_invented]] is further on again, in the same hand and the same ink. Nothing in her paragraph offers any way out of the vise except the one she does not name, which is [[to stop being at the address->ending_walk]]."
+   }
+  ],
+  "returnLine": "You turn the carbon face down beside the daybook.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "arithmetic_of_walking": {
+  "title": "Nine Hundred Days at the Cheapest Estimate",
+  "kind": "carbon",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "CARBON. POST 11-40 TO POST 9-64. STANDING ORDER NINE. DISPATCH WEIGHT 118 DRACHMS. OVERWEIGHT 74 DRACHMS, PAID FROM RATION.\n\nRETENTION NOT REQUIRED AT THIS DISPATCH. COPY RETAINED."
+   },
+   {
+    "register": "ledger",
+    "text": "Vey,\n\nDry all week. Ration sixteen lamp hours, sixteen burned, which has not happened before.\n\nI have costed the walk and set it out as a load: a sum can be checked; an offer cannot.\n\nITEM. Distance. No closer than five hundred and forty walks inward, which is the Division's chart for the Ninth Interior. No further than six hundred and sixty, which is the best this route has ever done on a wrapper I have held, and a runner does one walk a day. A range a hundred and twenty wide. Not an estimate. A shrug with figures in it.\n\nITEM. Pace. A walk is a runner's day under a full sack. Six tenths of a walk in a day, stairs counted in, held four days running to be sure of it.\n\nITEM. Stairs. Nine hundred and forty flights on the eastbound galleries by the relay tables, with the Sixth Gallery open. It has not been open in the memory of anybody I can ask. Going round it adds sixty walks and worse footing.\n\nITEM. Boots. The runner's ration is two pairs a year, a pair to every hundred and eighty-two walks and a half. I have allowed a hundred and eighty. Three pairs to the near end, four to the far. Three pairs bought.\n\nITEM. Oil. A lamp I carry is a lamp I fill. Six drachms a day at the least, and no post on that stretch issues it. Five thousand four hundred drachms at the cheapest estimate, nearly three times the weight of all you have sent me.\n\nITEM. Knees. Fifty-one years old, both. No spares held at this post.\n\nITEM. Carried weight, letters. One thousand nine hundred and forty four drachms on the post scale, one thousand nine hundred and thirty at Eleven-Thirty-Nine, entered at the lower, which is not how a load is costed, and not changed.\n\nITEM. Forwarding. None.\n\nITEM. Return. None.\n\nITEM. Not costed: [[what the ranges here become when nobody returns a shelf-list for them, which is floor at the bottom of the north stair->hold_door]].\n\nSUM. Five hundred and forty walks at six tenths of a walk in a day is nine hundred days, near end of the shrug, Sixth Gallery open. Seven hundred and twenty walks is twelve hundred, on the figures as they stand.\n\nThat is the sum. There is no question at the foot of it.\n\nI. Varn"
+   },
+   {
+    "register": "frame",
+    "text": "The sheet is ruled in pencil, every figure inside its rule. You check the sum. It is right. [[The address this sum answers, and what leaving it costs->threshold]] are on an earlier sheet. [[What he wrote back to this->the_channel]] came after. [[She could go anyway, with the sum in front of her and correct->ending_walk]]."
+   }
+  ],
+  "returnLine": "You fold the sheet along the crease she made in it and set it down.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "daybook_survey": {
+  "title": "Day 7. Lamp Hours Sixteen.",
+  "kind": "daybook",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "DAYBOOK. POST 11-40. DAY 7.\n\nWeather: fog to the eighth hour.\n\nLamp hours, rationed: sixteen.\n\nReaders: two.\n\nMail in: one.\n\nMail out: one."
+   },
+   {
+    "register": "ledger",
+    "text": "SURVEY NOTICE, PASTED AT THIS PAGE.\n\nPosts recording fewer than four readers in a calendar month over three consecutive months are struck. Keepers of struck posts are reassigned inward. Mail addressed to a struck post is held one season and then reduced. A post that holds catalogued material cannot be struck, and is surveyed."
+   },
+   {
+    "register": "ledger",
+    "text": "Oil short again. The ration came two measures under and I have entered it under. Requisition copied to Eleven-Thirty-Nine, who has none to spare and said so before I asked.\n\nRange Four dry today."
+   },
+   {
+    "register": "frame",
+    "text": "The notice is pasted square to the rule, the paste gone brown at its corners, and she has ruled the week's columns around it rather than move them. [[What she wrote to him the week it came, with the regulation copied out in her own hand->threshold]] is among the carbons. [[The reader column further on in this book never falls below four again->daybook_invented]]. Of the two entered here, [[one was the runner, and she wrote him down anyway->what_i_asked]]."
+   }
+  ],
+  "returnLine": "You turn the page back to where it was and square the book to the edge of the table.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "daybook_invented": {
+  "title": "The Reader Column",
+  "kind": "daybook",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "DAYBOOK. POST 11-40. READERS, THIRD WEEK, DAYS 15 TO 21.\n\nItem: the man in the green coat. Ninth hour, Range Two. Reads standing at the shelf. Does not sign.\n\nItem: a woman, in for the Gallery timetable. Did not stay.\n\nItem: a boy, sent by his mother for a title she wanted.\n\nItem: the green coat again, day six, second hour, lamps down. Range Two. Standing."
+   },
+   {
+    "register": "ledger",
+    "text": "A column is read across as well as down. A man who reads standing in Range Two this week and sits in Range Nine the next is two men, which is a discrepancy, and a discrepancy is surveyed. Keep him standing. Keep him unsigned. A signature can be compared."
+   },
+   {
+    "register": "frame",
+    "text": "Her month closes at five. The leaves after hers are ruled the same way, to the end of the month, by nobody in particular. The current column has strokes in it, one to a date, and nobody else in this room could have put them there. [[What a survey party would find reading a column like this across->daybook_collision]] is further on. [[The number she has to reach every month, and what happens to an address that misses it->threshold]] is in the carbons. [[The House has a name for a reader who keeps coming back to one holding->the_regular]]."
+   }
+  ],
+  "returnLine": "You let the page fall, and the book closes on its own weight.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "reader_column_tier1",
+    "register": "frame",
+    "text": "Today's stroke is in the column. There are few enough of them yet to take in without counting. The House does not read a column until the month is ruled off."
+   },
+   {
+    "key": "reader_column_tier2",
+    "register": "frame",
+    "text": "The strokes are past taking in at a glance: three separate dates at least, made in whatever light the Survey was allowing at the hour you came. The column does not ask for the hour. She entered hours anyway, for her three, because a column ruled only ever at the same hour looks ruled."
+   },
+   {
+    "key": "reader_column_tier3",
+    "register": "frame",
+    "text": "Eight separate dates at least, and a column with eight strokes in it is not a count, it is an attendance. Her man in the green coat is entered once at the second hour with the lamps down, which is an expensive thing to invent: it buys nothing against a threshold that counts heads and not hours, and it obliges a forger to remember it afterward. She did not invent you. She described you."
+   }
+  ]
+ },
+ "daybook_collision": {
+  "title": "Day 19. One Sack In.",
+  "kind": "daybook",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "DAYBOOK. POST 11-40. DAY 19.\n\nWeather: the draw in the north stair all day.\n\nLamp hours, rationed: sixteen.\n\nReaders: three.\n\nMail in: one sack.\n\nMail out: one."
+   },
+   {
+    "register": "ledger",
+    "text": "The regulation, two clauses of it side by side: a post that holds catalogued material cannot be struck, and is surveyed.\n\nHe has entered eleven volumes as held at this post. A party will call for them, and while it waits it will read the reader column. Neither the volumes nor the readers are in four ranges."
+   },
+   {
+    "register": "ledger",
+    "text": "In the margin, in pencil: Warn him. Heavy dispatch, 90 drachms. Twenty-two months at best and six years at worst.\n\nRuled through once, in ink, and left legible. Under it in the same pencil, copied out and finished: Warn him. Whatever I send arrives after."
+   },
+   {
+    "register": "ledger",
+    "text": "CARBON. FORM 12. CORRECTION OF RECORD. RETAINED UNDER STANDING ORDER NINE.\n\nHOLDING: XI.407 / ii / dry / , eleven volumes, Post 11-40.\n\nCORRECTION: to the conditions of call, add: not to be called for except in the presence of the entering officer.\n\nENTERED: I. Varn, Keeper, 11-40. Dispatched this day, 40 drachms, inside the allowance, at no charge against ration.\n\nRECEIVED, UNASSIGNED MATTER, NINTH INTERIOR: stamped. Interval, 1,506 walking days."
+   },
+   {
+    "register": "frame",
+    "text": "The carbon is pinned to the facing leaf, not pasted. [[The column of readers a party would also have to be shown->daybook_invented]] is a month back in this book. [[What she had already told him about this address->threshold]] is in the carbons. [[The letter in which he tells her what he entered here, and where, and which outran her->holding_location]] is on the table. [[The last page she ruled is not far from this one->daybook_last]]."
+   }
+  ],
+  "returnLine": "You leave the pin where it is and close the book on both leaves.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "daybook_last": {
+  "title": "The Last Entry",
+  "kind": "daybook",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "DAYBOOK. POST 11-40. DAY 29.\n\nWeather: fog to the eighth hour.\n\nLamp hours, rationed: sixteen.\n\nReaders: four.\n\nMail in: one.\n\nMail out: one."
+   },
+   {
+    "register": "ledger",
+    "text": "The survey party comes tomorrow. The ranges are in order, the columns are in order, and the oil is short but entered short, which counts as order. I took the shelf label for the holding down this morning and put it up again. There is one thing I ought to set out plainly before they are in the room, and it is that in fourteen years I have never once"
+   },
+   {
+    "register": "frame",
+    "text": "Four lines of ordinary prose at the bottom of a ruled form."
+   },
+   {
+    "register": "gap",
+    "text": ""
+   },
+   {
+    "register": "frame",
+    "text": "The hand changes."
+   },
+   {
+    "register": "ledger",
+    "text": "POST 11-40. ATTENDED FROM 11-39 THIS DATE. POST FOUND UNATTENDED. NO KEEPER PRESENT. INVENTORY TAKEN: FOUR RANGES, LAMP, SCALE, SORTING TABLE, DAYBOOK CONTINUED FROM THIS PAGE. MAIL HELD. ENTERED, KEEPER, 11-39, FIRST DAY OF THE FOLLOWING RULING."
+   },
+   {
+    "register": "ledger",
+    "text": "FORM 41. RULING ON QUERY 4-6631.\n\nThe holding XI.407 / ii / dry / , Post 11-40, carries a condition of call: it is not to be called for except in the presence of the entering officer.\n\nThe Division of Unassigned Matter, Ninth Interior, is unable to produce the entering officer or any successor holding his file.\n\nIn the absence of an entering officer the query cannot be put and is withdrawn.\n\nThe class stands. The holding stands."
+   },
+   {
+    "register": "frame",
+    "text": "The ruling is loose between the last leaves, never pasted in, because pasting it in was the business of the keeper of the post. [[What was in the wrapper and never went into this book->the_slip]] is hers as well. [[The page where she worked the two clauses against each other holds the correction she pinned to it->daybook_collision]]. [[One of the letters that came for her afterward is addressed to the post and not to her->to_the_post]]. [[The reader column went on counting after she stopped->ending_standing]]."
+   }
+  ],
+  "returnLine": "You slide the ruling back between the last leaves and close the book.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "the_post": {
+  "title": "Post Eleven-Forty",
+  "kind": "hub",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "filing",
+    "text": "[The arrived portion is in writing order, which is not the order the post brought it in. The work took years, and whoever did it left no note about having done it. Not one item in it was ever handed to the keeper it is addressed to. What stands unread at the close of a ruling is entered again and goes back onto the route, so this is the portion that went back on at every turn and outlived its own delivery. It came off the route at the ruling that entered it as having outrun her, and Standing Order Four has held it here ever since, against a reader.]"
+   },
+   {
+    "register": "frame",
+    "text": "Post Eleven-Forty. Four ranges, a sorting table, a scale, and one lamp at the range end lit whatever the hour is doing. One thousand one hundred and ninety walks from the Ingress, a figure off a chart nobody checks. The post is unattended, worked from Eleven-Thirty-Nine one day to a ruling period, the ruling period being the calendar month."
+   },
+   {
+    "register": "frame",
+    "text": "Standing Order Four. Mail that has outrun its addressee is not destroyed, because destroying mail requires a form and reading it does not. It is read once at the post, aloud, by whoever is standing there, and then filed. Matter not yet read is held at the post against a reader.\n\nYou are whoever is standing there."
+   },
+   {
+    "register": "frame",
+    "text": "The bundle lies flat at your left hand, out of its string. Every item carries a wrapper with the same boxes: route, drops, walking days, weight in drachms, and a ruled box marked TIME ELAPSED. [[The wrapper it all came in has something loose in it that is not a letter->the_slip]].\n\n{{WALKING}} Whatever is still on the route stands transcribed in [[the catalogue's fair copy of the whole accession, including what has not come->the_manifest]], and anything leaving here would wait in [[the iron box at the stair head, until it was worth a runner's back->relay_box]]."
+   },
+   {
+    "register": "frame",
+    "text": "{{NEWEST}} On the shelf behind you [[the ruled book lies open at a page with a notice pasted square into it->daybook_survey]], still kept, being the Survey's document and not the keeper's.\n\nYou came in [[out of the gallery, where the fog stands to the eighth hour->long_gallery]]. Above the third bay of Range Four the ceiling carries a stain, hard and brown at the rim."
+   },
+   {
+    "register": "frame",
+    "text": "[[The order has a second half, which is to file it back into the holding->ending_standing]]."
+   }
+  ],
+  "returnLine": "You square the bundle against the edge of the table and leave it there.",
+  "lightClauses": [
+   {
+    "band": "i",
+    "text": "Full lamp on all four ranges, and the scale's needle throws a hairline shadow onto the table."
+   },
+   {
+    "band": "ii",
+    "text": "The House has gone to half lamp together for its hour, and this room went with it."
+   },
+   {
+    "band": "iii",
+    "text": "The ration is back to working strength: enough for the page, not enough for the range ends."
+   },
+   {
+    "band": "iv",
+    "text": "The light has gone amber and stops a range short, which is the allowance for this hour."
+   },
+   {
+    "band": "v",
+    "text": "One lamp at the range end, and the table is as much of the room as you have."
+   }
+  ],
+  "variants": [
+   {
+    "key": "disturbed_ix404",
+    "register": "frame",
+    "text": "A volume is lying flat on a shelf top in Range Nine, which is not a fault and is not a count either. The shelf-list return for that bay stands open at this post and has not been walked."
+   },
+   {
+    "key": "delivery_already_opened",
+    "register": "frame",
+    "text": "Today's delivery has been opened and read and is on the table with the rest of it."
+   },
+   {
+    "key": "nothing_came_today",
+    "register": "frame",
+    "text": "Nothing came today. The route is under no obligation to bring something to every date, and mostly does not."
+   },
+   {
+    "key": "fourth_visit_day",
+    "register": "frame",
+    "text": "The chair is where you left it, turned a little out from the table."
+   },
+   {
+    "key": "later_month_ruling",
+    "register": "frame",
+    "text": "The post has begun its next ruling. What stood outstanding at the close of the last one was entered again and went back onto the route."
+   },
+   {
+    "key": "later_month_filing_sentence",
+    "register": "filing",
+    "text": "[Anything still outstanding has been entered again on the new ruling. The note does not say how many rulings that makes.]"
+   },
+   {
+    "key": "still_walking_one",
+    "register": "frame",
+    "text": "One of them is still walking."
+   },
+   {
+    "key": "still_walking_none",
+    "register": "frame",
+    "text": "Nothing of it is still walking. The route has handed over the whole of the accession and holds nothing outstanding against this post."
+   },
+   {
+    "key": "newest_arrival_label_paid_by_weight",
+    "register": "frame",
+    "text": "The newest of them explains why he writes at such length and asks you to read it as haste"
+   },
+   {
+    "key": "newest_arrival_label_dear_keeper",
+    "register": "frame",
+    "text": "The newest of them is the first thing he ever sent her, and it is a query about a shelf-list"
+   },
+   {
+    "key": "newest_arrival_label_the_fourth_consolidation",
+    "register": "frame",
+    "text": "The newest of them is his account of the new scheme, written by a man enjoying the work"
+   },
+   {
+    "key": "newest_arrival_label_somewhere_safe",
+    "register": "frame",
+    "text": "The newest of them says where he has been putting the books he cannot bear to lose"
+   },
+   {
+    "key": "newest_arrival_label_holding_location",
+    "register": "frame",
+    "text": "The newest of them enters eleven volumes as held at this post and says so at the top"
+   },
+   {
+    "key": "newest_arrival_label_bad_season",
+    "register": "frame",
+    "text": "The newest of them asks about the roof over Range Four and asks for nothing else"
+   },
+   {
+    "key": "newest_arrival_label_the_channel",
+    "register": "frame",
+    "text": "The newest of them answers her sum, item by item, and says no to the whole of it"
+   },
+   {
+    "key": "newest_arrival_label_to_the_post",
+    "register": "frame",
+    "text": "The newest of them is addressed to the post and not to the woman who kept it"
+   },
+   {
+    "key": "newest_arrival_label_one_line",
+    "register": "frame",
+    "text": "The newest of them weighs two drachms and has been walking the whole time"
+   }
+  ]
+ },
+ "long_gallery": {
+  "title": "The Long Gallery",
+  "kind": "room",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "The gallery runs four hundred metres from this door to the end wall, shelving both sides, and at about half that the two runs close to a point. It is a measurement and not an effect. Somebody walked it with a chain and wrote it down."
+   },
+   {
+    "register": "frame",
+    "text": "[[What stands in here until the eighth hour, and the one light that will show it->fog_hour]] is entered on the return as a weather field. So is the draw, the wind that falls down the north stairwells all year and crosses this floor at ankle height."
+   },
+   {
+    "register": "frame",
+    "text": "Range Nine, third bay: a quarto with a cracked hinge, numbered IX.404 / iv / dry / , the third field open and a space after it. [[You can take it down->disturb_hinge]]. Nobody here reshelves. The shelf-list for these gallery ranges is returned from the post you came out of, so a discrepancy out here is a query for the keeper inside."
+   },
+   {
+    "register": "frame",
+    "text": "[[The range at the back is still shelved the old way, three fields to a number->the_thresh]]. [[At this hour the gallery is only what you can hear of it->lamps_down]]. Anything going out of this post stands on its edge in [[the iron box at the stair head, until it is worth carrying->relay_box]]."
+   }
+  ],
+  "returnLine": "You come in off the gallery and square the bundle where you left it.",
+  "lightClauses": [
+   {
+    "band": "i",
+    "text": "Full lamp the length of it, and the point where the shelving closes is a bay further off."
+   },
+   {
+    "band": "ii",
+    "text": "Half lamp for the hour, and the far end of the gallery has simply been taken away."
+   },
+   {
+    "band": "iii",
+    "text": "The ration is back down: a spine at arm's length reads, a shelf end does not."
+   },
+   {
+    "band": "iv",
+    "text": "The lamps are on the evening allowance and the gallery ends about forty metres out."
+   },
+   {
+    "band": "v",
+    "text": "No lamp from here to the end wall, and the distance is a matter of record rather than of sight."
+   }
+  ],
+  "variants": [
+   {
+    "key": "disturbed_ix404_open",
+    "register": "frame",
+    "text": "IX.404 / iv / dry / is lying flat on the shelf top in the third bay of Range Nine, where you left it, open a little at the cracked hinge."
+   },
+   {
+    "key": "fourth_visit",
+    "register": "frame",
+    "text": "Somebody has straightened the run in the third bay since you were last down here. There is no entry anywhere for having done it."
+   }
+  ]
+ },
+ "relay_box": {
+  "title": "The Relay Box",
+  "kind": "room",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "The box is iron, bolted through the wall at the stair head. The lid hinge is worn bright. The chute on the outward side is dull, and has been dull as long as the paint has been on it, because nothing has ever left here at a speed worth entering."
+   },
+   {
+    "register": "frame",
+    "text": "Inside, thin items standing on their edges the way thin items do. A two drachm note. A half sheet folded twice. The frankings run back years, and some of the addresses are in hands that have stopped.\n\n[[Why a heavy letter overtakes a thin one, and why a thin one stands here for years->paid_by_weight]] lies in the bundle on the table. After this box comes [[a chain of runners, counted in pairs of hands between here and the Ninth Interior->hands_that_carried]]."
+   },
+   {
+    "register": "frame",
+    "text": "A chit hangs on a nail beside the lid. Six sets of initials on it, all of them P, in six different hands.\n\n[[The box is emptied at the reconciling, by whoever is carrying the run->runners_docket]]. [[The catalogue's claim about what is on its way here->the_manifest]] is a transcription and not a delivery."
+   }
+  ],
+  "returnLine": "You lower the lid onto its hinge and take up the bundle again.",
+  "lightClauses": [
+   {
+    "band": "i",
+    "text": "Full lamp at the stair head, and a franking can be read without lifting it out."
+   },
+   {
+    "band": "ii",
+    "text": "The half lamp hour has reached the stair head; the box is a shape and the frankings are not."
+   },
+   {
+    "band": "iii",
+    "text": "The ration is back to working strength and the box throws its own shadow down the stair."
+   },
+   {
+    "band": "iv",
+    "text": "The evening allowance reaches the stair head about as far as the lid and no further."
+   },
+   {
+    "band": "v",
+    "text": "One lamp behind you at the range end, and the inside of the box is entirely by touch."
+   }
+  ],
+  "variants": [
+   {
+    "key": "disturbed_ix404_chalk",
+    "register": "frame",
+    "text": "There is a chalk mark on the end of the box, dated, initialled P: one item out of place, Range Nine."
+   }
+  ]
+ },
+ "the_thresh": {
+  "title": "Still Shelved the Old Way",
+  "kind": "room",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "The Consolidation stopped three ranges short of the back wall. The spines still carry their Thresh numbers, painted small at the foot: IV.212 / i / dry / , and next along IV.86 / v / draw / . Range and shelf; an hour band in lower case roman, out of the five the stamp is counting in; a word for the weather indoors; then a solidus, a space, and nothing. A number whose third field cannot be read is called open, and half the building is shelved open, worked by inference and precedent, and nobody discusses it."
+   },
+   {
+    "register": "frame",
+    "text": "The fields do not say what a book is about. They say under what condition it may legitimately be read. One of these two is lawful in the band now printed at the head of the page; the other is not."
+   },
+   {
+    "register": "frame",
+    "text": "One lamp is lit at the range end, and it can be [[trimmed to half by hand, the way she records doing it once and enters no reason->trim_lamp]], an irregularity and not an offence. [[At noon the whole House goes to half lamp together, for its hour->the_noon_drop]]."
+   },
+   {
+    "register": "frame",
+    "text": "[[The letter setting out what the new scheme measures instead->the_fourth_consolidation]] is on the table, with [[the one admitting a class with no books in it that nobody can call for->somewhere_safe]]. On a form filled in here, [[class is a line you write a number on, and the number is a condition->the_slip]]. [[What cannot be placed goes down the north stair->hold_door]]."
+   }
+  ],
+  "returnLine": "You push the one that stands proud back level with the run, and walk back to the table.",
+  "lightClauses": [
+   {
+    "band": "i",
+    "text": "The lamps are at full on their brackets and every number on the run is as plain as paint; IV.212 / i / dry / is inside its own hour and IV.86 is nowhere near its own."
+   },
+   {
+    "band": "ii",
+    "text": "The light has gone low and flat and a shade cooler than it was, and something faintly brown is standing up in the numbers that was not there an hour ago. IV.140 / ii / dry / is lawful for the rest of this hour, and IV.212 is not."
+   },
+   {
+    "band": "iii",
+    "text": "The lamps have been pulled back a notch by the schedule and the small paint at the foot of the spines has lost its edges; IV.301 / iii / dry / is inside its hour now, and IV.86 wants two more bands than the page has."
+   },
+   {
+    "band": "iv",
+    "text": "One measured lamp is burning at the range end, amber for the first arm's length of shelving and dark after it. IV.55 / iv / draw / is lawful while this lasts, and IV.212 had its hour and has lost it."
+   },
+   {
+    "band": "v",
+    "text": "The room is dark to the ceiling and the range end lamp is the whole of the light, so you read the small paint by holding your head at an angle to it. IV.86 / v / draw / has been lawful since the twenty-second hour, and IV.212 will not be lawful again until the sixth."
+   }
+  ],
+  "variants": [
+   {
+    "key": "trim_lamp_ledger",
+    "register": "ledger",
+    "text": "Item: trimmed the range lamp to half for a quarter hour to read a third field. Irregular. I have not entered the reason."
+   },
+   {
+    "key": "trim_lamp_frame",
+    "register": "frame",
+    "text": "You put the lamp back to full. The numbers stay closed, because you have seen them now and a spine cannot be unread."
+   },
+   {
+    "key": "saw_third_field_paragraph_route_drop",
+    "register": "frame",
+    "text": "The fields do not say what a book is about. They say under what condition it may legitimately be read, and you can read them now: IV.212 / i / dry / aloud, and next along IV.86 / v / draw / in company. Down the run, standing, alone, not before. Five words, one to a spine, each of them a thing a person is either doing or not doing in a room. You read them at noon, in the hour the schedule still drops, which is the hour the House set aside for it and then filled with the meal. None of it is difficult. All of it is a matter of when you happen to be standing here."
+   },
+   {
+    "key": "saw_third_field_paragraph_route_lamp",
+    "register": "frame",
+    "text": "The fields do not say what a book is about. They say under what condition it may legitimately be read, and you can read them now: IV.212 / i / dry / aloud, and next along IV.86 / v / draw / in company. Down the run, standing, alone, not before. Five words, one to a spine, each of them a thing a person is either doing or not doing in a room. You read them by a lamp you trimmed yourself, at whatever hour it is, which is what she did, and she did not enter the reason either. None of it is difficult. All of it is a matter of when you happen to be standing here."
+   }
+  ]
+ },
+ "the_manifest": {
+  "title": "What the Catalogue Says Is Coming",
+  "kind": "room",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "The transcription volume stands at the end of the sorting table, bound in boards, and it falls open at the current place because that is where it has been opened. It holds a fair copy of every item in this accession, made at the far end off the dispatch returns, including the items the post has not brought. A transcription is a promise about an object you do not have."
+   },
+   {
+    "register": "frame",
+    "text": "What it can give you is the words. It cannot give you the wrapper, or the hand, or the weight in drachms, or the folds, or the column of daybook standing beside it on the day it came. [[The rest of it is standing on its edge in an iron box at the stair head->relay_box]], and will be for some time yet."
+   },
+   {
+    "register": "frame",
+    "text": "You may turn one page ahead, and the volume records that you have. It is bound in order, so ahead means the next one and not the one after it, and you go forward a page at a time and never jump. [[The next page holds the transcription of whatever the post has not brought yet->cold_target]]."
+   },
+   {
+    "register": "frame",
+    "text": "[[The slip in the wrapper was never lodged with any of this->the_slip]]. [[You could carry it to the catalogue yourself and lodge it->ending_deposit]]."
+   }
+  ],
+  "returnLine": "You let the volume fall shut on its own weight and square it to the shelf edge.",
+  "lightClauses": [
+   {
+    "band": "i",
+    "text": "The light is full on the boards and the fair copy is as plain as it is ever going to be, which is plainer than the letters it is copied from."
+   },
+   {
+    "band": "ii",
+    "text": "For this one hour the light goes low and cool across the page, and the fair copy greys without getting any harder to read, because a clerk ruled it for exactly this."
+   },
+   {
+    "band": "iii",
+    "text": "The lamps have come back a notch off the full and the hairlines in the copperplate thin out where the clerk lifted his pen."
+   },
+   {
+    "band": "iv",
+    "text": "One measured lamp burns above the shelf and puts an amber edge on the boards, and the outer columns of the page go warm and a little indistinct."
+   },
+   {
+    "band": "v",
+    "text": "There is no light on the shelf now except the one at the range end, and the fair copy comes up a line at a time under it, in the order it was bound."
+   }
+  ],
+  "variants": [
+   {
+    "key": "readcold_nonempty",
+    "register": "frame",
+    "text": "The volume falls open at the place you opened it. The catalogue now records that somebody read ahead of the post, which is the only kind of thing a catalogue can record about a person."
+   }
+  ]
+ },
+ "hold_door": {
+  "title": "The Door at the Bottom of the North Stair",
+  "kind": "room",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "Behind this door is floor, and it has to be swept round. The Hold is not a furnace. Nothing here is burned, which is the worse arrangement: deaccessioned matter is carried down, set on the floor in runs, and goes on existing. In this building uncatalogued and not existing are one condition. The difference is floor."
+   },
+   {
+    "register": "frame",
+    "text": "The north stair goes down ninety-odd treads, getting colder all the way, and the cold comes up through the gap under the door at the bottom. It is the wind the stamp at the head of this page calls draw."
+   },
+   {
+    "register": "frame",
+    "text": "You can put your hand flat on the door. The iron is colder than the air. You do not open it."
+   },
+   {
+    "register": "frame",
+    "text": "[[The letter from the man whose four books come down here if the query is upheld->bad_season]] is on the table upstairs. [[What it would cost to go the other way, costed to the boot and the knee by a woman of fifty-one->arithmetic_of_walking]]. [[What this stair sounds like with the lamps out->lamps_down]]. At the head of the stair is the gallery, [[four hundred metres of it you measured on the way in->long_gallery]]."
+   }
+  ],
+  "returnLine": "You take your hand off the door and carry the cold of it back up to the table.",
+  "lightClauses": [
+   {
+    "band": "i",
+    "text": "There is a lamp at the stair head, full on its bracket, and it reaches four treads and then stops, which is its whole contribution."
+   },
+   {
+    "band": "ii",
+    "text": "The stair lamp has gone low and cool with every other lamp in the House, and the door at the bottom is a shape rather than a door."
+   },
+   {
+    "band": "iii",
+    "text": "The light off the stair head is a notch short of what it was, and the gap under the door reads as a grey line and nothing else."
+   },
+   {
+    "band": "iv",
+    "text": "One measured lamp at the head of the stair puts an amber edge on the top treads and gives up a long way above the bottom."
+   },
+   {
+    "band": "v",
+    "text": "There is no light on this stair at all, and the door is simply where the cold is coming from, which is the whole of how you find it."
+   }
+  ],
+  "variants": []
+ },
+ "fog_hour": {
+  "title": "Fog to the Eighth Hour",
+  "kind": "fragment",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "The sixth hour, and the gallery ends at twenty metres. Not in haze: it ends. Shelving, standard, shelving, then fog with nothing behind it. The spines in Range Nine have taken water and the gutters are dark.\n\nA half sheet lies on the shelf top, the colour of the shelf. Under a lamp it is blank. A lamp comes off one point and warms the paper past the ink; this light is weak and comes from everywhere, and the brown stands out of the brown."
+   },
+   {
+    "register": "letter",
+    "text": "I went back to the fifth bay at the cold end of the season and it is stronger, which I cannot account for. I had my face against the shelf when a junior came round the standard. I said damp, and he entered it, so there is a return recording damp in Range Six where there is none."
+   },
+   {
+    "register": "frame",
+    "text": "Torn off above that line, and no wrapper on it: it is not one of the ten and the tally does not move. [[The range that smells of apples, and the letter that answered for it->deep_stacks]] is on the table. Behind you the gallery [[runs back down to the end that can be measured->long_gallery]]."
+   }
+  ],
+  "returnLine": "You set the half sheet back on the shelf top where it was lying, face down, and walk in to the table.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "disturbed_IX404",
+    "register": "frame",
+    "text": "The volume left lying flat in Range Nine has its gutter open to the air, and the condensation is collecting along the fold in a line you can see from the aisle. Noted, this date. Nothing is done about it."
+   }
+  ]
+ },
+ "lamps_down": {
+  "title": "Lamps Down",
+  "kind": "fragment",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "The room is dark, which is the state it is in for most of its existence. The Survey allots this post its hours and the hours are not many: a lamp hour is one lamp burning for one hour, and four ranges at full lamp spend four of them in one. Outside them there is one lamp lit at the range end, because there always is, and it reaches about a metre.\n\nFour things are audible and that is the whole of it. The draw, coming down the north stairwell at the rate it comes down all year. Settlement, which is the building putting its weight somewhere else. Paper relaxing on the shelves, a run at a time, at intervals long enough that you stop waiting for the next one. And once, a long way off and not again, a runner's tin whistle on a stair.\n\nIlse Varn kept this post nine years before the first letter came and fourteen years after it. Both figures are in the ruled book and neither is remarked on there.\n\n[[The whistle was going up to the iron box at the stair head, and it was not going fast->relay_box]]. [[The cold is coming up the north stair from the door at the bottom of it->hold_door]]."
+   }
+  ],
+  "returnLine": "You find the edge of the table in the dark and put your hand flat on the wrapper.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "the_noon_drop": {
+  "title": "The Drop",
+  "kind": "fragment",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "At noon every lamp in the House goes to half together, for one hour. It is on the schedule, it has a time against it, and it is the only one left. There were others. The Survey moved them.\n\nAt half lamp the under-ink shows. It is laid in a pale wash that takes no light; against a bright page it is nothing, and when the lamp drops the page goes down faster than the wash does and the wash stands up out of it. Every number on this range has four fields now and had three a minute ago.\n\nIX.404 / iv / dry / standing.\n\nIV.72 / v / draw / aloud.\n\nThe key was never lost. It was scheduled.\n\nAt the range end, on its nail, the shelf label for the holding entered against this post reads XI.407 / ii / dry / alone. Nobody is ever in a reading room at noon, because at noon everybody is at their meal.\n\nThe Consolidation is retiring the Thresh on the ground that half of it cannot be read. It cannot be read because the oil ration was cut and the hour was moved, and those two facts are kept in different schedules.\n\n[[The ruled box on the slip in the wrapper has had something in it the whole time->the_slip]]. You could [[walk the range again now and read the numbers the way they were written->the_thresh]]."
+   }
+  ],
+  "returnLine": "You square the shelf label against its nail and come back to the table while the hour holds.",
+  "lightClauses": [],
+  "variants": []
+ },
+ "runners_docket": {
+  "title": "Runner 2,209",
+  "kind": "fragment",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "ledger",
+    "text": "DOCKET. CIRCUIT 11-40. RUNNER 2,209.\n\nDROPS THIS TURN: four.\n\nWEIGHT CARRIED: 2 drachms.\n\nRECONCILED AT 11-40: this date, before the ledger closes."
+   },
+   {
+    "register": "frame",
+    "text": "Seven years on this circuit and I never met her. She was gone before I took the run. What the route knows is on the page, and the page comes with the run.\n\nTwo standing entries on the Eleven-Forty leaf. Six hands. They are copied forward at every handover and nobody amends them. I did not."
+   },
+   {
+    "register": "ledger",
+    "text": "STANDING ENTRY. The keeper at Eleven-Forty pays over weight out of her own ration. Take it. Do not correct the scale."
+   },
+   {
+    "register": "frame",
+    "text": "A second is on the same leaf, in the same six hands, off the other end of the circuit."
+   },
+   {
+    "register": "ledger",
+    "text": "STANDING ENTRY. Anything for Eleven-Forty travels at the far end's own expense and is not to be entered against the Division's account."
+   },
+   {
+    "register": "frame",
+    "text": "Both are in the present tense. Nobody has ever changed that.\n\nThirty-nine circuits on the leaf, one runner to each. The leaf is endorsed once for a copy taken at this post, which a keeper may do, and it is entered when done. [[What she made the count come to, in pairs of hands->hands_that_carried]] is not on the docket and is not my business.\n\nThe wrapper in the sack counts eight hundred and six drops, the most I have carried.\n\nLight sack. Heavy is better: a runner's day paid for, somebody inward still writing. I [[empty the box at the stair head before the ledger closes->relay_box]], and the month is off my back."
+   }
+  ],
+  "returnLine": "She signs the chit, folds the docket under her arm, and goes.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "reconciling_month_28",
+    "register": "frame",
+    "text": "Two items for this post this turn. Seventy-nine drachms and two. February runs twenty-eight, so the one falling due on the twenty-ninth comes now or it does not come."
+   },
+   {
+    "key": "reconciling_month_29",
+    "register": "frame",
+    "text": "Two items for this post this turn. Seventy-nine drachms and two. The month ran twenty-nine and both of them fell due on the last day of it."
+   },
+   {
+    "key": "reconciling_month_30",
+    "register": "frame",
+    "text": "One item for this post this turn. Two drachms. Thirty days in this ruling, and the heavy one went in one day back."
+   },
+   {
+    "key": "reconciling_month_31",
+    "register": "frame",
+    "text": "One item for this post this turn. Two drachms. Thirty-one days in this ruling, and the heavy one went in two days back."
+   },
+   {
+    "key": "second_entry_paid_by_weight_read",
+    "register": "frame",
+    "text": "There is a second one on the same leaf, in the same hands."
+   }
+  ]
+ },
+ "the_regular": {
+  "title": "A Category for It",
+  "kind": "fragment",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "The House has a category for you. Attendance, Repeated, One Holding: Form 19, entered by the keeper of the post and returned with the monthly column. It exists because a reader who comes back to the same material is a different fact from a reader, and is costed differently. The entry stands against the holding and not against the person. The House keeps no file on persons and the form has no field for a name.\n\nYou have stood at this table on {visitDays} separate dates, across more than one ruling. The figure is in the reader column of the book behind you, one stroke to a date, and it has been correct for some time.\n\n[[The three she made up, and the one in the column she did not->daybook_invented]] are a month back in the same book. [[The other form filled out correctly at this post and never lodged->the_slip]] is loose in the wrapper. [[What a column is for is settled at the end of the month, by whoever is standing here->ending_standing]]."
+   }
+  ],
+  "returnLine": "You close the book on the column and square it to the edge of the table.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "visit_count_token",
+    "register": "frame",
+    "text": "{visitDays} is the count of distinct dates in storage on which this reader has stood at the table, printed as a figure and nothing else."
+   }
+  ]
+ },
+ "the_slip": {
+  "title": "The Slip in the Wrapper",
+  "kind": "fragment",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "A slip, loose in the wrapper, attached to nothing. Standard form, filled out correctly."
+   },
+   {
+    "register": "ledger",
+    "text": "ACCESSION SLIP. POST 11-40.\n\nCLASS: XI.407 / ii / dry / \n\nMATERIAL: Correspondence, 9-64 to 11-40, with retained carbons 11-40 to 9-64.\n\nHOLDING LOCATION: Post 11-40, at the range end, off the floor.\n\nEXTENT: One bundle, ninety-four items, 4,006 drachms on the post scale.\n\nREMARKS:\n\nENTERED: I. Varn, Keeper, 11-40.\n\nDATE OF LODGING:\n\nLODGED BY, KEEPER OR PERSON STANDING:\n\nRULINGS THAT GO WITH IT:"
+   },
+   {
+    "register": "frame",
+    "text": "The remarks field is a ruled box four lines deep. There are marks in it, paler than the rule, that you cannot read at this lamp.\n\nThe second word of the extent is underlined. She underlines the second word of anything she weighed herself rather than took off a return, in every entry of the ruled book behind you.\n\nTwo lines want a hand. One has hers. The other is blank, and so is the date. It was never lodged.\n\n[[What the first line is asking for, which is a condition and not a subject->the_thresh]] is at the back range. [[What the catalogue has been told about this post, and what it has not->the_manifest]] stands open at the current place. You could [[carry it along to the catalogue and lodge it->ending_deposit]]."
+   }
+  ],
+  "returnLine": "You put the slip back in the wrapper, loose, the way you found it.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "remarks_saw_third_field",
+    "register": "ledger",
+    "text": "REMARKS: STANDING ORDER FOUR."
+   },
+   {
+    "key": "remarks_saw_third_field_frame",
+    "register": "frame",
+    "text": "The marks in the box are in the under-ink, and they are an order number and nothing else. She entered a condition of call against their correspondence. The condition is a person standing here."
+   }
+  ]
+ },
+ "ending_standing": {
+  "title": "The Standing Address",
+  "kind": "ending",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "She stayed.\n\nThere is a form for it and she filled it in, and the Survey wrote the ground back to her in its own words."
+   },
+   {
+    "register": "ledger",
+    "text": "FORM 30. REASSIGNMENT OF KEEPER. DECLINED AT THE KEEPER'S INSTANCE.\n\nPOST 11-40. KEEPER I. VARN.\n\nGROUND ENTERED AND ALLOWED: THE POST HOLDS CATALOGUED MATERIAL, CANNOT BE STRUCK, AND IS SURVEYED. THE KEEPER IS CONTINUED AT THE POST.\n\nNo further action is required of you."
+   },
+   {
+    "register": "frame",
+    "text": "She kept the desk. Sixteen lamp hours rationed, oil short more quarters than not and entered short, which counts as order. Range Four dry, or not dry, and written down either way. She wrote every week for the rest of it, on the heavy stock, and paid the overweight out of her own ration and never once corrected the scale.\n\nThe post was never struck. The holding stood.\n\nHer hand stops mid sentence on the last page of fourteen years of them, and the party named on that page for the next day was a survey and not a striking, because a post that holds catalogued material can only be surveyed. The keeper at Eleven-Thirty-Nine took the book up on the first day of the following ruling, and has kept it since.\n\nLetters dispatched before the Consolidation went on coming in for years after there was anybody at this post to read them, because a thing paid for at weight is carried whatever has happened at the far end, and no runner on the circuit reads an address for news. That is why the bundle is at your left hand. It is not a memorial. It is undelivered mail."
+   },
+   {
+    "register": "frame",
+    "text": "Her three were always the same three, because a careless forger is struck in the first ruling. A man in a green coat who reads standing at the shelf and does not sign. A woman in for the Gallery timetable, who did not stay. A boy sent by his mother for a title she wanted. She kept them steady for fourteen years and never gave the green coat a face, because a face can be asked about.\n\nThe column in the current book is honest. One of the three came in, decades late, out of the fog, and kept coming back at whatever hour the Survey was allowing."
+   },
+   {
+    "register": "frame",
+    "text": "So you file it, which is the half of the order nobody is standing over you to see done.\n\nFlat in the wrapper, the way he asked for it. No string, which cuts the folds. The light stock on top, unfolded, because it was written to the post and not to her. The whole of it at the range end, off the floor, and not under Range Four.\n\nThen the book. It is ruled to the end of the month by nobody in particular, and today's line is empty until somebody rules it. The pen hangs on its string beside the scale. Readers: the column asks for a figure and does not ask what brought it in. You make one stroke."
+   }
+  ],
+  "returnLine": "You close the book on the stroke, and the room goes on being a room.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "cold_chain_coda",
+    "register": "frame",
+    "text": "One thing more, since it is a fact about the two of you and the subject of this accession is waiting.\n\nThe sum she sent him took twenty-two months, post to post, and it is the fastest this route has ever carried anything. The answer to it is on this table. It has been walking ever since. You turned the pages of the volume rather than wait {{DAYS_SAVED}} days for the same words to be carried here at weight. Both figures are now in the record: hers on the wrappers, yours in the catalogue, which records that somebody read ahead of the post. It would be poor filing to leave the second one out."
+   },
+   {
+    "key": "bands_seen_v",
+    "register": "frame",
+    "text": "She entered the green coat once at the second hour, lamps down, Range Two, standing. You have stood at this table at that hour."
+   },
+   {
+    "key": "ending_reread_filing_line",
+    "register": "filing",
+    "text": "[Filed once already by whoever was standing here. The order does not provide for a second filing and does not forbid one.]"
+   }
+  ]
+ },
+ "ending_walk": {
+  "title": "Twelve Hundred Walks",
+  "kind": "ending",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "She went.\n\nThere is no account of the deciding and there was never going to be one. What there is is four papers in three hands, and not one of the hands is his."
+   },
+   {
+    "register": "ledger",
+    "text": "LOAD, OUTWARD. CARRIED. NOT COSTED AGAINST ANY RATION. ITEMS ALREADY COSTED ARE NOT ENTERED AGAIN. SEE THE SUM, LEFT ON THE TABLE.\n\nITEM. Blankets, two.\n\nITEM. The range lamp, and oil at six drachms the day, nine days of it, fifty-four drachms.\n\nITEM. Boots, three pairs, one pair worn; the fourth pair is not on this list."
+   },
+   {
+    "register": "frame",
+    "text": "The list is in her hand, on the back of a spoiled requisition, and it carries no signature, because a load list is not a dispatch. She left the sum itself on the table with the carbons. Every figure in it still checks, including the one that says nine hundred days at the cheapest estimate and twelve hundred on the figures as they stand."
+   },
+   {
+    "register": "ledger",
+    "text": "POST 11-40. ATTENDED FROM 11-39 THIS DATE. POST FOUND UNATTENDED. NO KEEPER PRESENT. INVENTORY TAKEN: FOUR RANGES, SCALE, SORTING TABLE, DAYBOOK CONTINUED FROM THIS PAGE. RANGE LAMP NOT PRESENT, REPLACEMENT REQUISITIONED. MAIL HELD. ENTERED, KEEPER, 11-39, FIRST DAY OF THE FOLLOWING RULING."
+   },
+   {
+    "register": "ledger",
+    "text": "NOTICE. POST 11-40. THE POST HOLDS CATALOGUED MATERIAL, CANNOT BE STRUCK, AND IS SURVEYED. THE POST IS WORKED FROM 11-39, ONE ATTENDED DAY TO THE RULING PERIOD. MAIL ADDRESSED TO THIS POST IS DELIVERED TO THIS POST."
+   },
+   {
+    "register": "frame",
+    "text": "The notice under it is the standing one, copied out for every post that holds catalogued material, and it is here because this post held some. The last of the four papers is dated years after the other three, comes off a different run, and does not mention any of them."
+   },
+   {
+    "register": "ledger",
+    "text": "DOCKET, EASTBOUND GALLERIES. STANDING ENTRY, COPIED FORWARD.\n\nKeeper walking outward past 10-06 with a lamp and two blankets. Answers to no post number. Takes no mail and leaves none. 10-06 is the last post on this run that holds a relay box.\n\nSix hands have copied that page forward without amending it, so the docket goes on saying walking, in the tense it was written in."
+   },
+   {
+    "register": "frame",
+    "text": "You close the bundle and you do not file it. Filing takes a date, and the only date the box will accept is the date of filing, which would put an end on a record that does not have one; you are not going to supply it."
+   }
+  ],
+  "returnLine": "You leave it closed in the middle of the table, where whoever stands here next will find it.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "ending_reread_filing_line",
+    "register": "filing",
+    "text": "[Reached once before at this post. The bundle was left unfiled and is unfiled still. No form covers the condition and none has been asked for.]"
+   }
+  ]
+ },
+ "ending_deposit": {
+  "title": "Accession 11-40 stroke 1",
+  "kind": "ending",
+  "day": 0,
+  "wrapper": "",
+  "blocks": [
+   {
+    "register": "frame",
+    "text": "She did the third thing, and she never once put it in a letter, which is how you know she worked it out standing at this table and not on paper she was keeping.\n\nIt has been in the wrapper the whole time, loose, under everything. You have read it once tonight. Three of its lines carry the case."
+   },
+   {
+    "register": "ledger",
+    "text": "CLASS: XI.407 / ii / dry / \n\nHOLDING LOCATION: Post 11-40, at the range end, off the floor.\n\nEXTENT: One bundle, ninety-four items, 4,006 drachms on the post scale."
+   },
+   {
+    "register": "frame",
+    "text": "The extent stands as she weighed it, and the ten the post has brought you tonight are not in her ninety-four.\n\nRead them the way the catalogue will, which is in three consequences.\n\nThe letters stop being letters and become a holding, which is a thing the Consolidation is obliged to place and may not reduce. The post stops being a room with a reader count in it and becomes a holding location, which cannot be struck on its own account and no longer needs his eleven volumes to stand. And the class he made up to hide four books behind acquires a holding.\n\nA class that stands by ruling and holds nothing the catalogue has been told about becomes true at the moment something is put under it."
+   },
+   {
+    "register": "frame",
+    "text": "She wrote readers into a column and he wrote a holding into a catalogue, each of them to keep the other's address alive, and neither of them ever knew. This is both crimes committed once more, together, on purpose, on a form the Survey supplies. You are holding both halves; the slip does not mean anything to a reader holding one.\n\nShe filled it out and did not lodge it. Nothing in the wrapper says why."
+   },
+   {
+    "register": "frame",
+    "text": "So you lodge it.\n\nThe catalogue desk is two ranges along at the head of the north stair, and the lodging tray is the shallow one on the left. You enter the class as she wrote it, open, the solidus and then the space. You fill in the date of lodging in ink: {{TODAY}}. You sign the line under it, which is LODGED BY, KEEPER OR PERSON STANDING, and the form does not ask which. You take the carbon, because a copy is retained at the post."
+   },
+   {
+    "register": "ledger",
+    "text": "DELIVERY ORDER. ACCESSION 11-40 / 1.\n\nITEMS HANDED OVER, IN THE ORDER OF HANDING:\n\n{{DELIVERY_LINES}}\n\nRECEIVED BY: THE PERSON STANDING. READ ALOUD AT THE POST. ORDER DISCHARGED."
+   },
+   {
+    "register": "frame",
+    "text": "That is your evening as the post has it: not what you understood, and not in what order, but what was handed over, and when, and what was signed for. From this side of the sorting table there is no other kind of account of a reader.\n\nA correctly filled out form gets copied forward unamended at every handover, in whatever hand is carrying the run, and goes on saying what it said in the tense it was written in, to people with no reason whatever to care about it.\n\nThe bundle is not on this table because somebody kept it. It is here because it was addressed to whoever would be standing here, and the address held, and the post is slow, and it has taken until now. You are not a witness to any of this. You are the delivery."
+   }
+  ],
+  "returnLine": "You lay the carbon flat in the empty wrapper and leave the table bare, the column still ruled to the end of the month.",
+  "lightClauses": [],
+  "variants": [
+   {
+    "key": "coda_saw_third_field_drop",
+    "register": "frame",
+    "text": "The number you have lodged is a closed number, because you have read the third field: XI.407 / ii / dry / alone. The Thresh states a condition and not a subject. At the drop, in dry weather, alone. Standing Order Four supplies the rest of it.\n\nYou read it at noon, when the whole House goes down together, which is what the schedule still allows.\n\nA person alone at an unattended post, reading aloud. The condition of call on this holding is you."
+   },
+   {
+    "key": "coda_saw_third_field_lamp",
+    "register": "frame",
+    "text": "The number you have lodged is a closed number, because you have read the third field: XI.407 / ii / dry / alone. The Thresh states a condition and not a subject. At the drop, in dry weather, alone. Standing Order Four supplies the rest of it.\n\nYou trimmed the range lamp to half with your own hand for a quarter hour, which is an irregularity and not an offence, and is what she did, and she did not enter a reason either.\n\nA person alone at an unattended post, reading aloud. The condition of call on this holding is you."
+   },
+   {
+    "key": "ending_reread_filing_line",
+    "register": "filing",
+    "text": "[Lodged once already at this post by whoever was standing here. A second lodging of the same holding is a duplicate accession. There is a form.]"
+   }
+  ]
+ }
+};
+
+const COLD_LABELS = {
+ "deep_stacks": "The next page is an answer about what the deep stacks smell of",
+ "paid_by_weight": "The next page explains why he writes at such length and asks you to read it as haste",
+ "dear_keeper": "The next page is the first thing he ever sent her, and it is a query about a shelf-list",
+ "the_fourth_consolidation": "The next page is his account of the new scheme, written by a man enjoying the work",
+ "somewhere_safe": "The next page says where he has been putting the books he cannot bear to lose",
+ "holding_location": "The next page enters eleven volumes as held at this post and says so at the top",
+ "bad_season": "The next page asks about the roof over Range Four and asks for nothing else",
+ "the_channel": "The next page answers her sum, item by item, and says no to the whole of it",
+ "to_the_post": "The next page is addressed to the post and not to the woman who kept it",
+ "one_line": "The next page weighs two drachms and has been walking the whole time"
+};
+
+/* ===================================================================
+   THE SLOW POST: engine
+
+   The reader is standing at Post Eleven-Forty. The real date decides how
+   much of the post has arrived, the real hour decides the lamp band, and
+   the post keeps a record of the reader because the daybook is still ruled
+   and somebody has to be counted in it.
+   =================================================================== */
+
+const KEY = 'slow_post_v2';
+
+/* The ten arriving items, in the order the route brings them. one_line has
+   no fixed day: it moves only at a reconciliation, which is the last
+   calendar day of whatever length the month has been. */
+const SPINE = ['deep_stacks', 'paid_by_weight', 'dear_keeper', 'the_fourth_consolidation',
+               'somewhere_safe', 'holding_location', 'bad_season', 'the_channel',
+               'to_the_post', 'one_line'];
+const ARRIVAL = {
+    deep_stacks: 1, paid_by_weight: 4, dear_keeper: 6, the_fourth_consolidation: 9,
+    somewhere_safe: 12, holding_location: 15, bad_season: 19, the_channel: 24,
+    to_the_post: 29, one_line: 0            /* 0 means: at the reconciling */
+};
+
+/* The Survey sets the lamps. None of this follows any sun. */
+const BANDS = [
+    { n: 'i',   name: 'LAMPS UP',       from: 360,  to: 719  },
+    { n: 'ii',  name: 'THE DROP',       from: 720,  to: 779  },
+    { n: 'iii', name: 'TRIMMED',        from: 780,  to: 1079 },
+    { n: 'iv',  name: 'EVENING RATION', from: 1080, to: 1319 },
+    { n: 'v',   name: 'LAMPS DOWN',     from: 1320, to: 359  }   /* wraps midnight */
+];
+
+const LOCK = {
+    walking:  'It is not at the post. It is somewhere between here and the Ninth Interior, and the post does not record how far.',
+    drop:     'The drop is at noon; it is at noon in every range in the House, and it lasts an hour.',
+    fog:      'The gallery holds its fog from the sixth hour to the eighth. Before the sixth there is no lamp to read it by, and after the eighth there is no fog.',
+    lampsdown:'The lamps are down from the twenty-second hour to the sixth. The Survey sets the hour and does not take requests.',
+    reconcile:'Pell comes at the reconciling, which is the last day of the month, whatever length the month has been.',
+    regular:  'The House rules the column by the month and reads it afterward. It does not class a reader on one month’s attendance.',
+    backbook: 'The leaves at the back of the book have not been turned. They turn when the table is further on than the book is.',
+    standing: 'There is more on this table than you have read, and the order says read, then file. It does not say file.',
+    walk:     'A costing is not a decision. The answer he sent and the vise she was standing in are both still on this table.',
+    deposit:  'The form wants a class, a holding, an extent and a hand that knows what it is signing. Not all of those are on this table yet.',
+    bound:    'The volume is bound in order. There is no page after this one that the post has not already brought.'
+};
+
+const ROMAN = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],
+               [40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+function roman(n) {
+    let out = '';
+    for (const [v, s] of ROMAN) while (n >= v) { out += s; n -= v; }
+    return out;
+}
+
+/* --- storage. The post keeps a record; a reader who blocks it is simply
+       one the post has no record of, and nothing says so. ------------- */
+
+function blank() {
+    return {
+        v: 2, firstVisit: null, visitDays: [], bandsSeen: [], warmOpens: {}, coldOpens: {},
+        wearDays: {}, order: [], readCold: [], disturbed: [], sawThirdField: false,
+        thirdFieldRoute: '', endings: [], struckShown: false, dropIns: { date: null, served: [] }
+    };
+}
+
+let S = blank();
+let storageWorks = true;
+
+function load() {
+    try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return blank();
+        const s = JSON.parse(raw);
+        const b = blank();
+        for (const k of Object.keys(b)) if (s[k] !== undefined) b[k] = s[k];
+        if (!b.dropIns || typeof b.dropIns !== 'object') b.dropIns = { date: null, served: [] };
+        if (!Array.isArray(b.dropIns.served)) b.dropIns.served = [];
+        return b;
+    } catch (e) { storageWorks = false; return blank(); }
+}
+
+function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); }
+    catch (e) { storageWorks = false; }
+}
+
+/* --- the present moment ------------------------------------------- */
+
+function iso(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+           String(d.getDate()).padStart(2, '0');
+}
+
+function daysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
+
+function bandFor(mins) {
+    for (const b of BANDS) {
+        if (b.from <= b.to) { if (mins >= b.from && mins <= b.to) return b; }
+        else if (mins >= b.from || mins <= b.to) return b;
+    }
+    return BANDS[4];
+}
+
+/* Fog stands in the Long Gallery to the eighth hour. The cold falls down the
+   north stairwells at night. The cold season is Condition Three. */
+function weatherFor(mins, month) {
+    if (mins >= 300 && mins <= 479) return 'fog';
+    if (mins >= 1320 || mins <= 299) return 'draw';
+    if (month === 10 || month === 11 || month === 0 || month === 1) return 'damp';
+    return 'dry';
+}
+
+function now() {
+    const d = new Date();
+    const mins = d.getHours() * 60 + d.getMinutes();
+    const dim = daysInMonth(d);
+    return {
+        d, date: d.getDate(), dim, mins, hour: d.getHours(),
+        isLastDay: d.getDate() === dim,
+        band: bandFor(mins), weather: weatherFor(mins, d.getMonth()), iso: iso(d)
+    };
+}
+
+/* --- what the post has managed to hand over ------------------------ */
+
+function arrivalDay(id, T) {
+    const a = ARRIVAL[id];
+    if (a === undefined) return null;
+    return a === 0 ? T.dim : Math.min(a, T.dim);   /* short month clause */
+}
+
+function onTable(id, T) {
+    if (ARRIVAL[id] === undefined) return true;          /* not an arriving item */
+    if ((S.warmOpens[id] || 0) > 0) return true;         /* read at the post, and filed */
+    return T.date >= arrivalDay(id, T);
+}
+
+function hasRead(id) {
+    return (S.warmOpens[id] || 0) > 0 || S.readCold.indexOf(id) !== -1;
+}
+
+function countSpineRead() {
+    return SPINE.filter(hasRead).length;
+}
+
+function tally(T) { return SPINE.filter(id => onTable(id, T)).length; }
+
+/* The first item the route has not handed over and the reader has not
+   already turned to in the volume. */
+function coldTarget(T) {
+    for (const id of SPINE) {
+        if (!onTable(id, T) && S.readCold.indexOf(id) === -1) return id;
+    }
+    return null;
+}
+
+/* --- gates. Every shut door in the piece resolves through here, so a
+       condition is stated in exactly one place. ---------------------- */
+
+function gate(id, T) {
+    const P = PASSAGES[id];
+    if (!P) return { open: false, line: '' };
+
+    /* An arriving item. Open warm when it is on the table; open cold when the
+       volume is what brought you. Already turned to in the volume counts as
+       read, so the post never tells a reader that something is still walking
+       when they have its transcription in front of them. */
+    if (ARRIVAL[id] !== undefined) {
+        if (onTable(id, T)) return { open: true, line: '', cold: false };
+        if (S.readCold.indexOf(id) !== -1) return { open: true, line: '', cold: true };
+        if (id === coldTarget(T)) return { open: true, line: '', cold: true };
+        return { open: false, line: LOCK.walking };
+    }
+
+    switch (id) {
+        case 'the_noon_drop':
+            return T.hour === 12 ? { open: true, line: '' } : { open: false, line: LOCK.drop };
+        case 'fog_hour':
+            return (T.mins >= 360 && T.mins <= 479) ? { open: true, line: '' }
+                                                    : { open: false, line: LOCK.fog };
+        case 'lamps_down':
+            return (T.mins >= 1320 || T.mins <= 359) ? { open: true, line: '' }
+                                                     : { open: false, line: LOCK.lampsdown };
+        case 'runners_docket':
+            return T.isLastDay ? { open: true, line: '' } : { open: false, line: LOCK.reconcile };
+        case 'the_regular': {
+            if (!S.firstVisit) return { open: false, line: LOCK.regular };
+            const f = S.firstVisit.slice(0, 7), t = T.iso.slice(0, 7);
+            return f !== t ? { open: true, line: '' } : { open: false, line: LOCK.regular };
+        }
+        case 'daybook_last':
+            return (countSpineRead() >= 4 || hasRead('to_the_post'))
+                ? { open: true, line: '' } : { open: false, line: LOCK.backbook };
+        case 'ending_standing':
+            return (countSpineRead() >= 8 && (hasRead('to_the_post') || hasRead('daybook_last')))
+                ? { open: true, line: '' } : { open: false, line: LOCK.standing };
+        case 'ending_walk':
+            return (hasRead('arithmetic_of_walking') && hasRead('the_channel') && hasRead('threshold'))
+                ? { open: true, line: '' } : { open: false, line: LOCK.walk };
+        case 'ending_deposit':
+            return (hasRead('the_thresh') && hasRead('somewhere_safe') && hasRead('holding_location') &&
+                    hasRead('the_slip') && (hasRead('daybook_invented') || hasRead('daybook_collision')))
+                ? { open: true, line: '' } : { open: false, line: LOCK.deposit };
+        default:
+            return { open: true, line: '' };
+    }
+}
+
+/* --- rendering ------------------------------------------------------ */
+
+/* --- tokens: the few places the prose has to count something -------- */
+
+let dropNote = '';          /* set by the drop-in rule, read by two hub clauses */
+
+const WORDS = ['none', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                'August', 'September', 'October', 'November', 'December'];
+
+function hubVariant(P, key) {
+    const v = variant(P, key);
+    return v ? v.text : '';
+}
+
+/* The newest thing the post has brought, and the sentence that opens it. */
+function newestClause(T) {
+    let newest = null;
+    for (const id of SPINE) if (onTable(id, T)) newest = id;
+    if (!newest) return '';
+    const P = PASSAGES.the_post;
+    const label = newest === 'deep_stacks'
+        ? 'The newest of them is an answer about what the deep stacks smell of'
+        : hubVariant(P, 'newest_arrival_label_' + newest);
+    if (!label) return '';
+    return '[[' + label + '->' + newest + ']].';
+}
+
+function walkingClause(T) {
+    const n = 10 - tally(T);
+    const P = PASSAGES.the_post;
+    if (n === 0) return hubVariant(P, 'still_walking_none');
+    if (n === 1) return hubVariant(P, 'still_walking_one');
+    return WORDS[n] + ' of them are still walking.';
+}
+
+/* How long the reader declined to wait, in the post's own arithmetic. */
+function daysSaved(T) {
+    let most = 1;
+    for (const id of S.readCold) {
+        const due = arrivalDay(id, T);
+        if (due !== null) most = Math.max(most, due - T.date);
+    }
+    return most;
+}
+
+/* ending_deposit recites the reader's path back as a delivery order,
+   because from the post's point of view that is what it is. */
+function deliveryLines() {
+    const lines = [];
+    let n = 0;
+    for (const id of S.order) {
+        if (!PASSAGES[id] || PASSAGES[id].kind === 'ending') continue;
+        n++;
+        lines.push(String(n).padStart(2, '0') + '.  ' + PASSAGES[id].title.toUpperCase());
+    }
+    return lines.join('\n');
+}
+
+function subst(text, T) {
+    return text
+        .replace(/\{\{NEWEST\}\}/g, () => newestClause(T))
+        .replace(/\{\{WALKING\}\}/g, () => walkingClause(T))
+        .replace(/\{\{DAYS_SAVED\}\}/g, () => String(daysSaved(T)))
+        .replace(/\{\{DELIVERY_LINES\}\}/g, () => deliveryLines())
+        .replace(/\{\{TODAY\}\}/g, () => T.date + ' ' + MONTHS[T.d.getMonth()] + ' ' + T.d.getFullYear())
+        .replace(/\{visitDays\}/g, () => String(visitCount()));
+}
+
+const LEXIA = /\[\[([^\]]+?)->([a-z0-9_]+)\]\]/g;
+
+function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+let shutSeq = 0;
+let currentId = null;
+
+/* A lexia is pressure in the page, never a hyperlink. A shut one is visible,
+   unlit, and says what it is waiting for, out loud for a screen reader too.
+
+   The prose is escaped around the markup rather than through it, because
+   escaping first would turn every -> into an entity and no link would match. */
+function lexiaHTML(anchor, target, T) {
+    const text = esc(anchor);
+
+    if (target === 'disturb_hinge') {
+        /* The one thing a reader can physically do to this building. */
+        if (disturbed()) return text;
+        return `<span class="lexia act" role="button" tabindex="0" data-act="disturb">${text}</span>`;
+    }
+
+    if (target === 'trim_lamp') {
+        /* The second route to a third field. It does not navigate: she
+           records trimming the range lamp and enters no reason. */
+        if (S.sawThirdField) return text;
+        return `<span class="lexia trim" role="button" tabindex="0" data-trim="1">${text}</span>`;
+    }
+
+    if (target === 'cold_target') {
+        const t = coldTarget(T);
+        if (!t) return shutHTML(text, LOCK.bound);
+        target = t;
+    }
+
+    if (!PASSAGES[target]) return text;
+
+    const g = gate(target, T);
+    if (!g.open) return shutHTML(text, g.line);
+
+    const been = hasRead(target) ? ' been' : '';
+    return `<a class="lexia${been}" data-to="${target}" role="link" tabindex="0">${text}</a>`;
+}
+
+function shutHTML(text, line) {
+    const id = 'shut' + (++shutSeq);
+    return `<span class="shut" role="button" tabindex="0" aria-disabled="true" ` +
+           `aria-describedby="${id}" data-shut="${id}" data-line="${esc(line)}">${text}</span>`;
+}
+
+function markup(text, T) {
+    let out = '', last = 0, m;
+    LEXIA.lastIndex = 0;
+    while ((m = LEXIA.exec(text)) !== null) {
+        out += esc(text.slice(last, m.index));
+        out += lexiaHTML(m[1], m[2], T);
+        last = m.index + m[0].length;
+    }
+    return out + esc(text.slice(last));
+}
+
+function paragraphs(text, T, br) {
+    return subst(text, T).trim().split(/\n\s*\n/).map(p => {
+        const t = p.trim();
+        if (!t) return '';
+        return '<p>' + markup(t, T).replace(/\n/g, br ? '<br>' : ' ') + '</p>';
+    }).join('\n');
+}
+
+function renderBlocks(blocks, T) {
+    let html = '';
+    for (const b of blocks) {
+        if (b.register === 'gap') { html += '<hr class="gap">'; continue; }
+        const body = paragraphs(b.text, T, b.register === 'ledger');
+        if (b.register === 'letter')      html += `<div class="letter">${body}</div>`;
+        else if (b.register === 'ledger') html += `<div class="ledger">${body}</div>`;
+        else if (b.register === 'filing') html += `<div class="filing">${body}</div>`;
+        else                              html += body;
+    }
+    return html;
+}
+
+/* --- the stamp: clock face and document header in one object -------- */
+
+function stamp(T) {
+    const hh = String(T.d.getHours()).padStart(2, '0');
+    const mm = String(T.d.getMinutes()).padStart(2, '0');
+    const n = tally(T);
+    return `<span class="fold">POST 11-40<span class="sep">/</span>DAY ${roman(T.date)}</span>` +
+           `<span class="sep">/</span><span class="fold">${T.band.n} ${T.band.name} ${T.weather}` +
+           `<span class="sep">/</span><span class="clock">${hh}:${mm}</span>` +
+           `<span class="sep">/</span>${n} of 10 on the table</span>`;
+}
+
+/* --- the wrapper, which is where the paper gives way ---------------- */
+
+function wrapperFor(id, T) {
+    const P = PASSAGES[id];
+    if (!P || !P.wrapper) return '';
+    const days = (S.wearDays[id] || []).length;
+    /* Three stamps, at one date, two dates and four. An object that cannot
+       part at a crease, a scrap or an unfolded sheet, carries its own line. */
+    const key = days >= 4 ? 'wear_4_or_more_days' : days >= 2 ? 'wear_2_days' : 'wear_1_day';
+    const own = variant(P, key);
+    let read;
+    if (own) read = own.text;
+    else if (days >= 4) read = 'Read at the post. The folds are going soft and the third sheet has parted at the crease.';
+    else if (days >= 2) read = 'Read at the post, second time.';
+    else                read = 'Delivered. Read at the post.';
+
+    /* The irony lands once. On every wrapper after the first the box is
+       simply empty, and the empty box does the rest of the work for free. */
+    let elapsed;
+    if (!S.struckShown) { elapsed = '<span class="struck">TIME ELAPSED</span>'; S.struckShown = true; }
+    else { elapsed = 'TIME ELAPSED'; }
+
+    return `<div class="wrapper">${esc(P.wrapper)}<span class="sep"> | </span>${elapsed}<br>${esc(read)}</div>`;
+}
+
+/* --- opening a passage ---------------------------------------------- */
+
+function variant(P, key) {
+    if (!P.variants) return null;
+    for (const v of P.variants) if (v.key === key) return v;
+    return null;
+}
+
+function open(id, T, silent) {
+    const P = PASSAGES[id];
+    if (!P) return;
+    T = T || now();
+
+    currentId = id;
+    const isArriving = ARRIVAL[id] !== undefined;
+    const cold = isArriving && !onTable(id, T);
+
+    /* The count is incremented before the prose renders, so a gate on this
+       page is evaluated against a reader who is standing here. */
+    if (silent) {
+        /* A re-render of the room you are already standing in. */
+    } else if (cold) {
+        S.coldOpens[id] = (S.coldOpens[id] || 0) + 1;
+        if (S.readCold.indexOf(id) === -1) S.readCold.push(id);
+    } else {
+        S.warmOpens[id] = (S.warmOpens[id] || 0) + 1;
+        if (isArriving) {
+            const w = S.wearDays[id] || (S.wearDays[id] = []);
+            if (w.indexOf(T.iso) === -1) w.push(T.iso);
+        }
+    }
+    if (id === 'the_noon_drop' && !S.sawThirdField) {
+        S.sawThirdField = true;
+        S.thirdFieldRoute = 'drop';
+    }
+    if (S.order.indexOf(id) === -1) S.order.push(id);
+    if (PASSAGES[id].kind === 'ending' && S.endings.indexOf(id) === -1) S.endings.push(id);
+    save();
+
+    const el = document.getElementById('passage');
+    let html = '';
+
+    if (PASSAGES[id].kind === 'ending' && (S.warmOpens[id] || 0) > 1) {
+        const seen = variant(P, 'ending_reread_filing_line') || variant(P, 'already_seen');
+        if (seen) html += `<div class="filing">${paragraphs(seen.text, T)}</div>`;
+    }
+
+    html += `<h1 class="passage-title">${esc(P.title)}</h1>`;
+
+    if (cold) {
+        /* The transcription only: no wrapper, no hand, no weight, no folds. */
+        const body = P.blocks.filter(b => b.register === 'letter' || b.register === 'ledger');
+        const src = body.length ? body : P.blocks.filter(b => b.register !== 'gap');
+        html += `<div class="ledger cold">` +
+                src.map(b => paragraphs(b.text.replace(LEXIA, '$1'), T)).join('') + `</div>`;
+        html += coldExits(T);
+    } else {
+        html += wrapperFor(id, T);
+        html += renderBlocks(applyVariants(P, T), T);
+    }
+
+    html += `<div class="shut-slot" aria-live="polite"></div>`;
+    html += `<div class="return"><a data-to="the_post">${esc(P.returnLine || 'You set it down on the table.')}</a></div>`;
+    if (id === 'the_post') html += resetLine();
+
+    el.innerHTML = html;
+    el.scrollTop = 0;
+    window.scrollTo(0, 0);
+    document.title = P.title + ' | The Slow Post';
+    wire(el, T);
+}
+
+/* Every cold transcription has the same three exits, and the first of them
+   advances the chain by exactly one item. */
+function coldExits(T) {
+    const next = coldTarget(T);
+    const label = next && PASSAGES[next] ? COLD_LABELS[next] : null;
+    let html = '<p class="cold-exits">';
+    if (next && label) {
+        html += `<a class="lexia" data-to="${next}" role="link" tabindex="0">${esc(label)}</a>. `;
+    } else {
+        html += `<span class="shut" role="button" tabindex="0" aria-disabled="true"
+            data-line="${esc(LOCK.bound)}">the next page of the volume</span>. `;
+    }
+    html += `<a class="lexia" data-to="the_manifest" role="link" tabindex="0">The volume it is bound in</a>, ` +
+            `and <a class="lexia" data-to="relay_box" role="link" tabindex="0">where the original is standing</a>.`;
+    return html + '</p>';
+}
+
+/* --- variants: the six ways the post notices you -------------------- */
+
+/* Each rule says when a piece of variant text belongs on the page. Keys are
+   matched by prefix, so a drafter can suffix a key without breaking this. */
+const VARIANT_RULES = {
+    reader_column_tier1: () => visitCount() < 3,
+    reader_column_tier2: () => visitCount() >= 3 && visitCount() < 8,
+    reader_column_tier3: () => visitCount() >= 8,
+
+    disturbed_IX404:       () => disturbed(),
+    disturbed_ix404:       () => disturbed(),
+    disturbed_ix404_chalk: () => disturbed(),
+    disturbed_ix404_open:  () => disturbed(),
+
+    remarks_saw_third_field:              () => S.sawThirdField,
+    remarks_saw_third_field_frame:        () => S.sawThirdField,
+    saw_third_field_paragraph_route_drop: () => S.sawThirdField && S.thirdFieldRoute === 'drop',
+    saw_third_field_paragraph_route_lamp: () => S.sawThirdField && S.thirdFieldRoute === 'lamp',
+    coda_saw_third_field_drop:            () => S.sawThirdField && S.thirdFieldRoute === 'drop',
+    coda_saw_third_field_lamp:            () => S.sawThirdField && S.thirdFieldRoute === 'lamp',
+
+    cold_chain_coda:  () => S.readCold.length > 0,
+    readcold_nonempty:() => S.readCold.length > 0,
+    bands_seen_v:     () => S.bandsSeen.indexOf('v') !== -1,
+
+    fourth_visit:     () => visitCount() >= 4,
+    fourth_visit_day: () => visitCount() >= 4,
+
+    later_month_ruling: (T) => laterMonth(T),
+
+    second_entry_paid_by_weight_read: () => hasRead('paid_by_weight'),
+
+    reconciling_month_28: (T) => T.dim === 28,
+    reconciling_month_29: (T) => T.dim === 29,
+    reconciling_month_30: (T) => T.dim === 30,
+    reconciling_month_31: (T) => T.dim === 31,
+
+    /* Served by the drop-in rule, and only on the load it dropped you into. */
+    delivery_already_opened: (T) => dropNote === 'opened',
+    nothing_came_today:      (T) => dropNote === 'nothing',
+
+    /* Handled elsewhere: tokens, in-place actions, and the wrapper. */
+    later_month_filing_sentence: () => false,
+    trim_lamp_frame:             () => false,
+    trim_lamp_ledger:            () => false,
+    visit_count_token:           () => false,
+    ending_reread_filing_line:   () => false,
+    already_seen:                () => false
+};
+
+function disturbed() { return S.disturbed.indexOf('IX.404') !== -1; }
+function laterMonth(T) { return !!S.firstVisit && S.firstVisit.slice(0, 7) !== T.iso.slice(0, 7); }
+
+function visitCount() { return S.visitDays.length; }
+
+function variantAllowed(key, T) {
+    if (key.indexOf('newest_arrival_label_') === 0) return false;   /* used by the hub token */
+    if (key.indexOf('wear_') === 0 || key.indexOf('wrapper_wear') === 0) return false;
+    if (key.indexOf('still_walking_') === 0) return false;          /* used by the hub token */
+    if (key.indexOf('order_noticed') !== -1 || key.indexOf('filing_order_noticed') === 0) return false;
+    const rule = VARIANT_RULES[key];
+    return rule ? !!rule(T) : false;
+}
+
+function applyVariants(P, T) {
+    const blocks = [];
+
+    /* The hub and the five rooms report the lamp they are standing under. */
+    if (P.lightClauses && P.lightClauses.length) {
+        const lc = P.lightClauses.filter(l => l.band === T.band.n)[0];
+        if (lc) blocks.push({ register: 'frame', text: lc.text });
+    }
+
+    for (const b of P.blocks) blocks.push(b);
+
+    /* One further sentence inside the filing hand's square bracket, which is
+       the same note in the same place and not a second appearance of it. */
+    const lm = variant(P, 'later_month_filing_sentence');
+    if (lm && laterMonth(T)) {
+        for (const b of blocks) {
+            if (b.register === 'filing') {
+                const extra = lm.text.replace(/^\[/, '').replace(/\]$/, '');
+                blocks[blocks.indexOf(b)] = {
+                    register: 'filing',
+                    text: b.text.replace(/\]\s*$/, ' ' + extra + ']')
+                };
+                break;
+            }
+        }
+    }
+
+    if (P.variants) {
+        for (const v of P.variants) {
+            if (v.key === 'already_seen') continue;
+            /* The order noticed pair: whichever of the two was opened second
+               gains a note in the filing hand, and only then. */
+            if (v.key.indexOf('order_noticed') === 0) {
+                const pair = P.id === 'dear_keeper' ? 'hands_that_carried' : 'dear_keeper';
+                if (!(hasRead(pair) && S.order.indexOf(pair) < S.order.indexOf(P.id))) continue;
+                blocks.push({ register: 'filing', text: v.text });
+                continue;
+            }
+            if (variantAllowed(v.key, T)) blocks.push({ register: v.register || 'frame', text: v.text });
+        }
+    }
+    return blocks;
+}
+
+/* --- the only thing in the piece that empties the key --------------- */
+
+function resetLine() {
+    return '<div class="reset"><a id="reset-strike" role="button" tabindex="0">Close the post.</a></div>';
+}
+
+function resetCost() {
+    const days = visitCount();
+    const items = SPINE.filter(id => (S.warmOpens[id] || 0) > 0).length;
+    const third = S.sawThirdField ? 'the third field stands read' : 'the third field stands unread';
+    return `Closing discards ${days} ${days === 1 ? 'day' : 'days'} attended, ` +
+           `${items} ${items === 1 ? 'item' : 'items'} read at the post, and ${third}. ` +
+           `The post keeps no copy. Strike it again to close it.`;
+}
+
+/* --- navigation ------------------------------------------------------ */
+
+function wire(el, T) {
+    const slot = el.querySelector('.shut-slot');
+
+    el.querySelectorAll('[data-to]').forEach(a => {
+        const go = e => {
+            e.preventDefault();
+            open(a.dataset.to, now());
+        };
+        a.addEventListener('click', go);
+        a.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') go(e);
+        });
+    });
+
+    el.querySelectorAll('.shut').forEach(s => {
+        const say = () => {
+            if (s.dataset.said) return;
+            s.dataset.said = '1';
+            const line = document.createElement('span');
+            line.className = 'shut-line';
+            if (s.dataset.shut) line.id = s.dataset.shut;
+            line.textContent = s.dataset.line;
+            if (slot) slot.appendChild(line); else s.after(line);
+        };
+        s.addEventListener('click', say);
+        s.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); say(); } });
+    });
+
+    el.querySelectorAll('[data-act="disturb"]').forEach(a => {
+        const act = () => {
+            if (disturbed()) return;
+            S.disturbed.push('IX.404');
+            save();
+            /* The room is different now, so you are shown the room. */
+            open(currentId, now(), true);
+        };
+        a.addEventListener('click', act);
+        a.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } });
+    });
+
+    el.querySelectorAll('[data-trim]').forEach(t => {
+        const trim = () => {
+            if (S.sawThirdField) return;
+            S.sawThirdField = true;
+            S.thirdFieldRoute = S.thirdFieldRoute || 'lamp';
+            save();
+            const P = PASSAGES[currentId];
+            const led = variant(P, 'trim_lamp_ledger');
+            const fr = variant(P, 'trim_lamp_frame');
+            const box = document.createElement('div');
+            if (led) box.innerHTML += `<div class="ledger">${paragraphs(led.text, T, true)}</div>`;
+            if (fr) box.innerHTML += paragraphs(fr.text, T);
+            t.replaceWith(document.createTextNode(t.textContent));
+            if (slot) slot.before(box); else el.appendChild(box);
+        };
+        t.addEventListener('click', trim);
+        t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trim(); } });
+    });
+
+    const strike = el.querySelector('#reset-strike');
+    if (strike) {
+        strike.addEventListener('click', () => {
+            if (strike.dataset.armed) {
+                try { localStorage.removeItem(KEY); } catch (e) { /* nothing to be done */ }
+                location.reload();
+                return;
+            }
+            strike.dataset.armed = '1';
+            strike.textContent = resetCost();
+            strike.classList.add('armed');
+        });
+    }
+
+    /* The cracked hinge in Range Nine. Taking it down is the only thing a
+       reader can physically do to this building, and nobody reshelves. */
+    el.querySelectorAll('[data-disturb]').forEach(d => {
+        d.addEventListener('click', () => {
+            if (S.disturbed.indexOf(d.dataset.disturb) === -1) S.disturbed.push(d.dataset.disturb);
+            save();
+        });
+    });
+}
+
+/* --- the drop-in rule: where a returning reader lands --------------- */
+
+function dropIn(T) {
+    /* ZERO. A reader the post has no record of meets the table first. */
+    if (!S.firstVisit || !storageWorks) return 'the_post';
+
+    const due = [];
+    if (T.isLastDay) due.push('runners_docket');
+    for (const id of SPINE) {
+        if (arrivalDay(id, T) === T.date && (S.warmOpens[id] || 0) === 0) due.push(id);
+    }
+    const served = (S.dropIns.date === T.iso) ? S.dropIns.served : [];
+    const rest = due.filter(id => served.indexOf(id) === -1);
+    if (!rest.length) {
+        /* Clause TWO: the frame notes in one clause either that today's
+           delivery has already been opened, or that nothing came. */
+        const dueToday = SPINE.some(id => arrivalDay(id, T) === T.date);
+        dropNote = dueToday ? 'opened' : 'nothing';
+        return 'the_post';
+    }
+
+    const pick = rest[0];
+    S.dropIns = { date: T.iso, served: served.concat([pick]) };
+    save();
+    return pick;
+}
+
+/* --- the tick. The stamp is live and the day rolls without a reload. - */
+
+let lastBand = null, lastDay = null;
+
+function tick() {
+    const T = now();
+    document.getElementById('stamp').innerHTML = stamp(T);
+    if (T.band.n !== lastBand) {
+        document.documentElement.setAttribute('data-band', T.band.n);
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content',
+            getComputedStyle(document.documentElement).getPropertyValue('--surround').trim());
+        lastBand = T.band.n;
+    }
+    /* The day rolls under the reader. The stamp changes; the open passage
+       is never withdrawn and never re-rendered. */
+    if (T.date !== lastDay) lastDay = T.date;
+}
+
+function boot() {
+    S = load();
+    const T = now();
+
+    if (!S.firstVisit) S.firstVisit = T.iso;
+    let vd = S.visitDays.filter(v => v && v.date === T.iso)[0];
+    if (!vd) { vd = { date: T.iso, bands: [] }; S.visitDays.push(vd); }
+    if (!vd.bands) vd.bands = [];
+    if (vd.bands.indexOf(T.band.n) === -1) vd.bands.push(T.band.n);
+    if (S.bandsSeen.indexOf(T.band.n) === -1) S.bandsSeen.push(T.band.n);
+    save();
+
+    document.documentElement.setAttribute('data-band', T.band.n);
+    lastBand = T.band.n; lastDay = T.date;
+    tick();
+    setInterval(tick, 10000);
+
+    open(dropIn(T), T);
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+    </script>
+</body>
+</html>
