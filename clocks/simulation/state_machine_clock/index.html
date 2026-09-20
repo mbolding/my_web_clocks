@@ -10,6 +10,8 @@
     <link rel="icon" href="favicon-32.png" sizes="32x32">
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -220,15 +222,22 @@
             return String(n).padStart(2, '0');
         }
 
+        let width, height;
+
         function resize() {
-            const size = canvas.clientWidth;
-            canvas.width = size;
-            canvas.height = canvas.clientHeight;
-            cx = canvas.width / 2;
-            cy = canvas.height / 2;
-            R_HOURS = canvas.width * 0.44;
-            R_MINUTES = canvas.width * 0.31;
-            R_SECONDS = canvas.width * 0.18;
+            width = canvas.clientWidth;
+            height = canvas.clientHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            cx = width / 2;
+            cy = height / 2;
+            R_HOURS = width * 0.44;
+            R_MINUTES = width * 0.31;
+            R_SECONDS = width * 0.18;
         }
         window.addEventListener('resize', resize);
 
@@ -369,7 +378,7 @@
             tick();
 
             ctx.fillStyle = '#0a0e14';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
 
             drawRing(HOURS_N, R_HOURS, lastHour, prevHour, COLORS.hours, hourFlashStart, 5, 3);
             drawRing(MINUTES_N, R_MINUTES, lastMinute, prevMinute, COLORS.minutes, minFlashStart, 3, 5);

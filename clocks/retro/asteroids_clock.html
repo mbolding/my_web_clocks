@@ -118,8 +118,12 @@
         function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
             // Re-center ship if off-screen or first run
             if (entities.ship.x === 0 || entities.ship.x > width) entities.ship.x = width / 2;

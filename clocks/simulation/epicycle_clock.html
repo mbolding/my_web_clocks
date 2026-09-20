@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Epicycle Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -226,7 +228,7 @@
             buildLegend();
             // Clear the canvas so the old trail doesn't linger under the new chain.
             ctx.fillStyle = '#08080e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
         }
 
         function buildLegend() {
@@ -240,18 +242,26 @@
             }
         }
 
+        let width, height;
+
         function resize() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
+            width = canvas.clientWidth;
+            height = canvas.clientHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.fillStyle = '#08080e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
         }
         window.addEventListener('resize', resize);
 
         function computeChain(nowMs) {
             let x = 0, y = 0;
             const points = [{ x: 0, y: 0, def: null }];
-            const baseRadius = Math.min(canvas.width, canvas.height) / 2 * 0.94;
+            const baseRadius = Math.min(width, height) / 2 * 0.94;
 
             for (let i = 0; i < circleCount; i++) {
                 const def = CIRCLE_DEFS[i];
@@ -268,9 +278,9 @@
         function draw() {
             ctx.save();
             ctx.fillStyle = `rgba(8, 8, 14, ${TRAIL_FADE})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
 
-            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.translate(width / 2, height / 2);
 
             const nowMs = Date.now();
             const points = computeChain(nowMs);

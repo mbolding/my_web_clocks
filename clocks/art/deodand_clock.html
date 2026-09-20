@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Deodand Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
     <style>
         * {
@@ -211,7 +213,7 @@
     <div class="stars" id="stars"></div>
 
     <div class="summoning-circle">
-        <canvas class="circle-canvas" id="canvas"></canvas>
+        <canvas aria-hidden="true" class="circle-canvas" id="canvas"></canvas>
         <div class="ethereal-glow"></div>
 
         <div class="center-content">
@@ -282,10 +284,18 @@
         let lastHour = -1;
 
         // Canvas setup
+        let width, height;
+
         function resizeCanvas() {
             const container = canvas.parentElement;
-            canvas.width = container.offsetWidth;
-            canvas.height = container.offsetHeight;
+            width = container.offsetWidth;
+            height = container.offsetHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
@@ -315,9 +325,9 @@
 
         // Create runes around the circle
         function createRunes() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(canvas.width, canvas.height) * 0.4;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.4;
 
             for (let i = 0; i < 24; i++) {
                 const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
@@ -335,9 +345,9 @@
 
         // Create hour markers
         function createHourMarkers() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(canvas.width, canvas.height) * 0.45;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.45;
 
             for (let i = 0; i < 24; i++) {
                 const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
@@ -357,11 +367,11 @@
 
         // Draw summoning circle
         function drawCircle() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxRadius = Math.min(canvas.width, canvas.height) * 0.48;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const maxRadius = Math.min(width, height) * 0.48;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, width, height);
 
             // Outer circles
             for (let i = 0; i < 3; i++) {

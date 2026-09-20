@@ -70,8 +70,19 @@
         const canvas = document.getElementById('matrix-bg');
         const ctx = canvas.getContext('2d');
 
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
+        let width, height;
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resizeCanvas();
 
         const cols = Math.floor(width / 20) + 1;
         const ypos = Array(cols).fill(0);
@@ -95,10 +106,7 @@
 
         setInterval(matrix, 50);
 
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
+        window.addEventListener('resize', resizeCanvas);
 
         // ASCII Clock
         const digits = {

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Coordinate Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -887,7 +889,12 @@ const ctx = cvs.getContext('2d');
 
 function resizeCanvas() {
     const sz = Math.round(cvs.parentElement.offsetWidth);
-    cvs.width = cvs.height = st.size = sz;
+    const dpr = window.devicePixelRatio || 1;
+    st.size = sz;
+    cvs.style.width = sz + 'px';
+    cvs.style.height = sz + 'px';
+    cvs.width = cvs.height = Math.round(sz * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     st.trail = [];
 }
 window.addEventListener('resize', resizeCanvas);

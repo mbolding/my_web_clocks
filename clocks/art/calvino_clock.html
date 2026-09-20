@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>If on a winter's night a traveler Clock</title>
     <!-- We will let themes import fonts they need dynamically or hardcode them here -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&family=DM+Sans:wght@300;700&family=Playfair+Display:ital@0;1&family=Bebas+Neue&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -138,6 +140,16 @@
             padding: 20px 0;
         }
 
+
+        /* The theme still changes, it just no longer slides between states. */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
     </style>
 </head>
 <body class="theme-minimal" id="bodyEl">

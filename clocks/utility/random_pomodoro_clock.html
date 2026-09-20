@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Random Pomodoro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -305,7 +307,7 @@
 
     <div class="container">
         <div class="status" id="status">Focus</div>
-        <div class="timer" id="timer">00:00</div>
+        <div class="timer" id="timer" role="timer" aria-label="Time remaining in the current interval">00:00</div>
 
         <div class="controls">
             <button id="toggleBtn">Start</button>

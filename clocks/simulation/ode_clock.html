@@ -39,8 +39,12 @@
         const digitalTimeElement = document.getElementById('digitalTime');
 
         const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
-        canvas.width = size;
-        canvas.height = size;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        canvas.width = Math.round(size * dpr);
+        canvas.height = Math.round(size * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         const gridSpacing = 30;
         const numCols = Math.floor(size / gridSpacing);

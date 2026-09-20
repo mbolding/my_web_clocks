@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zoomable Life Clock (Memento Mori)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -177,11 +179,14 @@
         }
 
         .zoom-controls button {
-            width: 32px;
+            /* min-width rather than width, so the +/- stay square but the
+               text-labelled Reset can size to its own content. */
+            min-width: 32px;
             height: 32px;
-            padding: 0;
+            padding: 0 10px;
             font-size: 1.1rem;
             line-height: 1;
+            white-space: nowrap;
         }
 
         .zoom-hint {
@@ -374,7 +379,44 @@
         const TOTAL_YEARS = 90;
         const WEEKS_PER_YEAR = 52;
         const TOTAL_WEEKS = TOTAL_YEARS * WEEKS_PER_YEAR; // 4680
+
         const MS_PER_WEEK = 604800000;
+
+        // One row of the grid is one year of life, so the filled position follows
+        // birthdays rather than raw elapsed weeks. A calendar year is about 52.18
+        // weeks, so counting raw weeks against a 90 x 52 grid runs the boxes out
+        // roughly 15 weeks before the 90th birthday and zeroes the countdown early.
+        // The headline stats stay on real elapsed time; only the grid is per-year.
+        function lifeProgress(dob, now) {
+            let completedYears = now.getFullYear() - dob.getFullYear();
+            const anniversary = new Date(dob);
+            anniversary.setFullYear(dob.getFullYear() + completedYears);
+            if (anniversary > now) {
+                completedYears--;
+                anniversary.setFullYear(anniversary.getFullYear() - 1);
+            }
+            const weekInYear = Math.min(
+                WEEKS_PER_YEAR - 1,
+                Math.floor((now - anniversary) / MS_PER_WEEK)
+            );
+            const lastBirthday = new Date(dob);
+            lastBirthday.setFullYear(dob.getFullYear() + TOTAL_YEARS);
+            return {
+                boxes: Math.max(0, Math.min(TOTAL_WEEKS, completedYears * WEEKS_PER_YEAR + weekInYear)),
+                weeksLived: Math.floor((now - dob) / MS_PER_WEEK),
+                weeksRemaining: Math.max(0, Math.ceil((lastBirthday - now) / MS_PER_WEEK)),
+                fraction: Math.min(1, (now - dob) / (lastBirthday - dob)),
+                currentWeekStart: new Date(anniversary.getTime() + weekInYear * MS_PER_WEEK)
+            };
+        }
+
+        // Which date a given box starts on. Rows are years of life, so a box's
+        // week is counted from that year's birthday, not from birth.
+        function weekBoxStart(dob, weekIndex) {
+            const yearStart = new Date(dob);
+            yearStart.setFullYear(dob.getFullYear() + Math.floor(weekIndex / WEEKS_PER_YEAR));
+            return new Date(yearStart.getTime() + (weekIndex % WEEKS_PER_YEAR) * MS_PER_WEEK);
+        }
 
         const MIN_SCALE = 1;
         const MAX_SCALE = 12;
@@ -540,7 +582,7 @@
             }
 
             const weekIndex = parseInt(box.id.replace('week-', ''), 10);
-            const startDate = new Date(dobDate.getTime() + weekIndex * MS_PER_WEEK);
+            const startDate = weekBoxStart(dobDate, weekIndex);
             const fmt = (d) => d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
             if (scale >= DAY_ZOOM_THRESHOLD) {
@@ -587,11 +629,8 @@
             // If future date, cap at 0
             if (msAlive < 0) return;
 
-            // Calculate weeks lived
-            const absoluteWeeksLived = Math.floor(msAlive / MS_PER_WEEK);
-
-            // Constrain to our 90 year grid
-            const weeksLived = Math.min(absoluteWeeksLived, TOTAL_WEEKS);
+            const progress = lifeProgress(dobDate, now);
+            const weeksLived = progress.boxes;
 
             // Update DOM Grid
             for (let i = 0; i < TOTAL_WEEKS; i++) {
@@ -602,7 +641,8 @@
                     if (box.className !== 'week-box week-filled') box.className = 'week-box week-filled';
                 } else if (i === weeksLived) {
                     if (box.className !== 'week-box week-current') box.className = 'week-box week-current';
-                    const dayOfWeekAlive = Math.floor((msAlive % MS_PER_WEEK) / MS_PER_DAY);
+                    const dayOfWeekAlive = Math.min(6, Math.max(0,
+                        Math.floor((now - progress.currentWeekStart) / MS_PER_DAY)));
                     box.style.setProperty('--today-day', dayOfWeekAlive);
                 } else {
                     if (box.className !== 'week-box') box.className = 'week-box';
@@ -610,11 +650,10 @@
             }
 
             // Update stats
-            const weeksRemaining = TOTAL_WEEKS - weeksLived;
-            const percent = ((weeksLived / TOTAL_WEEKS) * 100).toFixed(2);
+            const percent = (progress.fraction * 100).toFixed(2);
 
-            valWeeks.textContent = weeksLived.toLocaleString();
-            valRemaining.textContent = Math.max(0, weeksRemaining).toLocaleString();
+            valWeeks.textContent = progress.weeksLived.toLocaleString();
+            valRemaining.textContent = progress.weeksRemaining.toLocaleString();
             valPercent.textContent = `${percent}%`;
 
             // Update Live Timer (Total seconds alive)

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arthur C. Clarke Clock</title>
     <!-- Jost font closely resembles Futura / the 1968 geometric aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -231,10 +233,12 @@
                 }
             }
 
-            requestAnimationFrame(updateClock);
+            // Everything here is gated on the second changing, so a 10Hz poll
+            // keeps the eye pulse punctual at a sixth of the work.
         }
 
         updateClock();
+        setInterval(updateClock, 100);
 
         // --- Mouse Tracking Logic for HAL 9000 Pupil ---
         const halEye = document.getElementById('halEye');

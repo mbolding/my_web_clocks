@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chaos Pendulum Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -210,16 +212,23 @@
             return String(n).padStart(2, '0');
         }
 
+        let width, height;
+
         function resize() {
-            const size = canvas.clientWidth;
-            canvas.width = size;
-            canvas.height = canvas.clientHeight;
-            L1 = canvas.width * 0.22;
-            L2 = canvas.width * 0.22;
-            offsetX = canvas.width / 2;
-            offsetY = canvas.height * 0.32;
+            width = canvas.clientWidth;
+            height = canvas.clientHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            L1 = width * 0.22;
+            L2 = width * 0.22;
+            offsetX = width / 2;
+            offsetY = height * 0.32;
             ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
         }
         window.addEventListener('resize', resize);
 
@@ -242,12 +251,12 @@
             }
 
             ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
         }
 
         function animate() {
             ctx.fillStyle = `rgba(0, 0, 0, ${FADE_ALPHA})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
 
             const currentSecond = new Date().getSeconds();
 

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timeline Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <style>
@@ -19,6 +21,22 @@
             --crosshair-color: #1a1a1a;
             --accent: #2563eb;
         }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #141416;
+                --text: #ececec;
+                --text-muted: #8a8a8a;
+                --border: #2c2c30;
+                --track-bg: #1d1d20;
+                --night-band: rgba(120, 150, 255, 0.10);
+                --hour-band: rgba(255, 255, 255, 0.03);
+                --now-color: #ff6b74;
+                --crosshair-color: #ececec;
+                --accent: #5b8cff;
+            }
+        }
+
 
         * {
             box-sizing: border-box;
@@ -80,13 +98,13 @@
         }
 
         .zoom-btn:hover {
-            border-color: #bbb;
+            border-color: var(--text-muted);
             color: var(--text);
         }
 
         .zoom-btn.active {
             background: var(--text);
-            color: #fff;
+            color: var(--bg);
             border-color: var(--text);
         }
 

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entire Life Clock (Memento Mori)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -252,6 +254,36 @@
         const TOTAL_YEARS = 90;
         const WEEKS_PER_YEAR = 52;
         const TOTAL_WEEKS = TOTAL_YEARS * WEEKS_PER_YEAR; // 4680
+
+        const MS_PER_WEEK = 604800000;
+
+        // One row of the grid is one year of life, so the filled position follows
+        // birthdays rather than raw elapsed weeks. A calendar year is about 52.18
+        // weeks, so counting raw weeks against a 90 x 52 grid runs the boxes out
+        // roughly 15 weeks before the 90th birthday and zeroes the countdown early.
+        // The headline stats stay on real elapsed time; only the grid is per-year.
+        function lifeProgress(dob, now) {
+            let completedYears = now.getFullYear() - dob.getFullYear();
+            const anniversary = new Date(dob);
+            anniversary.setFullYear(dob.getFullYear() + completedYears);
+            if (anniversary > now) {
+                completedYears--;
+                anniversary.setFullYear(anniversary.getFullYear() - 1);
+            }
+            const weekInYear = Math.min(
+                WEEKS_PER_YEAR - 1,
+                Math.floor((now - anniversary) / MS_PER_WEEK)
+            );
+            const lastBirthday = new Date(dob);
+            lastBirthday.setFullYear(dob.getFullYear() + TOTAL_YEARS);
+            return {
+                boxes: Math.max(0, Math.min(TOTAL_WEEKS, completedYears * WEEKS_PER_YEAR + weekInYear)),
+                weeksLived: Math.floor((now - dob) / MS_PER_WEEK),
+                weeksRemaining: Math.max(0, Math.ceil((lastBirthday - now) / MS_PER_WEEK)),
+                fraction: Math.min(1, (now - dob) / (lastBirthday - dob)),
+                currentWeekStart: new Date(anniversary.getTime() + weekInYear * MS_PER_WEEK)
+            };
+        }
         
         let dobDate = null;
         let animationFrameId = null;
@@ -276,13 +308,8 @@
             // If future date, cap at 0
             if (msAlive < 0) return;
 
-            // Calculate weeks lived
-            // 1000 ms * 60 s * 60 m * 24 h * 7 d = 604,800,000 ms per week
-            const MS_PER_WEEK = 604800000;
-            const absoluteWeeksLived = Math.floor(msAlive / MS_PER_WEEK);
-            
-            // Constrain to our 90 year grid
-            const weeksLived = Math.min(absoluteWeeksLived, TOTAL_WEEKS);
+            const progress = lifeProgress(dobDate, now);
+            const weeksLived = progress.boxes;
 
             // Update DOM Grid
             // We use standard class assignment to prevent heavy relayouts where possible
@@ -300,11 +327,10 @@
             }
 
             // Update stats
-            const weeksRemaining = TOTAL_WEEKS - weeksLived;
-            const percent = ((weeksLived / TOTAL_WEEKS) * 100).toFixed(2);
+            const percent = (progress.fraction * 100).toFixed(2);
 
-            valWeeks.textContent = weeksLived.toLocaleString();
-            valRemaining.textContent = Math.max(0, weeksRemaining).toLocaleString();
+            valWeeks.textContent = progress.weeksLived.toLocaleString();
+            valRemaining.textContent = progress.weeksRemaining.toLocaleString();
             valPercent.textContent = `${percent}%`;
 
             // Update Live Timer (Total seconds alive)

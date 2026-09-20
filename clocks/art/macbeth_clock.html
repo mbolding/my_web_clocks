@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Macbeth Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@1,400&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -116,7 +118,7 @@
 
     <div class="pulse-overlay" id="pulseOverlay"></div>
 
-    <canvas id="dripCanvas"></canvas>
+    <canvas aria-hidden="true" id="dripCanvas"></canvas>
 
     <div class="clock-container">
         <div class="time-display" id="timeDisplay">00:00:00</div>
@@ -127,6 +129,10 @@
     </div>
 
     <script>
+        // Decorative motion only: with reduced motion requested the scene is drawn
+        // once and then left still; the clock itself keeps updating.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
         // --- Clock Logic & Heartbeat Pulse ---
         const timeDisplay = document.getElementById('timeDisplay');
         const pulseOverlay = document.getElementById('pulseOverlay');
@@ -162,9 +168,17 @@
         const ctx = canvas.getContext('2d');
         
         // Ensure canvas exactly matches window size
+        let width, height;
+
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             // Get center position for spawning drips near the text
             clockRect = timeDisplay.getBoundingClientRect();
         }
@@ -224,7 +238,7 @@
         function animateCanvas() {
             // Very slow fade to black/dry blood
             ctx.fillStyle = 'rgba(5, 0, 0, 0.01)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
             
             for (let i = drips.length - 1; i >= 0; i--) {
                 let drip = drips[i];
@@ -235,7 +249,7 @@
                     drips.splice(i, 1);
                 }
             }
-            requestAnimationFrame(animateCanvas);
+            if (!reduceMotion.matches) requestAnimationFrame(animateCanvas);
         }
 
         // Init

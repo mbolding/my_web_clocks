@@ -16,7 +16,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Bloomsday** - James Joyce's Ulysses (18 episodes through June 16, 1904)
 - ✅ **The Waste Land** - T.S. Eliot (five sections with fragmentary voices)
 - ✅ **Mrs Dalloway** - Virginia Woolf (single June day in London with Big Ben)
-- ✅ **Cien Años de Soledad** - Gabriel García Márquez (cyclical generations)
+- ✅ **One Hundred Years of Solitude** - Gabriel García Márquez, implemented twice on purpose: `one_hundred_years_clock.html` takes the structural reading (Macondo's circular time as concentric rings, Buendía generations) and `solitude_clock.html` the atmospheric one (the time dissolving into memory among the yellow butterflies). Two readings, one novel; don't add a third without a distinct angle.
 - ✅ **Infinite Jest** - David Foster Wallace (subsidized years, footnotes, E.T.A./Ennet House)
 - ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes, involuntary memory)
 
@@ -47,9 +47,9 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Macbeth** - William Shakespeare
 - ✅ **2001: A Space Odyssey** - Arthur C. Clarke
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
+- ✅ **Bach Clock** - J. S. Bach. Three concentric staves engraved with the subject of Contrapunctus I from *Die Kunst der Fuge*, read by three playheads at one note per second, minute and hour. Because the voices share one subject and differ only in speed, the clock's 1:60:720 hand ratio is literally a canon by augmentation. Optional Web Audio plays the three voices an octave apart; the hour is marked with B♭–A–C–B♮.
 - ✅ **Candide** - Voltaire
 - ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
-- ✅ **100 Years of Solitude** - Gabriel Garcia Marquez
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
 - ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
 - ✅ **The Tempest** - William Shakespeare (unity of time made literal: real 2-6pm storm window, five acts, Prospero's "sixth hour" deadline)
@@ -330,6 +330,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Multi-Dimensional Systems** - Added 4, 5, and 6 dimensional coordinate projections to Coordinate Clock.
 - ✅ **Epicycle Clock** - 3 to 6 nested circles (Fourier series style), each turning at its own timescale.
 - ✅ **State Machine Clock** - Three nested finite state machines (seconds/minutes/hours) drawn as concentric rings of states, with carries between rings visualized as pulses.
+- ✅ **DSL Clock** - A tiny embedded language (tokenizer, recursive-descent parser, tree-walking evaluator, no `eval`) re-run every frame. Programs assign to `text`, `sub`, `color`, `background`, `size` and `spin`; the parsed syntax tree is shown next to the editor. No loops and no user-defined functions, so every program terminates.
 
 ---
 

@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSL Clock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f4f5f8;
+            --panel: #ffffff;
+            --panel2: #eceef4;
+            --border: #d6dae6;
+            --text: #1b1e2b;
+            --text-dim: #5f6782;
+            --text-faint: #a3abc2;
+            --accent: #3a6ef0;
+            --keyword: #a625a4;
+            --number: #1a7f52;
+            --string: #b1541c;
+            --error: #d13b3b;
+            --preview-bg: #12141c;
+            --preview-fg: #e8ecf8;
+            --radius: 12px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1117;
+                --panel: #171a23;
+                --panel2: #1f2330;
+                --border: #2b3040;
+                --text: #e4e8f4;
+                --text-dim: #8b93ad;
+                --text-faint: #565e78;
+                --accent: #6d9bff;
+                --keyword: #d68bff;
+                --number: #5fd39a;
+                --string: #f0a06a;
+                --error: #ff6b6b;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 1.6vw, 16px);
+            padding: clamp(10px, 1.6vw, 18px);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(0.85rem, 2.4vw, 1rem);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .masthead {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .masthead p {
+            margin: 0;
+            font-size: clamp(0.7rem, 2vw, 0.8rem);
+            color: var(--text-dim);
+        }
+
+        /* ── The clock itself ───────────────────────────────────────────── */
+        .preview {
+            background: var(--preview-bg);
+            color: var(--preview-fg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            min-height: clamp(160px, 30vh, 280px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4em;
+            padding: clamp(16px, 4vw, 40px);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        #out-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: clamp(1.8rem, 9vw, 5rem);
+            line-height: 1.05;
+            white-space: pre-wrap;
+            word-break: break-word;
+            transform-origin: center;
+        }
+
+        #out-sub {
+            font-size: clamp(0.75rem, 2.6vw, 1.1rem);
+            letter-spacing: 0.08em;
+            opacity: 0.75;
+            white-space: pre-wrap;
+        }
+
+        #out-sub:empty {
+            display: none;
+        }
+
+        /* ── Workbench ──────────────────────────────────────────────────── */
+        .work {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            gap: clamp(10px, 1.6vw, 16px);
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 8px 12px;
+            background: var(--panel2);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+        }
+
+        .panel-head .spacer {
+            flex: 1 1 auto;
+        }
+
+        textarea {
+            display: block;
+            width: 100%;
+            border: 0;
+            resize: vertical;
+            padding: 12px;
+            min-height: clamp(180px, 30vh, 320px);
+            background: transparent;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.72rem, 1.9vw, 0.84rem);
+            line-height: 1.65;
+            tab-size: 2;
+        }
+
+        textarea:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
+        }
+
+        .chip {
+            font: inherit;
+            font-size: 0.68rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .chip:hover {
+            color: var(--text);
+            border-color: var(--accent);
+        }
+
+        .chip.active {
+            color: #fff;
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            min-height: 2.2em;
+            white-space: pre-wrap;
+        }
+
+        .status.bad {
+            color: var(--error);
+        }
+
+        .inspect {
+            margin: 0;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.66rem, 1.7vw, 0.76rem);
+            line-height: 1.6;
+            overflow: auto;
+            max-height: clamp(180px, 30vh, 320px);
+            white-space: pre;
+        }
+
+        .k { color: var(--keyword); }
+        .n { color: var(--number); }
+        .s { color: var(--string); }
+        .d { color: var(--text-faint); }
+
+        .vars {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+            gap: 6px 12px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.66rem, 1.7vw, 0.76rem);
+        }
+
+        .vars div {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            border-bottom: 1px dotted var(--border);
+            padding-bottom: 2px;
+        }
+
+        .vars b {
+            font-weight: 500;
+            color: var(--accent);
+        }
+
+        .vars span {
+            color: var(--text-dim);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        details.help {
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        details.help summary {
+            padding: 8px 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.7rem;
+        }
+
+        details.help div {
+            padding: 0 12px 12px;
+            line-height: 1.7;
+        }
+
+        details.help code {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text);
+            background: var(--panel2);
+            border-radius: 4px;
+            padding: 1px 5px;
+        }
+
+        @media (max-width: 720px) {
+            .work {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #out-text {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="masthead">
+        <h1>DSL Clock</h1>
+        <p>A clock you write. The program below is parsed into a syntax tree and re-run every frame.</p>
+    </header>
+
+    <!-- The clock. Everything about it comes from the program. -->
+    <div class="preview" id="preview">
+        <div id="out-text" role="timer" aria-label="Current time">&nbsp;</div>
+        <div id="out-sub"></div>
+    </div>
+
+    <div class="work">
+        <section class="panel">
+            <div class="panel-head">
+                <span>Program</span>
+                <span class="spacer"></span>
+                <span id="presets"></span>
+            </div>
+            <label class="hidden" for="src">Clock program source</label>
+            <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+            <div class="status" id="status" role="status" aria-live="polite"></div>
+            <details class="help">
+                <summary>Language</summary>
+                <div>
+                    Statements are one per line. <code>let</code> makes a local; assigning to
+                    <code>text</code>, <code>sub</code>, <code>color</code>, <code>background</code>,
+                    <code>size</code> or <code>spin</code> drives the display. <code>#</code> starts a comment.
+                    <br><br>
+                    <b>Time:</b> <code>h</code> <code>m</code> <code>s</code> <code>ms</code>
+                    <code>h12</code> <code>ampm</code> <code>t</code> (seconds since midnight)
+                    <code>day</code> <code>month</code> <code>year</code> <code>dow</code>
+                    <code>dayname</code> <code>monthname</code> <code>pi</code> <code>tau</code>
+                    <br><br>
+                    <b>Functions:</b> <code>pad</code> <code>base</code> <code>pick</code> <code>round</code>
+                    <code>floor</code> <code>abs</code> <code>min</code> <code>max</code> <code>clamp</code>
+                    <code>lerp</code> <code>sin</code> <code>cos</code> <code>sqrt</code> <code>hsl</code>
+                    <code>rgb</code> <code>upper</code> <code>lower</code> <code>str</code> <code>len</code>
+                    <code>slice</code> <code>repeat</code>
+                    <br><br>
+                    <b>Operators:</b> <code>+ - * / %</code>, <code>== != &lt; &lt;= &gt; &gt;=</code>,
+                    <code>and or not</code>, and <code>cond ? a : b</code>. There are no loops and no way to
+                    define a function, so every program is guaranteed to finish.
+                </div>
+            </details>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <span id="inspect-title">Syntax tree</span>
+                <span class="spacer"></span>
+                <button class="chip active" id="tab-ast" type="button" aria-pressed="true">AST</button>
+                <button class="chip" id="tab-vars" type="button" aria-pressed="false">Values</button>
+            </div>
+            <pre class="inspect" id="ast"></pre>
+            <div class="vars hidden" id="vars"></div>
+        </section>
+    </div>
+
+    <script>
+        // ════════════════════════════════════════════════════════════════
+        //  A tiny language for describing a clock face.
+        //
+        //  Source → tokens → syntax tree → evaluated once per frame against
+        //  the current time. Deliberately not eval(): the point of the clock
+        //  is that the language is real and visible, and the AST panel shows
+        //  the parse of whatever you have typed.
+        //
+        //  The grammar has no loops and no user-defined functions, so every
+        //  program terminates.
+        // ════════════════════════════════════════════════════════════════
+
+        const KEYWORDS = ['let', 'and', 'or', 'not', 'true', 'false'];
+        const PUNCT = ['==', '!=', '<=', '>=', '+', '-', '*', '/', '%', '(', ')', ',', '=', '<', '>', '?', ':'];
+
+        function tokenize(src) {
+            const tokens = [];
+            let i = 0, line = 1, depth = 0;
+            const push = (type, value) => tokens.push({ type, value, line });
+
+            while (i < src.length) {
+                const c = src[i];
+
+                // Inside brackets a newline is just whitespace, so a long call
+                // can be spread over several lines.
+                if (c === '\n') { if (depth === 0) push('nl'); line++; i++; continue; }
+                if (c === ';') { push('nl'); i++; continue; }
+                if (c === ' ' || c === '\t' || c === '\r') { i++; continue; }
+                if (c === '#') { while (i < src.length && src[i] !== '\n') i++; continue; }
+
+                if (c >= '0' && c <= '9' || (c === '.' && src[i + 1] >= '0' && src[i + 1] <= '9')) {
+                    let j = i;
+                    while (j < src.length && /[0-9.]/.test(src[j])) j++;
+                    const raw = src.slice(i, j);
+                    const n = Number(raw);
+                    if (!isFinite(n)) throw new LangError(`"${raw}" is not a number`, line);
+                    push('num', n);
+                    i = j;
+                    continue;
+                }
+
+                if (c === '"' || c === "'") {
+                    const quote = c;
+                    let j = i + 1, out = '';
+                    while (j < src.length && src[j] !== quote) {
+                        if (src[j] === '\\') {
+                            const esc = src[j + 1];
+                            out += esc === 'n' ? '\n' : esc === 't' ? '\t' : esc;
+                            j += 2;
+                        } else {
+                            if (src[j] === '\n') throw new LangError('unterminated string', line);
+                            out += src[j++];
+                        }
+                    }
+                    if (j >= src.length) throw new LangError('unterminated string', line);
+                    push('str', out);
+                    i = j + 1;
+                    continue;
+                }
+
+                if (/[A-Za-z_]/.test(c)) {
+                    let j = i;
+                    while (j < src.length && /[A-Za-z0-9_]/.test(src[j])) j++;
+                    const word = src.slice(i, j);
+                    push(KEYWORDS.includes(word) ? word : 'ident', word);
+                    i = j;
+                    continue;
+                }
+
+                const op = PUNCT.find(p => src.startsWith(p, i));
+                if (op) {
+                    if (op === '(') depth++;
+                    if (op === ')') depth = Math.max(0, depth - 1);
+                    push(op, op);
+                    i += op.length;
+                    continue;
+                }
+
+                throw new LangError(`unexpected character "${c}"`, line);
+            }
+            push('eof');
+            return tokens;
+        }
+
+        class LangError extends Error {
+            constructor(message, line) {
+                super(message);
+                this.line = line;
+            }
+        }
+
+        // ── Parser ──────────────────────────────────────────────────────
+        // Straight recursive descent, one function per precedence level.
+        function parse(tokens) {
+            let pos = 0;
+            const peek = () => tokens[pos];
+            const at = type => tokens[pos].type === type;
+            const next = () => tokens[pos++];
+            function expect(type, what) {
+                if (!at(type)) throw new LangError(`expected ${what || type}, found ${describe(peek())}`, peek().line);
+                return next();
+            }
+            const describe = tok => tok.type === 'eof' ? 'end of program'
+                : tok.type === 'nl' ? 'end of line'
+                    : `"${tok.value}"`;
+
+            function skipNewlines() { while (at('nl')) next(); }
+
+            function program() {
+                const body = [];
+                skipNewlines();
+                while (!at('eof')) {
+                    body.push(statement());
+                    if (!at('eof')) expect('nl', 'a new line');
+                    skipNewlines();
+                }
+                return { type: 'Program', body };
+            }
+
+            function statement() {
+                const line = peek().line;
+                if (at('let')) {
+                    next();
+                    const name = expect('ident', 'a name').value;
+                    expect('=');
+                    return { type: 'Let', name, value: expression(), line };
+                }
+                // `name = expr` is an assignment; anything else is a bare expression.
+                if (at('ident') && tokens[pos + 1] && tokens[pos + 1].type === '=') {
+                    const name = next().value;
+                    next();
+                    return { type: 'Assign', name, value: expression(), line };
+                }
+                return { type: 'ExprStatement', value: expression(), line };
+            }
+
+            const expression = () => ternary();
+
+            function ternary() {
+                const test = orExpr();
+                if (!at('?')) return test;
+                next();
+                const then = expression();
+                expect(':');
+                return { type: 'Conditional', test, then, otherwise: expression() };
+            }
+
+            function binaryLevel(sub, types) {
+                return function () {
+                    let left = sub();
+                    while (types.includes(peek().type)) {
+                        const op = next();
+                        left = { type: 'Binary', op: op.type, left, right: sub(), line: op.line };
+                    }
+                    return left;
+                };
+            }
+
+            function notExpr() {
+                if (at('not')) {
+                    const tok = next();
+                    return { type: 'Unary', op: 'not', operand: notExpr(), line: tok.line };
+                }
+                return comparison();
+            }
+
+            function unary() {
+                if (at('-')) {
+                    const tok = next();
+                    return { type: 'Unary', op: '-', operand: unary(), line: tok.line };
+                }
+                return primary();
+            }
+
+            function primary() {
+                const tok = peek();
+                if (at('num')) { next(); return { type: 'Number', value: tok.value }; }
+                if (at('str')) { next(); return { type: 'String', value: tok.value }; }
+                if (at('true') || at('false')) { next(); return { type: 'Boolean', value: tok.type === 'true' }; }
+                if (at('(')) {
+                    next();
+                    const inner = expression();
+                    expect(')', 'a closing ")"');
+                    return inner;
+                }
+                if (at('ident')) {
+                    next();
+                    if (at('(')) {
+                        next();
+                        const args = [];
+                        if (!at(')')) {
+                            args.push(expression());
+                            while (at(',')) { next(); args.push(expression()); }
+                        }
+                        expect(')', 'a closing ")"');
+                        return { type: 'Call', name: tok.value, args, line: tok.line };
+                    }
+                    return { type: 'Variable', name: tok.value, line: tok.line };
+                }
+                throw new LangError(`unexpected ${describe(tok)}`, tok.line);
+            }
+
+            const product = binaryLevel(unary, ['*', '/', '%']);
+            const sum = binaryLevel(product, ['+', '-']);
+            const comparison = binaryLevel(sum, ['==', '!=', '<', '<=', '>', '>=']);
+            const andExpr = binaryLevel(notExpr, ['and']);
+            const orExpr = binaryLevel(andExpr, ['or']);
+
+            return program();
+        }
+
+        // ── Built-in functions ──────────────────────────────────────────
+        const num = v => typeof v === 'number' ? v : typeof v === 'boolean' ? (v ? 1 : 0) : Number(v) || 0;
+        const text = v => typeof v === 'string' ? v
+            : typeof v === 'number' ? (Number.isInteger(v) ? String(v) : String(Math.round(v * 1000) / 1000))
+                : v ? 'true' : 'false';
+
+        const MAX_OUTPUT = 4000;
+
+        const BUILTINS = {
+            pad: (n, w = 2) => text(Math.trunc(num(n))).padStart(Math.trunc(num(w)), '0'),
+            base: (n, radix = 2, w = 0) =>
+                Math.trunc(num(n)).toString(Math.min(36, Math.max(2, Math.trunc(num(radix)))))
+                    .padStart(Math.trunc(num(w)), '0'),
+            pick: (index, ...options) => {
+                if (!options.length) return '';
+                const i = Math.trunc(num(index));
+                return options[((i % options.length) + options.length) % options.length];
+            },
+            round: n => Math.round(num(n)),
+            floor: n => Math.floor(num(n)),
+            abs: n => Math.abs(num(n)),
+            min: (...v) => Math.min(...v.map(num)),
+            max: (...v) => Math.max(...v.map(num)),
+            clamp: (n, lo, hi) => Math.min(Math.max(num(n), num(lo)), num(hi)),
+            lerp: (a, b, k) => num(a) + (num(b) - num(a)) * num(k),
+            sin: n => Math.sin(num(n)),
+            cos: n => Math.cos(num(n)),
+            sqrt: n => Math.sqrt(Math.abs(num(n))),
+            hsl: (h, s, l) => `hsl(${num(h)}, ${num(s)}%, ${num(l)}%)`,
+            rgb: (r, g, b) => `rgb(${Math.round(num(r))}, ${Math.round(num(g))}, ${Math.round(num(b))})`,
+            upper: v => text(v).toUpperCase(),
+            lower: v => text(v).toLowerCase(),
+            str: v => text(v),
+            len: v => text(v).length,
+            slice: (v, a, b) => text(v).slice(Math.trunc(num(a)), b === undefined ? undefined : Math.trunc(num(b))),
+            // The only unbounded growth in the language, and it nests, so the
+            // result is capped rather than just the count.
+            repeat: (v, n) => text(v).repeat(Math.min(400, Math.max(0, Math.trunc(num(n))))).slice(0, MAX_OUTPUT)
+        };
+
+        // ── Evaluator ───────────────────────────────────────────────────
+        const OUTPUTS = ['text', 'sub', 'color', 'background', 'size', 'spin'];
+
+        function evaluate(ast, scope) {
+            const locals = Object.create(null);
+
+            function lookup(name, line) {
+                if (name in locals) return locals[name];
+                if (name in scope) return scope[name];
+                throw new LangError(`"${name}" is not defined`, line);
+            }
+
+            function evalNode(node) {
+                switch (node.type) {
+                    case 'Number':
+                    case 'String':
+                    case 'Boolean':
+                        return node.value;
+                    case 'Variable':
+                        return lookup(node.name, node.line);
+                    case 'Unary': {
+                        const v = evalNode(node.operand);
+                        return node.op === 'not' ? !truthy(v) : -num(v);
+                    }
+                    case 'Conditional':
+                        return truthy(evalNode(node.test)) ? evalNode(node.then) : evalNode(node.otherwise);
+                    case 'Binary':
+                        return binary(node);
+                    case 'Call': {
+                        const fn = BUILTINS[node.name];
+                        if (!fn) throw new LangError(`there is no function called "${node.name}"`, node.line);
+                        return fn(...node.args.map(evalNode));
+                    }
+                }
+                throw new LangError(`cannot evaluate ${node.type}`, node.line);
+            }
+
+            function binary(node) {
+                const op = node.op;
+                // Short-circuit before touching the right-hand side.
+                if (op === 'and') return truthy(evalNode(node.left)) ? evalNode(node.right) : false;
+                if (op === 'or') {
+                    const left = evalNode(node.left);
+                    return truthy(left) ? left : evalNode(node.right);
+                }
+                const a = evalNode(node.left);
+                const b = evalNode(node.right);
+                switch (op) {
+                    // `+` concatenates as soon as either side is text, which is
+                    // what people reach for when building a clock face.
+                    case '+': return (typeof a === 'string' || typeof b === 'string') ? text(a) + text(b) : num(a) + num(b);
+                    case '-': return num(a) - num(b);
+                    case '*': return num(a) * num(b);
+                    case '/': {
+                        const d = num(b);
+                        if (d === 0) throw new LangError('division by zero', node.line);
+                        return num(a) / d;
+                    }
+                    case '%': {
+                        const d = num(b);
+                        if (d === 0) throw new LangError('division by zero', node.line);
+                        return num(a) % d;
+                    }
+                    case '==': return typeof a === typeof b ? a === b : text(a) === text(b);
+                    case '!=': return typeof a === typeof b ? a !== b : text(a) !== text(b);
+                    case '<': return num(a) < num(b);
+                    case '<=': return num(a) <= num(b);
+                    case '>': return num(a) > num(b);
+                    case '>=': return num(a) >= num(b);
+                }
+                throw new LangError(`unknown operator "${op}"`, node.line);
+            }
+
+            const truthy = v => typeof v === 'boolean' ? v : typeof v === 'number' ? v !== 0 : v !== '';
+
+            const out = Object.create(null);
+            let last = null;
+            for (const stmt of ast.body) {
+                if (stmt.type === 'Let') {
+                    locals[stmt.name] = evalNode(stmt.value);
+                } else if (stmt.type === 'Assign') {
+                    const value = evalNode(stmt.value);
+                    if (OUTPUTS.includes(stmt.name)) out[stmt.name] = value;
+                    else locals[stmt.name] = value;
+                } else {
+                    last = evalNode(stmt.value);
+                }
+            }
+            // A program that is just an expression still draws something.
+            if (!('text' in out) && last !== null) out.text = last;
+            return out;
+        }
+
+        // ── Time scope ──────────────────────────────────────────────────
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+
+        function timeScope(now) {
+            const h = now.getHours();
+            const ms = now.getMilliseconds();
+            return {
+                h,
+                m: now.getMinutes(),
+                s: now.getSeconds(),
+                ms,
+                h12: h % 12 === 0 ? 12 : h % 12,
+                ampm: h < 12 ? 'AM' : 'PM',
+                t: h * 3600 + now.getMinutes() * 60 + now.getSeconds() + ms / 1000,
+                day: now.getDate(),
+                month: now.getMonth() + 1,
+                year: now.getFullYear(),
+                dow: now.getDay(),
+                dayname: DAYS[now.getDay()],
+                monthname: MONTHS[now.getMonth()],
+                pi: Math.PI,
+                tau: Math.PI * 2
+            };
+        }
+
+        // ── Syntax tree rendering ───────────────────────────────────────
+        const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+        function renderAst(node, depth = 0, label = '') {
+            const pad = '  '.repeat(depth);
+            const tag = label ? `<span class="d">${label}: </span>` : '';
+            const line = (head, kids = []) =>
+                `${pad}${tag}${head}\n` + kids.join('');
+
+            switch (node.type) {
+                case 'Program':
+                    return node.body.map(n => renderAst(n, depth)).join('');
+                case 'Let':
+                    return line(`<span class="k">let</span> ${esc(node.name)}`, [renderAst(node.value, depth + 1)]);
+                case 'Assign':
+                    return line(`<span class="k">set</span> ${esc(node.name)}`, [renderAst(node.value, depth + 1)]);
+                case 'ExprStatement':
+                    return renderAst(node.value, depth);
+                case 'Number':
+                    return line(`<span class="n">${esc(node.value)}</span>`);
+                case 'String': {
+                    // Show escapes rather than letting a literal newline break the tree.
+                    const shown = node.value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
+                    return line(`<span class="s">"${esc(shown)}"</span>`);
+                }
+                case 'Boolean':
+                    return line(`<span class="k">${node.value}</span>`);
+                case 'Variable':
+                    return line(esc(node.name));
+                case 'Unary':
+                    return line(`<span class="k">${esc(node.op)}</span>`, [renderAst(node.operand, depth + 1)]);
+                case 'Binary':
+                    return line(`<span class="k">${esc(node.op)}</span>`,
+                        [renderAst(node.left, depth + 1), renderAst(node.right, depth + 1)]);
+                case 'Conditional':
+                    return line(`<span class="k">if</span>`, [
+                        renderAst(node.test, depth + 1, 'test'),
+                        renderAst(node.then, depth + 1, 'then'),
+                        renderAst(node.otherwise, depth + 1, 'else')
+                    ]);
+                case 'Call':
+                    return line(`${esc(node.name)}<span class="d">()</span>`,
+                        node.args.map(a => renderAst(a, depth + 1)));
+            }
+            return line(esc(node.type));
+        }
+
+        // ── Presets ─────────────────────────────────────────────────────
+        const PRESETS = {
+            Digital: `# The default. Assigning to text, color and background
+# is what draws the clock.
+text = pad(h, 2) + ":" + pad(m, 2) + ":" + pad(s, 2)
+sub = dayname + ", " + day + " " + monthname
+color = "#e8ecf8"
+background = "#12141c"`,
+
+            Binary: `# base(n, radix, width) does the work.
+text = base(h, 2, 5) + "\\n" + base(m, 2, 6) + "\\n" + base(s, 2, 6)
+sub = "hours / minutes / seconds"
+size = 0.62
+color = "#5fd39a"
+background = "#04100a"`,
+
+            Words: `# pick() indexes a list of options, and wraps.
+let toHalf = m >= 33
+let hh = toHalf ? (h12 % 12) + 1 : h12
+text = upper(pick(hh - 1,
+  "one", "two", "three", "four", "five", "six",
+  "seven", "eight", "nine", "ten", "eleven", "twelve"))
+sub = upper(pick(round(m / 5),
+  "o'clock", "five past", "ten past", "quarter past",
+  "twenty past", "twenty-five past", "half past",
+  "twenty-five to", "twenty to", "quarter to",
+  "ten to", "five to", "o'clock"))
+size = 0.8
+color = "#f0e6d2"
+background = "#191512"`,
+
+            Spectrum: `# t is seconds since midnight, so t/240 walks
+# the full colour wheel exactly once per day.
+let hue = t / 240
+background = hsl(hue, 45, 9)
+color = hsl(hue, 85, 66)
+text = pad(h, 2) + ":" + pad(m, 2)
+sub = "hue " + round(hue) + " of 360"`,
+
+            Pulse: `# ms is available, so this is smooth.
+let beat = abs(sin(t * pi))
+text = pad(h, 2) + ":" + pad(m, 2) + ":" + pad(s, 2)
+size = 1 + beat * 0.18
+spin = sin(t / 4) * 2
+color = hsl(205, 90, 45 + beat * 35)
+background = "#05070f"`,
+
+            Countdown: `# Arithmetic on t, plus a ternary for the warning colour.
+let left = 86400 - t
+let hrs = pad(floor(left / 3600), 2)
+let mins = pad(floor(left / 60) % 60, 2)
+let secs = pad(floor(left) % 60, 2)
+text = hrs + ":" + mins + ":" + secs
+sub = "until midnight"
+color = left < 3600 ? "#ff6b6b" : "#e8ecf8"
+background = left < 3600 ? "#1d0d10" : "#101018"`,
+
+            Bar: `# repeat() turns the minute into a progress bar.
+let filled = floor(m / 60 * 30)
+text = pad(h12, 2) + ":" + pad(m, 2) + " " + ampm
+sub = repeat("█", filled) + repeat("·", 30 - filled)
+size = 0.9
+color = "#9fe8c0"
+background = "#0c120f"`
+        };
+
+        // ── Wiring ──────────────────────────────────────────────────────
+        const srcEl = document.getElementById('src');
+        const statusEl = document.getElementById('status');
+        const astEl = document.getElementById('ast');
+        const varsEl = document.getElementById('vars');
+        const presetsEl = document.getElementById('presets');
+        const previewEl = document.getElementById('preview');
+        const outText = document.getElementById('out-text');
+        const outSub = document.getElementById('out-sub');
+        const tabAst = document.getElementById('tab-ast');
+        const tabVars = document.getElementById('tab-vars');
+        const inspectTitle = document.getElementById('inspect-title');
+
+        const STORAGE_KEY = 'dsl_clock_program';
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        // The last program that parsed and ran. Keeping it means the clock
+        // carries on telling the time while you are halfway through a line.
+        let running = null;
+        let runningSource = '';
+        let lastShown = null;
+
+        // Anything the interpreter throws that isn't already a LangError, such as
+        // a stack overflow from a deeply nested expression, still has to reach the
+        // status line rather than the console.
+        function asLangError(err) {
+            if (err instanceof LangError) return err;
+            if (err instanceof RangeError) return new LangError('expression is nested too deeply', 0);
+            return new LangError(err.message || String(err), 0);
+        }
+
+        function compile(source) {
+            const ast = parse(tokenize(source));
+            // Run it once against the current time so a program that only
+            // fails at evaluation is caught here too, not mid-frame.
+            evaluate(ast, timeScope(new Date()));
+            return ast;
+        }
+
+        function setStatus(message, bad) {
+            statusEl.textContent = message;
+            statusEl.classList.toggle('bad', !!bad);
+        }
+
+        function recompile() {
+            const source = srcEl.value;
+            try {
+                const ast = compile(source);
+                running = ast;
+                runningSource = source;
+                astEl.innerHTML = renderAst(ast) || '<span class="d">(empty program)</span>';
+                const count = ast.body.length;
+                setStatus(`ok — ${count} statement${count === 1 ? '' : 's'}`, false);
+                try { localStorage.setItem(STORAGE_KEY, source); } catch (e) { /* private mode */ }
+            } catch (rawError) {
+                const err = asLangError(rawError);
+                const where = err.line ? `line ${err.line}: ` : '';
+                setStatus(`${where}${err.message}` + (running ? '\nstill running the last version that worked' : ''), true);
+            }
+            markActivePreset();
+        }
+
+        function markActivePreset() {
+            for (const chip of presetsEl.children) {
+                chip.classList.toggle('active', PRESETS[chip.dataset.name] === srcEl.value);
+            }
+        }
+
+        // ── Frame ───────────────────────────────────────────────────────
+        function paint() {
+            if (!running) return;
+            const now = new Date();
+            const scope = timeScope(now);
+            let out;
+            try {
+                out = evaluate(running, scope);
+            } catch (rawError) {
+                // A program can parse and still fail on some later second, say a
+                // division that only hits zero on the hour. Report and hold.
+                const err = asLangError(rawError);
+                setStatus((err.line ? `line ${err.line}: ` : '') + err.message, true);
+                running = null;
+                return;
+            }
+
+            const shown = 'text' in out ? text(out.text).slice(0, MAX_OUTPUT) : '';
+            if (shown !== lastShown) {
+                outText.textContent = shown;
+                // Only relabel when the reading actually changes; this runs every frame.
+                outText.setAttribute('aria-label', shown.replace(/\n/g, ', ') || 'Clock');
+                lastShown = shown;
+            }
+            outSub.textContent = 'sub' in out ? text(out.sub).slice(0, MAX_OUTPUT) : '';
+            previewEl.style.background = 'background' in out ? text(out.background) : '';
+            previewEl.style.color = 'color' in out ? text(out.color) : '';
+            const size = 'size' in out ? num(out.size) : 1;
+            const spin = 'spin' in out ? num(out.spin) : 0;
+            outText.style.transform = `scale(${Math.min(4, Math.max(0.1, size))}) rotate(${spin}deg)`;
+
+            if (!varsEl.classList.contains('hidden')) paintVars(scope);
+        }
+
+        function paintVars(scope) {
+            varsEl.innerHTML = Object.entries(scope)
+                .map(([k, v]) => `<div><b>${k}</b><span>${esc(text(typeof v === 'number' ? Math.round(v * 100) / 100 : v))}</span></div>`)
+                .join('');
+        }
+
+        function loop() {
+            paint();
+            if (!reduceMotion.matches) requestAnimationFrame(loop);
+        }
+
+        // ── Tabs ────────────────────────────────────────────────────────
+        function showTab(which) {
+            const ast = which === 'ast';
+            astEl.classList.toggle('hidden', !ast);
+            varsEl.classList.toggle('hidden', ast);
+            tabAst.classList.toggle('active', ast);
+            tabVars.classList.toggle('active', !ast);
+            tabAst.setAttribute('aria-pressed', String(ast));
+            tabVars.setAttribute('aria-pressed', String(!ast));
+            inspectTitle.textContent = ast ? 'Syntax tree' : 'Live values';
+            if (!ast) paintVars(timeScope(new Date()));
+        }
+        tabAst.addEventListener('click', () => showTab('ast'));
+        tabVars.addEventListener('click', () => showTab('vars'));
+
+        // ── Presets ─────────────────────────────────────────────────────
+        for (const name of Object.keys(PRESETS)) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip';
+            chip.textContent = name;
+            chip.dataset.name = name;
+            chip.addEventListener('click', () => {
+                srcEl.value = PRESETS[name];
+                recompile();
+            });
+            presetsEl.appendChild(chip);
+        }
+
+        srcEl.addEventListener('input', recompile);
+
+        let saved = null;
+        try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) { /* private mode */ }
+        srcEl.value = saved || PRESETS.Digital;
+        recompile();
+        // If the stored program is broken, fall back rather than open on a dead clock.
+        if (!running) {
+            srcEl.value = PRESETS.Digital;
+            recompile();
+        }
+
+        showTab('ast');
+        loop();
+
+        // Held still, the clock still has to keep time, so step it once a second.
+        if (reduceMotion.matches) setInterval(paint, 1000);
+    </script>
+</body>
+
+</html>
