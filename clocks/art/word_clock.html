@@ -122,9 +122,9 @@
         const words = {
             'IT': [0, 0, 1],
             'IS': [0, 3, 4],
-            'A': [0, 6, 6],
-            'AM': [0, 7, 8],
-            'PM': [0, 9, 10],
+            'A': [0, 5, 5],
+            'AM': [10, 3, 4],
+            'PM': [10, 5, 6],
             'QUARTER': [1, 2, 8],
             'TWENTY': [2, 0, 5],
             'FIVE_MIN': [2, 6, 9],
@@ -144,7 +144,8 @@
             'SEVEN': [8, 0, 4],
             'TWELVE': [8, 5, 10],
             'TEN': [9, 3, 5],
-            'OCLOCK': [9, 7, 10, 10, 0, 2]
+            // Wraps the end of one row onto the start of the next: OCL + OCK.
+            'OCLOCK': [[9, 8, 10], [10, 0, 2]]
         };
 
         const grid = document.getElementById('grid');
@@ -165,16 +166,10 @@
             const pos = words[wordKey];
             if (!pos) return;
 
-            // Handle "OCLOCK" which spans two rows
-            if (wordKey === 'OCLOCK') {
-                // "O" at position [9, 7]
-                activateLetter(9, 7, accent);
-                // "CLOCK" at positions [10, 0-4]
-                for (let col = 0; col <= 4; col++) {
-                    activateLetter(10, col, accent);
-                }
-            } else {
-                const [row, startCol, endCol] = pos;
+            // A word is either one [row, start, end] run or a list of them,
+            // for the one word that wraps across two rows.
+            const segments = Array.isArray(pos[0]) ? pos : [pos];
+            for (const [row, startCol, endCol] of segments) {
                 for (let col = startCol; col <= endCol; col++) {
                     activateLetter(row, col, accent);
                 }
