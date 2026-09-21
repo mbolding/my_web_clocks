@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chasm</title>
-    <meta name="description" content="An original cavern-flyer built to the Atari 2600's actual hardware limits: 160x192, the TIA palette, two sprites a scanline, and the flicker that comes with them.">
+    <meta name="description" content="An original cavern-flyer built to the Atari 2600's actual hardware limits: 160x192, the TIA palette, two sprites a scanline, and the flicker that comes with them. Tells the time, which the hardware could not.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -612,6 +612,11 @@
                     particular grain and the tones land where they land instead of in tune.</li>
                 <li><b>The switches.</b> Six of them, including <b>TV Type</b>, which really did
                     just drop the colour and leave you the luminance.</li>
+                <li><b>Not the clock.</b> The time above the title and under the gauges is the one
+                    thing on screen the hardware could not have done &mdash; the console had no
+                    clock chip and no battery, so it never knew what time it was. It is drawn in
+                    the same 4&times;5 font as everything else, twelve hours with the tens digit
+                    left blank below ten, and the colon carries the seconds.</li>
             </ul>
             <p>The game itself is original. The console, its logos and its catalogue belong to
                 their owners; what is borrowed here is the shape of the hardware, which is the
@@ -1038,7 +1043,10 @@
             ];
 
             var SHIP_Y = 150;
-            var GROUND = 176;              // status strip begins here
+            // Four scanlines taller than the strip needs for the score row
+            // alone, so the clock underneath it gets a full glyph of room and
+            // the same black margin below that the strip always had.
+            var GROUND = 172;              // status strip begins here
 
             var state = {
                 mode: 'title',             // title | play | dying | over
@@ -1591,6 +1599,10 @@
                 var tag = 'G' + (state.variation + 1);
                 if (state.players === 2) tag += ' P' + (p + 1);
                 drawText(tag, 94, GROUND + 4, C.WHITE, 1);
+
+                // The time, on its own row under the gauges. Dim, so it stays
+                // out of the way of the things you are actually watching.
+                drawTextCentred(clockTime(), GROUND + 11, C.GREY + 2, 1);
             }
 
             // Two seconds of the variation's name over the top of play, the
@@ -1645,6 +1657,11 @@
                     pfRow(y, PF_COLS - w, PF_COLS, hue | 0x04);
                 }
 
+                // Above the logo, where a cabinet in a shop window would carry
+                // one. Neutral grey rather than the cycling hue, or it reads as
+                // the top of the title rather than as a clock.
+                drawTextCentred(clockTime(true), 6, C.GREY + 2, 2);
+
                 drawTextCentred('CHASM', 26, hue | 0x0C, fitScale('CHASM', 4, W - 40));
                 hline(30, W - 30, 54, C.GREY);
 
@@ -1674,6 +1691,25 @@
                 var s = String(Math.max(0, n | 0));
                 while (s.length < width) s = '0' + s;
                 return s;
+            }
+
+            // ----------------------------------------------------------------
+            // The clock. This is the one thing on screen the hardware could not
+            // have done: the console had no clock chip and no battery, so it
+            // never knew what time it was. Everything else about it is period —
+            // the 4x5 font, twelve hours with the tens digit left blank when it
+            // is under ten, and the colon carrying the seconds, which is how a
+            // clock with only four digits showed you it was still running.
+            //
+            // The blink is the second hand rather than decoration, so it keeps
+            // going when the rest of the screen holds still for reduced motion.
+            function clockTime(withMeridiem) {
+                var d = new Date();
+                var h24 = d.getHours(), h = h24 % 12 || 12;
+                return (h < 10 ? ' ' : '') + h +
+                    (d.getSeconds() % 2 ? ' ' : ':') +
+                    padNum(d.getMinutes(), 2) +
+                    (withMeridiem ? (h24 < 12 ? ' AM' : ' PM') : '');
             }
 
             // ================================================================

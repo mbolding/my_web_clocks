@@ -16,7 +16,7 @@ A growing collection of creative, self-contained web clock implementations — e
 | `clocks/simulation/` | Physics, particle, and agent simulation clocks (gravity, flocking, epicycles, a chaotic double pendulum, ...) |
 | `clocks/utility/` | Countdown timers, dial/desktop clocks, pomodoro timers, and other practical tools |
 
-`games/` holds standalone games rather than clocks — currently `chasm.html`, an original cavern flyer written to the Atari 2600's hardware limits. Games are listed under "Other Apps" at the foot of the gallery, not among the clocks.
+`games/` holds standalone games rather than clocks — currently `chasm.html`, an original cavern flyer written to the Atari 2600's hardware limits, which does tell the time, in the same pixel font it draws everything else with. Games are listed under "Other Apps" at the foot of the gallery, not among the clocks.
 
 `plate/` is a separate, standalone installable PWA (a QR code generator) hosted alongside the clocks but unrelated to the collection — it isn't part of the gallery.
 

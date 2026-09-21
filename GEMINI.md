@@ -37,7 +37,10 @@ deleting its `.clock-row` from `index.html`, and adding a short entry to
 anything in here.
 
 `games/` holds standalone games rather than clocks, currently `chasm.html`, an
-Atari 2600-style cavern flyer that moved over from the personal-site repo. They
+Atari 2600-style cavern flyer that moved over from the personal-site repo. It
+does carry a clock — the time, in its own 4x5 pixel font, above the title and in
+the status strip — which is what earns it a place here, but it is a game first
+and is not filed or counted as a clock. They
 are listed in the "Other Apps" section at the foot of `index.html`, outside the
 gallery's categories, so they are not counted or filtered with the clocks. Keep
 them self-contained single files like the clocks, but don't expect the
