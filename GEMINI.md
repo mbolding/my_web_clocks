@@ -21,6 +21,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── CLOCK_AUDIT.md             # Collection-wide review: what to improve, archive, add
 ├── CLAUDE.md                  # Equivalent guidance file for Claude Code (keep in sync with this file)
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
+├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
 ```
@@ -34,6 +35,17 @@ the collection, and not maintained. Retire a clock by `git mv`-ing it here,
 deleting its `.clock-row` from `index.html`, and adding a short entry to
 `archive/README.md` saying why. Don't apply the clock-file conventions below to
 anything in here.
+
+`games/` holds standalone games rather than clocks, currently `chasm.html`, an
+Atari 2600-style cavern flyer that moved over from the personal-site repo. It
+does carry a clock — the time, in its own 4x5 pixel font, above the title and in
+the status strip — which is what earns it a place here, but it is a game first
+and is not filed or counted as a clock. They
+are listed in the "Other Apps" section at the foot of `index.html`, outside the
+gallery's categories, so they are not counted or filtered with the clocks. Keep
+them self-contained single files like the clocks, but don't expect the
+clock-file conventions (the `_clock.html` naming, the category directories) to
+apply.
 
 `plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and isn't part of `index.html`'s gallery. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
 
