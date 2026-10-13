@@ -21,6 +21,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── CLOCK_AUDIT.md             # Collection-wide review: what to improve, archive, add
 ├── CLAUDE.md                  # Equivalent guidance file for Claude Code (keep in sync with this file)
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
+├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -46,6 +47,17 @@ gallery's categories, so they are not counted or filtered with the clocks. Keep
 them self-contained single files like the clocks, but don't expect the
 clock-file conventions (the `_clock.html` naming, the category directories) to
 apply.
+
+`brain/` is Brain Explorer, a three-plane MNI152 viewer with eight public
+atlases, listed under "Other Apps" and not counted as a clock. Unlike the clocks
+it is not a single file: `brain/index.html` fetches its volumes and label tables
+from `brain/data/`, so it has to be served (it won't run from `file://`). The
+data is prebuilt and committed. `brain/tools/build_data.py` (Python: nibabel,
+numpy, scipy, pillow) regenerates it from TemplateFlow, and is only needed when
+the data changes; the site itself still has no build step. Sources, licences
+and the data formats are in `brain/README.md`. Apart from its own data, the
+only thing it fetches is a URL the user types into "Load" to open an overlay.
+Don't apply the clock-file conventions to it.
 
 `plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and isn't part of `index.html`'s gallery. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
 
