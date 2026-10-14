@@ -4,320 +4,606 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Sound and the Fury Clock</title>
+    <meta name="description" content="Faulkner's four sections tell the same time four ways: Benjy's scattered digits, Quentin's handless watch, Jason's ticker, Dilsey's one-hand clock.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;700&family=Share+Tech+Mono&family=Nothing+You+Could+Do&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Share+Tech+Mono&family=Nothing+You+Could+Do&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
 
         body {
-            width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100svh;
+            height: 100svh;
             overflow: hidden;
             display: grid;
-            grid-template-columns: 50% 50%;
-            grid-template-rows: 50% 50%;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
             background: #000;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
         }
 
         .quadrant {
             position: relative;
+            overflow: hidden;
+            container-type: size;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            border: 1px solid #222;
+            padding: clamp(10px, 4cqmin, 28px);
+            padding-top: clamp(44px, 14cqmin, 76px);
         }
 
+        /* Section heading, as Faulkner titled each part */
         .label {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            z-index: 100;
-            opacity: 0.5;
-        }
-
-        /* -----------------------------------
-           Q1: BENJY (Top Left)
-           Non-linear, sensory, confused, honeysuckle
-           ----------------------------------- */
-        #q-benjy {
-            background-color: #f3f4e1; /* Faint pale yellow/green honey */
-            color: #4a5d23;
-            font-family: 'Nothing You Could Do', cursive;
-            filter: blur(0.5px);
-        }
-        
-        #q-benjy .label { color: #4a5d23; font-family: 'Cormorant Garamond', serif; }
-        
-        .benjy-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .b-time {
-            position: absolute;
-            font-size: clamp(3rem, 8vw, 6rem);
-            opacity: 0.8;
-            transition: all 0.5s ease;
-        }
-
-        /* -----------------------------------
-           Q2: QUENTIN (Top Right)
-           Obsession with exact time, overlapping hands, broken
-           ----------------------------------- */
-        #q-quentin {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-            font-family: 'Cormorant Garamond', serif;
-        }
-
-        #q-quentin .label { color: #888; }
-        
-        .q-analog {
-            position: relative;
-            width: 250px;
-            height: 250px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.1); /* Ghost of a watch */
-        }
-
-        .q-hand {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform-origin: 0 50%;
-            background: #fff;
-            height: 2px;
-            z-index: 10;
-        }
-
-        .q-hand-shadow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform-origin: 0 50%;
-            background: rgba(255,255,255,0.2);
-            height: 4px;
-            filter: blur(4px);
+            top: clamp(8px, 3.5cqmin, 22px);
+            left: clamp(10px, 4cqmin, 26px);
+            right: clamp(10px, 4cqmin, 26px);
             z-index: 5;
+            line-height: 1.1;
         }
-
-        .q-hand-sec { width: 100px; background: #aa2222; height: 1px; }
-        .q-hand-min { width: 80px; height: 2px; }
-        .q-hand-hr  { width: 50px; height: 4px; }
-        
-        .q-center {
-            position: absolute;
-            top: calc(50% - 4px);
-            left: calc(50% - 4px);
-            width: 8px; height: 8px;
-            background: #fff;
-            border-radius: 50%;
-        }
-        
-        .busted-hand {
-            position: absolute;
-            width: 40px; height: 2px; background: #555;
-            top: 70%; left: 30%;
-            transform: rotate(45deg);
-        }
-
-        /* -----------------------------------
-           Q3: JASON (Bottom Left)
-           Cold, rational, calculating, fast
-           ----------------------------------- */
-        #q-jason {
-            background-color: #0b0202;
-            color: #ff3333;
+        .label .who {
+            display: block;
             font-family: 'Share Tech Mono', monospace;
+            font-size: clamp(0.62rem, 3.2cqmin, 0.85rem);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+        .label .when {
+            display: block;
+            font-style: italic;
+            font-weight: 600;
+            font-size: clamp(0.95rem, 5.4cqmin, 1.6rem);
         }
 
-        #q-jason .label { color: #ff3333; border-bottom: 1px solid #ff3333; }
+        .caption {
+            font-style: italic;
+            text-align: center;
+            line-height: 1.25;
+            font-size: clamp(0.8rem, 4cqmin, 1.15rem);
+            max-width: 32ch;
+        }
+
+        /* ---------------- BENJY: April Seventh, 1928 ---------------- */
+        #q-benjy {
+            background:
+                radial-gradient(circle at 20% 15%, rgba(255,255,255,0.65), transparent 55%),
+                radial-gradient(circle at 85% 90%, rgba(214,206,150,0.45), transparent 60%),
+                #f1f0d6;
+            color: #33441a;
+            justify-content: flex-end;
+        }
+        #q-benjy .label .who { color: #55662e; }
+        #q-benjy .label .when { color: #2b3a12; }
+
+        .benjy-field {
+            position: absolute;
+            left: 0; right: 0;
+            top: clamp(40px, 12cqh, 70px);
+            bottom: clamp(44px, 18cqh, 110px);
+        }
+        .b-frag {
+            position: absolute;
+            font-family: 'Nothing You Could Do', cursive;
+            line-height: 1;
+            white-space: nowrap;
+            transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+            transition: left 1.6s ease, top 1.6s ease, transform 1.6s ease;
+        }
+        .b-frag.h { font-size: clamp(3rem, 40cqmin, 11rem); color: #2b3a12; }
+        .b-frag.m { font-size: clamp(2rem, 24cqmin, 6.5rem); color: #4c6022; }
+        .b-frag.s { font-size: clamp(1.2rem, 12cqmin, 3.2rem); color: #6e7d3e; }
+
+        #q-benjy .caption {
+            position: relative;
+            z-index: 2;
+            color: #4b5a29;
+            font-size: clamp(0.72rem, 3.6cqmin, 1.05rem);
+        }
+
+        /* ---------------- QUENTIN: June Second, 1910 ---------------- */
+        #q-quentin {
+            background: #15171b;
+            color: #e6e2d8;
+            gap: clamp(4px, 2cqmin, 14px);
+        }
+        #q-quentin .label .who { color: #a9b0bd; }
+        #q-quentin .label .when { color: #f0ece2; }
+
+        /* light from the window, with the shadow of the sash across it */
+        .window-light {
+            position: absolute;
+            top: -10%;
+            width: 46cqw;
+            height: 120%;
+            left: var(--sash-x, 30%);
+            transform: translateX(-50%) skewX(-8deg);
+            background: linear-gradient(180deg, rgba(240,226,190,0.10), rgba(240,226,190,0.04));
+            opacity: var(--sash-o, 1);
+            pointer-events: none;
+            transition: left 2s linear, opacity 2s linear;
+        }
+        .window-light::before, .window-light::after {
+            content: '';
+            position: absolute;
+            background: rgba(0,0,0,0.55);
+        }
+        .window-light::before { left: 47%; width: 6%; top: 0; bottom: 0; }   /* muntin */
+        .window-light::after  { top: 48%; height: 4%; left: 0; right: 0; }   /* the sash */
+
+        .watch {
+            position: relative;
+            z-index: 2;
+            width: min(62cqmin, 300px);
+            height: min(62cqmin, 300px);
+            flex: none;
+        }
+        .watch svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+        .q-reading {
+            position: relative;
+            z-index: 2;
+            font-style: italic;
+            font-size: clamp(0.95rem, 5.2cqmin, 1.5rem);
+            color: #f0ece2;
+            text-align: center;
+            line-height: 1.15;
+        }
+        .q-reading small {
+            display: block;
+            font-style: normal;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: clamp(0.6rem, 3cqmin, 0.8rem);
+            letter-spacing: 0.06em;
+            color: #a9b0bd;
+            margin-top: 0.3em;
+        }
+        #q-quentin .caption { position: relative; z-index: 2; color: #b9bfca; font-size: clamp(0.72rem, 3.6cqmin, 1.05rem); }
+
+        /* ---------------- JASON: April Sixth, 1928 ---------------- */
+        #q-jason {
+            background: #120606;
+            color: #ff5a4a;
+            font-family: 'Share Tech Mono', monospace;
+            gap: clamp(6px, 3cqmin, 18px);
+            padding-bottom: calc(clamp(26px, 10cqmin, 44px) + 8px);
+        }
+        #q-jason .label .who { color: #ff8b7d; }
+        #q-jason .label .when { color: #ffd2cb; font-family: 'Cormorant Garamond', serif; }
 
         .j-time {
-            font-size: clamp(4rem, 10vw, 7rem);
-            font-weight: 700;
-            text-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
-            letter-spacing: -2px;
+            font-size: clamp(1.7rem, min(20cqw, 26cqh), 6.5rem);
+            line-height: 1;
+            letter-spacing: -0.02em;
+            color: #ff6b5b;
+            text-shadow: 0 0 14px rgba(255, 70, 50, 0.35);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
-        
-        .j-ms {
-            font-size: clamp(1.5rem, 4vw, 3rem);
-            opacity: 0.6;
+        .j-ledger {
+            font-size: clamp(0.7rem, 3.8cqmin, 1rem);
+            color: #ffc2b9;
+            text-align: center;
+            line-height: 1.35;
+            max-width: 30ch;
         }
+        .j-ledger b { color: #fff0ec; font-weight: normal; }
 
-        /* -----------------------------------
-           Q4: DILSEY (Bottom Right)
-           Calm, ancient, circular, enduring
-           ----------------------------------- */
+        .ticker {
+            position: absolute;
+            left: 0; right: 0;
+            bottom: 0;
+            height: clamp(26px, 10cqmin, 44px);
+            border-top: 1px solid rgba(255,90,74,0.45);
+            background: rgba(255,90,74,0.07);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .ticker-track {
+            display: flex;
+            white-space: nowrap;
+            animation: tape 60s linear infinite;
+            will-change: transform;
+        }
+        .ticker-track span {
+            font-size: clamp(0.66rem, 3.6cqmin, 0.95rem);
+            color: #ffb0a5;
+            padding-right: 2.2em;
+        }
+        .ticker-track .up { color: #9fe39a; }
+        .ticker-track .dn { color: #ff6b5b; }
+        @keyframes tape { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* ---------------- DILSEY: April Eighth, 1928 ---------------- */
         #q-dilsey {
-            background-color: #2c2520; /* Deep warm wood */
-            color: #d4af37; /* Faded gold */
-            font-family: 'Cormorant Garamond', serif;
+            background:
+                radial-gradient(circle at 50% 40%, rgba(255,190,110,0.10), transparent 65%),
+                #2a211b;
+            color: #e8c877;
+            gap: clamp(4px, 2cqmin, 12px);
+        }
+        #q-dilsey .label .who { color: #d9b866; }
+        #q-dilsey .label .when { color: #f3dfa6; }
+
+        .cabinet {
+            width: min(52cqmin, 260px);
+            height: min(52cqmin, 260px);
+            flex: none;
+        }
+        .cabinet svg { width: 100%; height: 100%; display: block; }
+
+        .d-says {
+            font-size: clamp(1rem, 6cqmin, 1.8rem);
+            color: #fbe8b4;
+            text-align: center;
+            line-height: 1.1;
+        }
+        .d-says .struck {
+            display: block;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: clamp(0.6rem, 3cqmin, 0.8rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #c9a85a;
+            margin-bottom: 0.35em;
+        }
+        #q-dilsey .caption { color: #e3c77c; font-size: clamp(0.75rem, 3.8cqmin, 1.1rem); }
+
+        /* Narrow, tall cells (phones in portrait): stack the readouts a little tighter */
+        @container (max-aspect-ratio: 3/4) {
+            .watch { width: min(82cqw, 300px); height: min(82cqw, 300px); }
+            .cabinet { width: min(72cqw, 260px); height: min(72cqw, 260px); }
         }
 
-        #q-dilsey .label { color: #d4af37; border: 1px solid #d4af37; padding: 2px 5px; }
-
-        .d-quote {
-            font-style: italic;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            opacity: 0.7;
+        @media (prefers-reduced-motion: reduce) {
+            .b-frag, .window-light { transition: none; }
+            .ticker-track { animation: none; }
         }
-
-        .d-time {
-            font-size: clamp(3rem, 8vw, 5rem);
-            letter-spacing: 5px;
-        }
-
     </style>
 </head>
 <body>
+    <div class="sr-only" role="timer" aria-live="polite" id="sr-time"></div>
 
     <!-- Benjy -->
-    <div class="quadrant" id="q-benjy">
-        <div class="label">April 7, 1928</div>
-        <div class="benjy-container" id="benjyContainer">
-            <!-- Populated by JS randomly -->
+    <section class="quadrant" id="q-benjy" aria-label="Benjy, April Seventh, 1928">
+        <div class="label"><span class="who">Benjy</span><span class="when">April Seventh, 1928.</span></div>
+        <div class="benjy-field" aria-hidden="true">
+            <div class="b-frag h" id="b-h"></div>
+            <div class="b-frag m" id="b-m"></div>
+            <div class="b-frag s" id="b-s"></div>
         </div>
-    </div>
+        <p class="caption">Through the fence, between the curling flower spaces, I could see them hitting.</p>
+    </section>
 
     <!-- Quentin -->
-    <div class="quadrant" id="q-quentin">
-        <div class="label">June 2, 1910</div>
-        <div class="q-analog">
-            <!-- Shadows -->
-            <div class="q-hand-shadow q-hand-sec" id="qs-sec"></div>
-            <div class="q-hand-shadow q-hand-min" id="qs-min"></div>
-            <!-- Real Hands -->
-            <div class="busted-hand"></div>
-            <div class="q-hand q-hand-sec" id="q-sec"></div>
-            <div class="q-hand q-hand-min" id="q-min"></div>
-            <div class="q-hand q-hand-hr" id="q-hr"></div>
-            <div class="q-center"></div>
+    <section class="quadrant" id="q-quentin" aria-label="Quentin, June Second, 1910">
+        <div class="window-light" id="sash" aria-hidden="true"></div>
+        <div class="label"><span class="who">Quentin</span><span class="when">June Second, 1910.</span></div>
+        <div class="watch" aria-hidden="true">
+            <svg viewBox="-110 -110 220 220" id="watch-svg">
+                <defs>
+                    <radialGradient id="enamel" cx="40%" cy="35%" r="75%">
+                        <stop offset="0" stop-color="#f4efe2"/>
+                        <stop offset="1" stop-color="#cfc6b0"/>
+                    </radialGradient>
+                    <linearGradient id="caseGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#d9c48a"/>
+                        <stop offset="0.5" stop-color="#8a7440"/>
+                        <stop offset="1" stop-color="#d1b978"/>
+                    </linearGradient>
+                    <filter id="ghost" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="2.2"/>
+                    </filter>
+                </defs>
+                <!-- bow and crown -->
+                <rect x="-9" y="-112" width="18" height="12" rx="3" fill="url(#caseGrad)"/>
+                <circle cx="0" cy="-118" r="9" fill="none" stroke="url(#caseGrad)" stroke-width="4"/>
+                <circle r="100" fill="url(#caseGrad)"/>
+                <circle r="92" fill="url(#enamel)"/>
+                <g id="track"></g>
+                <g id="numerals" font-family="Cormorant Garamond, serif" font-size="15" font-weight="600" fill="#3a3326" text-anchor="middle" dominant-baseline="central"></g>
+                <!-- where the hands were: only their shadows remain -->
+                <g filter="url(#ghost)" stroke="#2a2218" stroke-linecap="round" opacity="0.38">
+                    <line id="ghost-h" x1="0" y1="0" x2="0" y2="-44" stroke-width="6" transform="translate(3 4)"/>
+                    <line id="ghost-m" x1="0" y1="0" x2="0" y2="-70" stroke-width="4" transform="translate(3 4)"/>
+                </g>
+                <!-- twisted-off stubs -->
+                <circle r="4.5" fill="#5b4a2a"/>
+                <path d="M0 0 l5 -3" stroke="#3a2f1c" stroke-width="2" stroke-linecap="round"/>
+                <path d="M0 0 l-3 5" stroke="#3a2f1c" stroke-width="1.6" stroke-linecap="round"/>
+                <!-- cracked crystal -->
+                <g stroke="rgba(255,255,255,0.75)" stroke-width="0.8" fill="none">
+                    <path d="M38 -52 L18 -20 L-6 -8 L-40 6 L-70 30"/>
+                    <path d="M38 -52 L58 -72"/>
+                    <path d="M38 -52 L70 -40 L86 -30"/>
+                    <path d="M38 -52 L30 -82"/>
+                    <path d="M18 -20 L26 12 L20 44 L30 78"/>
+                    <path d="M-6 -8 L-22 -40 L-50 -56"/>
+                    <path d="M-40 6 L-46 40"/>
+                </g>
+                <g stroke="rgba(40,30,20,0.35)" stroke-width="0.6" fill="none" transform="translate(0.8 0.8)">
+                    <path d="M38 -52 L18 -20 L-6 -8 L-40 6 L-70 30"/>
+                    <path d="M18 -20 L26 12 L20 44 L30 78"/>
+                </g>
+                <circle r="92" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+            </svg>
         </div>
-    </div>
+        <div class="q-reading" id="q-reading"></div>
+        <p class="caption">Father said clocks slay time.</p>
+    </section>
 
     <!-- Jason -->
-    <div class="quadrant" id="q-jason">
-        <div class="label">April 6, 1928</div>
-        <div class="j-time">
-            <span id="j-h">00</span>:<span id="j-m">00</span>:<span id="j-s">00</span><span class="j-ms" id="j-ms">.000</span>
-        </div>
-    </div>
+    <section class="quadrant" id="q-jason" aria-label="Jason, April Sixth, 1928">
+        <div class="label"><span class="who">Jason</span><span class="when">April Sixth, 1928.</span></div>
+        <div class="j-time" id="j-time">00:00:00</div>
+        <div class="j-ledger" id="j-ledger"></div>
+        <div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
+    </section>
 
     <!-- Dilsey -->
-    <div class="quadrant" id="q-dilsey">
-        <div class="label">April 8, 1928</div>
-        <div class="d-quote">"They endured."</div>
-        <div class="d-time" id="d-time">00:00:00</div>
-    </div>
-
+    <section class="quadrant" id="q-dilsey" aria-label="Dilsey, April Eighth, 1928">
+        <div class="label"><span class="who">Dilsey</span><span class="when">April Eighth, 1928.</span></div>
+        <div class="cabinet" aria-hidden="true">
+            <svg viewBox="-110 -110 220 220">
+                <rect x="-104" y="-104" width="208" height="208" rx="10" fill="#4a3424" stroke="#6d4f35" stroke-width="3"/>
+                <circle r="92" fill="#e9dcbc"/>
+                <circle r="92" fill="none" stroke="#2c1f15" stroke-width="2"/>
+                <circle r="70" fill="none" stroke="#2c1f15" stroke-width="0.8"/>
+                <g id="d-ticks"></g>
+                <g id="d-numerals" font-family="Cormorant Garamond, serif" font-size="15" font-weight="700" fill="#2c1f15" text-anchor="middle" dominant-baseline="central"></g>
+                <g id="d-hand">
+                    <path d="M0 12 L-3.2 0 L0 -64 L3.2 0 Z" fill="#20160f"/>
+                    <circle cy="-38" r="4" fill="none" stroke="#20160f" stroke-width="1.6"/>
+                </g>
+                <circle r="5" fill="#20160f"/>
+            </svg>
+        </div>
+        <div class="d-says" id="d-says"></div>
+        <p class="caption">I've seed de first en de last.</p>
+    </section>
 
     <script>
-        // DOM Elements
-        const bContainer = document.getElementById('benjyContainer');
-        const qSec = document.getElementById('q-sec');
-        const qMin = document.getElementById('q-min');
-        const qHr = document.getElementById('q-hr');
-        const qsSec = document.getElementById('qs-sec');
-        const qsMin = document.getElementById('qs-min');
-        
-        const jH = document.getElementById('j-h');
-        const jM = document.getElementById('j-m');
-        const jS = document.getElementById('j-s');
-        const jMs = document.getElementById('j-ms');
-        
-        const dTime = document.getElementById('d-time');
+        const NS = 'http://www.w3.org/2000/svg';
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const NUM_WORDS = ['twelve', 'one', 'two', 'three', 'four', 'five', 'six',
+            'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+        const ROMAN = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+        const pad = n => String(n).padStart(2, '0');
+        const h12 = h => (h % 12) || 12;
 
-        // Benjy Logic setup
-        const bTexts = ['H', 'M', 'S'];
-        const bElements = [];
-        for(let i=0; i<3; i++) {
-            const el = document.createElement('div');
-            el.className = 'b-time';
-            bContainer.appendChild(el);
-            bElements.push(el);
+        function svgEl(tag, attrs, parent) {
+            const el = document.createElementNS(NS, tag);
+            for (const k in attrs) el.setAttribute(k, attrs[k]);
+            parent.appendChild(el);
+            return el;
         }
 
-        let lastBSecond = -1;
+        // ---- build Quentin's dial: a 60-tick track that carries the ticking ----
+        const track = document.getElementById('track');
+        const ticks = [];
+        for (let i = 0; i < 60; i++) {
+            const a = i * Math.PI / 30;
+            const r1 = i % 5 === 0 ? 78 : 83, r2 = 88;
+            ticks.push(svgEl('line', {
+                x1: Math.sin(a) * r1, y1: -Math.cos(a) * r1,
+                x2: Math.sin(a) * r2, y2: -Math.cos(a) * r2,
+                stroke: '#3a3326', 'stroke-width': i % 5 === 0 ? 2 : 0.9,
+                'stroke-linecap': 'round'
+            }, track));
+        }
+        const tickDot = svgEl('circle', { r: 3.4, fill: '#b3261e' }, track);
+        const qNum = document.getElementById('numerals');
+        for (let i = 1; i <= 12; i++) {
+            const a = i * Math.PI / 6;
+            svgEl('text', { x: Math.sin(a) * 66, y: -Math.cos(a) * 66 }, qNum).textContent = i;
+        }
 
-        function updateClock() {
-            const now = new Date();
-            const hrs = now.getHours();
-            const mins = now.getMinutes();
-            const secs = now.getSeconds();
-            const ms = now.getMilliseconds();
-            
-            // Format Strings
-            const hStr = hrs.toString().padStart(2, '0');
-            const mStr = mins.toString().padStart(2, '0');
-            const sStr = secs.toString().padStart(2, '0');
+        // ---- build Dilsey's one-hand cabinet clock ----
+        const dTicks = document.getElementById('d-ticks');
+        for (let i = 0; i < 48; i++) {         // quarter-hour marks, all a one-hand dial can show
+            const a = i * Math.PI / 24;
+            const major = i % 4 === 0, half = i % 2 === 0;
+            const r1 = major ? 76 : half ? 80 : 83;
+            svgEl('line', {
+                x1: Math.sin(a) * r1, y1: -Math.cos(a) * r1,
+                x2: Math.sin(a) * 88, y2: -Math.cos(a) * 88,
+                stroke: '#2c1f15', 'stroke-width': major ? 2.2 : 1
+            }, dTicks);
+        }
+        const dNum = document.getElementById('d-numerals');
+        for (let i = 0; i < 12; i++) {
+            const a = i * Math.PI / 6;
+            const t = svgEl('text', { x: Math.sin(a) * 56, y: -Math.cos(a) * 56 }, dNum);
+            t.textContent = ROMAN[i];
+            if (ROMAN[i].length > 3) t.setAttribute('font-size', '12');
+        }
 
-            // ------------------
-            // 1. BENJY (Non-Linear Jitter)
-            // ------------------
-            if (lastBSecond !== secs) {
-                lastBSecond = secs;
-                
-                // Shuffle array of values so he confuses hours/mins/secs
-                const values = [hStr, mStr, sStr].sort(() => Math.random() - 0.5);
-                
-                bElements.forEach((el, index) => {
-                    el.textContent = values[index];
-                    // Random positions across the top left quadrant
-                    el.style.top = `${20 + Math.random() * 60}%`;
-                    el.style.left = `${10 + Math.random() * 70}%`;
-                    // Random rotation
-                    el.style.transform = `rotate(${(Math.random() - 0.5) * 45}deg)`;
-                });
+        // ---- Benjy: three fragments in scattered places, reshuffled each minute ----
+        // Size tells them apart on reflection: hour largest, minute middling, second smallest.
+        const SLOTS = [
+            [27, 20], [73, 18], [24, 50], [74, 50], [30, 80], [72, 82], [50, 35], [50, 65]
+        ];
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+        const bEls = ['b-h', 'b-m', 'b-s'].map(id => document.getElementById(id));
+        let lastBenjyKey = null;
+        function scatterBenjy(now) {
+            const key = now.getFullYear() * 1e6 + (now.getMonth() + 1) * 1e4 + now.getDate() * 100 + 0;
+            const seed = key * 1440 + now.getHours() * 60 + now.getMinutes();
+            if (seed === lastBenjyKey) return;
+            lastBenjyKey = seed;
+            const rnd = mulberry32(seed);
+            // pick three distinct slots; the large hour avoids the two central slots
+            const outer = [0, 1, 2, 3, 4, 5];
+            const pool = SLOTS.map((_, i) => i);
+            const hSlot = outer[Math.floor(rnd() * outer.length)];
+            const rest = pool.filter(i => i !== hSlot && !neighbours(i, hSlot));
+            const mSlot = rest.splice(Math.floor(rnd() * rest.length), 1)[0];
+            const rest2 = rest.filter(i => !neighbours(i, mSlot));
+            const sSlot = (rest2.length ? rest2 : rest)[Math.floor(rnd() * (rest2.length ? rest2 : rest).length)];
+            [hSlot, mSlot, sSlot].forEach((slot, i) => {
+                const [x, y] = SLOTS[slot];
+                const el = bEls[i];
+                el.style.left = (x + (rnd() - 0.5) * 6) + '%';
+                el.style.top = (y + (rnd() - 0.5) * 6) + '%';
+                el.style.setProperty('--rot', ((rnd() - 0.5) * 26).toFixed(1) + 'deg');
+            });
+        }
+        // slots that would make two fragments collide
+        function neighbours(a, b) {
+            const [ax, ay] = SLOTS[a], [bx, by] = SLOTS[b];
+            return Math.abs(ax - bx) < 30 && Math.abs(ay - by) < 26;
+        }
+
+        // ---- Jason: the cotton tape ----
+        function hash(n) {
+            n = Math.imul(n ^ (n >>> 16), 0x45d9f3b);
+            n = Math.imul(n ^ (n >>> 16), 0x45d9f3b);
+            return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+        }
+        function cottonAt(dayKey, minute) {
+            // a deterministic random walk around twenty cents a pound
+            let p = 2000;
+            for (let i = 0; i <= minute; i += 5) p += Math.round((hash(dayKey * 2000 + i) - 0.52) * 6);
+            return p;
+        }
+        const tickerEl = document.getElementById('ticker');
+        let lastTickerMinute = -1;
+        function buildTicker(now) {
+            const minuteOfDay = now.getHours() * 60 + now.getMinutes();
+            if (minuteOfDay === lastTickerMinute) return;
+            lastTickerMinute = minuteOfDay;
+            const dayKey = now.getFullYear() * 400 + now.getMonth() * 32 + now.getDate();
+            const items = [];
+            for (let k = 9; k >= 0; k--) {
+                const m = ((minuteOfDay - k * 5) % 1440 + 1440) % 1440;
+                const mm = m - (m % 5);
+                const p = cottonAt(dayKey, mm), prev = cottonAt(dayKey, Math.max(0, mm - 5));
+                const cls = p >= prev ? 'up' : 'dn';
+                const arrow = p >= prev ? '▲' : '▼';
+                items.push(`<span>${h12(Math.floor(mm / 60))}:${pad(mm % 60)} COTTON MAY <b class="${cls}">${arrow} ${(p / 100).toFixed(2)}</b></span>`);
             }
-
-            // ------------------
-            // 2. QUENTIN (Analog ticking, slightly shifted shadows indicating anxiety/brokenness)
-            // ------------------
-            // -90 is to start at 12 o'clock because transform-origin is 0 50%
-            const secDeg = (secs + ms/1000) * 6 - 90;
-            const minDeg = mins * 6 + (secs/60)*6 - 90;
-            const hrDeg = (hrs%12) * 30 + (mins/60)*30 - 90;
-
-            qSec.style.transform = `rotate(${secDeg}deg)`;
-            qMin.style.transform = `rotate(${minDeg}deg)`;
-            qHr.style.transform = `rotate(${hrDeg}deg)`;
-            
-            // Shadows lag slightly, representing the past dragging
-            qsSec.style.transform = `rotate(${secDeg - 2}deg)`;
-            qsMin.style.transform = `rotate(${minDeg - 1}deg)`;
-
-            // ------------------
-            // 3. JASON (Calculated, fast)
-            // ------------------
-            jH.textContent = hStr;
-            jM.textContent = mStr;
-            jS.textContent = sStr;
-            jMs.textContent = '.' + ms.toString().padStart(3, '0');
-
-            // ------------------
-            // 4. DILSEY (Solid, Roman/Classic, enduring)
-            // ------------------
-            // Dilsey often represents standard, stable time (12-hour format)
-            const dH = hrs % 12 || 12;
-            dTime.textContent = `${dH}:${mStr}:${sStr}`;
-
-            requestAnimationFrame(updateClock);
+            const html = items.join('');
+            tickerEl.innerHTML = html + html;
+        }
+        function span(mins) {
+            if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'}`;
+            return `${Math.floor(mins / 60)}h ${pad(mins % 60)}m`;
+        }
+        function jasonLedger(now) {
+            const h = now.getHours(), m = now.getMinutes(), dow = now.getDay();
+            const mins = h * 60 + m;
+            if (dow === 0) return 'Sunday. No market, no telegrams. <b>A day lost.</b>';
+            const close = dow === 6 ? 12 * 60 : 15 * 60;
+            if (mins < 10 * 60) {
+                const left = 10 * 60 - mins;
+                return `Market opens at ten. <b>${span(left)}</b> to wait, I says.`;
+            }
+            if (mins < close) {
+                const left = close - mins;
+                return `Market's open. <b>${span(left)}</b> to the close, and the wire's late again.`;
+            }
+            return `Market closed at ${dow === 6 ? 'noon' : 'three'}. <b>Lost again</b>, I says.`;
         }
 
-        updateClock();
+        // ---- Dilsey: the cabinet clock runs three hours slow; she reads it true ----
+        const SLOW_HOURS = 3;   // it strikes five when Dilsey says eight
+        const dHand = document.getElementById('d-hand');
+        const dSays = document.getElementById('d-says');
+        function minuteWords(h, m) {
+            const hr = NUM_WORDS[h % 12];
+            const next = NUM_WORDS[(h + 1) % 12];
+            if (m === 0) return `${hr} oclock`;
+            if (m === 15) return `quarter past ${hr}`;
+            if (m === 30) return `half past ${hr}`;
+            if (m === 45) return `quarter to ${next}`;
+            if (m < 30) return `${m} past ${hr}`;
+            return `${60 - m} to ${next}`;
+        }
+
+        // ---- Quentin's reading, in his own spelling of the hour ----
+        const qReading = document.getElementById('q-reading');
+        const sash = document.getElementById('sash');
+        const ghostH = document.getElementById('ghost-h');
+        const ghostM = document.getElementById('ghost-m');
+        const srTime = document.getElementById('sr-time');
+        const jTime = document.getElementById('j-time');
+        const jLedger = document.getElementById('j-ledger');
+
+        let lastMinute = -1;
+        function update() {
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+
+            // Benjy
+            scatterBenjy(now);
+            bEls[0].textContent = pad(h);
+            bEls[1].textContent = pad(m);
+            bEls[2].textContent = pad(s);
+
+            // Quentin: no hands, only the ticking and the shadows where hands were
+            const minDeg = m * 6 + s * 0.1;
+            const hrDeg = (h % 12) * 30 + m * 0.5;
+            ghostH.setAttribute('transform', `translate(3 4) rotate(${hrDeg})`);
+            ghostM.setAttribute('transform', `translate(3 4) rotate(${minDeg})`);
+            const a = s * Math.PI / 30;
+            tickDot.setAttribute('cx', (Math.sin(a) * 85.5).toFixed(2));
+            tickDot.setAttribute('cy', (-Math.cos(a) * 85.5).toFixed(2));
+            ticks.forEach((t, i) => t.setAttribute('stroke', i === s ? '#b3261e' : '#3a3326'));
+
+            // the sash shadow crosses the curtain from dawn to dusk
+            const dayFrac = (h * 60 + m) / 1440;
+            const sun = Math.min(1, Math.max(0, (dayFrac - 0.25) / 0.5));
+            const daylight = dayFrac > 0.22 && dayFrac < 0.8;
+            sash.style.setProperty('--sash-x', (12 + sun * 76).toFixed(1) + '%');
+            sash.style.setProperty('--sash-o', daylight ? '1' : '0.25');
+
+            // Jason
+            jTime.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+            if (m !== lastMinute) {
+                lastMinute = m;
+                const nextH = (h + 1) % 24;
+                qReading.innerHTML = `between ${NUM_WORDS[h % 12]} and ${NUM_WORDS[nextH % 12]} oclock` +
+                    `<small>${daylight ? 'the shadow of the sash on the curtains' : 'no shadow on the curtains'}</small>`;
+
+                jLedger.innerHTML = jasonLedger(now);
+                buildTicker(now);
+
+                // Dilsey's clock: one hand, three hours behind
+                const slowH = (h - SLOW_HOURS + 24) % 24;
+                const handDeg = (slowH % 12) * 30 + m * 0.5;
+                dHand.setAttribute('transform', `rotate(${handDeg})`);
+                const struck = h12(slowH);
+                const dLine = m === 0
+                    ? `The clock strikes ${NUM_WORDS[struck]}.`
+                    : `The clock says ${NUM_WORDS[struck]}, near enough.`;
+                dSays.innerHTML = `<span class="struck">${dLine}</span>Dilsey says ${minuteWords(h, m)}.`;
+
+                srTime.textContent = `${h12(h)}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`;
+            }
+        }
+
+        update();
+        // align to the second boundary, then tick once a second
+        setTimeout(() => { update(); setInterval(update, 1000); }, 1000 - (Date.now() % 1000));
     </script>
 </body>
 </html>
