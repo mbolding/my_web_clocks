@@ -65,7 +65,8 @@ the user opens or drops in, listed under "Other Apps" and not counted as a
 clock. It is one self-contained `dicom/index.html` with its own parser: explicit
 and implicit VR, big endian, deflated, RLE, and baseline JPEG through the
 browser's decoder. Other compressed transfer syntaxes still show their headers
-but not their pixels. Files are read locally and nothing is fetched or sent.
+but not their pixels. Modality and VOI LUTs in the file are applied, and a set
+of display colour maps sits beside the window controls. Files are read locally and nothing is fetched or sent.
 The "Demo" button writes a synthetic phantom series as real DICOM bytes in
 memory, so it goes through the same parser. Don't apply the clock-file
 conventions to it.

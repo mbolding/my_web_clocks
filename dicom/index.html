@@ -367,6 +367,24 @@
             accent-color: var(--accent);
         }
 
+        .cbar {
+            margin: 4px 0 8px;
+        }
+
+        .cbar-grad {
+            height: 10px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+        }
+
+        .cbar-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 0.72rem;
+        }
+
         .warnings {
             margin: 8px 0;
             padding-left: 18px;
@@ -771,6 +789,13 @@
                         <label>Center <input type="number" id="wl-c" step="any"></label>
                         <label>Width <input type="number" id="wl-w" step="any" min="0"></label>
                     </div>
+                    <div class="ctl-row">
+                        <label>Colour map <select id="cmap"></select></label>
+                    </div>
+                    <div class="cbar">
+                        <div class="cbar-grad" id="cbar-grad"></div>
+                        <div class="cbar-labels"><span id="cbar-lo"></span><span id="cbar-hi"></span></div>
+                    </div>
                 </div>
                 <div class="ctl-row">
                     <label><input type="checkbox" id="opt-cross" checked> Crosshair</label>
@@ -1097,7 +1122,12 @@
 00282110 CS LossyImageCompression
 00282112 DS LossyImageCompressionRatio
 00282114 CS LossyImageCompressionMethod
+00281056 CS VOILUTFunction
 00283000 SQ ModalityLUTSequence
+00283002 US LUTDescriptor
+00283003 LO LUTExplanation
+00283004 LO ModalityLUTType
+00283006 US LUTData
 00283010 SQ VOILUTSequence
 00289110 SQ PixelMeasuresSequence
 00289132 SQ FrameVOILUTSequence
@@ -1472,6 +1502,8 @@ FFFCFFFC OB DataSetTrailingPadding`;
             img.rgb = img.spp === 3 || img.photo === 'PALETTE COLOR';
             file.img = img;
             file.pix = pix;
+            const mItem = getEl(d, 0x00283000)?.items?.[0];
+            file.mlut = mItem ? parseLut(mItem, img.signed) : null;
             const shared = getEl(d, 0x52009229)?.items?.[0] || null;
             const perFrame = getEl(d, 0x52009230)?.items || null;
             for (let f = 0; f < img.nf; f++) {
@@ -1496,6 +1528,7 @@ FFFCFFFC OB DataSetTrailingPadding`;
                     thick: look(0x00289110, 0x00180050)?.[0],
                     slope: slope && Number.isFinite(slope) ? slope : 1,
                     inter: Number.isFinite(inter) ? inter : 0,
+                    mlut: file.mlut,
                     wc: look(0x00289132, 0x00281050),
                     ww: look(0x00289132, 0x00281051),
                     tpos: look(0x00209111, 0x00209128)?.[0] ?? num(d, 0x00200100),
@@ -1503,6 +1536,21 @@ FFFCFFFC OB DataSetTrailingPadding`;
                     inst: num(d, 0x00200013),
                 });
             }
+        }
+
+        // A Modality or VOI LUT item: descriptor [entries, first mapped value,
+        // bits] plus one table entry per 16-bit word (or per byte if packed).
+        function parseLut(item, signed) {
+            const desc = nums(item, 0x00283002), el = getEl(item, 0x00283006);
+            if (!desc || desc.length < 3 || !el) return null;
+            let [n, first, bits] = desc;
+            if (!n) n = 65536;
+            if (signed && first > 32767) first -= 65536;
+            const data = new Uint16Array(n), c = el.c;
+            if (el.len >= 2 * n) for (let k = 0; k < n; k++) data[k] = c.dv.getUint16(el.off + 2 * k, c.le);
+            else if (el.len >= n) for (let k = 0; k < n; k++) data[k] = c.u8[el.off + k];
+            else return null;
+            return { n, first, bits, data, expl: str(item, 0x00283003) };
         }
 
         // =====================================================================
@@ -1793,7 +1841,7 @@ FFFCFFFC OB DataSetTrailingPadding`;
             let lo = Infinity, hi = -Infinity;
             for (const fr of frames) {
                 const im = fr.file.img;
-                if (im.ba > 16 || !Number.isInteger(fr.slope) || !Number.isInteger(fr.inter)) return Float32Array;
+                if (fr.mlut || im.ba > 16 || !Number.isInteger(fr.slope) || !Number.isInteger(fr.inter)) return Float32Array;
                 const rlo = im.signed ? -(2 ** (im.bs - 1)) : 0, rhi = im.signed ? 2 ** (im.bs - 1) - 1 : 2 ** im.bs - 1;
                 const a = rlo * fr.slope + fr.inter, b = rhi * fr.slope + fr.inter;
                 lo = Math.min(lo, a, b);
@@ -1864,7 +1912,14 @@ FFFCFFFC OB DataSetTrailingPadding`;
                     const raw = await decodeFrame(fr);
                     const out = data[t];
                     if (rgb) out.set(toRGB(raw, fr.file.img, fr.file), k * XY * 3);
-                    else if (fr.slope === 1 && fr.inter === 0) out.set(raw.arr.length === XY ? raw.arr : raw.arr.subarray(0, XY), k * XY);
+                    else if (fr.mlut) {
+                        // A Modality LUT replaces rescale slope/intercept.
+                        const a = raw.arr, base = k * XY, L = fr.mlut, top = L.n - 1;
+                        for (let i = 0; i < XY; i++) {
+                            const j = a[i] - L.first;
+                            out[base + i] = L.data[j < 0 ? 0 : j > top ? top : j];
+                        }
+                    } else if (fr.slope === 1 && fr.inter === 0) out.set(raw.arr.length === XY ? raw.arr : raw.arr.subarray(0, XY), k * XY);
                     else {
                         const a = raw.arr, base = k * XY, s = fr.slope, b = fr.inter;
                         for (let i = 0; i < XY; i++) out[base + i] = a[i] * s + b;
@@ -1904,6 +1959,37 @@ FFFCFFFC OB DataSetTrailingPadding`;
         }
 
         // =====================================================================
+        // Colour maps: interpolated stops, baked into 256 packed ABGR entries
+        // =====================================================================
+        const CMAPS = {
+            grey: ['Greyscale', [[0, [0, 0, 0]], [1, [255, 255, 255]]]],
+            hotiron: ['Hot iron', [[0, [0, 0, 0]], [0.5, [255, 0, 0]], [0.75, [255, 128, 0]], [1, [255, 255, 255]]]],
+            hot: ['Hot', [[0, [0, 0, 0]], [0.375, [255, 0, 0]], [0.75, [255, 255, 0]], [1, [255, 255, 255]]]],
+            inferno: ['Inferno', [[0, [0, 0, 4]], [0.25, [87, 16, 110]], [0.5, [188, 55, 84]], [0.75, [249, 142, 9]], [1, [252, 255, 164]]]],
+            viridis: ['Viridis', [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]]],
+            plasma: ['Plasma', [[0, [13, 8, 135]], [0.25, [126, 3, 168]], [0.5, [204, 71, 120]], [0.75, [248, 149, 64]], [1, [240, 249, 33]]]],
+            rainbow: ['Rainbow (jet)', [[0, [0, 0, 128]], [0.125, [0, 0, 255]], [0.375, [0, 255, 255]], [0.625, [255, 255, 0]], [0.875, [255, 0, 0]], [1, [128, 0, 0]]]],
+            coolwarm: ['Cool\u2013warm (diverging)', [[0, [59, 76, 192]], [0.5, [221, 221, 221]], [1, [180, 4, 38]]]],
+            phase: ['Phase (cyclic)', [[0, [255, 0, 0]], [1 / 6, [255, 255, 0]], [2 / 6, [0, 255, 0]], [3 / 6, [0, 255, 255]], [4 / 6, [0, 0, 255]], [5 / 6, [255, 0, 255]], [1, [255, 0, 0]]]],
+        };
+        const lutCache = {};
+        function colourLut(name) {
+            if (lutCache[name]) return lutCache[name];
+            const pts = (CMAPS[name] || CMAPS.grey)[1];
+            const lut = new Uint32Array(256);
+            for (let k = 0; k < 256; k++) {
+                const t = k / 255;
+                let s = 0;
+                while (s < pts.length - 2 && t > pts[s + 1][0]) s++;
+                const [t0, c0] = pts[s], [t1, c1] = pts[s + 1];
+                const f = clamp((t - t0) / (t1 - t0), 0, 1);
+                const c = [0, 1, 2].map((ch) => Math.round(c0[ch] + (c1[ch] - c0[ch]) * f));
+                lut[k] = (0xFF000000 | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0;
+            }
+            return (lutCache[name] = lut);
+        }
+
+        // =====================================================================
         // Viewer state
         // =====================================================================
         const S = {
@@ -1912,7 +1998,7 @@ FFFCFFFC OB DataSetTrailingPadding`;
             wc: 0, ww: 1, invert: false, smooth: false, cross: true,
             active: 'axi', big: null, locked: false,
             tagFile: null, tagFrame: 0, fileList: [], open: new Map(), varies: null,
-            presets: [],
+            presets: [], cmap: 'grey', voi: null,
         };
 
         // Each view: the patient axis it looks along, and which patient axes
@@ -2050,13 +2136,20 @@ FFFCFFFC OB DataSetTrailingPadding`;
                 }
             } else {
                 const lo = S.wc - S.ww / 2, k = 255 / Math.max(S.ww, 1e-9), inv = S.invert;
+                const lut = colourLut(S.cmap), voi = S.voi;
                 for (let y = 0; y < g.H; y++) {
                     let i = base + y * sv;
                     for (let x = 0; x < g.W; x++, i += su) {
-                        let gv = (data[i] - lo) * k;
-                        gv = gv < 0 ? 0 : gv > 255 ? 255 : gv | 0;
+                        let gv;
+                        if (voi) {
+                            const j = Math.round(data[i]) - voi.first;
+                            gv = voi.map[j < 0 ? 0 : j >= voi.n ? voi.n - 1 : j];
+                        } else {
+                            gv = (data[i] - lo) * k;
+                            gv = gv < 0 ? 0 : gv > 255 ? 255 : gv | 0;
+                        }
                         if (inv) gv = 255 - gv;
-                        out[o++] = 0xFF000000 | (gv * 0x010101);
+                        out[o++] = lut[gv];
                     }
                 }
             }
@@ -2071,7 +2164,7 @@ FFFCFFFC OB DataSetTrailingPadding`;
             const slice = v.el.querySelector('.vslice');
             if (!S.vol || !v.g) { slice.textContent = ''; return; }
             const g = v.g;
-            const key = [S.cur[g.na], S.t, S.wc, S.ww, S.invert].join('|');
+            const key = [S.cur[g.na], S.t, S.wc, S.ww, S.invert, S.cmap, S.voi ? S.voi.id : ''].join('|');
             if (key !== v.key) { fillLayer(v); v.key = key; }
             const pw = g.W * g.sh, ph = g.H * g.sv;
             const s = Math.min(v.w / pw, v.h / ph) * 0.94 * v.zoom;
@@ -2138,14 +2231,46 @@ FFFCFFFC OB DataSetTrailingPadding`;
             drawView(v);
         }
 
-        function setWindow(c, w, fromPreset) {
+        function setWindow(c, w, fromPreset, keepVoi) {
+            if (!keepVoi) S.voi = null;
             S.wc = c;
             S.ww = Math.max(w, 1e-6);
             const fmt = (x) => +x.toPrecision(6);
             $('#wl-c').value = fmt(S.wc);
             $('#wl-w').value = fmt(S.ww);
             if (!fromPreset) $('#wl-preset').value = 'custom';
+            updateBar();
             requestRender();
+        }
+
+        // Normalise a VOI LUT's output to 0..255 over the range it actually uses.
+        function voiMap(L, id) {
+            let lo = Infinity, hi = -Infinity;
+            for (const v of L.data) { if (v < lo) lo = v; if (v > hi) hi = v; }
+            const k = 255 / Math.max(hi - lo, 1), map = new Uint8Array(L.n);
+            for (let i = 0; i < L.n; i++) map[i] = Math.round((L.data[i] - lo) * k);
+            return { id, first: L.first, n: L.n, map };
+        }
+
+        function applyPreset(p) {
+            if (p.voi) {
+                S.voi = voiMap(p.voi, p.id);
+                setWindow(p.c, p.w, true, true);
+            } else setWindow(p.c, p.w, true);
+        }
+
+        function updateBar() {
+            const lut = colourLut(S.cmap), stops = [];
+            for (let k = 0; k <= 16; k++) {
+                let gv = Math.round((k / 16) * 255);
+                if (S.invert) gv = 255 - gv;
+                const c = lut[gv];
+                stops.push(`rgb(${c & 255},${(c >> 8) & 255},${(c >> 16) & 255}) ${(k / 16) * 100}%`);
+            }
+            $('#cbar-grad').style.background = `linear-gradient(90deg, ${stops.join(',')})`;
+            const [lo, hi] = S.voi ? [S.voi.first, S.voi.first + S.voi.n - 1] : [S.wc - S.ww / 2, S.wc + S.ww / 2];
+            $('#cbar-lo').textContent = fmtNum(lo) + (S.voi ? ' (LUT)' : '');
+            $('#cbar-hi').textContent = fmtNum(hi);
         }
 
         function bindViewEvents(v) {
@@ -2289,6 +2414,11 @@ FFFCFFFC OB DataSetTrailingPadding`;
             }
             out.push({ id: 'auto', name: 'Auto (1–99%)', c: (vol.p1 + vol.p99) / 2, w: vol.p99 - vol.p1 });
             out.push({ id: 'full', name: 'Full range', c: (vol.min + vol.max) / 2, w: Math.max(vol.max - vol.min, 1e-6) });
+            const voiSeq = getEl(fr.file.ds, 0x00283010)?.items || [];
+            voiSeq.forEach((item, i) => {
+                const L = parseLut(item, vol.min < 0);
+                if (L) out.push({ id: 'voi' + i, name: `${L.expl || 'VOI LUT ' + (i + 1)} (LUT from file)`, c: L.first + (L.n - 1) / 2, w: L.n, voi: L });
+            });
             if (vol.modality === 'CT') {
                 for (const [name, c, w] of [['Brain', 40, 80], ['Subdural', 75, 215], ['Soft tissue', 40, 400], ['Lung', -600, 1500], ['Bone', 400, 1800]]) {
                     out.push({ id: name, name: 'CT ' + name.toLowerCase(), c, w });
@@ -2304,11 +2434,12 @@ FFFCFFFC OB DataSetTrailingPadding`;
             S.presets = windowPresets(vol);
             const sel = $('#wl-preset');
             sel.innerHTML = S.presets.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('') + '<option value="custom">Custom</option>';
-            const p = S.presets[0];
+            // With no window in the file, a VOI LUT from the file beats auto.
+            const p = S.presets[0].id.startsWith('f') ? S.presets[0] : S.presets.find((x) => x.voi) || S.presets[0];
             sel.value = p.id;
-            setWindow(p.c, p.w, true);
             S.invert = vol.invert;
             $('#opt-invert').checked = S.invert;
+            applyPreset(p);
         }
 
         function showViewMsg(text) {
@@ -2989,8 +3120,11 @@ FFFCFFFC OB DataSetTrailingPadding`;
             });
             $('#wl-preset').addEventListener('change', (e) => {
                 const p = S.presets.find((x) => x.id === e.target.value);
-                if (p) setWindow(p.c, p.w, true);
+                if (p) applyPreset(p);
             });
+            const cm = $('#cmap');
+            cm.innerHTML = Object.entries(CMAPS).map(([id, [name]]) => `<option value="${id}">${name}</option>`).join('');
+            cm.addEventListener('change', () => { S.cmap = cm.value; updateBar(); requestRender(); });
             const typed = () => {
                 const c = parseFloat($('#wl-c').value), w = parseFloat($('#wl-w').value);
                 if (Number.isFinite(c) && Number.isFinite(w) && w > 0) setWindow(c, w);
@@ -2999,7 +3133,7 @@ FFFCFFFC OB DataSetTrailingPadding`;
             $('#wl-w').addEventListener('change', typed);
             $('#opt-cross').addEventListener('change', (e) => { S.cross = e.target.checked; requestRender(); });
             $('#opt-smooth').addEventListener('change', (e) => { S.smooth = e.target.checked; requestRender(); });
-            $('#opt-invert').addEventListener('change', (e) => { S.invert = e.target.checked; requestRender(); });
+            $('#opt-invert').addEventListener('change', (e) => { S.invert = e.target.checked; updateBar(); requestRender(); });
             $('#time').addEventListener('input', (e) => setTime(+e.target.value));
 
             window.addEventListener('keydown', (e) => {
