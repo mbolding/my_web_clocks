@@ -6,56 +6,115 @@
     <title>Sisyphus Clock</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Anton&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Anton&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --ink: #2b1c14;
+            --paper: #f4e6c1;
+            --mustard: #cfae6e;
+            --brown: #5a4530;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
-            background: #cfae6e;
+            background: var(--mustard);
             font-family: 'Playfair Display', serif;
-            color: #2b1c14;
+            color: var(--ink);
             min-height: 100vh;
+            min-height: 100svh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 30px 16px 50px;
+            padding: clamp(10px, 2.2vh, 24px) 16px clamp(10px, 2vh, 22px);
+            overflow-x: hidden;
         }
 
         header {
             text-align: center;
-            margin-bottom: 18px;
+            margin-bottom: clamp(8px, 1.6vh, 16px);
         }
 
         h1 {
-            font-size: clamp(1.6rem, 5vw, 2.4rem);
+            font-size: clamp(1.4rem, 4.2vw, 2.2rem);
             letter-spacing: 1px;
+            line-height: 1.1;
         }
 
         .subtitle {
             font-style: italic;
-            font-size: clamp(0.75rem, 2vw, 0.9rem);
-            color: #5a4530;
-            margin-top: 6px;
+            font-size: clamp(0.85rem, 2vw, 1.05rem);
+            color: var(--brown);
+            margin-top: 4px;
         }
 
+        .subtitle .q { white-space: nowrap; }
+
+        @media (max-width: 560px) {
+            .subtitle .src { display: block; margin: 2px 0 0; }
+        }
+
+        .subtitle .src {
+            font-style: normal;
+            font-family: 'Anton', sans-serif;
+            font-size: 0.72em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-left: 0.4em;
+            white-space: nowrap;
+        }
+
+        /* The stage fills whatever height the header and caption leave. */
         .scene-wrap {
+            flex: 1 1 auto;
+            min-height: 0;
             width: 100%;
-            max-width: 640px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .scene {
+            --ar: 1.6;
             position: relative;
-            width: 100%;
-            aspect-ratio: 4 / 3;
+            width: min(100%, calc((100svh - clamp(150px, 22vh, 210px)) * var(--ar)));
+            max-width: 1400px;
+            aspect-ratio: 16 / 10;
+            container-type: size;
             overflow: hidden;
-            border-radius: 8px;
-            border: 6px solid #f4e6c1;
+            border-radius: 6px;
+            border: clamp(4px, 0.7vw, 7px) solid var(--paper);
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-            background: linear-gradient(180deg, #f4e2ad 0%, #f0d182 55%, #e9c273 100%);
+            background: linear-gradient(180deg, var(--sky-top, #f4e2ad) 0%, var(--sky-bot, #e9c273) 100%);
+        }
+
+        @media (max-aspect-ratio: 1/1) {
+            .scene {
+                --ar: 0.8;
+                aspect-ratio: 4 / 5;
+            }
+        }
+
+        @media (max-aspect-ratio: 2/3) {
+            .scene {
+                --ar: 0.6;
+                aspect-ratio: 3 / 5;
+            }
+        }
+
+        @media (max-aspect-ratio: 1/2) {
+            .scene {
+                --ar: 0.55;
+                aspect-ratio: 11 / 20;
+            }
         }
 
         .scene.shake {
@@ -70,16 +129,29 @@
             80% { transform: translate(4px, -2px); }
         }
 
+        .star {
+            position: absolute;
+            width: 1.4cqmin;
+            aspect-ratio: 1;
+            background: #fdf3d6;
+            clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+            opacity: var(--night, 0);
+        }
+
         .sun {
             position: absolute;
-            top: 8%;
-            left: 78%;
-            width: 11%;
+            width: 13cqmin;
             aspect-ratio: 1 / 1;
             border-radius: 50%;
             background: #f6b93b;
-            box-shadow: 0 0 24px 6px rgba(246, 185, 59, 0.55);
-            transition: left 1s linear, top 1s linear;
+            box-shadow: 0.8cqmin 0.8cqmin 0 rgba(43, 28, 20, 0.25);
+            transform: translate(-50%, -50%);
+        }
+
+        .sun.moon {
+            width: 10cqmin;
+            background: transparent;
+            box-shadow: inset -2.6cqmin -1cqmin 0 0 #f4e6c1;
         }
 
         .cloud {
@@ -87,68 +159,153 @@
             background: #fdf6e3;
             border-radius: 40%;
             opacity: 0.85;
+            box-shadow: 0.5cqmin 0.5cqmin 0 rgba(43, 28, 20, 0.15);
         }
 
-        .cloud.c1 { width: 16%; height: 6%; top: 14%; left: 8%; }
-        .cloud.c2 { width: 11%; height: 5%; top: 22%; left: 20%; }
+        .cloud.c1 { width: 16%; height: 5%; top: 33%; left: 72%; }
+        .cloud.c2 { width: 10%; height: 4%; top: 41%; left: 84%; }
 
-        .mountain {
+        .land {
             position: absolute;
             inset: 0;
-            clip-path: polygon(0% 100%, 12% 100%, 58% 15%, 100% 100%);
-            background: linear-gradient(200deg, #a97a4b, #7c5533 70%);
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0.6cqmin 0.6cqmin 0 rgba(43, 28, 20, 0.28));
+        }
+
+        .land polygon, .land rect {
+            vector-effect: non-scaling-stroke;
+        }
+
+        /* Torn-paper scraps carrying the hour and minute. */
+        .time-board {
+            position: absolute;
+            left: 4%;
+            top: 5%;
+            display: flex;
+            align-items: flex-end;
+            gap: 1.4cqmin;
+            z-index: 4;
+            transition: transform 0.6s ease;
+        }
+
+        .scrap {
+            font-family: 'Anton', sans-serif;
+            line-height: 1;
+            background: var(--paper);
+            color: var(--ink);
+            padding: 1.2cqmin 1.8cqmin 1.4cqmin;
+            box-shadow: 0.7cqmin 0.7cqmin 0 rgba(43, 28, 20, 0.35);
+            font-variant-numeric: tabular-nums;
+            transition: background 0.6s ease, color 0.6s ease, box-shadow 0.6s ease;
+        }
+
+        .scrap.big {
+            font-size: 15cqmin;
+            clip-path: polygon(0 3%, 9% 0, 30% 4%, 55% 0, 78% 3%, 100% 0, 98% 40%, 100% 72%, 97% 100%, 70% 97%, 44% 100%, 18% 96%, 0 100%, 2% 60%);
+        }
+
+        .scrap.h { transform: rotate(-3deg); }
+        .scrap.m { transform: rotate(2deg); }
+
+        .scrap.colon {
+            font-size: 11cqmin;
+            background: transparent;
+            box-shadow: none;
+            color: var(--ink);
+            padding: 0 0 2.4cqmin;
+            transition: color 0.6s ease;
+        }
+
+        .scene.dark .scrap.colon { color: var(--paper); }
+
+        .scrap.s {
+            font-size: 4.2cqmin;
+            padding: 0.8cqmin 1.2cqmin;
+            transform: rotate(-4deg) translateY(-1cqmin);
+            align-self: flex-end;
+        }
+
+        /* The walk down: the hour of consciousness, the scraps light up. */
+        .scene.descent .time-board {
+            transform: translateY(-0.6cqmin) scale(1.04);
+            transform-origin: 0 0;
+        }
+
+        .scene.descent .scrap.big {
+            background: var(--ink);
+            color: var(--paper);
+            box-shadow: 0.9cqmin 0.9cqmin 0 rgba(246, 185, 59, 0.9);
+        }
+
+        .phase-tag {
+            position: absolute;
+            left: 4.4%;
+            font-family: 'Anton', sans-serif;
+            font-size: clamp(0.7rem, 3.4cqmin, 1.15rem);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: var(--ink);
+            color: var(--paper);
+            padding: 0.5em 0.8em;
+            transform: rotate(-2deg);
+            z-index: 4;
+            white-space: nowrap;
         }
 
         .squash-group {
             position: absolute;
             inset: 0;
-            transform-origin: 50% 100%;
-            transition: transform 0.25s ease;
+            z-index: 3;
         }
 
         .squash-group.squashed {
-            transform: scaleY(0.08) translateY(0%);
+            transform: scaleY(0.08);
+            transition: transform 0.25s ease;
         }
 
         .boulder {
             position: absolute;
-            width: 9%;
+            left: 0;
+            top: 0;
+            width: 11cqmin;
             aspect-ratio: 1 / 1;
             border-radius: 50%;
-            transform: translate(-50%, -50%);
             background: radial-gradient(circle at 35% 30%, #9c8a72, #4a3f33 75%);
-            box-shadow: inset -4px -4px 8px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.35);
+            box-shadow: inset -0.8cqmin -0.8cqmin 1.4cqmin rgba(0, 0, 0, 0.4), 0.7cqmin 0.7cqmin 0 rgba(43, 28, 20, 0.35);
             z-index: 3;
         }
 
-        /* Rolling back down the hill: left/top ease-in like gravity, while it spins. */
-        .boulder.rolling-back {
-            transition: left 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19), top 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19);
-            animation: boulder-spin 0.75s linear;
-        }
-
-        @keyframes boulder-spin {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(-960deg); }
+        .boulder::after {
+            /* A chip in the stone so its roll can be seen. */
+            content: '';
+            position: absolute;
+            left: 22%;
+            top: 30%;
+            width: 26%;
+            height: 12%;
+            border-radius: 40%;
+            background: rgba(244, 230, 193, 0.35);
         }
 
         .sisyphus {
             position: absolute;
-            width: 11%;
-            transform: translate(-50%, -50%) rotate(-18deg);
+            left: 0;
+            top: 0;
+            width: 11cqmin;
             z-index: 2;
-        }
-
-        .sisyphus.rolling-back {
-            transition: left 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19), top 0.75s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+            transform-origin: 50% 100%;
         }
 
         .sisyphus svg {
             width: 100%;
             height: auto;
             display: block;
-            fill: #2b1c14;
+            fill: var(--ink);
+            overflow: visible;
         }
+
+        .scene.dark .sisyphus svg { fill: #1a100b; }
 
         .leg-back {
             transform-origin: 21.5px 54px;
@@ -159,6 +316,23 @@
             transform-origin: 33.5px 54px;
             animation: walk-front 0.65s ease-in-out infinite;
             animation-delay: -0.325s;
+        }
+
+        .arm-push { display: block; }
+        .arm-swing { display: none; }
+        .sisyphus.walking .arm-push { display: none; }
+        .sisyphus.walking .arm-swing { display: block; }
+
+        .sisyphus.walking .leg-back,
+        .sisyphus.walking .leg-front {
+            animation-duration: 1.1s;
+        }
+
+        .sisyphus.walking .leg-front { animation-delay: -0.55s; }
+
+        .sisyphus.still .leg-back,
+        .sisyphus.still .leg-front {
+            animation-play-state: paused;
         }
 
         @keyframes walk-back {
@@ -173,13 +347,13 @@
 
         .giant-foot {
             position: absolute;
+            left: 20%;
             top: -60%;
-            left: 50%;
-            width: 34%;
+            width: 40cqmin;
             aspect-ratio: 1.3 / 1;
             transform: translate(-50%, 0) rotate(6deg);
             background: #e8d3a0;
-            border: 3px solid #2b1c14;
+            border: 3px solid var(--ink);
             border-radius: 45% 45% 42% 58% / 62% 62% 38% 38%;
             box-shadow: 0 14px 24px rgba(0, 0, 0, 0.4);
             transition: top 0.35s cubic-bezier(0.6, 0, 0.9, 0.4);
@@ -187,7 +361,6 @@
         }
 
         .giant-foot.stomp {
-            top: 24%;
             transition: top 0.32s cubic-bezier(0.9, 0, 1, 0.4);
         }
 
@@ -197,7 +370,7 @@
             aspect-ratio: 1 / 1;
             border-radius: 50%;
             background: #e8d3a0;
-            border: 3px solid #2b1c14;
+            border: 3px solid var(--ink);
             bottom: -6%;
         }
 
@@ -214,10 +387,10 @@
             align-items: center;
             justify-content: center;
             font-family: 'Anton', sans-serif;
-            font-size: clamp(1.8rem, 8vw, 3.2rem);
+            font-size: 14cqmin;
             letter-spacing: 2px;
-            color: #2b1c14;
-            background: rgba(244, 230, 193, 0.92);
+            color: var(--ink);
+            background: rgba(244, 230, 193, 0.94);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.25s ease;
@@ -228,39 +401,42 @@
             opacity: 1;
         }
 
-        .placard {
-            position: absolute;
-            bottom: 3%;
-            right: 3%;
-            background: #2b1c14;
-            color: #f4e6c1;
-            font-family: 'Anton', sans-serif;
-            font-size: clamp(0.85rem, 2.4vw, 1.1rem);
-            letter-spacing: 1px;
-            padding: 6px 12px;
-            border-radius: 4px;
-            z-index: 4;
-        }
-
         .caption-area {
-            margin-top: 20px;
+            margin-top: clamp(8px, 1.6vh, 16px);
             text-align: center;
-            min-height: 3.2em;
-            max-width: 480px;
+            min-height: 3.4em;
+            max-width: 620px;
         }
 
         .caption-text {
             font-style: italic;
-            font-size: clamp(1rem, 2.6vw, 1.2rem);
+            font-size: clamp(0.95rem, 2.4vw, 1.2rem);
+            line-height: 1.35;
         }
 
         .caption-attrib {
             font-family: 'Anton', sans-serif;
-            font-size: 0.7rem;
+            font-size: clamp(0.68rem, 1.6vw, 0.8rem);
             letter-spacing: 1px;
-            color: #5a4530;
-            margin-top: 6px;
+            color: var(--brown);
+            margin-top: 4px;
             text-transform: uppercase;
+            min-height: 1.2em;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .leg-back, .leg-front { animation: none; }
+            .scene.shake { animation: none; }
+            .time-board, .scrap { transition: none; }
         }
     </style>
 </head>
@@ -268,15 +444,30 @@
 
     <header>
         <h1>The Sisyphus Clock</h1>
-        <div class="subtitle">Every minute, the same rock. Every hour, a foot.</div>
+        <div class="subtitle" lang="fr"><span class="q">« Il faut imaginer Sisyphe heureux. »</span><span class="src" lang="en">Camus, Le Mythe de Sisyphe</span></div>
     </header>
 
     <div class="scene-wrap">
-        <div class="scene" id="scene">
+        <div class="scene" id="scene" aria-hidden="true">
+            <div id="stars"></div>
             <div class="sun" id="sun"></div>
             <div class="cloud c1"></div>
             <div class="cloud c2"></div>
-            <div class="mountain"></div>
+
+            <svg class="land" id="land" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <polygon id="backHill" fill="#b98e5c" stroke="#2b1c14" stroke-width="0" points=""></polygon>
+                <polygon id="mountain" fill="#8a5f39" points=""></polygon>
+                <polygon id="mountainShade" fill="#6f4a2b" points=""></polygon>
+                <rect id="ground" x="0" width="100" fill="#6b4a2e"></rect>
+            </svg>
+
+            <div class="time-board" id="timeBoard">
+                <div class="scrap big h" id="hh">00</div>
+                <div class="scrap colon">:</div>
+                <div class="scrap big m" id="mm">00</div>
+                <div class="scrap s" id="ss">00</div>
+            </div>
+            <div class="phase-tag" id="phaseTag">the ascent</div>
 
             <div class="squash-group" id="squashGroup">
                 <div class="sisyphus" id="sisyphus">
@@ -284,7 +475,8 @@
                         <rect class="leg-back" x="17" y="54" width="9" height="34" rx="4"></rect>
                         <rect class="leg-front" x="29" y="54" width="9" height="34" rx="4"></rect>
                         <path d="M13,58 Q8,34 24,14 L41,19 Q43,40 34,58 Z"></path>
-                        <rect x="31" y="8" width="10" height="32" rx="5" transform="rotate(38 36 8)"></rect>
+                        <rect class="arm-push" x="31" y="8" width="10" height="32" rx="5" transform="rotate(38 36 8)"></rect>
+                        <rect class="arm-swing" x="25" y="20" width="9" height="30" rx="4.5" transform="rotate(-12 29 22)"></rect>
                         <circle cx="25" cy="10" r="9"></circle>
                     </svg>
                 </div>
@@ -300,90 +492,279 @@
             </div>
 
             <div class="end-card" id="endCard"></div>
-
-            <div class="placard" id="digitalTime">00:00:00</div>
         </div>
     </div>
 
+    <div class="sr-only" aria-live="polite" id="srTime"></div>
+
     <div class="caption-area">
-        <div class="caption-text" id="captionText">"One must imagine Sisyphus happy."</div>
-        <div class="caption-attrib" id="captionAttrib">&mdash; Camus</div>
+        <div class="caption-text" id="captionText"></div>
+        <div class="caption-attrib" id="captionAttrib"></div>
     </div>
 
     <script>
-        const scene = document.getElementById('scene');
-        const sun = document.getElementById('sun');
-        const squashGroup = document.getElementById('squashGroup');
-        const boulder = document.getElementById('boulder');
-        const sisyphus = document.getElementById('sisyphus');
-        const giantFoot = document.getElementById('giantFoot');
-        const endCard = document.getElementById('endCard');
-        const digitalTime = document.getElementById('digitalTime');
-        const captionText = document.getElementById('captionText');
-        const captionAttrib = document.getElementById('captionAttrib');
+        const $ = id => document.getElementById(id);
+        const scene = $('scene');
+        const sun = $('sun');
+        const squashGroup = $('squashGroup');
+        const boulder = $('boulder');
+        const sisyphus = $('sisyphus');
+        const giantFoot = $('giantFoot');
+        const endCard = $('endCard');
+        const hhEl = $('hh'), mmEl = $('mm'), ssEl = $('ss');
+        const phaseTag = $('phaseTag');
+        const timeBoard = $('timeBoard');
+        const captionText = $('captionText');
+        const captionAttrib = $('captionAttrib');
+        const srTime = $('srTime');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-        const SLOPE_START = { x: 12, y: 100 };
-        const SLOPE_END = { x: 58, y: 15 };
+        // One minute of labour. The push up takes most of it; the rock falls;
+        // and the last quarter is the walk back down, the beat Camus cares about.
+        const ASCENT_END = 42;   // seconds: rock reaches the summit
+        const ROLL_START = 43;   // a breath at the top, then it goes
+        const ROLL_END = 45;     // rock is back on the plain
+        // 45..60: Sisyphus walks down after it, empty-handed.
 
+        // Mountain geometry in % of the scene, switched for portrait screens.
+        const LAYOUTS = {
+            wide: { foot: { x: 18, y: 88 }, peak: { x: 62, y: 20 }, right: [[76, 38], [84, 46], [100, 58]] },
+            tall: { foot: { x: 20, y: 90 }, peak: { x: 80, y: 42 }, right: [[84, 50], [100, 60]] }
+        };
+
+        let geo = null;   // pixel geometry, rebuilt on resize
         let gagInProgress = false;
-        let tumbling = false;
-        let prevT = 0;
         let lastGagKey = null;
-        let captionResetTimer = null;
+        let lastPhase = null;
+        let lastMinuteKey = null;
 
-        function pad(n) {
-            return String(n).padStart(2, '0');
+        const pad = n => String(n).padStart(2, '0');
+
+        function buildGeometry() {
+            const w = scene.clientWidth;
+            const h = scene.clientHeight;
+            const L = w >= h ? LAYOUTS.wide : LAYOUTS.tall;
+            const G = L.foot.y;
+
+            const pts = [[L.foot.x, G], [L.peak.x, L.peak.y], ...L.right, [100, G]];
+            $('mountain').setAttribute('points', pts.map(p => p.join(',')).join(' '));
+            // A darker cut-paper strip on the far face, for the collage look.
+            const shade = [[L.peak.x, L.peak.y], ...L.right, [100, G], [L.peak.x + 8, G]];
+            $('mountainShade').setAttribute('points', shade.map(p => p.join(',')).join(' '));
+            $('backHill').setAttribute('points', `${L.foot.x + 26},${G} ${L.peak.x + 22},${L.peak.y + 22} 100,${L.peak.y + 30} 100,${G}`);
+            $('ground').setAttribute('y', G);
+            $('ground').setAttribute('height', 100 - G + 1);
+
+            const fx = L.foot.x / 100 * w, fy = G / 100 * h;
+            const px = L.peak.x / 100 * w, py = L.peak.y / 100 * h;
+            const dx = px - fx, dy = py - fy;
+            const len = Math.hypot(dx, dy);
+            const u = { x: dx / len, y: dy / len };
+            const n = { x: u.y, y: -u.x };     // outward normal, up and to the left
+            const r = boulder.offsetWidth / 2;
+            const figW = sisyphus.offsetWidth;
+            const figH = figW * 1.5;
+            const slopeDeg = Math.atan2(dy, dx) * 180 / Math.PI;   // negative: uphill to the right
+
+            geo = {
+                w, h, G, fx, fy, len, u, n, r, figW, figH, slopeDeg,
+                sMin: r * 1.1,
+                sMax: len - r * 0.5,
+                boardBottom: 0
+            };
+
+            // Tag sits under the time scraps.
+            const tb = timeBoard.getBoundingClientRect();
+            const sc = scene.getBoundingClientRect();
+            phaseTag.style.top = (tb.bottom - sc.top + h * 0.025) + 'px';
         }
 
-        function setCaption(text, attrib, holdMs) {
-            captionText.textContent = text;
-            captionAttrib.textContent = attrib || '';
-            if (captionResetTimer) clearTimeout(captionResetTimer);
-            if (holdMs) {
-                captionResetTimer = setTimeout(() => {
-                    captionText.textContent = '"One must imagine Sisyphus happy."';
-                    captionAttrib.textContent = '— Camus';
-                }, holdMs);
+        // A point on the slope s px from its foot (negative s runs out onto the plain).
+        function slopePoint(s) {
+            if (s < 0) return { x: geo.fx + s, y: geo.fy };
+            return { x: geo.fx + geo.u.x * s, y: geo.fy + geo.u.y * s };
+        }
+
+        function placeBoulder(s, spin) {
+            const p = slopePoint(s);
+            const nx = s < 0 ? 0 : geo.n.x, ny = s < 0 ? -1 : geo.n.y;
+            const cx = p.x + nx * geo.r, cy = p.y + ny * geo.r;
+            boulder.style.transform = `translate(${cx - geo.r}px, ${cy - geo.r}px) rotate(${spin}deg)`;
+            return { cx, cy };
+        }
+
+        function placeFigure(s, mode) {
+            const p = slopePoint(s);
+            let lean, flip;
+            if (mode === 'push') { lean = pushLean(); flip = 1; }
+            else if (mode === 'walk') { lean = 6; flip = -1; }
+            else { lean = 0; flip = 1; }
+            // Feet on the slope (or plain); the pivot is the bottom-centre of the figure.
+            const x = p.x - geo.figW / 2;
+            const y = p.y - geo.figH + geo.figH * 0.03;
+            sisyphus.style.transform = `translate(${x}px, ${y}px) scaleX(${flip}) rotate(${lean}deg)`;
+            sisyphus.classList.toggle('walking', mode === 'walk');
+            sisyphus.classList.toggle('still', mode === 'stand');
+        }
+
+        // He leans into the hill more the steeper it is.
+        const pushLean = () => Math.min(40, -geo.slopeDeg * 0.6);
+
+        // Slide him down the slope until his reaching hands just meet the back of the rock.
+        function pushFeet(sb) {
+            const b = slopePoint(sb);
+            const bc = { x: b.x + geo.n.x * geo.r, y: b.y + geo.n.y * geo.r };
+            const th = pushLean() * Math.PI / 180;
+            const vx = geo.figW * (46 / 60 - 0.5), vy = -geo.figH * (76 / 90);
+            const hx = vx * Math.cos(th) - vy * Math.sin(th);
+            const hy = vx * Math.sin(th) + vy * Math.cos(th);
+            for (let sf = sb - geo.r * 0.5; sf > sb - geo.figH * 3; sf -= 1) {
+                const f = slopePoint(sf);
+                if ((f.x + hx - bc.x) * geo.u.x + (f.y + hy - bc.y) * geo.u.y <= -geo.r * 0.92) return sf;
+            }
+            return sb - geo.figH;
+        }
+
+        const easeInOut = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        function frame() {
+            if (!geo) buildGeometry();
+            const now = new Date();
+            const sec = now.getSeconds() + now.getMilliseconds() / 1000;
+            const { sMin, sMax, r } = geo;
+            const behind = pushFeet;   // where he stands, pushing
+            const span = sMax - sMin;
+            let phase;
+
+            if (sec < ASCENT_END) {
+                phase = 'ascent';
+                // Steady toil with a small shove-and-slip each second.
+                const p = sec / ASCENT_END;
+                const shove = Math.sin(sec * Math.PI * 2) * 0.006 * (1 - p);
+                const s = sMin + span * Math.min(1, Math.max(0, p + shove));
+                placeBoulder(s, (s - sMin) / r * 57.3);
+                placeFigure(behind(s), 'push');
+            } else if (sec < ROLL_START) {
+                phase = 'summit';
+                const wob = Math.sin((sec - ASCENT_END) * Math.PI * 4) * 3;
+                placeBoulder(sMax, span / r * 57.3 + wob);
+                placeFigure(behind(sMax), 'stand');
+            } else if (sec < ROLL_END) {
+                phase = 'fall';
+                const q = (sec - ROLL_START) / (ROLL_END - ROLL_START);
+                let s = sMax - span * q * q;                      // gravity
+                if (q > 0.85) s = sMin + Math.sin((q - 0.85) / 0.15 * Math.PI) * r * 0.5;   // one bounce
+                placeBoulder(s, (s - sMin) / r * 57.3);
+                placeFigure(behind(sMax), 'stand');
+            } else {
+                phase = 'descent';
+                placeBoulder(sMin, 0);
+                const q = (sec - ROLL_END) / (60 - ROLL_END);
+                const from = behind(sMax), to = behind(sMin);
+                placeFigure(from + (to - from) * easeInOut(q), 'walk');
+            }
+
+            if (phase !== lastPhase && !gagInProgress) setPhase(phase);
+            lastPhase = phase;
+
+            if (!reduceMotion.matches) requestAnimationFrame(frame);
+        }
+
+        const PHASES = {
+            ascent: {
+                tag: 'the ascent',
+                text: 'Up the slope again, shoulder to the stone, for the whole of this minute.',
+                attrib: ''
+            },
+            summit: {
+                tag: 'the summit',
+                text: 'The top. For one second it holds.',
+                attrib: ''
+            },
+            fall: {
+                tag: 'the fall',
+                text: '…and down it goes again.',
+                attrib: ''
+            },
+            descent: {
+                tag: 'the walk down',
+                text: '« cette heure qui est comme une respiration »',
+                attrib: 'Camus, of the walk back down, the hour he is aware',
+                lang: 'fr'
+            }
+        };
+
+        function setPhase(phase) {
+            const P = PHASES[phase];
+            phaseTag.textContent = P.tag;
+            captionText.textContent = P.text;
+            captionText.lang = P.lang || 'en';
+            captionAttrib.textContent = P.attrib;
+            scene.classList.toggle('descent', phase === 'descent');
+        }
+
+        // ---- Sky, sun and moon follow the real day ----
+        const SKY = [
+            [0, '#2b2236', '#4a3340'],
+            [5, '#3a2c3c', '#6b4a46'],
+            [6.5, '#f0b98a', '#f2cf8f'],
+            [9, '#f4e2ad', '#ecc777'],
+            [17, '#f4e2ad', '#e9c273'],
+            [19, '#e8a067', '#c9704a'],
+            [20.5, '#4a3344', '#6e4a46'],
+            [24, '#2b2236', '#4a3340']
+        ];
+        const hex = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+        const mix = (a, b, t) => {
+            const A = hex(a), B = hex(b);
+            return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`;
+        };
+
+        function updateSky(hf) {
+            let i = 0;
+            while (i < SKY.length - 2 && hf >= SKY[i + 1][0]) i++;
+            const [h0, t0, b0] = SKY[i], [h1, t1, b1] = SKY[i + 1];
+            const t = (hf - h0) / (h1 - h0);
+            scene.style.setProperty('--sky-top', mix(t0, t1, t));
+            scene.style.setProperty('--sky-bot', mix(b0, b1, t));
+            const night = hf < 5.5 || hf >= 20 ? 1 : (hf < 6.5 ? 6.5 - hf : (hf > 19 ? hf - 19 : 0));
+            scene.style.setProperty('--night', Math.min(1, night).toFixed(2));
+            scene.classList.toggle('dark', hf < 6 || hf >= 19.75);
+
+            // Sun crosses 06:00-18:00, moon crosses 18:00-06:00, both rising from behind the mountain.
+            const isDay = hf >= 6 && hf < 18;
+            const f = isDay ? (hf - 6) / 12 : ((hf + 6) % 24) / 12;
+            sun.classList.toggle('moon', !isDay);
+            sun.style.left = (36 + 58 * f) + '%';
+            sun.style.top = (66 - 56 * Math.sin(Math.PI * f)) + '%';
+        }
+
+        function makeStars() {
+            const box = $('stars');
+            const spots = [[48, 8], [56, 14], [70, 6], [82, 12], [91, 22], [76, 24], [40, 30], [95, 6], [64, 28], [87, 32]];
+            for (const [x, y] of spots) {
+                const s = document.createElement('div');
+                s.className = 'star';
+                s.style.left = x + '%';
+                s.style.top = y + '%';
+                box.appendChild(s);
             }
         }
 
-        function setBoulderPosition(t) {
-            const x = SLOPE_START.x + (SLOPE_END.x - SLOPE_START.x) * t;
-            const y = SLOPE_START.y + (SLOPE_END.y - SLOPE_START.y) * t;
-            boulder.style.left = x + '%';
-            boulder.style.top = y + '%';
-            sisyphus.style.left = (x - 5) + '%';
-            sisyphus.style.top = (y + 5) + '%';
-        }
-
-        function triggerTumble() {
-            tumbling = true;
-            // The boulder and Sisyphus are already sitting near the peak (their
-            // last-set left/top). Adding the transition class, then moving the
-            // target back to the foot of the slope, animates them rolling/walking
-            // back down along that same line instead of teleporting.
-            boulder.classList.add('rolling-back');
-            sisyphus.classList.add('rolling-back');
-            setBoulderPosition(0);
-            setCaption('...and down it goes again.', '', 1600);
-
-            setTimeout(() => {
-                boulder.classList.remove('rolling-back');
-                sisyphus.classList.remove('rolling-back');
-                prevT = 0;
-                tumbling = false;
-            }, 750);
-        }
-
+        // ---- The hour: a foot ----
         function triggerFootGag() {
             gagInProgress = true;
-            tumbling = false;
-            boulder.classList.remove('rolling-back');
-            sisyphus.classList.remove('rolling-back');
-            setBoulderPosition(0);
-
+            const b = boulder.getBoundingClientRect();
+            const sc = scene.getBoundingClientRect();
+            const cx = b.left + b.width / 2 - sc.left;
+            const half = giantFoot.offsetWidth / 2;
+            giantFoot.style.left = Math.max(half + 8, Math.min(sc.width - half - 8, cx - b.width * 0.4)) + 'px';
+            squashGroup.style.transformOrigin = `${cx}px ${geo.fy}px`;
+            // Land the sole on the plain.
+            const footH = giantFoot.offsetHeight;
             giantFoot.classList.add('stomp');
-            scene.classList.add('shake');
+            giantFoot.style.top = (geo.fy - footH * 0.98) + 'px';
+            if (!reduceMotion.matches) scene.classList.add('shake');
 
             setTimeout(() => {
                 scene.classList.remove('shake');
@@ -391,73 +772,57 @@
                 endCard.textContent = 'CRUNCH.';
                 endCard.classList.add('visible');
             }, 380);
-
-            setTimeout(() => {
-                endCard.textContent = 'THE END';
-            }, 700);
-
-            setTimeout(() => {
-                endCard.classList.remove('visible');
-            }, 1900);
-
+            setTimeout(() => { endCard.textContent = 'THE END'; }, 900);
+            setTimeout(() => { endCard.classList.remove('visible'); }, 2100);
             setTimeout(() => {
                 giantFoot.classList.remove('stomp');
-            }, 2000);
-
+                giantFoot.style.top = '';
+            }, 2200);
             setTimeout(() => {
                 squashGroup.classList.remove('squashed');
-                setCaption('(It wasn’t.)', '', 2000);
-            }, 2450);
-
+                captionText.textContent = '(It wasn’t.) He gets up, and goes back to the stone.';
+                captionText.lang = 'en';
+                captionAttrib.textContent = '';
+            }, 2650);
             setTimeout(() => {
-                // Resync prevT so the freeze during the gag doesn't read as a
-                // spurious minute-wrap and stomp on the caption we just set.
-                prevT = (Date.now() % 60000) / 60000;
                 gagInProgress = false;
-            }, 4500);
+                lastPhase = null;   // let the next frame restore the phase caption
+            }, 6000);
         }
 
-        function animate() {
-            if (!gagInProgress && !tumbling) {
-                const now = Date.now();
-                const t = (now % 60000) / 60000;
-                if (t < prevT - 0.5) {
-                    triggerTumble();
-                } else {
-                    setBoulderPosition(t);
-                    prevT = t;
-                }
-            }
-            requestAnimationFrame(animate);
-        }
-
-        function updateSunPosition(h, m, s) {
-            const dayFraction = (h + m / 60 + s / 3600) / 24;
-            const arc = Math.sin(Math.PI * dayFraction); // 0 at midnight, 1 at noon
-            const x = 5 + 90 * dayFraction;
-            const y = 60 - 54 * arc; // high overhead at noon, low near the horizon at night
-            sun.style.left = x + '%';
-            sun.style.top = y + '%';
-        }
-
-        function updateDigital() {
+        function tick() {
             const now = new Date();
-            const h = now.getHours();
-            const m = now.getMinutes();
-            const s = now.getSeconds();
-            digitalTime.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-            updateSunPosition(h, m, s);
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            hhEl.textContent = pad(h);
+            mmEl.textContent = pad(m);
+            ssEl.textContent = pad(s);
+            updateSky(h + m / 60 + s / 3600);
 
-            const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${h}`;
-            if (m === 0 && s === 0 && key !== lastGagKey && !gagInProgress) {
+            const minuteKey = `${h}:${m}`;
+            if (minuteKey !== lastMinuteKey) {
+                lastMinuteKey = minuteKey;
+                srTime.textContent = `${pad(h)}:${pad(m)}`;
+            }
+
+            // Fire at the top of the hour; a short window so a delayed tick can't miss it.
+            const key = `${now.toDateString()}-${h}`;
+            if (m === 0 && s < 3 && key !== lastGagKey && !gagInProgress) {
                 lastGagKey = key;
                 triggerFootGag();
             }
+
+            // With reduced motion the rAF loop is off, so step the scene each second.
+            if (reduceMotion.matches) frame();
         }
 
-        updateDigital();
-        setInterval(updateDigital, 1000);
-        requestAnimationFrame(animate);
+        makeStars();
+        buildGeometry();
+        tick();
+        setInterval(tick, 1000);
+        requestAnimationFrame(frame);
+        window.addEventListener('resize', () => { geo = null; });
+        reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(frame); });
+        if (document.fonts) document.fonts.ready.then(() => { geo = null; });
     </script>
 </body>
 </html>
