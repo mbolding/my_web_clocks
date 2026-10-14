@@ -178,7 +178,9 @@
             min-height: 0;
             overflow: hidden;
             background: #000;
-            touch-action: none;
+            /* Vertical swipes scroll the page on touch screens; taps and
+               sideways swipes are handled by the view. */
+            touch-action: pan-y;
             outline: none;
         }
 
@@ -779,7 +781,8 @@
                 <p class="help">Click or drag to move the cursor &middot; wheel or <kbd>&uarr;</kbd><kbd>&darr;</kbd>
                     to page slices &middot; right-drag or <kbd>Shift</kbd>-drag for window/level &middot;
                     <kbd>Ctrl</kbd>+wheel to zoom &middot; middle- or <kbd>Alt</kbd>-drag to pan &middot; double-click
-                    a view to enlarge it &middot; <kbd>0</kbd> resets zoom &middot; <kbd>/</kbd> searches tags.</p>
+                    a view to enlarge it &middot; <kbd>0</kbd> resets zoom &middot; <kbd>/</kbd> searches tags. On a touch screen, tap to move the cursor and swipe
+                    sideways across a view to page its slices.</p>
             </div>
 
             <div class="view-msg" id="view-msg" hidden>
@@ -2154,8 +2157,14 @@ FFFCFFFC OB DataSetTrailingPadding`;
                 if (!S.vol) return;
                 setActive(v.id);
                 v.el.focus({ preventScroll: true });
-                cv.setPointerCapture(e.pointerId);
                 const [x, y] = local(e);
+                if (e.pointerType === 'touch') {
+                    // Wait to see whether this is a tap, a sideways swipe, or a
+                    // vertical scroll (which the browser takes and cancels).
+                    drag = { mode: 'touch', x, y, step: 0 };
+                    return;
+                }
+                cv.setPointerCapture(e.pointerId);
                 const mode = e.button === 2 || e.shiftKey ? 'wl' : e.button === 1 || e.altKey ? 'pan' : 'cursor';
                 drag = { mode, x, y, wc: S.wc, ww: S.ww, px: v.panX, py: v.panY };
                 if (mode === 'cursor') setCursor(screenToVoxel(v, x, y));
@@ -2164,7 +2173,12 @@ FFFCFFFC OB DataSetTrailingPadding`;
             cv.addEventListener('pointermove', (e) => {
                 if (!drag) return;
                 const [x, y] = local(e);
-                if (drag.mode === 'cursor') setCursor(screenToVoxel(v, x, y));
+                if (drag.mode === 'touch') {
+                    if (Math.abs(x - drag.x) > 10) { drag.mode = 'swipe'; drag.x = x; }
+                } else if (drag.mode === 'swipe') {
+                    const n = Math.trunc((x - drag.x) / 12);
+                    if (n) { drag.x += n * 12; stepSlice(v, n); }
+                } else if (drag.mode === 'cursor') setCursor(screenToVoxel(v, x, y));
                 else if (drag.mode === 'pan') {
                     v.panX = drag.px + x - drag.x;
                     v.panY = drag.py + y - drag.y;
@@ -2174,9 +2188,11 @@ FFFCFFFC OB DataSetTrailingPadding`;
                     setWindow(drag.wc + (y - drag.y) * k, drag.ww + (x - drag.x) * k);
                 }
             });
-            const end = () => { drag = null; };
-            cv.addEventListener('pointerup', end);
-            cv.addEventListener('pointercancel', end);
+            cv.addEventListener('pointerup', (e) => {
+                if (drag && drag.mode === 'touch') setCursor(screenToVoxel(v, ...local(e)));
+                drag = null;
+            });
+            cv.addEventListener('pointercancel', () => { drag = null; });
             cv.addEventListener('wheel', (e) => {
                 if (!S.vol) return;
                 e.preventDefault();
