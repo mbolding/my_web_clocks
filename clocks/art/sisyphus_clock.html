@@ -475,9 +475,12 @@
                         <rect class="leg-back" x="17" y="54" width="9" height="34" rx="4"></rect>
                         <rect class="leg-front" x="29" y="54" width="9" height="34" rx="4"></rect>
                         <path d="M13,58 Q8,34 24,14 L41,19 Q43,40 34,58 Z"></path>
-                        <rect class="arm-push" x="31" y="8" width="10" height="32" rx="5" transform="rotate(38 36 8)"></rect>
+                        <g class="arm-push">
+                            <rect x="33" y="15" width="24" height="8" rx="4" transform="rotate(-84 35 19)"></rect>
+                            <rect x="32" y="19" width="23" height="8" rx="4" transform="rotate(-70 34 23)"></rect>
+                        </g>
                         <rect class="arm-swing" x="25" y="20" width="9" height="30" rx="4.5" transform="rotate(-12 29 22)"></rect>
-                        <circle cx="25" cy="10" r="9"></circle>
+                        <circle cx="25" cy="14" r="8"></circle>
                     </svg>
                 </div>
                 <div class="boulder" id="boulder"></div>
@@ -615,12 +618,14 @@
             const b = slopePoint(sb);
             const bc = { x: b.x + geo.n.x * geo.r, y: b.y + geo.n.y * geo.r };
             const th = pushLean() * Math.PI / 180;
-            const vx = geo.figW * (46 / 60 - 0.5), vy = -geo.figH * (76 / 90);
+            const vx = geo.figW * (39 / 60 - 0.5), vy = -geo.figH * (90 / 90);
             const hx = vx * Math.cos(th) - vy * Math.sin(th);
             const hy = vx * Math.sin(th) + vy * Math.cos(th);
-            for (let sf = sb - geo.r * 0.5; sf > sb - geo.figH * 3; sf -= 1) {
+            // Walk up from well below until the hands reach the rock's surface.
+            for (let sf = sb - geo.figH * 3; sf < sb; sf += 1) {
                 const f = slopePoint(sf);
-                if ((f.x + hx - bc.x) * geo.u.x + (f.y + hy - bc.y) * geo.u.y <= -geo.r * 0.92) return sf;
+                const dx = f.x + hx - bc.x, dy = f.y + hy - bc.y;
+                if (Math.hypot(dx, dy) <= geo.r * 1.02) return sf;
             }
             return sb - geo.figH;
         }
