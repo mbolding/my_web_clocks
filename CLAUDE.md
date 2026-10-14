@@ -22,6 +22,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── GEMINI.md                  # Equivalent guidance file for the Gemini CLI (keep in sync with this file)
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
+├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -58,6 +59,16 @@ the data changes; the site itself still has no build step. Sources, licences
 and the data formats are in `brain/README.md`. Apart from its own data, the
 only thing it fetches is a URL the user types into "Load" to open an overlay.
 Don't apply the clock-file conventions to it.
+
+`dicom/` is DICOM Explorer, a three-plane viewer and tag browser for DICOM files
+the user opens or drops in, listed under "Other Apps" and not counted as a
+clock. It is one self-contained `dicom/index.html` with its own parser: explicit
+and implicit VR, big endian, deflated, RLE, and baseline JPEG through the
+browser's decoder. Other compressed transfer syntaxes still show their headers
+but not their pixels. Files are read locally and nothing is fetched or sent.
+The "Demo" button writes a synthetic phantom series as real DICOM bytes in
+memory, so it goes through the same parser. Don't apply the clock-file
+conventions to it.
 
 `plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and isn't part of `index.html`'s gallery. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
 
