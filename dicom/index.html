@@ -2965,7 +2965,9 @@ FFFCFFFC OB DataSetTrailingPadding`;
             for (let i = 0; i < queue.length; i++) {
                 const { it, name } = queue[i];
                 try {
-                    let bytes = it.bytes || new Uint8Array(await it.arrayBuffer());
+                    // In-memory entries (demo, ZIP members) carry `data`; anything else is a
+                    // File. Not `bytes`: newer browsers give File a bytes() method.
+                    let bytes = it.data instanceof Uint8Array ? it.data : new Uint8Array(await it.arrayBuffer());
                     if (it.method === 8) bytes = await inflate(bytes);
                     if (bytes[0] === 0x1F && bytes[1] === 0x8B) bytes = await inflate(bytes, 'gzip');
                     if (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04) {
@@ -2973,7 +2975,7 @@ FFFCFFFC OB DataSetTrailingPadding`;
                         for (const z of zipEntries(bytes)) {
                             if (z.encrypted) { failed.push(`${name}/${z.name}: encrypted`); continue; }
                             if (z.method !== 0 && z.method !== 8) { failed.push(`${name}/${z.name}: unsupported ZIP compression`); continue; }
-                            queue.push({ it: { bytes: z.data, method: z.method }, name: `${name}/${z.name}` });
+                            queue.push({ it: { data: z.data, method: z.method }, name: `${name}/${z.name}` });
                         }
                         continue;
                     }
@@ -3166,7 +3168,7 @@ FFFCFFFC OB DataSetTrailingPadding`;
                     [0x00281052, 'DS', '-1024'], [0x00281053, 'DS', '1'], [0x00281055, 'LO', 'BRAIN\\BONE'],
                     [PIXEL, 'OW', px],
                 ];
-                files.push({ name: `demo/CT${String(k + 1).padStart(4, '0')}.dcm`, bytes: writeDicom(els, CT, sop) });
+                files.push({ name: `demo/CT${String(k + 1).padStart(4, '0')}.dcm`, data: writeDicom(els, CT, sop) });
             }
             return files;
         }
