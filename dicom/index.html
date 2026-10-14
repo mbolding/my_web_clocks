@@ -1,0 +1,3160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DICOM Explorer</title>
+    <meta name="description"
+        content="Open a folder of DICOM files in the browser: a three-plane orthogonal viewer plus a searchable tag browser. Nothing is uploaded.">
+    <style>
+        :root {
+            --bg: #0c0e11;
+            --panel: #14171b;
+            --panel-2: #1b1f25;
+            --border: #262b33;
+            --text: #e6e8eb;
+            --muted: #8a93a1;
+            --accent: #3ee0c5;
+            --accent-ink: #052620;
+            --warn: #ffb454;
+            --header-h: 56px;
+            --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            color-scheme: dark;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #eceef1;
+                --panel: #ffffff;
+                --panel-2: #f4f5f7;
+                --border: #dcdfe4;
+                --text: #15181c;
+                --muted: #5b6370;
+                --accent: #0e9682;
+                --accent-ink: #ffffff;
+                --warn: #b26a00;
+                color-scheme: light;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+            color: inherit;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        /* ---------- header ---------- */
+        .top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: var(--header-h);
+            padding: 0 16px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 650;
+            letter-spacing: -0.01em;
+        }
+
+        .brand .sub {
+            color: var(--muted);
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+            flex: none;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel-2);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-ink);
+            font-weight: 600;
+        }
+
+        .small-btn {
+            padding: 2px 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--panel-2);
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .small-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+        }
+
+        .small-btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        /* ---------- layout ---------- */
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 460px;
+            height: calc(100dvh - var(--header-h));
+        }
+
+        .views {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            grid-template-areas: "sag cor" "axi info";
+            gap: 2px;
+            min-height: 0;
+            background: #000;
+        }
+
+        .views.max {
+            grid-template-columns: minmax(0, 1fr) minmax(240px, 32%);
+            grid-template-rows: 1fr;
+            grid-template-areas: "main info";
+        }
+
+        .views.max .view:not(.big) {
+            display: none;
+        }
+
+        .views.max .view.big {
+            grid-area: main;
+        }
+
+        .view {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            background: #000;
+            /* Vertical swipes scroll the page on touch screens; taps and
+               sideways swipes are handled by the view. */
+            touch-action: pan-y;
+            outline: none;
+        }
+
+        .view[data-view="sag"] {
+            grid-area: sag;
+        }
+
+        .view[data-view="cor"] {
+            grid-area: cor;
+        }
+
+        .view[data-view="axi"] {
+            grid-area: axi;
+        }
+
+        .view canvas {
+            position: absolute;
+            inset: 0;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .view .vname,
+        .view .vslice,
+        .view .ori {
+            position: absolute;
+            pointer-events: none;
+            color: #c9d1d9;
+            font-size: 0.78rem;
+            text-shadow: 0 0 3px #000, 0 0 3px #000;
+        }
+
+        .view .vname {
+            top: 6px;
+            left: 8px;
+            font-weight: 600;
+        }
+
+        .view.active .vname {
+            color: var(--accent);
+        }
+
+        .view .vslice {
+            bottom: 6px;
+            right: 8px;
+            font-family: var(--mono);
+        }
+
+        .ori {
+            font-weight: 650;
+            color: #ffd479 !important;
+        }
+
+        .ori.l {
+            left: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .ori.r {
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .ori.t {
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .ori.b {
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .view-msg {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            text-align: center;
+            color: var(--muted);
+            background: #000;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .view-msg div {
+            max-width: 420px;
+        }
+
+        /* ---------- info pane ---------- */
+        .info {
+            grid-area: info;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 12px 14px;
+            background: var(--panel);
+            font-size: 0.85rem;
+        }
+
+        .info-title {
+            font-weight: 650;
+            font-size: 0.95rem;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 2px 10px;
+            margin: 8px 0;
+        }
+
+        .kv dt {
+            color: var(--muted);
+        }
+
+        .kv dd {
+            margin: 0;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .readout {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 2px 10px;
+            padding: 8px 10px;
+            margin: 8px 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel-2);
+        }
+
+        .readout span {
+            color: var(--muted);
+        }
+
+        .readout b {
+            font-family: var(--mono);
+            font-weight: 500;
+            overflow-wrap: anywhere;
+        }
+
+        .ctl-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 12px;
+            margin: 6px 0;
+        }
+
+        .ctl-row label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ctl-row select,
+        .ctl-row input[type="number"] {
+            padding: 3px 6px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--panel-2);
+        }
+
+        .ctl-row input[type="number"] {
+            width: 84px;
+        }
+
+        .ctl-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--accent);
+        }
+
+        .cbar {
+            margin: 4px 0 8px;
+        }
+
+        .cbar-grad {
+            height: 10px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+        }
+
+        .cbar-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 0.72rem;
+        }
+
+        .warnings {
+            margin: 8px 0;
+            padding-left: 18px;
+            color: var(--warn);
+        }
+
+        .help {
+            margin: 10px 0 0;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        kbd {
+            padding: 0 4px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: var(--mono);
+            font-size: 0.72rem;
+        }
+
+        /* ---------- empty state ---------- */
+        .empty {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: var(--bg);
+        }
+
+        .empty-card {
+            max-width: 520px;
+            padding: 28px;
+            border: 1px dashed var(--border);
+            border-radius: 14px;
+            background: var(--panel);
+            text-align: center;
+        }
+
+        .empty-card h2 {
+            margin: 0 0 8px;
+            font-size: 1.2rem;
+        }
+
+        .empty-card p {
+            margin: 8px 0;
+            color: var(--muted);
+        }
+
+        .empty-card .row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 16px 0 8px;
+        }
+
+        /* ---------- side panel ---------- */
+        .panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--panel);
+            border-left: 1px solid var(--border);
+        }
+
+        .panel h2 {
+            margin: 0;
+            font-size: 0.75rem;
+            font-weight: 650;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+        }
+
+        .series-sec {
+            flex: none;
+            max-height: 32%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .series-list {
+            list-style: none;
+            margin: 6px 0 0;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        .series-list .study-h {
+            padding: 6px 4px 2px;
+            color: var(--muted);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .series {
+            display: block;
+            width: 100%;
+            padding: 5px 8px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .series:hover {
+            background: var(--panel-2);
+        }
+
+        .series[aria-current="true"] {
+            border-color: var(--accent);
+            background: var(--panel-2);
+        }
+
+        .series .s-name {
+            display: block;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .series .s-sub {
+            display: block;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .status {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+
+        .tags-sec {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 10px 12px 0;
+        }
+
+        .tags-head {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tags-head .file-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        #tag-filter {
+            width: 100%;
+            margin: 8px 0 6px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel-2);
+            outline: none;
+        }
+
+        #tag-filter:focus {
+            border-color: var(--accent);
+        }
+
+        .tag-opts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 14px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .tag-opts label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .tag-table {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            margin: 8px -12px 0;
+            border-top: 1px solid var(--border);
+            font-size: 0.78rem;
+        }
+
+        .trow {
+            display: grid;
+            grid-template-columns: 94px 28px minmax(100px, 36%) minmax(0, 1fr);
+            gap: 8px;
+            padding: 2px 12px;
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+            align-items: baseline;
+        }
+
+        .trow:hover {
+            background: var(--panel-2);
+        }
+
+        .trow .c-tag,
+        .trow .c-vr,
+        .trow .c-val {
+            font-family: var(--mono);
+        }
+
+        .trow .c-tag {
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .trow .c-vr {
+            color: var(--muted);
+        }
+
+        .trow .c-name {
+            padding-left: calc(var(--d, 0) * 12px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .trow .c-val {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: text;
+        }
+
+        .trow .c-val.full {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .trow.box {
+            cursor: pointer;
+        }
+
+        .trow.box .c-name::before {
+            content: "▸ ";
+            color: var(--muted);
+        }
+
+        .trow.box.open .c-name::before {
+            content: "▾ ";
+        }
+
+        .trow.item .c-name {
+            color: var(--muted);
+        }
+
+        .trow.item.cur .c-name {
+            color: var(--accent);
+        }
+
+        .trow.priv .c-tag {
+            color: var(--warn);
+        }
+
+        .trow.vary .c-tag {
+            color: var(--accent);
+        }
+
+        .trow.vary .c-tag::after {
+            content: " •";
+        }
+
+        .trow.csa .c-tag {
+            color: var(--warn);
+            opacity: 0.7;
+        }
+
+        .placeholder {
+            padding: 16px 12px;
+            color: var(--muted);
+        }
+
+        .drop {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: grid;
+            place-items: center;
+            background: color-mix(in srgb, var(--bg) 80%, transparent);
+            border: 3px dashed var(--accent);
+            font-size: 1.3rem;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        @media (max-width: 1100px) {
+            .layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .views {
+                height: min(88vh, 900px);
+            }
+
+            .panel {
+                height: 80vh;
+                border-left: 0;
+                border-top: 1px solid var(--border);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .brand .sub {
+                display: none;
+            }
+
+            .actions .btn {
+                padding: 6px 9px;
+            }
+
+            .views {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(3, 42vh) auto;
+                grid-template-areas: "axi" "cor" "sag" "info";
+                height: auto;
+            }
+
+            .views.max {
+                grid-template-columns: 1fr;
+                grid-template-rows: 70vh auto;
+                grid-template-areas: "main" "info";
+            }
+
+            .trow {
+                grid-template-columns: 84px 24px minmax(80px, 34%) minmax(0, 1fr);
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="top">
+        <div class="brand">
+            <h1>DICOM Explorer</h1>
+            <span class="sub">Three-plane viewer &amp; tag browser &middot; files stay in your browser</span>
+        </div>
+        <div class="actions">
+            <button class="btn primary" id="open-files">Open files</button>
+            <button class="btn" id="open-folder">Open folder</button>
+            <button class="btn" id="load-demo" title="Generate a synthetic head phantom series">Demo</button>
+            <input type="file" id="file-input" multiple hidden>
+            <input type="file" id="folder-input" webkitdirectory multiple hidden>
+        </div>
+    </header>
+
+    <main class="layout">
+        <section class="views" id="views" aria-label="Image views">
+            <div class="view" data-view="sag" tabindex="0"><canvas aria-label="Sagittal view"></canvas><span
+                    class="vname"></span><span class="ori l"></span><span class="ori r"></span><span
+                    class="ori t"></span><span class="ori b"></span><span class="vslice"></span></div>
+            <div class="view" data-view="cor" tabindex="0"><canvas aria-label="Coronal view"></canvas><span
+                    class="vname"></span><span class="ori l"></span><span class="ori r"></span><span
+                    class="ori t"></span><span class="ori b"></span><span class="vslice"></span></div>
+            <div class="view active" data-view="axi" tabindex="0"><canvas aria-label="Axial view"></canvas><span
+                    class="vname"></span><span class="ori l"></span><span class="ori r"></span><span
+                    class="ori t"></span><span class="ori b"></span><span class="vslice"></span></div>
+
+            <div class="info" id="info">
+                <div class="info-title" id="info-title">No series loaded</div>
+                <div class="muted" id="info-sub"></div>
+                <dl class="kv" id="info-kv"></dl>
+                <div class="readout" id="readout" hidden>
+                    <span>Voxel</span><b id="r-vox">&ndash;</b>
+                    <span>LPS mm</span><b id="r-lps">&ndash;</b>
+                    <span>Value</span><b id="r-val">&ndash;</b>
+                    <span>Source</span><b id="r-src">&ndash;</b>
+                </div>
+                <div class="ctl-row" id="time-row" hidden>
+                    <label for="time">Volume</label>
+                    <input type="range" id="time" min="0" max="0" value="0">
+                    <span id="time-n" class="muted"></span>
+                </div>
+                <div id="wl-box" hidden>
+                    <div class="ctl-row">
+                        <label>Window <select id="wl-preset"></select></label>
+                    </div>
+                    <div class="ctl-row">
+                        <label>Center <input type="number" id="wl-c" step="any"></label>
+                        <label>Width <input type="number" id="wl-w" step="any" min="0"></label>
+                    </div>
+                    <div class="ctl-row">
+                        <label>Colour map <select id="cmap"></select></label>
+                    </div>
+                    <div class="cbar">
+                        <div class="cbar-grad" id="cbar-grad"></div>
+                        <div class="cbar-labels"><span id="cbar-lo"></span><span id="cbar-hi"></span></div>
+                    </div>
+                </div>
+                <div class="ctl-row">
+                    <label><input type="checkbox" id="opt-cross" checked> Crosshair</label>
+                    <label><input type="checkbox" id="opt-smooth"> Smooth</label>
+                    <label id="invert-wrap"><input type="checkbox" id="opt-invert"> Invert</label>
+                </div>
+                <ul class="warnings" id="warnings"></ul>
+                <p class="help">Click or drag to move the cursor &middot; wheel or <kbd>&uarr;</kbd><kbd>&darr;</kbd>
+                    to page slices &middot; right-drag or <kbd>Shift</kbd>-drag for window/level &middot;
+                    <kbd>Ctrl</kbd>+wheel to zoom &middot; middle- or <kbd>Alt</kbd>-drag to pan &middot; double-click
+                    a view to enlarge it &middot; <kbd>0</kbd> resets zoom &middot; <kbd>/</kbd> searches tags. On a touch screen, tap to move the cursor and swipe
+                    sideways across a view to page its slices.</p>
+            </div>
+
+            <div class="view-msg" id="view-msg" hidden>
+                <div id="view-msg-text"></div>
+            </div>
+
+            <div class="empty" id="empty">
+                <div class="empty-card">
+                    <h2>Drop DICOM files or a folder here</h2>
+                    <p>Series are grouped and sorted by position, then shown as axial, coronal and sagittal planes. Every
+                        tag, including sequences and private tags, is browsable on the right.</p>
+                    <div class="row">
+                        <button class="btn primary" data-act="files">Open files</button>
+                        <button class="btn" data-act="folder">Open folder</button>
+                        <button class="btn" data-act="demo">Try the demo</button>
+                    </div>
+                    <p>Files are read in this tab and never uploaded. Uncompressed, deflated, RLE and baseline JPEG
+                        pixel data display; other compressed images still show their headers.</p>
+                </div>
+            </div>
+        </section>
+
+        <aside class="panel">
+            <div class="series-sec">
+                <h2>Series</h2>
+                <ul class="series-list" id="series-list"></ul>
+                <p class="status" id="status"></p>
+            </div>
+            <div class="tags-sec">
+                <div class="tags-head">
+                    <h2>Tags</h2>
+                    <button class="small-btn" id="file-prev" title="Previous file" aria-label="Previous file"
+                        disabled>&lsaquo;</button>
+                    <span class="file-label" id="file-label"></span>
+                    <button class="small-btn" id="file-next" title="Next file" aria-label="Next file"
+                        disabled>&rsaquo;</button>
+                    <button class="small-btn" id="copy-dump" title="Copy every tag of this file as text"
+                        disabled>Copy</button>
+                </div>
+                <input id="tag-filter" type="search" placeholder="Filter by tag, keyword or value…" autocomplete="off"
+                    spellcheck="false" aria-label="Filter tags">
+                <div class="tag-opts">
+                    <label><input type="checkbox" id="opt-private" checked> Private tags</label>
+                    <label title="Tags whose value differs between the files of this series"><input type="checkbox"
+                            id="opt-vary" disabled> Only tags that vary</label>
+                    <label><input type="checkbox" id="opt-expand"> Expand all</label>
+                </div>
+                <div class="tag-table" id="tag-table">
+                    <p class="placeholder">Load some DICOM files to see their tags.</p>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <div class="drop" id="drop" hidden>Drop DICOM files or folders</div>
+
+    <script>
+        'use strict';
+
+        const $ = (s, r = document) => r.querySelector(s);
+        const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+        // =====================================================================
+        // Data dictionary: tag, VR, keyword. Not the full standard, just the
+        // attributes people actually look for, plus every sequence a viewer
+        // needs to find geometry in enhanced multi-frame objects.
+        // =====================================================================
+        const DICT_SRC = `
+00020000 UL FileMetaInformationGroupLength
+00020001 OB FileMetaInformationVersion
+00020002 UI MediaStorageSOPClassUID
+00020003 UI MediaStorageSOPInstanceUID
+00020010 UI TransferSyntaxUID
+00020012 UI ImplementationClassUID
+00020013 SH ImplementationVersionName
+00020016 AE SourceApplicationEntityTitle
+00020100 UI PrivateInformationCreatorUID
+00020102 OB PrivateInformation
+00041130 CS FileSetID
+00041200 UL OffsetOfTheFirstDirectoryRecordOfTheRootDirectoryEntity
+00041202 UL OffsetOfTheLastDirectoryRecordOfTheRootDirectoryEntity
+00041212 US FileSetConsistencyFlag
+00041220 SQ DirectoryRecordSequence
+00041400 UL OffsetOfTheNextDirectoryRecord
+00041410 US RecordInUseFlag
+00041420 UL OffsetOfReferencedLowerLevelDirectoryEntity
+00041430 CS DirectoryRecordType
+00041500 CS ReferencedFileID
+00041510 UI ReferencedSOPClassUIDInFile
+00041511 UI ReferencedSOPInstanceUIDInFile
+00041512 UI ReferencedTransferSyntaxUIDInFile
+00080005 CS SpecificCharacterSet
+00080008 CS ImageType
+00080012 DA InstanceCreationDate
+00080013 TM InstanceCreationTime
+00080014 UI InstanceCreatorUID
+00080016 UI SOPClassUID
+00080018 UI SOPInstanceUID
+00080020 DA StudyDate
+00080021 DA SeriesDate
+00080022 DA AcquisitionDate
+00080023 DA ContentDate
+0008002A DT AcquisitionDateTime
+00080030 TM StudyTime
+00080031 TM SeriesTime
+00080032 TM AcquisitionTime
+00080033 TM ContentTime
+00080050 SH AccessionNumber
+00080054 AE RetrieveAETitle
+00080056 CS InstanceAvailability
+00080060 CS Modality
+00080064 CS ConversionType
+00080068 CS PresentationIntentType
+00080070 LO Manufacturer
+00080080 LO InstitutionName
+00080081 ST InstitutionAddress
+00080090 PN ReferringPhysicianName
+00080100 SH CodeValue
+00080102 SH CodingSchemeDesignator
+00080103 SH CodingSchemeVersion
+00080104 LO CodeMeaning
+00080201 SH TimezoneOffsetFromUTC
+00081010 SH StationName
+00081030 LO StudyDescription
+00081032 SQ ProcedureCodeSequence
+0008103E LO SeriesDescription
+00081040 LO InstitutionalDepartmentName
+00081048 PN PhysiciansOfRecord
+00081050 PN PerformingPhysicianName
+00081060 PN NameOfPhysiciansReadingStudy
+00081070 PN OperatorsName
+00081080 LO AdmittingDiagnosesDescription
+00081090 LO ManufacturerModelName
+00081110 SQ ReferencedStudySequence
+00081111 SQ ReferencedPerformedProcedureStepSequence
+00081115 SQ ReferencedSeriesSequence
+00081120 SQ ReferencedPatientSequence
+00081140 SQ ReferencedImageSequence
+00081150 UI ReferencedSOPClassUID
+00081155 UI ReferencedSOPInstanceUID
+00081160 IS ReferencedFrameNumber
+00081199 SQ ReferencedSOPSequence
+00081250 SQ RelatedSeriesSequence
+00082111 ST DerivationDescription
+00082112 SQ SourceImageSequence
+00082218 SQ AnatomicRegionSequence
+00089007 CS FrameType
+00089092 SQ ReferencedImageEvidenceSequence
+00089121 SQ ReferencedRawDataSequence
+00089123 UI CreatorVersionUID
+00089205 CS PixelPresentation
+00089206 CS VolumetricProperties
+00089207 CS VolumeBasedCalculationTechnique
+00089208 CS ComplexImageComponent
+00089209 CS AcquisitionContrast
+00100010 PN PatientName
+00100020 LO PatientID
+00100021 LO IssuerOfPatientID
+00100030 DA PatientBirthDate
+00100040 CS PatientSex
+00101000 LO OtherPatientIDs
+00101001 PN OtherPatientNames
+00101010 AS PatientAge
+00101020 DS PatientSize
+00101030 DS PatientWeight
+00101040 LO PatientAddress
+00102000 LO MedicalAlerts
+00102110 LO Allergies
+00102160 SH EthnicGroup
+001021B0 LT AdditionalPatientHistory
+00104000 LT PatientComments
+00120062 CS PatientIdentityRemoved
+00120063 LO DeidentificationMethod
+00180010 LO ContrastBolusAgent
+00180015 CS BodyPartExamined
+00180020 CS ScanningSequence
+00180021 CS SequenceVariant
+00180022 CS ScanOptions
+00180023 CS MRAcquisitionType
+00180024 SH SequenceName
+00180025 CS AngioFlag
+00180031 LO Radiopharmaceutical
+00180050 DS SliceThickness
+00180060 DS KVP
+00180080 DS RepetitionTime
+00180081 DS EchoTime
+00180082 DS InversionTime
+00180083 DS NumberOfAverages
+00180084 DS ImagingFrequency
+00180085 SH ImagedNucleus
+00180086 IS EchoNumbers
+00180087 DS MagneticFieldStrength
+00180088 DS SpacingBetweenSlices
+00180089 IS NumberOfPhaseEncodingSteps
+00180090 DS DataCollectionDiameter
+00180091 IS EchoTrainLength
+00180093 DS PercentSampling
+00180094 DS PercentPhaseFieldOfView
+00180095 DS PixelBandwidth
+00181000 LO DeviceSerialNumber
+00181020 LO SoftwareVersions
+00181030 LO ProtocolName
+00181072 TM RadiopharmaceuticalStartTime
+00181074 DS RadionuclideTotalDose
+00181075 DS RadionuclideHalfLife
+00181088 IS HeartRate
+00181100 DS ReconstructionDiameter
+00181110 DS DistanceSourceToDetector
+00181111 DS DistanceSourceToPatient
+00181120 DS GantryDetectorTilt
+00181130 DS TableHeight
+00181140 CS RotationDirection
+00181150 IS ExposureTime
+00181151 IS XRayTubeCurrent
+00181152 IS Exposure
+00181160 SH FilterType
+00181164 DS ImagerPixelSpacing
+00181170 IS GeneratorPower
+00181190 DS FocalSpots
+00181210 SH ConvolutionKernel
+00181250 SH ReceiveCoilName
+00181251 SH TransmitCoilName
+00181310 US AcquisitionMatrix
+00181312 CS InPlanePhaseEncodingDirection
+00181314 DS FlipAngle
+00181315 CS VariableFlipAngleFlag
+00181316 DS SAR
+00181318 DS dBdt
+00185100 CS PatientPosition
+00185101 CS ViewPosition
+00189004 CS ContentQualification
+00189005 SH PulseSequenceName
+00189006 SQ MRImagingModifierSequence
+00189042 SQ MRReceiveCoilSequence
+00189049 SQ MRTransmitCoilSequence
+00189073 FD AcquisitionDuration
+00189082 FD EffectiveEchoTime
+00189087 FD DiffusionBValue
+00189089 FD DiffusionGradientOrientation
+00189112 SQ MRTimingAndRelatedParametersSequence
+00189114 SQ MREchoSequence
+00189115 SQ MRModifierSequence
+00189117 SQ MRDiffusionSequence
+00189119 SQ MRAveragesSequence
+00189125 SQ MRFOVGeometrySequence
+00189345 FD CTDIvol
+0020000D UI StudyInstanceUID
+0020000E UI SeriesInstanceUID
+00200010 SH StudyID
+00200011 IS SeriesNumber
+00200012 IS AcquisitionNumber
+00200013 IS InstanceNumber
+00200020 CS PatientOrientation
+00200032 DS ImagePositionPatient
+00200037 DS ImageOrientationPatient
+00200052 UI FrameOfReferenceUID
+00200060 CS Laterality
+00200100 IS TemporalPositionIdentifier
+00200105 IS NumberOfTemporalPositions
+00200110 DS TemporalResolution
+00201002 IS ImagesInAcquisition
+00201040 LO PositionReferenceIndicator
+00201041 DS SliceLocation
+00204000 LT ImageComments
+00209056 SH StackID
+00209057 UL InStackPositionNumber
+00209071 SQ FrameAnatomySequence
+00209072 CS FrameLaterality
+00209111 SQ FrameContentSequence
+00209113 SQ PlanePositionSequence
+00209116 SQ PlaneOrientationSequence
+00209128 UL TemporalPositionIndex
+00209153 FD NominalCardiacTriggerDelayTime
+00209156 US FrameAcquisitionNumber
+00209157 UL DimensionIndexValues
+00209158 LT FrameComments
+00209164 UI DimensionOrganizationUID
+00209165 AT DimensionIndexPointer
+00209167 AT FunctionalGroupPointer
+00209221 SQ DimensionOrganizationSequence
+00209222 SQ DimensionIndexSequence
+00209421 LO DimensionDescriptionLabel
+00280002 US SamplesPerPixel
+00280004 CS PhotometricInterpretation
+00280006 US PlanarConfiguration
+00280008 IS NumberOfFrames
+00280009 AT FrameIncrementPointer
+00280010 US Rows
+00280011 US Columns
+00280030 DS PixelSpacing
+00280034 IS PixelAspectRatio
+00280100 US BitsAllocated
+00280101 US BitsStored
+00280102 US HighBit
+00280103 US PixelRepresentation
+00280106 US SmallestImagePixelValue
+00280107 US LargestImagePixelValue
+00280120 US PixelPaddingValue
+00280301 CS BurnedInAnnotation
+00281050 DS WindowCenter
+00281051 DS WindowWidth
+00281052 DS RescaleIntercept
+00281053 DS RescaleSlope
+00281054 LO RescaleType
+00281055 LO WindowCenterWidthExplanation
+00281101 US RedPaletteColorLookupTableDescriptor
+00281102 US GreenPaletteColorLookupTableDescriptor
+00281103 US BluePaletteColorLookupTableDescriptor
+00281201 OW RedPaletteColorLookupTableData
+00281202 OW GreenPaletteColorLookupTableData
+00281203 OW BluePaletteColorLookupTableData
+00282110 CS LossyImageCompression
+00282112 DS LossyImageCompressionRatio
+00282114 CS LossyImageCompressionMethod
+00281056 CS VOILUTFunction
+00283000 SQ ModalityLUTSequence
+00283002 US LUTDescriptor
+00283003 LO LUTExplanation
+00283004 LO ModalityLUTType
+00283006 US LUTData
+00283010 SQ VOILUTSequence
+00289110 SQ PixelMeasuresSequence
+00289132 SQ FrameVOILUTSequence
+00289145 SQ PixelValueTransformationSequence
+00321032 PN RequestingPhysician
+00321060 LO RequestedProcedureDescription
+00321064 SQ RequestedProcedureCodeSequence
+00324000 LT StudyComments
+00400007 LO ScheduledProcedureStepDescription
+00400009 SH ScheduledProcedureStepID
+00400244 DA PerformedProcedureStepStartDate
+00400245 TM PerformedProcedureStepStartTime
+00400253 SH PerformedProcedureStepID
+00400254 LO PerformedProcedureStepDescription
+00400260 SQ PerformedProtocolCodeSequence
+00400275 SQ RequestAttributesSequence
+00400555 SQ AcquisitionContextSequence
+00401001 SH RequestedProcedureID
+00540016 SQ RadiopharmaceuticalInformationSequence
+00540081 US NumberOfSlices
+00541001 CS Units
+00541102 CS DecayCorrection
+00541300 DS FrameReferenceTime
+00880140 UI StorageMediaFileSetUID
+52009229 SQ SharedFunctionalGroupsSequence
+52009230 SQ PerFrameFunctionalGroupsSequence
+7FE00001 OV ExtendedOffsetTable
+7FE00002 OV ExtendedOffsetTableLengths
+7FE00008 OF FloatPixelData
+7FE00009 OD DoubleFloatPixelData
+7FE00010 OW PixelData
+FFFAFFFA SQ DigitalSignaturesSequence
+FFFCFFFC OB DataSetTrailingPadding`;
+        const DICT = new Map();
+        for (const line of DICT_SRC.trim().split('\n')) {
+            const [t, vr, kw] = line.trim().split(/\s+/);
+            DICT.set(parseInt(t, 16) >>> 0, { vr, kw });
+        }
+        const OVERLAY = { 0x0010: 'OverlayRows', 0x0011: 'OverlayColumns', 0x0022: 'OverlayDescription', 0x0040: 'OverlayType', 0x0050: 'OverlayOrigin', 0x0100: 'OverlayBitsAllocated', 0x0102: 'OverlayBitPosition', 0x1500: 'OverlayLabel', 0x3000: 'OverlayData' };
+        const OVERLAY_VR = { 0x0010: 'US', 0x0011: 'US', 0x0022: 'LO', 0x0040: 'CS', 0x0050: 'SS', 0x0100: 'US', 0x0102: 'US', 0x1500: 'LO', 0x3000: 'OW' };
+
+        const TS_IMPLICIT = '1.2.840.10008.1.2';
+        const TS_EXPLICIT = '1.2.840.10008.1.2.1';
+        const TS_DEFLATE = '1.2.840.10008.1.2.1.99';
+        const TS_BIG = '1.2.840.10008.1.2.2';
+        const TS_RLE = '1.2.840.10008.1.2.5';
+        const BROWSER_CODECS = {
+            '1.2.840.10008.1.2.4.50': 'image/jpeg',
+            '1.2.840.10008.1.2.4.90': 'image/jp2',
+            '1.2.840.10008.1.2.4.91': 'image/jp2',
+        };
+        const UIDS = {
+            '1.2.840.10008.1.2': 'Implicit VR Little Endian',
+            '1.2.840.10008.1.2.1': 'Explicit VR Little Endian',
+            '1.2.840.10008.1.2.1.99': 'Deflated Explicit VR Little Endian',
+            '1.2.840.10008.1.2.2': 'Explicit VR Big Endian',
+            '1.2.840.10008.1.2.4.50': 'JPEG Baseline',
+            '1.2.840.10008.1.2.4.51': 'JPEG Extended (12-bit)',
+            '1.2.840.10008.1.2.4.57': 'JPEG Lossless',
+            '1.2.840.10008.1.2.4.70': 'JPEG Lossless SV1',
+            '1.2.840.10008.1.2.4.80': 'JPEG-LS Lossless',
+            '1.2.840.10008.1.2.4.81': 'JPEG-LS Near-Lossless',
+            '1.2.840.10008.1.2.4.90': 'JPEG 2000 Lossless',
+            '1.2.840.10008.1.2.4.91': 'JPEG 2000',
+            '1.2.840.10008.1.2.4.201': 'HTJ2K Lossless',
+            '1.2.840.10008.1.2.4.203': 'HTJ2K',
+            '1.2.840.10008.1.2.5': 'RLE Lossless',
+            '1.2.840.10008.1.3.10': 'Media Storage Directory Storage',
+            '1.2.840.10008.5.1.4.1.1.1': 'CR Image Storage',
+            '1.2.840.10008.5.1.4.1.1.1.1': 'Digital X-Ray Image Storage',
+            '1.2.840.10008.5.1.4.1.1.1.2': 'Digital Mammography Image Storage',
+            '1.2.840.10008.5.1.4.1.1.2': 'CT Image Storage',
+            '1.2.840.10008.5.1.4.1.1.2.1': 'Enhanced CT Image Storage',
+            '1.2.840.10008.5.1.4.1.1.3.1': 'Ultrasound Multi-frame Image Storage',
+            '1.2.840.10008.5.1.4.1.1.4': 'MR Image Storage',
+            '1.2.840.10008.5.1.4.1.1.4.1': 'Enhanced MR Image Storage',
+            '1.2.840.10008.5.1.4.1.1.4.2': 'MR Spectroscopy Storage',
+            '1.2.840.10008.5.1.4.1.1.6.1': 'Ultrasound Image Storage',
+            '1.2.840.10008.5.1.4.1.1.7': 'Secondary Capture Image Storage',
+            '1.2.840.10008.5.1.4.1.1.11.1': 'Grayscale Softcopy Presentation State',
+            '1.2.840.10008.5.1.4.1.1.12.1': 'X-Ray Angiographic Image Storage',
+            '1.2.840.10008.5.1.4.1.1.20': 'Nuclear Medicine Image Storage',
+            '1.2.840.10008.5.1.4.1.1.66.4': 'Segmentation Storage',
+            '1.2.840.10008.5.1.4.1.1.88.11': 'Basic Text SR',
+            '1.2.840.10008.5.1.4.1.1.88.22': 'Enhanced SR',
+            '1.2.840.10008.5.1.4.1.1.88.33': 'Comprehensive SR',
+            '1.2.840.10008.5.1.4.1.1.128': 'PET Image Storage',
+            '1.2.840.10008.5.1.4.1.1.130': 'Enhanced PET Image Storage',
+            '1.2.840.10008.5.1.4.1.1.481.2': 'RT Dose Storage',
+            '1.2.840.10008.5.1.4.1.1.481.3': 'RT Structure Set Storage',
+        };
+
+        // =====================================================================
+        // Parser
+        // =====================================================================
+        const ITEM = 0xFFFEE000, ITEM_END = 0xFFFEE00D, SEQ_END = 0xFFFEE0DD;
+        const UNDEF = 0xFFFFFFFF, PIXEL = 0x7FE00010;
+        const LONG_VR = new Set(['OB', 'OD', 'OF', 'OL', 'OV', 'OW', 'SQ', 'SV', 'UC', 'UN', 'UR', 'UT', 'UV']);
+        const VALID_VR = new Set(['AE', 'AS', 'AT', 'CS', 'DA', 'DS', 'DT', 'FD', 'FL', 'IS', 'LO', 'LT', 'OB', 'OD', 'OF', 'OL', 'OV', 'OW', 'PN', 'SH', 'SL', 'SQ', 'SS', 'ST', 'SV', 'TM', 'UC', 'UI', 'UL', 'UN', 'UR', 'US', 'UT', 'UV']);
+        const STR_VR = new Set(['AE', 'AS', 'CS', 'DA', 'DS', 'DT', 'IS', 'LO', 'LT', 'PN', 'SH', 'ST', 'TM', 'UC', 'UI', 'UR', 'UT']);
+        const TEXT_VR = new Set(['LT', 'ST', 'UT', 'UR']);
+        const CHARSET_VR = new Set(['LO', 'LT', 'PN', 'SH', 'ST', 'UC', 'UT']);
+        const NUM_VR = { US: [2, 'getUint16'], SS: [2, 'getInt16'], UL: [4, 'getUint32'], SL: [4, 'getInt32'], FL: [4, 'getFloat32'], FD: [8, 'getFloat64'], SV: [8, 'getBigInt64'], UV: [8, 'getBigUint64'], OF: [4, 'getFloat32'], OD: [8, 'getFloat64'], OL: [4, 'getUint32'], OV: [8, 'getBigUint64'] };
+        const LATIN1 = new TextDecoder('latin1');
+        const CHARSETS = {
+            'ISO_IR 6': 'latin1', 'ISO_IR 100': 'latin1', 'ISO_IR 101': 'iso-8859-2', 'ISO_IR 109': 'iso-8859-3',
+            'ISO_IR 110': 'iso-8859-4', 'ISO_IR 144': 'iso-8859-5', 'ISO_IR 127': 'iso-8859-6', 'ISO_IR 126': 'iso-8859-7',
+            'ISO_IR 138': 'iso-8859-8', 'ISO_IR 148': 'iso-8859-9', 'ISO_IR 13': 'shift_jis', 'ISO_IR 166': 'tis-620',
+            'ISO_IR 192': 'utf-8', 'GB18030': 'gb18030', 'GBK': 'gbk', 'ISO 2022 IR 87': 'iso-2022-jp',
+            'ISO 2022 IR 149': 'euc-kr', 'ISO 2022 IR 58': 'gb2312',
+        };
+
+        const hex4 = (n) => n.toString(16).toUpperCase().padStart(4, '0');
+        const hex8 = (t) => hex4(t >>> 16) + hex4(t & 0xFFFF);
+        const tagStr = (t) => `(${hex4(t >>> 16)},${hex4(t & 0xFFFF)})`;
+        const isPrivate = (t) => ((t >>> 16) & 1) === 1;
+
+        function dictVR(tag) {
+            const d = DICT.get(tag);
+            if (d) return d.vr;
+            const g = tag >>> 16, e = tag & 0xFFFF;
+            if (e === 0) return 'UL';
+            if ((g & 0xFF01) === 0x6000 && OVERLAY_VR[e]) return OVERLAY_VR[e];
+            if ((g & 1) && e >= 0x10 && e <= 0xFF) return 'LO';
+            return 'UN';
+        }
+
+        function readHead(c, p) {
+            const g = c.dv.getUint16(p, c.le), e = c.dv.getUint16(p + 2, c.le);
+            const tag = ((g << 16) | e) >>> 0;
+            if (g === 0xFFFE) return { tag, vr: '', len: c.dv.getUint32(p + 4, c.le), off: p + 8 };
+            if (c.explicit) {
+                const vr = String.fromCharCode(c.u8[p + 4], c.u8[p + 5]);
+                if (VALID_VR.has(vr)) {
+                    if (LONG_VR.has(vr)) return { tag, vr, len: c.dv.getUint32(p + 8, c.le), off: p + 12 };
+                    return { tag, vr, len: c.dv.getUint16(p + 6, c.le), off: p + 8 };
+                }
+            }
+            // Implicit VR (or an explicit file that slipped into implicit): the
+            // VR comes from the dictionary.
+            return { tag, vr: dictVR(tag), len: c.dv.getUint32(p + 4, c.le), off: p + 8, implicit: true };
+        }
+
+        function startsWithItem(c, off, end) {
+            return off + 8 <= end && c.dv.getUint16(off, c.le) === 0xFFFE && c.dv.getUint16(off + 2, c.le) === 0xE000;
+        }
+
+        // Parse elements from p to end. Inside an undefined-length item it stops
+        // at the item delimiter and returns the position after it.
+        function parseSet(c, p, end) {
+            const els = [];
+            while (p + 8 <= end) {
+                let el;
+                try {
+                    el = readHead(c, p);
+                    if (el.tag === ITEM_END) return { els, p: el.off };
+                    if (el.tag === SEQ_END || el.tag === ITEM) return { els, p: el.off };
+                    let asSeq = el.vr === 'SQ';
+                    if (!asSeq && el.tag !== PIXEL && (el.vr === 'UN' || el.implicit)) {
+                        asSeq = el.len === UNDEF || startsWithItem(c, el.off, Math.min(end, el.off + el.len));
+                    }
+                    let next;
+                    if (asSeq) {
+                        // UN with undefined length holds an implicit little endian sequence.
+                        const sc = el.vr === 'UN' && !el.implicit ? { ...c, explicit: false, le: true } : c;
+                        const r = parseSeq(sc, el.off, el.len, end);
+                        el.vr = 'SQ';
+                        el.items = r.items;
+                        next = r.p;
+                    } else if (el.len === UNDEF) {
+                        const r = parseFrags(c, el.off, end);
+                        el.frags = r.frags;
+                        next = r.p;
+                    } else {
+                        next = el.off + el.len;
+                        if (next > end) {
+                            el.len = Math.max(0, end - el.off);
+                            next = end;
+                            c.root.truncated = true;
+                        }
+                    }
+                    el.end = next;
+                    el.c = c;
+                    els.push(el);
+                    p = next;
+                } catch (err) {
+                    c.root.truncated = true;
+                    break;
+                }
+            }
+            return { els, p: Math.max(p, end) };
+        }
+
+        function parseSeq(c, off, len, outerEnd) {
+            const end = len === UNDEF ? outerEnd : Math.min(off + len, outerEnd);
+            const items = [];
+            let p = off;
+            while (p + 8 <= end) {
+                const tag = ((c.dv.getUint16(p, c.le) << 16) | c.dv.getUint16(p + 2, c.le)) >>> 0;
+                const ilen = c.dv.getUint32(p + 4, c.le);
+                if (tag === SEQ_END) { p += 8; break; }
+                if (tag !== ITEM) break;
+                p += 8;
+                if (ilen === UNDEF) {
+                    const r = parseSet(c, p, end);
+                    items.push(r.els);
+                    p = r.p;
+                } else {
+                    const ie = Math.min(p + ilen, end);
+                    items.push(parseSet(c, p, ie).els);
+                    p = ie;
+                }
+            }
+            return { items, p: len === UNDEF ? p : end };
+        }
+
+        function parseFrags(c, p, end) {
+            const frags = [];
+            while (p + 8 <= end) {
+                const tag = ((c.dv.getUint16(p, c.le) << 16) | c.dv.getUint16(p + 2, c.le)) >>> 0;
+                const len = c.dv.getUint32(p + 4, c.le);
+                p += 8;
+                if (tag === SEQ_END) break;
+                if (tag !== ITEM || len === UNDEF) break;
+                frags.push({ off: p, len: Math.min(len, end - p) });
+                p += len;
+            }
+            return { frags, p: Math.min(p, end) };
+        }
+
+        async function inflateRaw(u8) {
+            const run = async (b) => {
+                const stream = new Blob([b]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+                return new Uint8Array(await new Response(stream).arrayBuffer());
+            };
+            try {
+                return await run(u8);
+            } catch (e) {
+                // Writers pad the stream to an even length, and the browser's
+                // inflater rejects that trailing byte.
+                return run(u8.subarray(0, u8.length - 1));
+            }
+        }
+
+        function getEl(els, tag) {
+            if (!els) return null;
+            if (!els._m) {
+                els._m = new Map();
+                for (const e of els) if (!els._m.has(e.tag)) els._m.set(e.tag, e);
+            }
+            return els._m.get(tag) || null;
+        }
+
+        function elBytes(el) {
+            return el.c.u8.subarray(el.off, el.off + el.len);
+        }
+
+        // Values of an element as an array of strings or numbers, or null for
+        // bulk binary data. `max` caps how many numeric values are read.
+        function readValues(el, vr = el.vr, max = Infinity) {
+            if (STR_VR.has(vr)) {
+                const dec = CHARSET_VR.has(vr) ? el.c.root.dec : LATIN1;
+                let s = dec.decode(elBytes(el));
+                s = s.replace(/[\0 ]+$/, '');
+                if (TEXT_VR.has(vr)) return [s];
+                if (s === '') return [];
+                return s.split('\\').map((x) => x.replace(/\0/g, '').trim());
+            }
+            if (vr === 'AT') {
+                const out = [];
+                for (let i = 0; i + 4 <= el.len && out.length < max; i += 4) {
+                    out.push(tagStr(((el.c.dv.getUint16(el.off + i, el.c.le) << 16) | el.c.dv.getUint16(el.off + i + 2, el.c.le)) >>> 0));
+                }
+                return out;
+            }
+            const spec = NUM_VR[vr];
+            if (!spec || ['OF', 'OD', 'OL', 'OV'].includes(vr)) return null;
+            const [size, fn] = spec;
+            const out = [];
+            for (let i = 0; i + size <= el.len && out.length < max; i += size) out.push(el.c.dv[fn](el.off + i, el.c.le));
+            return out;
+        }
+
+        function str(els, tag) {
+            const e = getEl(els, tag);
+            if (!e || e.vr === 'SQ') return '';
+            const v = readValues(e);
+            return v ? v.join('\\') : '';
+        }
+
+        function nums(els, tag) {
+            const e = getEl(els, tag);
+            if (!e || e.vr === 'SQ') return null;
+            const v = readValues(e);
+            if (!v || !v.length) return null;
+            const n = v.map(Number);
+            return n.every(Number.isFinite) ? n : null;
+        }
+
+        function num(els, tag, i = 0) {
+            const n = nums(els, tag);
+            return n && n.length > i ? n[i] : NaN;
+        }
+
+        async function parseFile(name, u8) {
+            const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+            const pre = u8.length >= 132 && u8[128] === 0x44 && u8[129] === 0x49 && u8[130] === 0x43 && u8[131] === 0x4D;
+            let p = pre ? 132 : 0;
+            const meta = [];
+            const mc = { u8, dv, le: true, explicit: true, dec: LATIN1 };
+            mc.root = mc;
+            if (p + 8 <= u8.length && dv.getUint16(p, true) === 0x0002) {
+                while (p + 8 <= u8.length && dv.getUint16(p, true) === 0x0002) {
+                    const el = readHead(mc, p);
+                    if (el.len === UNDEF) break;
+                    el.end = Math.min(el.off + el.len, u8.length);
+                    el.len = el.end - el.off;
+                    el.c = mc;
+                    meta.push(el);
+                    p = el.end;
+                }
+            } else if (!pre) {
+                // No preamble: accept a bare data set that opens in group 0008.
+                if (u8.length < 16 || dv.getUint16(0, true) !== 0x0008) return null;
+            }
+            let ts = str(meta, 0x00020010);
+            if (!ts) {
+                const vr = String.fromCharCode(u8[p + 4], u8[p + 5]);
+                ts = VALID_VR.has(vr) ? TS_EXPLICIT : TS_IMPLICIT;
+            }
+            let dsU8 = u8, start = p;
+            if (ts === TS_DEFLATE) {
+                dsU8 = await inflateRaw(u8.subarray(p));
+                start = 0;
+            }
+            const c = {
+                u8: dsU8, dv: new DataView(dsU8.buffer, dsU8.byteOffset, dsU8.byteLength),
+                le: ts !== TS_BIG, explicit: ts !== TS_IMPLICIT, dec: LATIN1,
+            };
+            c.root = c;
+            const ds = parseSet(c, start, dsU8.length).els;
+            if (!ds.length && !meta.length) return null;
+            const cs = str(ds, 0x00080005).split('\\').map((s) => s.trim()).filter(Boolean);
+            const label = CHARSETS[cs[cs.length - 1]] || CHARSETS[cs[0]];
+            if (label && label !== 'latin1') {
+                try { c.dec = new TextDecoder(label); } catch (e) { /* unsupported: keep latin1 */ }
+            }
+            const file = { name, size: u8.length, meta, ds, ts, truncated: !!c.truncated, all: meta.concat(ds) };
+            describeImage(file);
+            return file;
+        }
+
+        // =====================================================================
+        // Image description: per-frame geometry, scaling and window
+        // =====================================================================
+        function describeImage(file) {
+            const d = file.ds;
+            file.frames = [];
+            const pix = getEl(d, PIXEL);
+            const rows = num(d, 0x00280010), cols = num(d, 0x00280011);
+            if (!pix || !(rows > 0 && cols > 0)) return;
+            const ba = num(d, 0x00280100) || 16;
+            const img = {
+                rows, cols, ba,
+                spp: num(d, 0x00280002) || 1,
+                bs: num(d, 0x00280101) || ba,
+                signed: num(d, 0x00280103) === 1,
+                photo: (str(d, 0x00280004) || 'MONOCHROME2').toUpperCase(),
+                planar: num(d, 0x00280006) || 0,
+                nf: Math.max(1, Math.round(num(d, 0x00280008)) || 1),
+            };
+            img.rgb = img.spp === 3 || img.photo === 'PALETTE COLOR';
+            file.img = img;
+            file.pix = pix;
+            const mItem = getEl(d, 0x00283000)?.items?.[0];
+            file.mlut = mItem ? parseLut(mItem, img.signed) : null;
+            const shared = getEl(d, 0x52009229)?.items?.[0] || null;
+            const perFrame = getEl(d, 0x52009230)?.items || null;
+            for (let f = 0; f < img.nf; f++) {
+                const look = (seq, tag) => {
+                    for (const src of [perFrame && perFrame[f], shared]) {
+                        if (!src) continue;
+                        const it = getEl(src, seq)?.items?.[0];
+                        if (it && getEl(it, tag)) return nums(it, tag);
+                    }
+                    return nums(d, tag);
+                };
+                const ipp = look(0x00209113, 0x00200032);
+                const iop = look(0x00209116, 0x00200037);
+                const ps = look(0x00289110, 0x00280030) || nums(d, 0x00181164);
+                const slope = look(0x00289145, 0x00281053)?.[0];
+                const inter = look(0x00289145, 0x00281052)?.[0];
+                file.frames.push({
+                    file, f,
+                    ipp: ipp && ipp.length === 3 ? ipp : null,
+                    iop: iop && iop.length === 6 ? iop : null,
+                    ps: ps && ps.length >= 2 && ps[0] > 0 && ps[1] > 0 ? ps : null,
+                    thick: look(0x00289110, 0x00180050)?.[0],
+                    slope: slope && Number.isFinite(slope) ? slope : 1,
+                    inter: Number.isFinite(inter) ? inter : 0,
+                    mlut: file.mlut,
+                    wc: look(0x00289132, 0x00281050),
+                    ww: look(0x00289132, 0x00281051),
+                    tpos: look(0x00209111, 0x00209128)?.[0] ?? num(d, 0x00200100),
+                    acq: num(d, 0x00200012),
+                    inst: num(d, 0x00200013),
+                });
+            }
+        }
+
+        // A Modality or VOI LUT item: descriptor [entries, first mapped value,
+        // bits] plus one table entry per 16-bit word (or per byte if packed).
+        function parseLut(item, signed) {
+            const desc = nums(item, 0x00283002), el = getEl(item, 0x00283006);
+            if (!desc || desc.length < 3 || !el) return null;
+            let [n, first, bits] = desc;
+            if (!n) n = 65536;
+            if (signed && first > 32767) first -= 65536;
+            const data = new Uint16Array(n), c = el.c;
+            if (el.len >= 2 * n) for (let k = 0; k < n; k++) data[k] = c.dv.getUint16(el.off + 2 * k, c.le);
+            else if (el.len >= n) for (let k = 0; k < n; k++) data[k] = c.u8[el.off + k];
+            else return null;
+            return { n, first, bits, data, expl: str(item, 0x00283003) };
+        }
+
+        // =====================================================================
+        // Pixel decoding
+        // =====================================================================
+        function frameBytes(file, f) {
+            const u8 = file.pix.c.u8;
+            const frags = file.pix.frags;
+            const data = frags.slice(1);
+            const cat = (list) => {
+                if (list.length === 1) return u8.subarray(list[0].off, list[0].off + list[0].len);
+                const out = new Uint8Array(list.reduce((s, x) => s + x.len, 0));
+                let o = 0;
+                for (const x of list) { out.set(u8.subarray(x.off, x.off + x.len), o); o += x.len; }
+                return out;
+            };
+            if (!data.length) throw new Error('Encapsulated pixel data has no fragments');
+            if (file.img.nf === 1) return cat(data);
+            const bot = frags[0];
+            if (bot.len >= 4 * file.img.nf) {
+                const dv = file.pix.c.dv;
+                const base = data[0].off - 8;
+                const at = (i) => base + dv.getUint32(bot.off + 4 * i, true);
+                const s = at(f), e = f + 1 < file.img.nf ? at(f + 1) : Infinity;
+                const list = data.filter((x) => x.off - 8 >= s && x.off - 8 < e);
+                if (list.length) return cat(list);
+            }
+            if (data.length === file.img.nf) return cat([data[f]]);
+            throw new Error('Can’t tell which fragments belong to which frame');
+        }
+
+        function unpackBits(src, start, end, dst) {
+            let i = start, o = 0;
+            const n = dst.length;
+            while (i < end && o < n) {
+                const h = (src[i++] << 24) >> 24;
+                if (h >= 0) {
+                    const k = Math.min(h + 1, n - o, end - i);
+                    dst.set(src.subarray(i, i + k), o);
+                    i += h + 1;
+                    o += k;
+                } else if (h !== -128) {
+                    const k = Math.min(1 - h, n - o);
+                    dst.fill(src[i++], o, o + k);
+                    o += k;
+                }
+            }
+        }
+
+        function rleDecode(u8, img) {
+            const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+            const nseg = dv.getUint32(0, true);
+            const bps = img.ba / 8, npix = img.rows * img.cols;
+            if (nseg !== img.spp * bps) throw new Error(`RLE frame has ${nseg} segments, expected ${img.spp * bps}`);
+            const offs = [];
+            for (let i = 0; i < nseg; i++) offs.push(dv.getUint32(4 + 4 * i, true));
+            const out = new Uint8Array(npix * img.spp * bps);
+            const tmp = new Uint8Array(npix);
+            for (let s = 0; s < img.spp; s++) {
+                for (let b = 0; b < bps; b++) {
+                    const seg = s * bps + b;
+                    tmp.fill(0);
+                    unpackBits(u8, offs[seg], seg + 1 < nseg ? offs[seg + 1] : u8.length, tmp);
+                    // Segment 0 of each sample holds its most significant byte.
+                    const byte = bps - 1 - b;
+                    for (let p = 0; p < npix; p++) out[(p * img.spp + s) * bps + byte] = tmp[p];
+                }
+            }
+            return { arr: typed(out, img), planar: 0 };
+        }
+
+        function typed(bytes, img) {
+            if (img.ba === 8) return img.signed ? new Int8Array(bytes.buffer, bytes.byteOffset, bytes.length) : bytes;
+            if (img.ba === 16) return img.signed ? new Int16Array(bytes.buffer, bytes.byteOffset, bytes.length / 2) : new Uint16Array(bytes.buffer, bytes.byteOffset, bytes.length / 2);
+            if (img.ba === 32) return img.signed ? new Int32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4) : new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4);
+            throw new Error(`${img.ba}-bit pixels aren’t supported`);
+        }
+
+        function maskBits(arr, img) {
+            if (img.bs >= img.ba || img.ba === 1 || img.rgb) return arr;
+            const mask = 2 ** img.bs - 1, sign = 2 ** (img.bs - 1);
+            for (let i = 0; i < arr.length; i++) {
+                let v = arr[i] & mask;
+                if (img.signed && v >= sign) v -= 2 * sign;
+                arr[i] = v;
+            }
+            return arr;
+        }
+
+        async function browserDecode(u8, img, mime) {
+            const bmp = await createImageBitmap(new Blob([u8], { type: mime }), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+            const cv = document.createElement('canvas');
+            cv.width = bmp.width;
+            cv.height = bmp.height;
+            const ctx = cv.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(bmp, 0, 0);
+            const px = ctx.getImageData(0, 0, bmp.width, bmp.height).data;
+            if (bmp.width !== img.cols || bmp.height !== img.rows) throw new Error('Decoded image size doesn’t match Rows/Columns');
+            const n = img.rows * img.cols;
+            if (!img.rgb) {
+                const out = new Uint8Array(n);
+                for (let i = 0; i < n; i++) out[i] = px[i * 4];
+                return { arr: out, planar: 0, ready: false };
+            }
+            const out = new Uint8Array(n * 3);
+            for (let i = 0; i < n; i++) { out[i * 3] = px[i * 4]; out[i * 3 + 1] = px[i * 4 + 1]; out[i * 3 + 2] = px[i * 4 + 2]; }
+            return { arr: out, planar: 0, ready: true };
+        }
+
+        // Raw samples for one frame: { arr, planar, ready } where `ready` means
+        // the browser already produced display RGB.
+        async function decodeFrame(fr) {
+            const file = fr.file, img = file.img, pix = file.pix;
+            const n = img.rows * img.cols * img.spp;
+            if (!pix.frags) {
+                const c = pix.c;
+                if (img.ba === 1) {
+                    const out = new Uint8Array(n), bit0 = fr.f * n;
+                    if (pix.off + Math.ceil((bit0 + n) / 8) > pix.off + pix.len) throw new Error('Pixel data is shorter than the image size says');
+                    for (let i = 0; i < n; i++) {
+                        const b = bit0 + i;
+                        out[i] = (c.u8[pix.off + (b >> 3)] >> (b & 7)) & 1;
+                    }
+                    return { arr: out, planar: img.planar };
+                }
+                const bpp = img.ba / 8;
+                const start = pix.off + fr.f * n * bpp;
+                if (start + n * bpp > pix.off + pix.len) throw new Error('Pixel data is shorter than the image size says');
+                const bytes = c.u8.slice(start, start + n * bpp);
+                if (!c.le && bpp > 1) {
+                    for (let i = 0; i < bytes.length; i += bpp) bytes.subarray(i, i + bpp).reverse();
+                }
+                return { arr: maskBits(typed(bytes, img), img), planar: img.planar };
+            }
+            const fb = frameBytes(file, fr.f);
+            if (file.ts === TS_RLE) {
+                const r = rleDecode(fb, img);
+                r.arr = maskBits(r.arr, img);
+                return r;
+            }
+            const mime = BROWSER_CODECS[file.ts];
+            if (mime) {
+                try { return await browserDecode(fb, img, mime); } catch (e) {
+                    throw new Error(`This browser couldn’t decode the ${UIDS[file.ts] || file.ts} pixel data`);
+                }
+            }
+            throw new Error(`Pixel data is compressed as ${UIDS[file.ts] || file.ts}, which this viewer can’t decompress`);
+        }
+
+        function paletteOf(file) {
+            if (file._pal !== undefined) return file._pal;
+            const d = file.ds, luts = [];
+            for (let i = 0; i < 3; i++) {
+                const desc = nums(d, 0x00281101 + i);
+                const el = getEl(d, 0x00281201 + i);
+                if (!desc || !el) return (file._pal = null);
+                const count = desc[0] || 65536, first = desc[1], bits = desc[2];
+                const vals = new Uint8Array(count);
+                for (let k = 0; k < count; k++) {
+                    const off = el.off + 2 * k;
+                    const v = off + 2 <= el.off + el.len ? el.c.dv.getUint16(off, el.c.le) : 0;
+                    vals[k] = bits === 16 ? v >> 8 : v & 0xFF;
+                }
+                luts.push({ first, vals });
+            }
+            return (file._pal = luts);
+        }
+
+        // Convert decoded samples to interleaved 8-bit RGB.
+        function toRGB(raw, img, file) {
+            const n = img.rows * img.cols, out = new Uint8Array(n * 3), a = raw.arr;
+            if (raw.ready) return a;
+            if (img.photo === 'PALETTE COLOR') {
+                const pal = paletteOf(file);
+                for (let i = 0; i < n; i++) {
+                    for (let c = 0; c < 3; c++) {
+                        const L = pal ? pal[c] : null;
+                        out[i * 3 + c] = L ? L.vals[clamp(a[i] - L.first, 0, L.vals.length - 1)] : a[i];
+                    }
+                }
+                return out;
+            }
+            const shift = img.ba > 8 ? img.bs - 8 : 0;
+            for (let i = 0; i < n; i++) {
+                for (let c = 0; c < 3; c++) {
+                    const v = raw.planar === 1 ? a[c * n + i] : a[i * 3 + c];
+                    out[i * 3 + c] = shift > 0 ? v >> shift : v;
+                }
+            }
+            if (img.photo.startsWith('YBR_FULL')) {
+                for (let i = 0; i < n * 3; i += 3) {
+                    const y = out[i], cb = out[i + 1] - 128, cr = out[i + 2] - 128;
+                    out[i] = clamp(Math.round(y + 1.402 * cr), 0, 255);
+                    out[i + 1] = clamp(Math.round(y - 0.344136 * cb - 0.714136 * cr), 0, 255);
+                    out[i + 2] = clamp(Math.round(y + 1.772 * cb), 0, 255);
+                }
+            }
+            return out;
+        }
+
+        // =====================================================================
+        // Series grouping and volume assembly
+        // =====================================================================
+        const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+        const unit = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+        const rnd = (v) => (Math.round(v * 500) / 500 + 0).toFixed(3);
+
+        function pnName(s) {
+            return s.split('=')[0].split('^').filter(Boolean).join(' ');
+        }
+
+        function buildStacks(files) {
+            const map = new Map();
+            const get = (key, file, kind) => {
+                if (!map.has(key)) map.set(key, { key, kind, files: [], frames: [], fileSet: new Set(), first: file });
+                return map.get(key);
+            };
+            for (const file of files) {
+                const d = file.ds;
+                const uid = str(d, 0x0020000E) || 'file:' + file.name;
+                if (!file.frames.length) {
+                    const st = get(uid + '|nopix', file, 'nopix');
+                    st.files.push(file);
+                    continue;
+                }
+                for (const fr of file.frames) {
+                    const geo = fr.iop ? fr.iop.map(rnd).join(',') : file.img.nf > 1 ? 'clip:' + file.name : 'none';
+                    const st = get([uid, file.img.rows, file.img.cols, file.img.spp, geo].join('|'), file, 'img');
+                    st.frames.push(fr);
+                    if (!st.fileSet.has(file)) { st.fileSet.add(file); st.files.push(file); }
+                }
+            }
+            const stacks = [...map.values()];
+            const perUid = new Map();
+            for (const st of stacks) {
+                const d = st.first.ds;
+                const uid = st.key.split('|')[0];
+                perUid.set(uid, (perUid.get(uid) || 0) + 1);
+                st.uid = uid;
+                st.seriesNum = num(d, 0x00200011);
+                st.modality = str(d, 0x00080060);
+                st.desc = str(d, 0x0008103E) || str(d, 0x00181030) || UIDS[str(d, 0x00080016)] || 'Untitled series';
+                st.studyKey = str(d, 0x0020000D) || 'study';
+                const date = str(d, 0x00080020);
+                st.studyLabel = [pnName(str(d, 0x00100010)) || 'Anonymous', str(d, 0x00081030), date && `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`].filter(Boolean).join(' · ');
+                st.sortKey = [date, str(d, 0x00080030), st.studyKey].join('|');
+            }
+            const seen = new Map();
+            for (const st of stacks) {
+                if (perUid.get(st.uid) > 1) {
+                    const k = (seen.get(st.uid) || 0) + 1;
+                    seen.set(st.uid, k);
+                    st.part = k;
+                }
+                st.files.sort((a, b) => (num(a.ds, 0x00200013) - num(b.ds, 0x00200013)) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+            }
+            stacks.sort((a, b) => a.sortKey.localeCompare(b.sortKey) || ((a.seriesNum || 0) - (b.seriesNum || 0)) || (a.part || 0) - (b.part || 0));
+            return stacks;
+        }
+
+        function stackSub(st) {
+            const bits = [st.modality];
+            if (st.kind === 'nopix') bits.push('headers only');
+            else {
+                const img = st.first.img;
+                bits.push(`${img.cols}×${img.rows}`);
+                bits.push(`${st.frames.length} ${st.frames.length === 1 ? 'image' : 'images'}`);
+            }
+            if (st.files.length > 1 || st.kind === 'nopix') bits.push(`${st.files.length} file${st.files.length === 1 ? '' : 's'}`);
+            return bits.filter(Boolean).join(' · ');
+        }
+
+        function tcmp(a, b) {
+            const A = [a.tpos, a.acq, a.inst, a.f], B = [b.tpos, b.acq, b.inst, b.f];
+            for (let i = 0; i < 4; i++) {
+                const x = A[i], y = B[i];
+                const nx = !Number.isFinite(x), ny = !Number.isFinite(y);
+                if ((nx && ny) || x === y) continue;
+                if (nx) return 1;
+                if (ny) return -1;
+                return x - y;
+            }
+            return 0;
+        }
+
+        function pickType(frames) {
+            let lo = Infinity, hi = -Infinity;
+            for (const fr of frames) {
+                const im = fr.file.img;
+                if (fr.mlut || im.ba > 16 || !Number.isInteger(fr.slope) || !Number.isInteger(fr.inter)) return Float32Array;
+                const rlo = im.signed ? -(2 ** (im.bs - 1)) : 0, rhi = im.signed ? 2 ** (im.bs - 1) - 1 : 2 ** im.bs - 1;
+                const a = rlo * fr.slope + fr.inter, b = rhi * fr.slope + fr.inter;
+                lo = Math.min(lo, a, b);
+                hi = Math.max(hi, a, b);
+            }
+            if (lo >= -32768 && hi <= 32767) return Int16Array;
+            if (lo >= 0 && hi <= 65535) return Uint16Array;
+            return Float32Array;
+        }
+
+        async function buildVolume(st, progress) {
+            const frames = st.frames, f0 = frames[0], img = f0.file.img;
+            const X = img.cols, Y = img.rows, warnings = [];
+            const geo = frames.every((f) => f.ipp && f.iop);
+            let R = [1, 0, 0], C = [0, 1, 0], N = [0, 0, 1];
+            if (geo) {
+                R = unit(f0.iop.slice(0, 3));
+                C = unit(f0.iop.slice(3, 6));
+                N = unit(cross(R, C));
+            } else if (frames.length > 1) {
+                warnings.push('No patient geometry: images are stacked in instance order and orientation labels are hidden');
+            }
+            const list = frames.map((f, i) => ({ f, i, d: geo ? dot(f.ipp, N) : 0 }));
+            list.sort((a, b) => (a.d - b.d) || tcmp(a.f, b.f) || (a.i - b.i));
+            let groups = [];
+            if (geo) {
+                for (const e of list) {
+                    const g = groups[groups.length - 1];
+                    if (g && Math.abs(e.d - g.d) < 0.01) g.push(e.f);
+                    else { const ng = [e.f]; ng.d = e.d; groups.push(ng); }
+                }
+            } else {
+                groups = list.map((e, i) => { const g = [e.f]; g.d = i; return g; });
+            }
+            let T = groups[0].length;
+            if (!groups.every((g) => g.length === T)) {
+                warnings.push(`${frames.length - groups.length} images share a slice position with another; showing the first at each position`);
+                groups = groups.map((g) => { const ng = [g[0]]; ng.d = g.d; return ng; });
+                T = 1;
+            }
+            const Z = groups.length;
+            const ps = f0.ps;
+            if (!ps) warnings.push('No pixel spacing; assuming 1 mm pixels');
+            const rs = ps ? ps[0] : 1, cs = ps ? ps[1] : 1;
+            let ss = num(f0.file.ds, 0x00180088) || f0.thick || 1;
+            if (geo && Z > 1) {
+                const gaps = [];
+                for (let k = 1; k < Z; k++) gaps.push(groups[k].d - groups[k - 1].d);
+                const sorted = [...gaps].sort((a, b) => a - b);
+                ss = sorted[sorted.length >> 1];
+                if (gaps.some((g) => Math.abs(g - ss) > 0.1 * ss + 0.01)) {
+                    warnings.push(`Slice gaps vary from ${sorted[0].toFixed(2)} to ${sorted[sorted.length - 1].toFixed(2)} mm (missing slices?); displayed at the median, ${ss.toFixed(2)} mm`);
+                }
+                const a = groups[0][0].ipp, b = groups[Z - 1][0].ipp;
+                const dlt = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], along = dot(dlt, N);
+                const perp = Math.hypot(dlt[0] - N[0] * along, dlt[1] - N[1] * along, dlt[2] - N[2] * along);
+                if (perp > Math.max(cs, rs)) warnings.push('Slices are offset in-plane from each other (gantry tilt?); shown unsheared');
+            }
+            const rgb = img.rgb;
+            const Type = rgb ? Uint8Array : pickType(frames);
+            const XY = X * Y, data = [];
+            for (let t = 0; t < T; t++) data.push(new Type(XY * Z * (rgb ? 3 : 1)));
+            let done = 0;
+            const total = Z * T;
+            for (let k = 0; k < Z; k++) {
+                for (let t = 0; t < T; t++) {
+                    const fr = groups[k][t];
+                    const raw = await decodeFrame(fr);
+                    const out = data[t];
+                    if (rgb) out.set(toRGB(raw, fr.file.img, fr.file), k * XY * 3);
+                    else if (fr.mlut) {
+                        // A Modality LUT replaces rescale slope/intercept.
+                        const a = raw.arr, base = k * XY, L = fr.mlut, top = L.n - 1;
+                        for (let i = 0; i < XY; i++) {
+                            const j = a[i] - L.first;
+                            out[base + i] = L.data[j < 0 ? 0 : j > top ? top : j];
+                        }
+                    } else if (fr.slope === 1 && fr.inter === 0) out.set(raw.arr.length === XY ? raw.arr : raw.arr.subarray(0, XY), k * XY);
+                    else {
+                        const a = raw.arr, base = k * XY, s = fr.slope, b = fr.inter;
+                        for (let i = 0; i < XY; i++) out[base + i] = a[i] * s + b;
+                    }
+                    if (++done % 16 === 0 && progress) await progress(done, total);
+                }
+            }
+            const vol = {
+                X, Y, Z, T, dims: [X, Y, Z], sp: [cs, rs, ss], data, rgb, geo, R, C, N, groups, warnings,
+                origin: geo ? groups[0][0].ipp : [0, 0, 0],
+                invert: img.photo === 'MONOCHROME1',
+                modality: st.modality,
+            };
+            if (!rgb) stats(vol);
+            return vol;
+        }
+
+        function stats(vol) {
+            const d = vol.data[0], n = d.length;
+            const step = Math.max(1, Math.floor(n / 400000));
+            const sample = [];
+            let lo = Infinity, hi = -Infinity;
+            for (let i = 0; i < n; i += step) {
+                const v = d[i];
+                if (v < lo) lo = v;
+                if (v > hi) hi = v;
+                sample.push(v);
+            }
+            sample.sort((a, b) => a - b);
+            const q = (p) => sample[Math.min(sample.length - 1, Math.floor(p * sample.length))];
+            vol.min = lo;
+            vol.max = hi;
+            vol.p1 = q(0.01);
+            vol.p99 = q(0.99);
+            if (vol.p99 <= vol.p1) { vol.p1 = lo; vol.p99 = hi; }
+            vol.range = Math.max(vol.p99 - vol.p1, 1e-6);
+        }
+
+        // =====================================================================
+        // Colour maps: interpolated stops, baked into 256 packed ABGR entries
+        // =====================================================================
+        const CMAPS = {
+            grey: ['Greyscale', [[0, [0, 0, 0]], [1, [255, 255, 255]]]],
+            hotiron: ['Hot iron', [[0, [0, 0, 0]], [0.5, [255, 0, 0]], [0.75, [255, 128, 0]], [1, [255, 255, 255]]]],
+            hot: ['Hot', [[0, [0, 0, 0]], [0.375, [255, 0, 0]], [0.75, [255, 255, 0]], [1, [255, 255, 255]]]],
+            inferno: ['Inferno', [[0, [0, 0, 4]], [0.25, [87, 16, 110]], [0.5, [188, 55, 84]], [0.75, [249, 142, 9]], [1, [252, 255, 164]]]],
+            viridis: ['Viridis', [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]]],
+            plasma: ['Plasma', [[0, [13, 8, 135]], [0.25, [126, 3, 168]], [0.5, [204, 71, 120]], [0.75, [248, 149, 64]], [1, [240, 249, 33]]]],
+            rainbow: ['Rainbow (jet)', [[0, [0, 0, 128]], [0.125, [0, 0, 255]], [0.375, [0, 255, 255]], [0.625, [255, 255, 0]], [0.875, [255, 0, 0]], [1, [128, 0, 0]]]],
+            coolwarm: ['Cool\u2013warm (diverging)', [[0, [59, 76, 192]], [0.5, [221, 221, 221]], [1, [180, 4, 38]]]],
+            phase: ['Phase (cyclic)', [[0, [255, 0, 0]], [1 / 6, [255, 255, 0]], [2 / 6, [0, 255, 0]], [3 / 6, [0, 255, 255]], [4 / 6, [0, 0, 255]], [5 / 6, [255, 0, 255]], [1, [255, 0, 0]]]],
+        };
+        const lutCache = {};
+        function colourLut(name) {
+            if (lutCache[name]) return lutCache[name];
+            const pts = (CMAPS[name] || CMAPS.grey)[1];
+            const lut = new Uint32Array(256);
+            for (let k = 0; k < 256; k++) {
+                const t = k / 255;
+                let s = 0;
+                while (s < pts.length - 2 && t > pts[s + 1][0]) s++;
+                const [t0, c0] = pts[s], [t1, c1] = pts[s + 1];
+                const f = clamp((t - t0) / (t1 - t0), 0, 1);
+                const c = [0, 1, 2].map((ch) => Math.round(c0[ch] + (c1[ch] - c0[ch]) * f));
+                lut[k] = (0xFF000000 | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0;
+            }
+            return (lutCache[name] = lut);
+        }
+
+        // =====================================================================
+        // Viewer state
+        // =====================================================================
+        const S = {
+            files: [], stacks: [], stack: null, vol: null,
+            cur: [0, 0, 0], t: 0,
+            wc: 0, ww: 1, invert: false, smooth: false, cross: true,
+            active: 'axi', big: null, locked: false,
+            tagFile: null, tagFrame: 0, fileList: [], open: new Map(), varies: null,
+            presets: [], cmap: 'grey', voi: null,
+        };
+
+        // Each view: the patient axis it looks along, and which patient axes
+        // run left-to-right and top-to-bottom on screen (with direction).
+        // LPS: +x = patient left, +y = posterior, +z = superior.
+        const VIEW_DEFS = {
+            axi: { name: 'Axial', n: 2, h: [0, 1], v: [1, 1] },
+            cor: { name: 'Coronal', n: 1, h: [0, 1], v: [2, -1] },
+            sag: { name: 'Sagittal', n: 0, h: [1, 1], v: [2, -1] },
+        };
+        const PERMS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+        const views = {};
+
+        function setupViews() {
+            for (const el of document.querySelectorAll('.view')) {
+                const id = el.dataset.view, cv = el.querySelector('canvas');
+                const layer = document.createElement('canvas');
+                const v = {
+                    id, el, cv, ctx: cv.getContext('2d'), layer, lctx: layer.getContext('2d'),
+                    w: 0, h: 0, zoom: 1, panX: 0, panY: 0, g: null, key: '',
+                };
+                views[id] = v;
+                new ResizeObserver(() => resizeView(v)).observe(el);
+                bindViewEvents(v);
+            }
+        }
+
+        function resizeView(v) {
+            const dpr = window.devicePixelRatio || 1;
+            v.w = v.el.clientWidth;
+            v.h = v.el.clientHeight;
+            v.cv.style.width = v.w + 'px';
+            v.cv.style.height = v.h + 'px';
+            v.cv.width = Math.round(v.w * dpr);
+            v.cv.height = Math.round(v.h * dpr);
+            v.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            drawView(v);
+        }
+
+        function dirLabel(vec) {
+            const L = [['L', 'R'], ['P', 'A'], ['S', 'I']];
+            return [0, 1, 2]
+                .filter((i) => Math.abs(vec[i]) > 0.25)
+                .sort((a, b) => Math.abs(vec[b]) - Math.abs(vec[a]))
+                .map((i) => (vec[i] > 0 ? L[i][0] : L[i][1]))
+                .join('');
+        }
+
+        function setupGeometry(vol) {
+            const A = [vol.R, vol.C, vol.N];
+            let best = null;
+            for (const p of PERMS) {
+                const s = Math.abs(A[p[0]][0]) + Math.abs(A[p[1]][1]) + Math.abs(A[p[2]][2]);
+                if (!best || s > best.s + 1e-9) best = { p, s };
+            }
+            const perm = best.p;
+            const sgn = [0, 1, 2].map((a) => Math.sign(A[perm[a]][a]) || 1);
+            for (const id of Object.keys(VIEW_DEFS)) {
+                const D = VIEW_DEFS[id], v = views[id];
+                const na = perm[D.n], ha = perm[D.h[0]], va = perm[D.v[0]];
+                const g = {
+                    na, ha, va,
+                    hf: sgn[D.h[0]] * D.h[1] < 0,
+                    vf: sgn[D.v[0]] * D.v[1] < 0,
+                    W: vol.dims[ha], H: vol.dims[va],
+                    sh: vol.sp[ha], sv: vol.sp[va],
+                };
+                v.g = g;
+                v.key = '';
+                v.zoom = 1;
+                v.panX = v.panY = 0;
+                v.layer.width = g.W;
+                v.layer.height = g.H;
+                v.img = v.lctx.createImageData(g.W, g.H);
+                v.buf = new Uint32Array(v.img.data.buffer);
+                const right = A[ha].map((x) => (g.hf ? -x : x));
+                const down = A[va].map((x) => (g.vf ? -x : x));
+                const lab = (cls, vec) => { v.el.querySelector('.ori.' + cls).textContent = vol.geo ? dirLabel(vec) : ''; };
+                lab('r', right);
+                lab('l', right.map((x) => -x));
+                lab('b', down);
+                lab('t', down.map((x) => -x));
+                let name = D.name;
+                if (!vol.geo) name = id === 'axi' ? 'Image plane' : id === 'cor' ? 'Reformat (rows)' : 'Reformat (columns)';
+                else if (na === 2 && Math.abs(vol.N[D.n]) < 0.995) name += ' (oblique acquisition)';
+                else if (na !== 2) name += ' · reformat';
+                v.el.querySelector('.vname').textContent = name;
+            }
+            // A single slice (or a single row/column) leaves only one view worth showing.
+            const flat = Object.values(views).find((v) => vol.dims[v.g.na] === 1 && v.g.W > 1 && v.g.H > 1);
+            S.locked = !!flat;
+            setBig(flat ? flat.id : null);
+        }
+
+        function setBig(id) {
+            S.big = id;
+            const box = $('#views');
+            box.classList.toggle('max', !!id);
+            for (const v of Object.values(views)) v.el.classList.toggle('big', v.id === id);
+            if (id) setActive(id);
+        }
+
+        function setActive(id) {
+            S.active = id;
+            for (const v of Object.values(views)) v.el.classList.toggle('active', v.id === id);
+        }
+
+        // ---------- rendering ----------
+        let raf = 0;
+        function requestRender() {
+            if (!raf) raf = requestAnimationFrame(() => { raf = 0; renderAll(); });
+        }
+
+        function renderAll() {
+            for (const v of Object.values(views)) drawView(v);
+            updateReadout();
+            syncTagFile();
+        }
+
+        function fillLayer(v) {
+            const vol = S.vol, g = v.g, data = vol.data[S.t];
+            const strides = [1, vol.X, vol.X * vol.Y];
+            let base = S.cur[g.na] * strides[g.na], su = strides[g.ha], sv = strides[g.va];
+            if (g.hf) { base += (g.W - 1) * su; su = -su; }
+            if (g.vf) { base += (g.H - 1) * sv; sv = -sv; }
+            const out = v.buf;
+            let o = 0;
+            if (vol.rgb) {
+                for (let y = 0; y < g.H; y++) {
+                    let i = base + y * sv;
+                    for (let x = 0; x < g.W; x++, i += su) {
+                        const j = i * 3;
+                        out[o++] = 0xFF000000 | (data[j + 2] << 16) | (data[j + 1] << 8) | data[j];
+                    }
+                }
+            } else {
+                const lo = S.wc - S.ww / 2, k = 255 / Math.max(S.ww, 1e-9), inv = S.invert;
+                const lut = colourLut(S.cmap), voi = S.voi;
+                for (let y = 0; y < g.H; y++) {
+                    let i = base + y * sv;
+                    for (let x = 0; x < g.W; x++, i += su) {
+                        let gv;
+                        if (voi) {
+                            const j = Math.round(data[i]) - voi.first;
+                            gv = voi.map[j < 0 ? 0 : j >= voi.n ? voi.n - 1 : j];
+                        } else {
+                            gv = (data[i] - lo) * k;
+                            gv = gv < 0 ? 0 : gv > 255 ? 255 : gv | 0;
+                        }
+                        if (inv) gv = 255 - gv;
+                        out[o++] = lut[gv];
+                    }
+                }
+            }
+            v.lctx.putImageData(v.img, 0, 0);
+        }
+
+        function drawView(v) {
+            const ctx = v.ctx;
+            if (!v.w || !v.h) return;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, v.w, v.h);
+            const slice = v.el.querySelector('.vslice');
+            if (!S.vol || !v.g) { slice.textContent = ''; return; }
+            const g = v.g;
+            const key = [S.cur[g.na], S.t, S.wc, S.ww, S.invert, S.cmap, S.voi ? S.voi.id : ''].join('|');
+            if (key !== v.key) { fillLayer(v); v.key = key; }
+            const pw = g.W * g.sh, ph = g.H * g.sv;
+            const s = Math.min(v.w / pw, v.h / ph) * 0.94 * v.zoom;
+            const dw = pw * s, dh = ph * s;
+            const x0 = (v.w - dw) / 2 + v.panX, y0 = (v.h - dh) / 2 + v.panY;
+            v.box = { x0, y0, dw, dh, s };
+            ctx.imageSmoothingEnabled = S.smooth;
+            ctx.drawImage(v.layer, x0, y0, dw, dh);
+            if (S.cross) {
+                const u = g.hf ? g.W - 1 - S.cur[g.ha] : S.cur[g.ha];
+                const w = g.vf ? g.H - 1 - S.cur[g.va] : S.cur[g.va];
+                const sx = Math.round(x0 + ((u + 0.5) * dw) / g.W) + 0.5;
+                const sy = Math.round(y0 + ((w + 0.5) * dh) / g.H) + 0.5;
+                const gap = 10;
+                ctx.strokeStyle = 'rgba(62, 224, 197, 0.75)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                if (g.W > 1) {
+                    ctx.moveTo(sx, Math.max(0, y0)); ctx.lineTo(sx, sy - gap);
+                    ctx.moveTo(sx, sy + gap); ctx.lineTo(sx, Math.min(v.h, y0 + dh));
+                }
+                if (g.H > 1) {
+                    ctx.moveTo(Math.max(0, x0), sy); ctx.lineTo(sx - gap, sy);
+                    ctx.moveTo(sx + gap, sy); ctx.lineTo(Math.min(v.w, x0 + dw), sy);
+                }
+                ctx.stroke();
+            }
+            slice.textContent = `${S.cur[g.na] + 1} / ${S.vol.dims[g.na]}`;
+        }
+
+        // ---------- interaction ----------
+        function screenToVoxel(v, x, y) {
+            const b = v.box, g = v.g;
+            const u = clamp(Math.floor(((x - b.x0) / b.dw) * g.W), 0, g.W - 1);
+            const w = clamp(Math.floor(((y - b.y0) / b.dh) * g.H), 0, g.H - 1);
+            const idx = S.cur.slice();
+            idx[g.ha] = g.hf ? g.W - 1 - u : u;
+            idx[g.va] = g.vf ? g.H - 1 - w : w;
+            return idx;
+        }
+
+        function setCursor(idx) {
+            if (!S.vol) return;
+            S.cur = idx.map((x, i) => clamp(x, 0, S.vol.dims[i] - 1));
+            requestRender();
+        }
+
+        function stepSlice(v, n) {
+            if (!S.vol || !v.g) return;
+            const idx = S.cur.slice();
+            idx[v.g.na] += n;
+            setCursor(idx);
+        }
+
+        function setZoom(v, z, x, y) {
+            z = clamp(z, 0.5, 40);
+            if (x !== undefined && v.box) {
+                const cx = v.w / 2 + v.panX, cy = v.h / 2 + v.panY;
+                const rx = (x - cx) / v.zoom, ry = (y - cy) / v.zoom;
+                v.panX = x - v.w / 2 - rx * z;
+                v.panY = y - v.h / 2 - ry * z;
+            }
+            v.zoom = z;
+            drawView(v);
+        }
+
+        function setWindow(c, w, fromPreset, keepVoi) {
+            if (!keepVoi) S.voi = null;
+            S.wc = c;
+            S.ww = Math.max(w, 1e-6);
+            const fmt = (x) => +x.toPrecision(6);
+            $('#wl-c').value = fmt(S.wc);
+            $('#wl-w').value = fmt(S.ww);
+            if (!fromPreset) $('#wl-preset').value = 'custom';
+            updateBar();
+            requestRender();
+        }
+
+        // Normalise a VOI LUT's output to 0..255 over the range it actually uses.
+        function voiMap(L, id) {
+            let lo = Infinity, hi = -Infinity;
+            for (const v of L.data) { if (v < lo) lo = v; if (v > hi) hi = v; }
+            const k = 255 / Math.max(hi - lo, 1), map = new Uint8Array(L.n);
+            for (let i = 0; i < L.n; i++) map[i] = Math.round((L.data[i] - lo) * k);
+            return { id, first: L.first, n: L.n, map };
+        }
+
+        function applyPreset(p) {
+            if (p.voi) {
+                S.voi = voiMap(p.voi, p.id);
+                setWindow(p.c, p.w, true, true);
+            } else setWindow(p.c, p.w, true);
+        }
+
+        function updateBar() {
+            const lut = colourLut(S.cmap), stops = [];
+            for (let k = 0; k <= 16; k++) {
+                let gv = Math.round((k / 16) * 255);
+                if (S.invert) gv = 255 - gv;
+                const c = lut[gv];
+                stops.push(`rgb(${c & 255},${(c >> 8) & 255},${(c >> 16) & 255}) ${(k / 16) * 100}%`);
+            }
+            $('#cbar-grad').style.background = `linear-gradient(90deg, ${stops.join(',')})`;
+            const [lo, hi] = S.voi ? [S.voi.first, S.voi.first + S.voi.n - 1] : [S.wc - S.ww / 2, S.wc + S.ww / 2];
+            $('#cbar-lo').textContent = fmtNum(lo) + (S.voi ? ' (LUT)' : '');
+            $('#cbar-hi').textContent = fmtNum(hi);
+        }
+
+        function bindViewEvents(v) {
+            const cv = v.cv;
+            let drag = null, wheelAcc = 0;
+            const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+            cv.addEventListener('contextmenu', (e) => e.preventDefault());
+            cv.addEventListener('pointerdown', (e) => {
+                if (!S.vol) return;
+                setActive(v.id);
+                v.el.focus({ preventScroll: true });
+                const [x, y] = local(e);
+                if (e.pointerType === 'touch') {
+                    // Wait to see whether this is a tap, a sideways swipe, or a
+                    // vertical scroll (which the browser takes and cancels).
+                    drag = { mode: 'touch', x, y, step: 0 };
+                    return;
+                }
+                cv.setPointerCapture(e.pointerId);
+                const mode = e.button === 2 || e.shiftKey ? 'wl' : e.button === 1 || e.altKey ? 'pan' : 'cursor';
+                drag = { mode, x, y, wc: S.wc, ww: S.ww, px: v.panX, py: v.panY };
+                if (mode === 'cursor') setCursor(screenToVoxel(v, x, y));
+                e.preventDefault();
+            });
+            cv.addEventListener('pointermove', (e) => {
+                if (!drag) return;
+                const [x, y] = local(e);
+                if (drag.mode === 'touch') {
+                    if (Math.abs(x - drag.x) > 10) { drag.mode = 'swipe'; drag.x = x; }
+                } else if (drag.mode === 'swipe') {
+                    const n = Math.trunc((x - drag.x) / 12);
+                    if (n) { drag.x += n * 12; stepSlice(v, n); }
+                } else if (drag.mode === 'cursor') setCursor(screenToVoxel(v, x, y));
+                else if (drag.mode === 'pan') {
+                    v.panX = drag.px + x - drag.x;
+                    v.panY = drag.py + y - drag.y;
+                    drawView(v);
+                } else if (!S.vol.rgb) {
+                    const k = S.vol.range / 400;
+                    setWindow(drag.wc + (y - drag.y) * k, drag.ww + (x - drag.x) * k);
+                }
+            });
+            cv.addEventListener('pointerup', (e) => {
+                if (drag && drag.mode === 'touch') setCursor(screenToVoxel(v, ...local(e)));
+                drag = null;
+            });
+            cv.addEventListener('pointercancel', () => { drag = null; });
+            cv.addEventListener('wheel', (e) => {
+                if (!S.vol) return;
+                e.preventDefault();
+                setActive(v.id);
+                if (e.ctrlKey || e.metaKey) {
+                    const [x, y] = local(e);
+                    setZoom(v, v.zoom * Math.exp(-e.deltaY * 0.0025), x, y);
+                    return;
+                }
+                // A mouse notch is one slice; trackpads send small deltas that add up.
+                if (e.deltaMode !== 0 || Math.abs(e.deltaY) >= 50) {
+                    wheelAcc = 0;
+                    stepSlice(v, e.deltaY > 0 ? -1 : 1);
+                    return;
+                }
+                wheelAcc += e.deltaY;
+                const steps = Math.trunc(wheelAcc / 30);
+                if (steps) { wheelAcc -= steps * 30; stepSlice(v, -steps); }
+            }, { passive: false });
+            cv.addEventListener('dblclick', () => {
+                if (!S.vol || S.locked) return;
+                setBig(S.big === v.id ? null : v.id);
+            });
+        }
+
+        // ---------- readout & info ----------
+        function fmtNum(x) {
+            if (typeof x === 'bigint') return x.toString();
+            if (Number.isInteger(x)) return String(x);
+            return String(+x.toPrecision(Math.abs(x) >= 1000 ? 7 : 5));
+        }
+
+        function currentFrame() {
+            if (!S.vol) return null;
+            return S.vol.groups[S.cur[2]][S.t];
+        }
+
+        function updateReadout() {
+            const vol = S.vol;
+            $('#readout').hidden = !vol;
+            if (!vol) return;
+            const [i, j, k] = S.cur;
+            const idx = i + j * vol.X + k * vol.X * vol.Y;
+            const d = vol.data[S.t];
+            $('#r-vox').textContent = `${i}, ${j}, ${k}`;
+            if (vol.geo) {
+                const p = [0, 1, 2].map((a) => vol.origin[a] + i * vol.sp[0] * vol.R[a] + j * vol.sp[1] * vol.C[a] + k * vol.sp[2] * vol.N[a]);
+                $('#r-lps').textContent = p.map((x) => x.toFixed(1)).join(', ');
+            } else $('#r-lps').textContent = 'no geometry';
+            $('#r-val').textContent = vol.rgb ? `RGB ${d[idx * 3]}, ${d[idx * 3 + 1]}, ${d[idx * 3 + 2]}` : fmtNum(d[idx]) + (vol.modality === 'CT' ? ' HU' : '');
+            const fr = currentFrame();
+            const inst = num(fr.file.ds, 0x00200013);
+            const bits = [`slice ${k + 1}/${vol.Z}`];
+            if (vol.T > 1) bits.push(`volume ${S.t + 1}/${vol.T}`);
+            if (fr.file.img.nf > 1) bits.push(`frame ${fr.f + 1}`);
+            if (Number.isFinite(inst)) bits.push(`#${inst}`);
+            $('#r-src').textContent = bits.join(' · ');
+        }
+
+        function setInfo(st) {
+            const d = st.first.ds;
+            $('#info-title').textContent = `${Number.isFinite(st.seriesNum) ? st.seriesNum + ' · ' : ''}${st.desc}${st.part ? ` (stack ${st.part})` : ''}`;
+            $('#info-sub').textContent = st.studyLabel;
+            const kv = [];
+            const add = (k, v) => { if (v) kv.push([k, v]); };
+            const vol = S.vol;
+            add('Patient', [str(d, 0x00100020), str(d, 0x00100040), str(d, 0x00101010)].filter(Boolean).join(' · '));
+            add('Modality', [st.modality, str(d, 0x00080070), str(d, 0x00081090), num(d, 0x00180087) ? num(d, 0x00180087) + ' T' : ''].filter(Boolean).join(' · '));
+            if (vol) {
+                add('Matrix', `${vol.X} × ${vol.Y} × ${vol.Z}${vol.T > 1 ? ' × ' + vol.T : ''}`);
+                add('Voxel', vol.sp.map((x) => +x.toFixed(3)).join(' × ') + ' mm');
+                if (vol.geo) {
+                    const a = [0, 1, 2].reduce((m, i) => (Math.abs(vol.N[i]) > Math.abs(vol.N[m]) ? i : m), 0);
+                    const plane = ['Sagittal', 'Coronal', 'Axial'][a];
+                    add('Acquired', Math.abs(vol.N[a]) < 0.995 ? `Oblique, nearest ${plane.toLowerCase()}` : plane);
+                }
+                if (!vol.rgb) add('Range', `${fmtNum(vol.min)} to ${fmtNum(vol.max)}`);
+            }
+            add('Syntax', UIDS[st.first.ts] || st.first.ts);
+            $('#info-kv').innerHTML = kv.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+            const warns = [...(vol ? vol.warnings : [])];
+            if (st.files.some((f) => f.truncated)) warns.push('Some files are truncated; their last elements may be missing');
+            $('#warnings').innerHTML = warns.map((w) => `<li>${esc(w)}</li>`).join('');
+        }
+
+        function windowPresets(vol) {
+            const out = [];
+            const fr = vol.groups[0][0];
+            const expl = str(fr.file.ds, 0x00281055).split('\\');
+            if (fr.wc && fr.ww) {
+                for (let i = 0; i < Math.min(fr.wc.length, fr.ww.length); i++) {
+                    if (fr.ww[i] > 0) out.push({ id: 'f' + i, name: (expl[i] || `Preset ${i + 1}`) + ' (from file)', c: fr.wc[i], w: fr.ww[i] });
+                }
+            }
+            out.push({ id: 'auto', name: 'Auto (1–99%)', c: (vol.p1 + vol.p99) / 2, w: vol.p99 - vol.p1 });
+            out.push({ id: 'full', name: 'Full range', c: (vol.min + vol.max) / 2, w: Math.max(vol.max - vol.min, 1e-6) });
+            const voiSeq = getEl(fr.file.ds, 0x00283010)?.items || [];
+            voiSeq.forEach((item, i) => {
+                const L = parseLut(item, vol.min < 0);
+                if (L) out.push({ id: 'voi' + i, name: `${L.expl || 'VOI LUT ' + (i + 1)} (LUT from file)`, c: L.first + (L.n - 1) / 2, w: L.n, voi: L });
+            });
+            if (vol.modality === 'CT') {
+                for (const [name, c, w] of [['Brain', 40, 80], ['Subdural', 75, 215], ['Soft tissue', 40, 400], ['Lung', -600, 1500], ['Bone', 400, 1800]]) {
+                    out.push({ id: name, name: 'CT ' + name.toLowerCase(), c, w });
+                }
+            }
+            return out;
+        }
+
+        function setupWindowUi(vol) {
+            $('#wl-box').hidden = vol.rgb;
+            $('#invert-wrap').hidden = vol.rgb;
+            if (vol.rgb) return;
+            S.presets = windowPresets(vol);
+            const sel = $('#wl-preset');
+            sel.innerHTML = S.presets.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('') + '<option value="custom">Custom</option>';
+            // With no window in the file, a VOI LUT from the file beats auto.
+            const p = S.presets[0].id.startsWith('f') ? S.presets[0] : S.presets.find((x) => x.voi) || S.presets[0];
+            sel.value = p.id;
+            S.invert = vol.invert;
+            $('#opt-invert').checked = S.invert;
+            applyPreset(p);
+        }
+
+        function showViewMsg(text) {
+            $('#view-msg').hidden = !text;
+            $('#view-msg-text').textContent = text || '';
+        }
+
+        function setStatus(text) {
+            $('#status').textContent = text;
+        }
+
+        // ---------- series selection ----------
+        async function selectStack(st) {
+            S.stack = st;
+            for (const b of document.querySelectorAll('.series')) b.setAttribute('aria-current', String(S.stacks[+b.dataset.i] === st));
+            for (const other of S.stacks) if (other !== st) other.vol = null;
+            S.vol = null;
+            S.varies = null;
+            showViewMsg('');
+            requestRender();
+            if (st.kind === 'img') {
+                if (!st.vol) {
+                    showViewMsg('Decoding…');
+                    try {
+                        st.vol = await buildVolume(st, async (d, n) => {
+                            showViewMsg(`Decoding ${d} / ${n}…`);
+                            await new Promise((r) => setTimeout(r));
+                        });
+                        st.err = null;
+                    } catch (e) {
+                        st.err = e.message || String(e);
+                    }
+                }
+                if (S.stack !== st) return;
+                if (st.vol) {
+                    const vol = st.vol;
+                    S.vol = vol;
+                    S.cur = vol.dims.map((n) => n >> 1);
+                    S.t = 0;
+                    setupGeometry(vol);
+                    setupWindowUi(vol);
+                    $('#time-row').hidden = vol.T < 2;
+                    $('#time').max = vol.T - 1;
+                    $('#time').value = 0;
+                    $('#time-n').textContent = vol.T > 1 ? `1 / ${vol.T}` : '';
+                    const seen = new Set();
+                    S.fileList = [];
+                    for (const g of vol.groups) for (const fr of g) if (!seen.has(fr.file)) { seen.add(fr.file); S.fileList.push(fr.file); }
+                    showViewMsg('');
+                } else {
+                    S.fileList = st.files;
+                    showViewMsg(`${st.err}. The headers are still browsable on the right.`);
+                }
+            } else {
+                S.fileList = st.files;
+                showViewMsg('This series has no pixel data. Its headers are on the right.');
+            }
+            if (!S.vol) {
+                for (const v of Object.values(views)) { v.g = null; v.el.querySelectorAll('.ori,.vname').forEach((x) => (x.textContent = '')); }
+                setBig(null);
+                $('#wl-box').hidden = true;
+                $('#time-row').hidden = true;
+                S.tagFile = S.fileList[0] || null;
+                S.tagFrame = 0;
+            }
+            S.varies = computeVaries(st);
+            $('#opt-vary').disabled = !S.varies;
+            if (!S.varies) $('#opt-vary').checked = false;
+            setInfo(st);
+            S.tagFile = S.vol ? null : S.tagFile;
+            renderTagsNow();
+            requestRender();
+        }
+
+        function renderSeries() {
+            const ul = $('#series-list');
+            let last = null, html = '';
+            S.stacks.forEach((st, i) => {
+                if (st.studyKey !== last) {
+                    html += `<li class="study-h" title="${esc(st.studyLabel)}">${esc(st.studyLabel)}</li>`;
+                    last = st.studyKey;
+                }
+                const name = `${Number.isFinite(st.seriesNum) ? st.seriesNum + ' · ' : ''}${st.desc}${st.part ? ` (${st.part})` : ''}`;
+                html += `<li><button class="series" data-i="${i}" aria-current="false" title="${esc(name)}"><span class="s-name">${esc(name)}</span><span class="s-sub">${esc(stackSub(st))}</span></button></li>`;
+            });
+            ul.innerHTML = html;
+        }
+
+        // =====================================================================
+        // Tag browser
+        // =====================================================================
+        const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+        function fmtBytes(n) {
+            if (n < 1024) return `${n} B`;
+            if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+            return `${(n / 1048576).toFixed(1)} MB`;
+        }
+
+        function printable(u8) {
+            if (!u8.length) return false;
+            for (let i = 0; i < u8.length; i++) {
+                const b = u8[i];
+                if (b === 0 && i >= u8.length - 1) continue;
+                if ((b < 32 && b !== 9 && b !== 10 && b !== 13) || (b > 126 && b < 160)) return false;
+            }
+            return true;
+        }
+
+        function tagName(el, sib) {
+            const t = el.tag, g = t >>> 16, e = t & 0xFFFF;
+            const d = DICT.get(t);
+            if (d) return d.kw;
+            if (e === 0) return 'GroupLength';
+            if ((g & 0xFF01) === 0x6000 && OVERLAY[e]) return OVERLAY[e];
+            if (g & 1) {
+                if (e >= 0x10 && e <= 0xFF) return 'PrivateCreator';
+                if (e >= 0x1000) {
+                    const cr = getEl(sib, ((g << 16) | (e >> 8)) >>> 0);
+                    const name = cr ? str(sib, cr.tag) : '';
+                    return name ? `Private · ${name}` : 'Private';
+                }
+                return 'Private';
+            }
+            return 'Unknown';
+        }
+
+        function valueText(el, full = false) {
+            if (!full && el._t !== undefined) return el._t;
+            let s;
+            if (el.vr === 'SQ') s = `${el.items.length} item${el.items.length === 1 ? '' : 's'}`;
+            else if (el.frags) s = `Encapsulated, ${el.frags.length} fragment${el.frags.length === 1 ? '' : 's'} (${fmtBytes(el.frags.reduce((a, f) => a + f.len, 0))})`;
+            else if (el.tag === PIXEL || el.tag === 0x7FE00008 || el.tag === 0x7FE00009) s = `${fmtBytes(el.len)} of pixel data`;
+            else {
+                let vr = el.vr;
+                if (vr === 'UN') {
+                    const d = DICT.get(el.tag);
+                    if (d && !['UN', 'SQ'].includes(d.vr)) vr = d.vr;
+                }
+                const max = full ? 100000 : 64;
+                const vals = readValues(el, vr, max);
+                if (vals) {
+                    s = vals.map((x) => (typeof x === 'number' ? (vr === 'FL' ? fmtNum(x) : String(x)) : x)).join(' \\ ');
+                    const size = NUM_VR[vr]?.[0] || (vr === 'AT' ? 4 : 0);
+                    if (size && el.len / size > vals.length) s += ` … (${el.len / size} values)`;
+                    if (vr === 'UI' && UIDS[vals[0]]) s += `  — ${UIDS[vals[0]]}`;
+                } else {
+                    const u8 = elBytes(el);
+                    if (vr === 'UN' && u8.length <= (full ? u8.length : 4096) && printable(u8)) s = LATIN1.decode(u8).replace(/[\0 ]+$/, '');
+                    else {
+                        const k = full ? 512 : 24;
+                        s = Array.from(u8.subarray(0, k), (b) => b.toString(16).padStart(2, '0')).join(' ') + (u8.length > k ? ' …' : '') + ` (${fmtBytes(u8.length)})`;
+                    }
+                }
+            }
+            if (!full) {
+                if (s.length > 300) s = s.slice(0, 300) + '…';
+                el._t = s;
+            }
+            return s;
+        }
+
+        // Siemens CSA headers: a private binary blob that holds most of the
+        // interesting MR parameters. Parsed into rows when the creator says CSA.
+        function parseCSA(el) {
+            const u8 = elBytes(el);
+            if (u8.length < 16) return null;
+            const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+            const v2 = u8[0] === 0x53 && u8[1] === 0x56 && u8[2] === 0x31 && u8[3] === 0x30;
+            let p = v2 ? 8 : 0;
+            const n = dv.getUint32(p, true);
+            if (n < 1 || n > 1000 || dv.getUint32(p + 4, true) !== 77) return null;
+            p += 8;
+            const cstr = (a, b) => { const s = LATIN1.decode(u8.subarray(a, b)); const z = s.indexOf('\0'); return (z < 0 ? s : s.slice(0, z)).trim(); };
+            const out = [];
+            let first = 0;
+            for (let t = 0; t < n && p + 84 <= u8.length; t++) {
+                const name = cstr(p, p + 64), vm = dv.getInt32(p + 64, true), vr = cstr(p + 68, p + 72), nItems = dv.getInt32(p + 76, true);
+                p += 84;
+                if (t === 0) first = nItems;
+                if (nItems < 0 || nItems > 10000) break;
+                const vals = [];
+                for (let i = 0; i < nItems && p + 16 <= u8.length; i++) {
+                    const x0 = dv.getInt32(p, true), x1 = dv.getInt32(p + 4, true);
+                    p += 16;
+                    const len = v2 ? x1 : x0 - first;
+                    if (len < 0 || p + len > u8.length) { p = u8.length; break; }
+                    const s = cstr(p, p + len);
+                    if (s !== '') vals.push(s);
+                    p += len + ((4 - (len % 4)) % 4);
+                }
+                out.push({ name, vr, vm, value: vals.join(' \\ ') });
+            }
+            return out.length ? out : null;
+        }
+
+        function csaOf(el, sib) {
+            if (el.tag >>> 16 !== 0x0029 || !['OB', 'UN'].includes(el.vr) || el.frags) return null;
+            if (el._csa !== undefined) return el._csa;
+            const cr = str(sib, ((0x0029 << 16) | ((el.tag & 0xFFFF) >> 8)) >>> 0);
+            el._csa = /CSA/i.test(cr) ? parseCSA(el) : null;
+            return el._csa;
+        }
+
+        function fnv(u8) {
+            let h = 0x811c9dc5;
+            for (let i = 0; i < u8.length; i++) { h ^= u8[i]; h = Math.imul(h, 0x01000193); }
+            return h >>> 0;
+        }
+
+        function computeVaries(st) {
+            if (st.files.length < 2) return null;
+            const first = new Map(), count = new Map(), vary = new Set();
+            for (const f of st.files) {
+                for (const el of f.all) {
+                    if (el.tag === PIXEL) continue;
+                    const sig = `${el.vr}:${el.len}:${fnv(el.c.u8.subarray(el.off, el.end))}`;
+                    if (!first.has(el.tag)) { first.set(el.tag, sig); count.set(el.tag, 1); } else {
+                        count.set(el.tag, count.get(el.tag) + 1);
+                        if (first.get(el.tag) !== sig) vary.add(el.tag);
+                    }
+                }
+            }
+            for (const [t, n] of count) if (n < st.files.length) vary.add(t);
+            return vary;
+        }
+
+        let ROWS = [];
+        const ROW_LIMIT = 5000;
+
+        function renderTagsNow() {
+            const box = $('#tag-table');
+            const file = S.tagFile;
+            const has = !!file;
+            $('#copy-dump').disabled = !has;
+            const idx = has ? S.fileList.indexOf(file) : -1;
+            $('#file-prev').disabled = idx <= 0;
+            $('#file-next').disabled = idx < 0 || idx >= S.fileList.length - 1;
+            if (!has) {
+                $('#file-label').textContent = '';
+                box.innerHTML = '<p class="placeholder">Load some DICOM files to see their tags.</p>';
+                return;
+            }
+            const short = file.name.split('/').slice(-2).join('/');
+            $('#file-label').textContent = `${idx + 1}/${S.fileList.length} · ${short}` + (file.img && file.img.nf > 1 ? ` · frame ${S.tagFrame + 1}/${file.img.nf}` : '');
+            $('#file-label').title = file.name;
+            const q = $('#tag-filter').value.trim().toLowerCase();
+            const showPriv = $('#opt-private').checked;
+            const onlyVar = $('#opt-vary').checked && S.varies;
+            const expandAll = $('#opt-expand').checked;
+            ROWS = [];
+            let count = 0;
+            const html = [];
+
+            const row = (cls, depth, tag, vr, name, val, ref) => {
+                ROWS.push(ref);
+                count++;
+                return `<div class="trow ${cls}" data-r="${ROWS.length - 1}" style="--d:${depth}"><span class="c-tag">${tag}</span><span class="c-vr">${esc(vr)}</span><span class="c-name" title="${esc(name)}">${esc(name)}</span><span class="c-val" title="${esc(val.length > 120 ? val.slice(0, 600) : val)}">${esc(val)}</span></div>`;
+            };
+            const isOpen = (path, dflt) => (S.open.has(path) ? S.open.get(path) : expandAll || dflt);
+
+            // Returns { html, hit } for a list of elements.
+            const walkEls = (els, depth, path, top) => {
+                let out = '', hit = false;
+                for (const el of els) {
+                    if (count > ROW_LIMIT) break;
+                    if (!showPriv && isPrivate(el.tag)) continue;
+                    if (top && onlyVar && !S.varies.has(el.tag)) continue;
+                    const p = path + '/' + hex8(el.tag);
+                    const name = tagName(el, els);
+                    const val = valueText(el);
+                    const self = !q || `${tagStr(el.tag)} ${hex8(el.tag)} ${el.vr} ${name} ${val}`.toLowerCase().includes(q);
+                    const csa = el.vr === 'SQ' ? null : csaOf(el, els);
+                    const kids = el.vr === 'SQ' ? el.items : csa;
+                    let cls = (isPrivate(el.tag) ? 'priv ' : '') + (top && S.varies && S.varies.has(el.tag) ? 'vary ' : '');
+                    if (!kids) {
+                        if (!self) continue;
+                        hit = true;
+                        out += row(cls, depth, tagStr(el.tag), el.vr, name, val, { el });
+                        continue;
+                    }
+                    const open = q ? true : isOpen(p, false);
+                    let inner = '', innerHit = false;
+                    if (open) {
+                        const r = el.vr === 'SQ' ? walkItems(el, depth + 1, p) : walkCSA(csa, depth + 1, p);
+                        inner = r.html;
+                        innerHit = r.hit;
+                    }
+                    if (q && !self && !innerHit) continue;
+                    hit = true;
+                    const shown = q ? innerHit : open;
+                    cls += 'box' + (shown ? ' open' : '');
+                    const label = csa ? `${val} · ${csa.length} CSA entries` : val;
+                    out += row(cls, depth, tagStr(el.tag), el.vr, name, label, { el, path: p });
+                    if (shown) out += inner;
+                }
+                return { html: out, hit };
+            };
+            const walkItems = (el, depth, path) => {
+                let out = '', hit = false;
+                const perFrame = el.tag === 0x52009230 && depth === 1;
+                el.items.forEach((item, i) => {
+                    if (count > ROW_LIMIT) return;
+                    const p = path + '#' + i;
+                    const cur = perFrame && i === S.tagFrame;
+                    const open = q ? true : isOpen(p, el.items.length <= 3 || cur);
+                    let inner = { html: '', hit: false };
+                    if (open) inner = walkEls(item, depth + 1, p, false);
+                    if (q && !inner.hit) return;
+                    hit = hit || inner.hit || !q;
+                    const shown = q ? inner.hit : open;
+                    out += row(`box item${shown ? ' open' : ''}${cur ? ' cur' : ''}`, depth, '', '', `Item ${i + 1}${cur ? ' · current frame' : ''}`, `${item.length} element${item.length === 1 ? '' : 's'}`, { path: p });
+                    if (shown) out += inner.html;
+                });
+                return { html: out, hit };
+            };
+            const walkCSA = (list, depth) => {
+                let out = '', hit = false;
+                for (const c of list) {
+                    if (count > ROW_LIMIT) break;
+                    if (q && !`${c.vr} ${c.name} ${c.value}`.toLowerCase().includes(q)) continue;
+                    hit = true;
+                    out += row('csa', depth, 'CSA', c.vr, c.name, c.value.length > 300 ? c.value.slice(0, 300) + '…' : c.value, { csa: c });
+                }
+                return { html: out, hit };
+            };
+
+            if (file.meta.length) {
+                const r = walkEls(file.meta, 0, 'meta', true);
+                html.push(r.html);
+            }
+            html.push(walkEls(file.ds, 0, 'ds', true).html);
+            let s = html.join('');
+            if (count > ROW_LIMIT) s += `<p class="placeholder">Showing the first ${ROW_LIMIT} rows. Narrow it down with the filter.</p>`;
+            if (!s) s = '<p class="placeholder">No tags match.</p>';
+            const top = box.scrollTop;
+            box.innerHTML = s;
+            box.scrollTop = top;
+        }
+
+        let tagRaf = 0;
+        function renderTags() {
+            if (!tagRaf) tagRaf = requestAnimationFrame(() => { tagRaf = 0; renderTagsNow(); });
+        }
+
+        // Keep the tag panel on the file under the cursor.
+        function syncTagFile() {
+            if (!S.vol) return;
+            const fr = currentFrame();
+            if (fr.file !== S.tagFile || fr.f !== S.tagFrame) {
+                S.tagFile = fr.file;
+                S.tagFrame = fr.f;
+                renderTags();
+            }
+        }
+
+        function gotoFile(delta) {
+            const i = S.fileList.indexOf(S.tagFile) + delta;
+            const file = S.fileList[i];
+            if (!file) return;
+            if (S.vol) {
+                for (let k = 0; k < S.vol.Z; k++) {
+                    const t = S.vol.groups[k].findIndex((fr) => fr.file === file);
+                    if (t >= 0) {
+                        S.cur[2] = k;
+                        setTime(t);
+                        setCursor(S.cur);
+                        return;
+                    }
+                }
+            }
+            S.tagFile = file;
+            S.tagFrame = 0;
+            renderTagsNow();
+        }
+
+        function setTime(t) {
+            if (!S.vol) return;
+            S.t = clamp(t, 0, S.vol.T - 1);
+            $('#time').value = S.t;
+            $('#time-n').textContent = `${S.t + 1} / ${S.vol.T}`;
+            requestRender();
+        }
+
+        function dumpText(file) {
+            const lines = [];
+            const walk = (els, depth) => {
+                for (const el of els) {
+                    const pad = '  '.repeat(depth);
+                    lines.push(`${pad}${tagStr(el.tag)} ${el.vr || '--'} ${tagName(el, els)}: ${valueText(el, true).slice(0, 4000)}`);
+                    if (el.vr === 'SQ') el.items.forEach((it, i) => { lines.push(`${pad}  Item ${i + 1}`); walk(it, depth + 2); });
+                    const csa = el.vr === 'SQ' ? null : csaOf(el, els);
+                    if (csa) for (const c of csa) lines.push(`${pad}  [CSA] ${c.name} (${c.vr}): ${c.value}`);
+                }
+            };
+            lines.push(`# ${file.name}`);
+            walk(file.meta, 0);
+            walk(file.ds, 0);
+            return lines.join('\n');
+        }
+
+        async function copyText(text, btn) {
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+            }
+            const old = btn.textContent;
+            btn.textContent = 'Copied';
+            setTimeout(() => (btn.textContent = old), 1200);
+        }
+
+        function setupTagPanel() {
+            const box = $('#tag-table');
+            box.addEventListener('click', (e) => {
+                const rowEl = e.target.closest('.trow');
+                if (!rowEl) return;
+                const ref = ROWS[+rowEl.dataset.r];
+                if (!ref) return;
+                if (ref.path && !e.target.closest('.c-val.full')) {
+                    const open = rowEl.classList.contains('open');
+                    S.open.set(ref.path, !open);
+                    renderTagsNow();
+                    return;
+                }
+                const cell = e.target.closest('.c-val');
+                if (!cell || window.getSelection().toString()) return;
+                if (cell.classList.contains('full')) {
+                    cell.classList.remove('full');
+                    cell.textContent = ref.el ? valueText(ref.el) : ref.csa.value.slice(0, 300);
+                } else {
+                    cell.classList.add('full');
+                    cell.textContent = ref.el ? valueText(ref.el, true) : ref.csa.value;
+                }
+            });
+            $('#tag-filter').addEventListener('input', renderTags);
+            for (const id of ['#opt-private', '#opt-vary', '#opt-expand']) $(id).addEventListener('change', () => {
+                if (id === '#opt-expand') S.open.clear();
+                renderTagsNow();
+            });
+            $('#file-prev').addEventListener('click', () => gotoFile(-1));
+            $('#file-next').addEventListener('click', () => gotoFile(1));
+            $('#copy-dump').addEventListener('click', (e) => S.tagFile && copyText(dumpText(S.tagFile), e.currentTarget));
+        }
+
+        // =====================================================================
+        // Loading
+        // =====================================================================
+        async function loadFiles(items) {
+            if (!items.length) return;
+            $('#empty').hidden = true;
+            setStatus(`Reading ${items.length} file${items.length === 1 ? '' : 's'}…`);
+            const files = [];
+            let skipped = 0, failed = 0;
+            for (let i = 0; i < items.length; i++) {
+                const it = items[i];
+                const name = it.webkitRelativePath || it.relPath || it.name;
+                try {
+                    const bytes = it.bytes || new Uint8Array(await it.arrayBuffer());
+                    const f = await parseFile(name, bytes);
+                    if (f) files.push(f); else skipped++;
+                } catch (e) {
+                    failed++;
+                    console.warn(name, e);
+                }
+                if (i % 32 === 31) {
+                    setStatus(`Reading ${i + 1} / ${items.length}…`);
+                    await new Promise((r) => setTimeout(r));
+                }
+            }
+            if (!files.length) {
+                setStatus(`No DICOM files found in ${items.length} file${items.length === 1 ? '' : 's'}.`);
+                if (!S.files.length) $('#empty').hidden = false;
+                return;
+            }
+            S.files = files;
+            S.stacks = buildStacks(files);
+            S.open.clear();
+            const extra = [skipped && `${skipped} non-DICOM skipped`, failed && `${failed} unreadable`].filter(Boolean).join(', ');
+            setStatus(`${files.length} DICOM file${files.length === 1 ? '' : 's'} in ${S.stacks.length} series${extra ? ' · ' + extra : ''}`);
+            renderSeries();
+            const imgs = S.stacks.filter((s) => s.kind === 'img');
+            const pick = imgs.length ? imgs.reduce((a, b) => (b.frames.length > a.frames.length ? b : a)) : S.stacks[0];
+            await selectStack(pick);
+        }
+
+        async function filesFromDrop(dt) {
+            const entries = [...(dt.items || [])].map((i) => (i.webkitGetAsEntry ? i.webkitGetAsEntry() : null)).filter(Boolean);
+            if (!entries.length) return [...dt.files];
+            const out = [];
+            const walk = async (entry) => {
+                if (entry.isFile) {
+                    const f = await new Promise((res, rej) => entry.file(res, rej));
+                    f.relPath = entry.fullPath.replace(/^\//, '');
+                    out.push(f);
+                } else if (entry.isDirectory) {
+                    const reader = entry.createReader();
+                    for (; ;) {
+                        const batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+                        if (!batch.length) break;
+                        for (const e of batch) await walk(e);
+                    }
+                }
+            };
+            for (const e of entries) await walk(e);
+            return out;
+        }
+
+        // =====================================================================
+        // Demo: a synthetic head phantom written out as real DICOM files, so
+        // it goes through exactly the same parser as anything you open.
+        // =====================================================================
+        const IMPL_UID = '2.25.271828182845904523536028747135266249';
+
+        function newUid() {
+            const b = crypto.getRandomValues(new Uint8Array(15));
+            return '2.25.' + BigInt('0x' + Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')).toString();
+        }
+
+        function concatBytes(parts) {
+            const out = new Uint8Array(parts.reduce((s, p) => s + p.length, 0));
+            let o = 0;
+            for (const p of parts) { out.set(p, o); o += p.length; }
+            return out;
+        }
+
+        function encEl(tag, vr, val) {
+            const g = tag >>> 16, e = tag & 0xFFFF;
+            const head = (gg, ee, v, len) => {
+                const long = LONG_VR.has(v);
+                const b = new Uint8Array(v ? (long ? 12 : 8) : 8), dv = new DataView(b.buffer);
+                dv.setUint16(0, gg, true);
+                dv.setUint16(2, ee, true);
+                if (!v) { dv.setUint32(4, len, true); return b; }
+                b[4] = v.charCodeAt(0);
+                b[5] = v.charCodeAt(1);
+                if (long) dv.setUint32(8, len, true); else dv.setUint16(6, len, true);
+                return b;
+            };
+            if (vr === 'SQ') {
+                const parts = [head(g, e, 'SQ', UNDEF)];
+                for (const item of val) {
+                    parts.push(head(0xFFFE, 0xE000, '', UNDEF));
+                    for (const x of item) parts.push(encEl(...x));
+                    parts.push(head(0xFFFE, 0xE00D, '', 0));
+                }
+                parts.push(head(0xFFFE, 0xE0DD, '', 0));
+                return concatBytes(parts);
+            }
+            let body;
+            if (ArrayBuffer.isView(val)) body = new Uint8Array(val.buffer, val.byteOffset, val.byteLength);
+            else if (NUM_VR[vr]) {
+                const arr = [].concat(val), [n, fn] = NUM_VR[vr];
+                body = new Uint8Array(n * arr.length);
+                const dv = new DataView(body.buffer);
+                arr.forEach((x, i) => dv['set' + fn.slice(3)](i * n, x, true));
+            } else {
+                let s = String(val);
+                if (s.length % 2) s += vr === 'UI' ? '\0' : ' ';
+                body = new TextEncoder().encode(s);
+            }
+            if (body.length % 2) body = concatBytes([body, new Uint8Array(1)]);
+            return concatBytes([head(g, e, vr, body.length), body]);
+        }
+
+        function writeDicom(elements, sopClass, sopInst) {
+            const ds = elements.sort((a, b) => a[0] - b[0]).map((x) => encEl(...x));
+            const meta = concatBytes([
+                [0x00020001, 'OB', new Uint8Array([0, 1])], [0x00020002, 'UI', sopClass], [0x00020003, 'UI', sopInst],
+                [0x00020010, 'UI', TS_EXPLICIT], [0x00020012, 'UI', IMPL_UID], [0x00020013, 'SH', 'DICOMEXPLORER'],
+            ].map((x) => encEl(...x)));
+            return concatBytes([new Uint8Array(128), new TextEncoder().encode('DICM'), encEl(0x00020000, 'UL', meta.length), meta, ...ds]);
+        }
+
+        function makeDemo() {
+            const X = 128, Y = 128, Z = 72, ps = 1.8, ss = 2.5;
+            // [cx, cy, cz, ax, ay, az, rotation about z (deg), HU], painted in order. LPS mm.
+            const shapes = [
+                [0, 0, 0, 74, 94, 90, 0, 40],
+                [0, 0, 0, 70, 90, 86, 0, 1100],
+                [0, 2, 3, 65, 84, 80, 0, 36],
+                [0, 4, 8, 52, 68, 58, 0, 27],
+                [-11, -2, 14, 6, 24, 14, -14, 6],
+                [11, -2, 14, 6, 24, 14, 14, 6],
+                [0, 10, 2, 2.5, 9, 7, 0, 6],
+                [30, 28, 30, 10, 12, 10, 25, 72],
+                [-30, -78, -40, 12, 12, 12, 0, 12],
+                [30, -78, -40, 12, 12, 12, 0, 12],
+                [0, -64, -44, 8, 11, 12, 0, -950],
+            ].map(([cx, cy, cz, ax, ay, az, r, hu]) => ({ cx, cy, cz, ax, ay, az, c: Math.cos((r * Math.PI) / 180), s: Math.sin((r * Math.PI) / 180), hu }));
+            let seed = 12345;
+            const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+            const study = newUid(), series = newUid(), frame = newUid();
+            const CT = '1.2.840.10008.5.1.4.1.1.2';
+            const files = [];
+            for (let k = 0; k < Z; k++) {
+                const z = (k - (Z - 1) / 2) * ss;
+                const px = new Uint16Array(X * Y);
+                for (let j = 0; j < Y; j++) {
+                    const y = (j - (Y - 1) / 2) * ps;
+                    for (let i = 0; i < X; i++) {
+                        const x = (i - (X - 1) / 2) * ps;
+                        let hu = -1000;
+                        for (const e of shapes) {
+                            const dx = x - e.cx, dy = y - e.cy, dz = z - e.cz;
+                            const xr = dx * e.c + dy * e.s, yr = -dx * e.s + dy * e.c;
+                            if ((xr / e.ax) ** 2 + (yr / e.ay) ** 2 + (dz / e.az) ** 2 <= 1) hu = e.hu;
+                        }
+                        if (hu > -900) hu += (rand() + rand() + rand() - 1.5) * 9;
+                        px[j * X + i] = clamp(Math.round(hu + 1024), 0, 4095);
+                    }
+                }
+                const sop = newUid();
+                const ipp = [-(X - 1) / 2 * ps, -(Y - 1) / 2 * ps, z].map((v) => +v.toFixed(3)).join('\\');
+                const els = [
+                    [0x00080005, 'CS', 'ISO_IR 100'], [0x00080008, 'CS', 'ORIGINAL\\PRIMARY\\AXIAL'],
+                    [0x00080016, 'UI', CT], [0x00080018, 'UI', sop], [0x00080020, 'DA', '20260101'],
+                    [0x00080030, 'TM', '093000'], [0x00080060, 'CS', 'CT'], [0x00080070, 'LO', 'DICOM Explorer (synthetic)'],
+                    [0x00081030, 'LO', 'Synthetic head phantom'], [0x0008103E, 'LO', 'Axial 2.5 mm'],
+                    [0x00082218, 'SQ', [[[0x00080100, 'SH', 'T-D1100'], [0x00080102, 'SH', 'SRT'], [0x00080104, 'LO', 'Head']]]],
+                    [0x00090010, 'LO', 'DICOM EXPLORER DEMO'], [0x00091001, 'LO', 'Private tags are labelled by their creator'],
+                    [0x00091002, 'US', 42],
+                    [0x00100010, 'PN', 'Phantom^Demo'], [0x00100020, 'LO', 'DEMO-0001'], [0x00100040, 'CS', 'O'],
+                    [0x00180050, 'DS', '2.5'], [0x00180060, 'DS', '120'], [0x00185100, 'CS', 'HFS'],
+                    [0x0020000D, 'UI', study], [0x0020000E, 'UI', series], [0x00200010, 'SH', '1'],
+                    [0x00200011, 'IS', '2'], [0x00200013, 'IS', String(k + 1)],
+                    [0x00200032, 'DS', ipp], [0x00200037, 'DS', '1\\0\\0\\0\\1\\0'], [0x00200052, 'UI', frame],
+                    [0x00201041, 'DS', String(+z.toFixed(3))],
+                    [0x00280002, 'US', 1], [0x00280004, 'CS', 'MONOCHROME2'], [0x00280010, 'US', Y], [0x00280011, 'US', X],
+                    [0x00280030, 'DS', `${ps}\\${ps}`], [0x00280100, 'US', 16], [0x00280101, 'US', 12], [0x00280102, 'US', 11],
+                    [0x00280103, 'US', 0], [0x00281050, 'DS', '40\\500'], [0x00281051, 'DS', '80\\2000'],
+                    [0x00281052, 'DS', '-1024'], [0x00281053, 'DS', '1'], [0x00281055, 'LO', 'BRAIN\\BONE'],
+                    [PIXEL, 'OW', px],
+                ];
+                files.push({ name: `demo/CT${String(k + 1).padStart(4, '0')}.dcm`, bytes: writeDicom(els, CT, sop) });
+            }
+            return files;
+        }
+
+        // =====================================================================
+        // Wiring
+        // =====================================================================
+        function setupControls() {
+            const fi = $('#file-input'), di = $('#folder-input');
+            const openFiles = () => fi.click(), openFolder = () => di.click();
+            const demo = () => loadFiles(makeDemo());
+            $('#open-files').addEventListener('click', openFiles);
+            $('#open-folder').addEventListener('click', openFolder);
+            $('#load-demo').addEventListener('click', demo);
+            $('#empty').addEventListener('click', (e) => {
+                const act = e.target.closest('[data-act]')?.dataset.act;
+                if (act === 'files') openFiles(); else if (act === 'folder') openFolder(); else if (act === 'demo') demo();
+            });
+            for (const inp of [fi, di]) inp.addEventListener('change', () => { loadFiles([...inp.files]); inp.value = ''; });
+
+            const drop = $('#drop');
+            let depth = 0;
+            const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+            window.addEventListener('dragenter', (e) => { if (hasFiles(e)) { depth++; drop.hidden = false; } });
+            window.addEventListener('dragleave', (e) => { if (hasFiles(e) && --depth <= 0) { depth = 0; drop.hidden = true; } });
+            window.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+            window.addEventListener('drop', async (e) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                depth = 0;
+                drop.hidden = true;
+                loadFiles(await filesFromDrop(e.dataTransfer));
+            });
+
+            $('#series-list').addEventListener('click', (e) => {
+                const b = e.target.closest('.series');
+                if (b) selectStack(S.stacks[+b.dataset.i]);
+            });
+            $('#wl-preset').addEventListener('change', (e) => {
+                const p = S.presets.find((x) => x.id === e.target.value);
+                if (p) applyPreset(p);
+            });
+            const cm = $('#cmap');
+            cm.innerHTML = Object.entries(CMAPS).map(([id, [name]]) => `<option value="${id}">${name}</option>`).join('');
+            cm.addEventListener('change', () => { S.cmap = cm.value; updateBar(); requestRender(); });
+            const typed = () => {
+                const c = parseFloat($('#wl-c').value), w = parseFloat($('#wl-w').value);
+                if (Number.isFinite(c) && Number.isFinite(w) && w > 0) setWindow(c, w);
+            };
+            $('#wl-c').addEventListener('change', typed);
+            $('#wl-w').addEventListener('change', typed);
+            $('#opt-cross').addEventListener('change', (e) => { S.cross = e.target.checked; requestRender(); });
+            $('#opt-smooth').addEventListener('change', (e) => { S.smooth = e.target.checked; requestRender(); });
+            $('#opt-invert').addEventListener('change', (e) => { S.invert = e.target.checked; updateBar(); requestRender(); });
+            $('#time').addEventListener('input', (e) => setTime(+e.target.value));
+
+            window.addEventListener('keydown', (e) => {
+                const t = e.target;
+                const typing = t instanceof HTMLInputElement && !['checkbox', 'range'].includes(t.type) || t instanceof HTMLSelectElement;
+                if (e.key === '/' && !typing) { e.preventDefault(); $('#tag-filter').focus(); return; }
+                if (e.key === 'Escape' && t === $('#tag-filter')) { t.value = ''; renderTagsNow(); t.blur(); return; }
+                if (typing || !S.vol || e.ctrlKey || e.metaKey) return;
+                const v = views[S.active];
+                const steps = { ArrowUp: 1, ArrowDown: -1, PageUp: 10, PageDown: -10 };
+                if (e.key in steps) { e.preventDefault(); stepSlice(v, steps[e.key]); }
+                else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && S.vol.T > 1) { e.preventDefault(); setTime(S.t + (e.key === 'ArrowRight' ? 1 : -1)); }
+                else if (e.key === '0') { v.zoom = 1; v.panX = v.panY = 0; drawView(v); }
+            });
+        }
+
+        setupViews();
+        setupControls();
+        setupTagPanel();
+        window.dicomExplorer = { S, loadFiles, parseFile };
+    </script>
+</body>
+
+</html>
