@@ -7,407 +7,1067 @@
     <title>The Metamorphosis Clock</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #15100b;
+            --ink: #ebe1cc;
+            --ink-dim: #bcae94;
+            --ink-faint: #8f8269;
+            --rule: #3a2f22;
+            --brass: #c9a25e;
+            --part1: #8a6a3c;
+            --part2: #6e4f2c;
+            --part3: #4f3622;
+            --dream: #2f3440;
+            --after: #5d6a52;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
         body {
-            min-height: 100vh;
-            background: linear-gradient(to bottom, #2a2522 0%, #1a1512 100%);
-            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'EB Garamond', Georgia, serif;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: #c8c4bc;
-            position: relative;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
             overflow: hidden;
         }
 
-        .insect-legs {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .scene {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        canvas {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
-            opacity: 0.05;
-            z-index: 0;
+            display: block;
         }
 
-        .leg {
+        .mast {
             position: absolute;
-            width: 2px;
-            background: linear-gradient(to bottom, transparent, #8a7a6a, transparent);
-            transform-origin: top center;
+            top: clamp(10px, 2vh, 20px);
+            left: clamp(16px, 3vw, 32px);
+            pointer-events: none;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
         }
 
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: rgba(30, 26, 22, 0.95);
-            border: 1px solid #4a4037;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            padding: 3rem 2.5rem;
+        .mast .frak {
+            font-family: 'UnifrakturMaguntia', 'EB Garamond', serif;
+            font-size: clamp(1.4rem, 3.4vw, 2.3rem);
+            line-height: 1;
+            color: var(--ink);
+        }
+
+        .mast .by {
+            font-size: clamp(0.8rem, 1.6vw, 0.95rem);
+            color: var(--ink-dim);
+            letter-spacing: 0.08em;
+            margin-top: 0.2em;
+        }
+
+        .panel {
+            flex: 0 0 auto;
+            border-top: 1px solid var(--rule);
+            background: linear-gradient(#1c150e, var(--bg));
+            padding: clamp(10px, 2vh, 18px) 16px clamp(12px, 2.2vh, 20px);
+        }
+
+        .panel-inner {
+            max-width: 860px;
+            margin: 0 auto;
             position: relative;
-            z-index: 1;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #3a3430;
+        .head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
         }
 
-        .title {
-            font-family: 'Roboto Mono', monospace;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 300;
-            color: #d8d4cc;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.1em;
+        .part {
+            font-size: clamp(0.8rem, 1.7vw, 0.95rem);
+            letter-spacing: 0.14em;
             text-transform: uppercase;
+            color: var(--brass);
         }
 
-        .original-title {
-            font-size: clamp(0.9rem, 2vw, 1.1rem);
-            color: #8a8480;
-            margin-bottom: 1rem;
+        .part .de {
+            font-family: 'UnifrakturMaguntia', serif;
+            text-transform: none;
+            letter-spacing: 0.02em;
+            font-size: 1.2em;
+            color: var(--ink);
+            margin-right: 0.4em;
+        }
+
+        .part .de.num {
+            font-family: 'EB Garamond', Georgia, serif;
+            font-size: 1.15em;
+            letter-spacing: 0.08em;
+        }
+
+        .time {
+            font-size: clamp(1.3rem, 3.2vw, 1.9rem);
+            font-variant-numeric: lining-nums tabular-nums;
+            color: var(--ink);
+            white-space: nowrap;
+        }
+
+        .time .sec { color: var(--ink-faint); font-size: 0.65em; }
+
+        .beat {
+            font-size: clamp(1rem, 2.1vw, 1.2rem);
+            line-height: 1.45;
+            margin-top: 0.35em;
+        }
+
+        .quote {
+            margin-top: 0.55em;
+            padding-left: 0.8em;
+            border-left: 2px solid var(--brass);
+        }
+
+        .quote[hidden] { display: none; }
+
+        .quote q {
             font-style: italic;
+            font-size: clamp(0.98rem, 2vw, 1.15rem);
+            line-height: 1.4;
+            quotes: "\201E" "\201C";
         }
 
-        .author {
-            font-size: 0.95rem;
-            color: #9a9490;
-            letter-spacing: 0.2em;
+        .gloss {
+            display: block;
+            margin-top: 0.15em;
+            font-size: clamp(0.85rem, 1.7vw, 0.95rem);
+            color: var(--ink-dim);
+            line-height: 1.35;
         }
 
-        .time-display {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(20, 16, 12, 0.5);
-            border: 1px solid #3a3430;
-        }
-
-        .current-time {
-            font-size: clamp(2rem, 5vw, 4rem);
-            font-weight: 600;
-            color: #e8e4dc;
-            margin-bottom: 0.5rem;
-            font-family: 'IBM Plex Mono', monospace;
-        }
-
-        .stage-indicator {
-            font-size: 0.85rem;
-            color: #8a8480;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-        }
-
-        .transformation-stage {
-            margin-bottom: 2rem;
-        }
-
-        .stage-title {
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            font-weight: 600;
-            color: #b8b4ac;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .narrative-container {
+        .line {
             position: relative;
-            min-height: 180px;
-            margin-bottom: 1.5rem;
+            margin-top: clamp(8px, 1.4vh, 12px);
+            height: 10px;
+            border-radius: 2px;
+            overflow: visible;
         }
 
-        .narrative {
-            font-size: clamp(0.95rem, 2vw, 1.1rem);
-            line-height: 1.8;
-            color: #c8c4bc;
-            opacity: 0;
+        .seg {
             position: absolute;
             top: 0;
-            left: 0;
-            right: 0;
-            animation: narrativeFade 15s ease-in-out infinite;
+            bottom: 0;
         }
 
-        .narrative:nth-child(1) { animation-delay: 0s; }
-        .narrative:nth-child(2) { animation-delay: 5s; }
-        .narrative:nth-child(3) { animation-delay: 10s; }
-
-        @keyframes narrativeFade {
-            0% { opacity: 0; transform: translateY(8px); }
-            3%, 30% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(8px); }
+        .tick {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            width: 2px;
+            margin-left: -1px;
+            background: var(--ink-dim);
         }
 
-        .opening-line {
-            font-size: clamp(0.85rem, 1.8vw, 1rem);
-            line-height: 1.7;
-            color: #a8a4ac;
-            font-style: italic;
-            padding: 1.5rem;
-            background: rgba(10, 6, 2, 0.3);
-            border-left: 3px solid #6a6460;
-            margin-top: 1rem;
+        .tick.door { background: #120c07; width: 3px; margin-left: -1.5px; top: 0; bottom: 0; }
+
+        .needle {
+            position: absolute;
+            top: -6px;
+            bottom: -6px;
+            width: 2px;
+            margin-left: -1px;
+            background: #e2523f;
+            box-shadow: 0 0 6px rgba(226, 82, 63, 0.7);
         }
 
-        .body-count {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            font-size: 0.8rem;
-            color: #6a6460;
-            text-align: right;
-            z-index: 2;
+        .labels {
+            position: relative;
+            height: 1.3em;
+            margin-top: 3px;
+            margin-bottom: 0.2em;
+            font-size: clamp(0.72rem, 1.5vw, 0.82rem);
+            color: var(--ink-faint);
         }
 
-        .body-count .number {
-            font-size: 3rem;
-            font-weight: 600;
-            color: #8a8480;
-            display: block;
-            line-height: 1;
-            margin-bottom: 0.25rem;
+        .labels span {
+            position: absolute;
+            transform: translateX(-50%);
+            white-space: nowrap;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
+        .labels .h { color: #6f6452; }
 
-            .body-count {
-                bottom: 1rem;
-                right: 1rem;
-            }
+        .sr-only {
+            position: absolute;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
         }
 
-        @keyframes legTwitch {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(3deg); }
+        @media (max-width: 560px) {
+            .labels .h { display: none; }
         }
     </style>
 </head>
 
 <body>
-    <div class="insect-legs" id="legs"></div>
-
-    <div class="container">
-        <div class="header">
-            <h1 class="title">The Metamorphosis</h1>
-            <div class="original-title">Die Verwandlung</div>
-            <div class="author">Franz Kafka</div>
-        </div>
-
-        <div class="time-display">
-            <div class="current-time" id="time">00:00</div>
-            <div class="stage-indicator" id="stage-indicator">Transformation in Progress</div>
-        </div>
-
-        <div class="transformation-stage">
-            <h2 class="stage-title" id="stage-title">The Awakening</h2>
-            <div class="narrative-container">
-                <div id="narratives">
-                    <!-- Narratives injected here -->
-                </div>
-            </div>
-            <div class="opening-line">
-                "As Gregor Samsa awoke one morning from uneasy dreams he found himself transformed in his bed into a monstrous vermin."
-            </div>
+    <div class="scene" id="scene">
+        <canvas id="room" role="img" aria-label="Gregor Samsa's view of the alarm clock on the chest of drawers"></canvas>
+        <div class="mast">
+            <div class="frak" lang="de">Die Verwandlung</div>
+            <div class="by">Franz Kafka, 1915</div>
         </div>
     </div>
 
-    <div class="body-count">
-        <span class="number" id="leg-count">6</span>
-        <span>legs</span>
+    <div class="panel">
+        <div class="panel-inner">
+            <div class="head">
+                <div class="part" id="part"></div>
+                <div class="time" role="timer" aria-label="Current time"><span id="hm">--:--</span><span class="sec" id="sec">:--</span></div>
+            </div>
+            <div class="line" id="line" aria-hidden="true"></div>
+            <div class="labels" id="labels" aria-hidden="true"></div>
+            <div class="copy" id="copy">
+            <p class="beat" id="beat" aria-live="polite"></p>
+            <div class="quote" id="quote" hidden>
+                <q lang="de" id="q"></q>
+                <span class="gloss" id="gloss"></span>
+            </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        const stages = [
-            {
-                hours: [0, 1, 2, 3],
-                title: "Night — Before Transformation",
-                indicator: "The Uneasy Dreams",
-                narratives: [
-                    "In the darkness before dawn, Gregor Samsa sleeps fitfully. His dreams are troubled, chaotic. Something is changing.",
-                    "The sample collection lies on the table. Tomorrow he must wake early for the five o'clock train. Always the traveling, the worries, the irregular meals.",
-                    "His parents sleep in the next room. Grete, his sister, in hers. The apartment is silent. But something terrible is about to happen."
-                ]
-            },
-            {
-                hours: [4, 5, 6],
-                title: "Dawn — The Awakening",
-                indicator: "Discovering the Change",
-                narratives: [
-                    "As Gregor Samsa awoke one morning from uneasy dreams he found himself transformed in his bed into a monstrous vermin.",
-                    "He lay on his armour-like back and saw, when he lifted his head a little, his brown, arched abdomen divided into stiff sections.",
-                    "What has happened to me? he thought. It was no dream. His room, a proper human room, lay quiet between the four familiar walls."
-                ]
-            },
-            {
-                hours: [7, 8, 9],
-                title: "Morning — The Failed Escape",
-                indicator: "Unable to Rise",
-                narratives: [
-                    "His many legs, pitifully thin compared with the size of the rest of him, waved helplessly before his eyes.",
-                    "He tried to get back to sleep, but found it impossible. When he tried to lift himself, he fell back again with a little cry.",
-                    "The alarm clock had not rung. It was past seven o'clock. Had the alarm not rung? He could see from the bed that it was set for four o'clock."
-                ]
-            },
-            {
-                hours: [10, 11],
-                title: "Late Morning — The Chief Clerk",
-                indicator: "The Locked Door",
-                narratives: [
-                    "'Gregor!' his father called. 'The chief clerk is here.' And already his mother was saying: 'Gregor, the chief clerk is here.'",
-                    "Through the door, he tried to speak. But his voice had changed—it was the voice of an animal, painful and incomprehensible.",
-                    "The chief clerk stepped back into the hall. 'Did you hear him speak?' 'That was the voice of an animal,' said the chief clerk."
-                ]
-            },
-            {
-                hours: [12, 13, 14],
-                title: "Midday — The Revelation",
-                indicator: "They See Him",
-                narratives: [
-                    "Gregor had pushed himself through the doorway. His mother saw him and fell backward. His father clenched his fist with a hostile expression.",
-                    "The chief clerk was already on the stairs. He vanished with a cry of 'Ugh!' that echoed through the entire stairwell.",
-                    "His father seized the chief clerk's walking stick and a newspaper, stamping his feet and driving Gregor back into his room with hisses."
-                ]
-            },
-            {
-                hours: [15, 16, 17],
-                title: "Afternoon — The Isolation Begins",
-                indicator: "Locked Away",
-                narratives: [
-                    "No one came anymore, and the keys were now always in the locks. They had locked him in. He was a prisoner.",
-                    "His sister brought him food, but she could not bear to look at him. She hurried in, quickly set down the bowl, and rushed out.",
-                    "He spent the hours crawling on the walls and ceiling. It was much better than lying on the floor. He could breathe more freely."
-                ]
-            },
-            {
-                hours: [18, 19],
-                title: "Evening — Grete's Care",
-                indicator: "His Sister's Pity",
-                narratives: [
-                    "Grete understood better than anyone what sort of food would suit him. She brought him a selection: old, half-rotten vegetables, bones covered with congealed white sauce.",
-                    "He had thought no one would dare to remove anything from his room. But his sister was determined to look after him, in her own way.",
-                    "She had even started to move the furniture out, to give him more room to crawl. But did he really want a bare room, stripped of all memory?"
-                ]
-            },
-            {
-                hours: [20, 21],
-                title: "Night — The Apple",
-                indicator: "His Father's Rage",
-                narratives: [
-                    "His father had decided to bombard him. Apples rolled across the floor. Then one flew directly at him and lodged in his back.",
-                    "The pain was indescribable. 'Gregor!' his sister had cried. She had seen it. His mother had fainted. The apple remained embedded in his flesh.",
-                    "From that injury, which disabled him for more than a month, he never fully recovered. The apple remained there, a visible reminder."
-                ]
-            },
-            {
-                hours: [22, 23],
-                title: "Late Night — The Final Stage",
-                indicator: "Decline and Death",
-                narratives: [
-                    "He had become completely neglected. Dust covered everything in his room. His sister no longer bothered to clean.",
-                    "He ate almost nothing now. The wound in his back was open and inflamed. He could barely move. He thought of his family with tenderness and love.",
-                    "He remained in this state of empty, peaceful reflection until the church clock struck three in the morning. Then his head sank to the floor, and his last breath weakly left his nostrils."
-                ]
-            }
+    (function () {
+        'use strict';
+
+        // ------------------------------------------------------------------
+        // The day as the book. Times are minutes after midnight.
+        // The novella's own clock times are kept where it gives them:
+        // the alarm set for four, half past six, quarter to seven, seven,
+        // quarter past seven, and the tower clock striking three.
+        // Each of the three parts ends with Gregor back behind his door.
+        // ------------------------------------------------------------------
+        const T = (h, m) => h * 60 + (m || 0);
+
+        const PARTS = {
+            dream: { de: 'Unruhige Träume', en: 'Before waking' },
+            I:     { de: 'I', en: 'Part One' },
+            II:    { de: 'II', en: 'Part Two' },
+            III:   { de: 'III', en: 'Part Three' },
+            after: { de: 'Danach', en: 'Afterwards' }
+        };
+
+        const BEATS = [
+            { t: T(0), part: 'III', mode: 'dying',
+              text: 'The flat is asleep. In the dark of the lumber room he finds he can no longer move. The rotting apple in his back hardly hurts now; he thinks of his family with tenderness.' },
+            { t: T(1, 30), part: 'III', mode: 'dying',
+              text: 'Emptied out and peaceful, he waits. The alarm clock goes on without him.',
+              q: 'In diesem Zustand leeren und friedlichen Nachdenkens blieb er, bis die Turmuhr die dritte Morgenstunde schlug.',
+              gloss: 'He stays like this, emptily and peacefully thinking, until the tower clock strikes three in the morning.' },
+            { t: T(3), part: 'III', mode: 'dying', dead: true,
+              text: 'Three strokes from the tower clock. He still sees the window begin to grey. Then his head sinks to the floor of its own accord, and a last faint breath leaves him.' },
+            { t: T(3, 20), part: 'after', mode: 'dying', dead: true,
+              text: 'In the morning the charwoman will find him and call the family in. Later they take the tram out into the warm spring countryside, and the parents notice how their daughter has grown.' },
+            { t: T(4), part: 'dream', mode: 'dream', ring: true,
+              text: 'Four o\'clock. The alarm, set correctly, rings on the chest of drawers. Nobody in the bed hears it.' },
+            { t: T(4, 2), part: 'dream', mode: 'dream',
+              text: 'Uneasy dreams. A case of cloth samples lies unpacked on the table; above it hangs a picture cut from a magazine, a lady in a fur hat and boa.' },
+            { t: T(5), part: 'dream', mode: 'dream',
+              text: 'Five o\'clock. The train pulls out without him. The firm\'s porter waited on the platform and has already reported him.' },
+            { t: T(6, 30), part: 'I', mode: 'back',
+              text: 'He wakes on his back, armoured, the brown belly domed and divided into stiff arches, the quilt about to slide off.',
+              q: 'Als Gregor Samsa eines Morgens aus unruhigen Träumen erwachte, fand er sich in seinem Bett zu einem ungeheueren Ungeziefer verwandelt.',
+              gloss: 'One morning Gregor Samsa woke from troubled dreams and found himself changed, in his bed, into a monstrous vermin.' },
+            { t: T(6, 38), part: 'I', mode: 'back',
+              text: 'His many thin legs wave helplessly before his eyes. He looks across at the alarm clock on the chest.',
+              q: 'Es war halb sieben Uhr, und die Zeiger gingen ruhig vorwärts',
+              gloss: 'It was half past six, and the hands were calmly moving on.' },
+            { t: T(6, 45), part: 'I', mode: 'back',
+              text: 'Quarter to seven. His mother taps softly at the door: wasn\'t he meant to be leaving? His answer comes out with a painful squeak underneath it.' },
+            { t: T(7), part: 'I', mode: 'back',
+              text: 'Seven already. The next train goes at seven; he could only catch it in a mad rush. He resolves to be out of bed before it strikes a quarter past.' },
+            { t: T(7, 10), part: 'I', mode: 'floor',
+              text: 'He rocks his whole length out of the bed and lands with a thud, head raised. Now the clock is high above him.' },
+            { t: T(7, 15), part: 'I', mode: 'floor',
+              text: 'A ring at the flat door. It is the chief clerk from the firm, come in person.' },
+            { t: T(7, 30), part: 'I', mode: 'floor',
+              text: 'Through the locked door the chief clerk lists his failings. Gregor pleads at length, and no one understands a word: it is the voice of an animal.' },
+            { t: T(7, 55), part: 'I', mode: 'floor',
+              text: 'He has no teeth, so he turns the key with his jaws, a brown fluid running from his mouth.' },
+            { t: T(8, 10), part: 'I', mode: 'floor',
+              text: 'The door swings open. His mother sinks to the floor; the chief clerk backs away to the stairs and flees.' },
+            { t: T(8, 25), part: 'I', mode: 'floor',
+              text: 'His father seizes the chief clerk\'s stick and a newspaper and drives him back, stamping and hissing.' },
+            { t: T(8, 40), part: 'I', mode: 'floor', door: true,
+              text: 'Wedged in the doorway, one flank scraped raw, he is shoved through, bleeding. The door is slammed shut with the stick. Then, at last, quiet.' },
+            { t: T(9, 30), part: 'II', mode: 'floor',
+              text: 'He wakes from a sleep like a faint. By the door, a bowl of sweet milk with white bread in it, once his favourite. He turns away from it.' },
+            { t: T(10, 30), part: 'II', mode: 'floor',
+              text: 'His sister brings a choice spread on old newspaper: half-rotten vegetables, bones, a cheese he once called inedible. He eats the cheese first.' },
+            { t: T(11, 30), part: 'II', mode: 'floor',
+              text: 'Through the door he learns of his father\'s savings, and of his own secret plan: to send Grete to the conservatory to study the violin.' },
+            { t: T(12, 30), part: 'II', mode: 'floor',
+              text: 'So that she need not see him, he drags a sheet over the sofa and hides beneath it while she is in the room.' },
+            { t: T(13, 30), part: 'II', mode: 'ceiling',
+              text: 'He has taken to crawling over the walls and ceiling. Hanging up there he breathes more freely, and the whole room turns over.' },
+            { t: T(14, 30), part: 'II', mode: 'floor',
+              text: 'Grete decides to clear the room so he can crawl: the chest, the desk. Her mother worries it will look as if they have given up hope.' },
+            { t: T(15, 30), part: 'II', mode: 'floor',
+              text: 'They carry out the chest of drawers. The alarm clock is left on the bare floor.' },
+            { t: T(16), part: 'II', mode: 'floor', picture: true,
+              text: 'He will not lose the lady in furs. He climbs to the picture and presses himself to the glass, which soothes his hot belly. His mother sees him and faints.' },
+            { t: T(16, 45), part: 'II', mode: 'floor',
+              text: 'Grete runs for smelling salts; a bottle breaks and a splinter cuts his face. His father comes home in a messenger\'s uniform with gold buttons.' },
+            { t: T(17, 15), part: 'II', mode: 'floor', apple: true, door: true,
+              text: 'His father pelts him with apples from the sideboard bowl. One lodges in his back. His mother runs in and begs for his life.' },
+            { t: T(18), part: 'III', mode: 'floor',
+              text: 'The apple stays where it is; no one dares take it out. In return, every evening, the door to the living room is left open, and he watches the family at the lamp.' },
+            { t: T(19), part: 'III', mode: 'floor',
+              text: 'Three bearded lodgers take the front room. What has no place elsewhere is pushed into his: crates, an ash bin, dust.' },
+            { t: T(20), part: 'III', mode: 'floor', violin: true,
+              text: 'In the kitchen Grete plays the violin. The lodgers ask her into the living room to play for them.' },
+            { t: T(20, 30), part: 'III', mode: 'floor', violin: true,
+              text: 'Drawn by the music, he creeps out onto the clean floor, trailing dust and lint. He means to tell her about the conservatory.' },
+            { t: T(21, 15), part: 'III', mode: 'floor',
+              text: 'The lodgers see him. They give notice on the spot and refuse to pay.' },
+            { t: T(21, 45), part: 'III', mode: 'floor',
+              text: 'Grete says it has to go. If it were really Gregor, she says, he would have left of his own accord.' },
+            { t: T(22, 15), part: 'III', mode: 'floor', door: true,
+              text: 'Slowly he turns and crawls back. Behind him the door is pushed shut, bolted, locked.' },
+            { t: T(22, 40), part: 'III', mode: 'dying',
+              text: 'In the dark he finds he cannot move at all. It is almost a relief.' }
         ];
 
-        const timeEl = document.getElementById('time');
-        const stageIndicatorEl = document.getElementById('stage-indicator');
-        const stageTitleEl = document.getElementById('stage-title');
-        const narrativesEl = document.getElementById('narratives');
-        const legCountEl = document.getElementById('leg-count');
-        const legsContainer = document.getElementById('legs');
+        // Segments of the 24-hour line, in the order the day runs.
+        const SEGMENTS = [
+            { from: T(0), to: T(3), part: 'III' },
+            { from: T(3), to: T(4), part: 'after' },
+            { from: T(4), to: T(6, 30), part: 'dream' },
+            { from: T(6, 30), to: T(9, 30), part: 'I' },
+            { from: T(9, 30), to: T(18), part: 'II' },
+            { from: T(18), to: T(24), part: 'III' }
+        ];
+        const SEG_COLOR = { I: 'var(--part1)', II: 'var(--part2)', III: 'var(--part3)', dream: 'var(--dream)', after: 'var(--after)' };
+        const TICKS = [
+            { t: T(3), title: 'The tower clock strikes three' },
+            { t: T(4), title: 'The alarm rings' },
+            { t: T(8, 40), title: 'Door shut, Part One', door: true },
+            { t: T(16), title: 'The lady in furs' },
+            { t: T(17, 15), title: 'The apple', door: true },
+            { t: T(20), title: 'The violin' },
+            { t: T(22, 15), title: 'Door locked, Part Three', door: true }
+        ];
 
-        let currentStageIndex = -1;
+        // ------------------------------------------------------------------
+        // DOM: the line across the bottom
+        // ------------------------------------------------------------------
+        const line = document.getElementById('line');
+        const labels = document.getElementById('labels');
+        const pct = m => (m / 1440 * 100) + '%';
+        SEGMENTS.forEach(s => {
+            const d = document.createElement('div');
+            d.className = 'seg';
+            d.style.left = pct(s.from);
+            d.style.width = ((s.to - s.from) / 1440 * 100) + '%';
+            d.style.background = SEG_COLOR[s.part];
+            line.appendChild(d);
+        });
+        TICKS.forEach(k => {
+            const d = document.createElement('div');
+            d.className = 'tick' + (k.door ? ' door' : '');
+            d.style.left = pct(k.t);
+            d.title = k.title;
+            line.appendChild(d);
+        });
+        const needle = document.createElement('div');
+        needle.className = 'needle';
+        line.appendChild(needle);
+        [
+            { t: T(1, 30), s: 'III' }, { t: T(5, 15), s: 'dreams' }, { t: T(7, 50), s: 'I' },
+            { t: T(13, 45), s: 'II' }, { t: T(21), s: 'III' },
+            { t: T(0) + 14, s: '0', h: 1 }, { t: T(12), s: '12', h: 1 }, { t: T(24) - 14, s: '24', h: 1 }
+        ].forEach(l => {
+            const sp = document.createElement('span');
+            sp.textContent = l.s;
+            sp.style.left = pct(l.t);
+            if (l.h) sp.className = 'h';
+            labels.appendChild(sp);
+        });
 
-        // Create background legs
-        function createLegs() {
-            for (let i = 0; i < 6; i++) {
-                const leg = document.createElement('div');
-                leg.className = 'leg';
-                const x = (i % 2 === 0) ? Math.random() * 30 : 70 + Math.random() * 30;
-                const height = 200 + Math.random() * 300;
-                const rotation = (i % 2 === 0) ? -20 - Math.random() * 40 : 20 + Math.random() * 40;
+        const partEl = document.getElementById('part');
+        const beatEl = document.getElementById('beat');
+        const quoteEl = document.getElementById('quote');
+        const qEl = document.getElementById('q');
+        const glossEl = document.getElementById('gloss');
+        const hmEl = document.getElementById('hm');
+        const secEl = document.getElementById('sec');
+        const canvas = document.getElementById('room');
+        const ctx = canvas.getContext('2d');
+        const sceneEl = document.getElementById('scene');
 
-                leg.style.left = `${x}%`;
-                leg.style.height = `${height}px`;
-                leg.style.transform = `rotate(${rotation}deg)`;
-                leg.style.animation = `legTwitch ${3 + Math.random() * 4}s ease-in-out infinite`;
-                leg.style.animationDelay = `${Math.random() * 2}s`;
+        function beatAt(m) {
+            let b = BEATS[0];
+            for (const x of BEATS) if (x.t <= m) b = x; else break;
+            return b;
+        }
 
-                legsContainer.appendChild(leg);
+        const pad = n => String(n).padStart(2, '0');
+        let lastBeat = null;
+        let lastMinute = -1;
+
+        function updateText() {
+            const now = new Date();
+            const m = now.getHours() * 60 + now.getMinutes();
+            hmEl.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+            secEl.textContent = ':' + pad(now.getSeconds());
+            if (m !== lastMinute) {
+                lastMinute = m;
+                needle.style.left = pct(m + now.getSeconds() / 60);
+            }
+            const b = beatAt(m);
+            if (b !== lastBeat) {
+                lastBeat = b;
+                const p = PARTS[b.part];
+                partEl.innerHTML = '';
+                const de = document.createElement('span');
+                de.className = 'de' + (/^[IV]+$/.test(p.de) ? ' num' : '');
+                de.lang = 'de';
+                de.textContent = p.de;
+                partEl.appendChild(de);
+                partEl.appendChild(document.createTextNode(p.en));
+                beatEl.textContent = b.text;
+                if (b.q) {
+                    qEl.textContent = b.q;
+                    glossEl.textContent = b.gloss;
+                    quoteEl.hidden = false;
+                } else {
+                    quoteEl.hidden = true;
+                }
+                canvas.setAttribute('aria-label', sceneLabel(b));
+                if (reduceMotion.matches) snapCamera();
             }
         }
 
-        function getStageForHour(hour) {
-            for (const stage of stages) {
-                if (stage.hours.includes(hour)) {
-                    return stage;
+        function sceneLabel(b) {
+            const where = b.mode === 'back' ? 'lying on his back in bed, legs waving, looking at'
+                : b.mode === 'ceiling' ? 'hanging from the ceiling, seeing upside down'
+                : b.mode === 'dream' ? 'asleep, with' : 'on the floor, looking up at';
+            return 'Gregor Samsa ' + where + ' the alarm clock in his room';
+        }
+
+        // ------------------------------------------------------------------
+        // Canvas scene
+        // ------------------------------------------------------------------
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let W = 0, H = 0;
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const r = sceneEl.getBoundingClientRect();
+            W = Math.max(1, r.width);
+            H = Math.max(1, r.height);
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            if (reduceMotion.matches) draw(performance.now());
+        }
+
+        // Camera per viewpoint: rotation, zoom, vertical shift (fraction of H)
+        const CAMS = {
+            dream:   { rot: -0.05, zoom: 1.0, dy: 0.0, fg: 0 },
+            back:    { rot: -0.07, zoom: 1.0, dy: -0.02, fg: 1 },
+            floor:   { rot: 0.025, zoom: 1.12, dy: 0.10, fg: 0 },
+            ceiling: { rot: Math.PI, zoom: 1.0, dy: 0.0, fg: 0 },
+            dying:   { rot: 0.11, zoom: 1.2, dy: 0.13, fg: 0 }
+        };
+        const cam = { rot: 0, zoom: 1, dy: 0, fg: 0 };
+        function snapCamera() {
+            const b = beatAt(minuteNow());
+            Object.assign(cam, CAMS[b.mode]);
+        }
+        function minuteNow() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+
+        function mix(a, b, t) { return a + (b - a) * t; }
+        function mixRGB(c1, c2, t) {
+            return [0, 1, 2].map(i => Math.round(mix(c1[i], c2[i], t)));
+        }
+        const rgb = (c, a) => a === undefined ? `rgb(${c[0]},${c[1]},${c[2]})` : `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+        // Sky through the window and overall darkness, by hour of day
+        const SKY = [
+            [0, [10, 13, 20]], [4.5, [12, 15, 22]], [6, [58, 62, 70]], [8, [120, 126, 132]],
+            [13, [140, 145, 150]], [17, [110, 104, 96]], [19, [62, 48, 40]], [20.5, [18, 20, 28]], [24, [10, 13, 20]]
+        ];
+        const DARK = [[0, 0.62], [5, 0.6], [6.5, 0.35], [8.5, 0.12], [16.5, 0.14], [19, 0.4], [21, 0.58], [24, 0.62]];
+        function lerpTable(tab, h) {
+            for (let i = 0; i < tab.length - 1; i++) {
+                const a = tab[i], b = tab[i + 1];
+                if (h >= a[0] && h <= b[0]) {
+                    const t = (h - a[0]) / (b[0] - a[0]);
+                    return Array.isArray(a[1]) ? mixRGB(a[1], b[1], t) : mix(a[1], b[1], t);
                 }
             }
-            return stages[0];
+            return tab[0][1];
         }
 
-        function renderNarratives(narratives) {
-            narrativesEl.innerHTML = narratives.map(narrative => `
-                <div class="narrative">${narrative}</div>
-            `).join('');
-        }
+        let lastFrame = 0;
 
-        function updateClock() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
+        function draw(now) {
+            const date = new Date();
+            const hrs = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
+            const m = date.getHours() * 60 + date.getMinutes();
+            const b = beatAt(m);
+            const target = CAMS[b.mode];
+            const animate = !reduceMotion.matches;
+            const t = animate ? now / 1000 : 0;
 
-            // Update time display
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
-
-            // Get current stage
-            const stage = getStageForHour(hour);
-            const stageIndex = stages.indexOf(stage);
-
-            // Update content if stage changed
-            if (stageIndex !== currentStageIndex) {
-                stageTitleEl.textContent = stage.title;
-                stageIndicatorEl.textContent = stage.indicator;
-                renderNarratives(stage.narratives);
-                currentStageIndex = stageIndex;
-            }
-
-            // Update leg count based on stage (deterioration)
-            if (hour >= 20) {
-                legCountEl.textContent = '3'; // Losing functionality
-            } else if (hour >= 15) {
-                legCountEl.textContent = '5'; // One damaged
-            } else if (hour >= 7) {
-                legCountEl.textContent = '6'; // Full vermin
-            } else if (hour >= 4) {
-                legCountEl.textContent = '6'; // Transformation complete
+            if (animate) {
+                const dt = Math.min(0.1, (now - lastFrame) / 1000 || 0);
+                const k = 1 - Math.exp(-dt * 1.6);
+                cam.rot = mix(cam.rot, target.rot, k);
+                cam.zoom = mix(cam.zoom, target.zoom, k);
+                cam.dy = mix(cam.dy, target.dy, k);
+                cam.fg = mix(cam.fg, target.fg, k);
             } else {
-                legCountEl.textContent = '2'; // Still human
+                Object.assign(cam, target);
+            }
+            lastFrame = now;
+
+            const state = {
+                chest: m >= T(4) && m < T(15, 30),
+                junk: m >= T(19) || m < T(4),
+                rain: m >= T(6, 30) && m < T(10),
+                doorOpen: m >= T(18) && m < T(22, 15),
+                violin: !!b.violin,
+                picture: !!b.picture,
+                dream: b.mode === 'dream',
+                dead: !!b.dead,
+                ring: !!b.ring && date.getMinutes() === 0 && date.getSeconds() < 50,
+                sky: b.dead && b.part === 'III' ? [70, 74, 82] : lerpTable(SKY, hrs),
+                dark: lerpTable(DARK, hrs)
+            };
+
+            ctx.save();
+            ctx.clearRect(0, 0, W, H);
+
+            // Room space is 1000 x 700, fitted so the central 560 units always show
+            const s = Math.min(W / 560, H / 700) * cam.zoom;
+            ctx.translate(W / 2, H / 2 + cam.dy * H);
+            ctx.rotate(cam.rot);
+            ctx.scale(s, s);
+            ctx.translate(-500, -350);
+            drawRoom(state, t, date);
+            ctx.restore();
+
+            // Light and darkness in screen space
+            ctx.save();
+            ctx.fillStyle = `rgba(8, 5, 3, ${state.dark})`;
+            ctx.fillRect(0, 0, W, H);
+            if (state.doorOpen) {
+                const g = ctx.createRadialGradient(W * 0.85, H * 0.75, 0, W * 0.85, H * 0.75, Math.max(W, H) * 0.7);
+                const warm = state.violin ? 0.2 + 0.04 * Math.sin(t * 1.3) : 0.16;
+                g.addColorStop(0, `rgba(255, 190, 110, ${warm})`);
+                g.addColorStop(1, 'rgba(255, 190, 110, 0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, W, H);
+            }
+            const v = ctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.3, W / 2, H * 0.5, Math.max(W, H) * 0.8);
+            v.addColorStop(0, 'rgba(0,0,0,0)');
+            v.addColorStop(1, 'rgba(0,0,0,0.6)');
+            ctx.fillStyle = v;
+            ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+
+            // Foreground: Gregor's own body
+            if (cam.fg > 0.02) drawBelly(t, cam.fg);
+            if (state.dream) drawQuilt();
+            if (b.mode === 'floor' || b.mode === 'dying') drawFloorLegs(t, b.mode === 'dying' ? 0 : 1);
+        }
+
+        function drawRoom(st, t, date) {
+            // Wall, extended well past the room so rotation never shows an edge
+            ctx.fillStyle = '#4a3f2c';
+            ctx.fillRect(-1500, -1500, 4000, 2020);
+            // wallpaper stripes
+            ctx.strokeStyle = 'rgba(30, 24, 14, 0.35)';
+            ctx.lineWidth = 3;
+            for (let x = -1500; x < 2500; x += 42) {
+                ctx.beginPath(); ctx.moveTo(x, -1500); ctx.lineTo(x, 520); ctx.stroke();
+            }
+            // skirting
+            ctx.fillStyle = '#2b2116';
+            ctx.fillRect(-1500, 505, 4000, 18);
+            // floor
+            ctx.fillStyle = '#33271a';
+            ctx.fillRect(-1500, 520, 4000, 1600);
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 2;
+            for (let i = -40; i < 60; i++) {
+                ctx.beginPath();
+                ctx.moveTo(500 + i * 60, 520);
+                ctx.lineTo(500 + i * 260, 1400);
+                ctx.stroke();
+            }
+
+            drawWindow(st, t);
+            drawPicture(st);
+            drawDoor(st);
+            if (st.junk) drawJunk();
+
+            if (st.chest) {
+                drawChest();
+                drawClock(500, 252, 82, date, st, t);
+            } else {
+                drawClock(500, 434, 82, date, st, t);
+            }
+
+            if (st.junk) {
+                // dust in the air and on the floor
+                ctx.fillStyle = 'rgba(200, 190, 170, 0.08)';
+                for (let i = 0; i < 140; i++) {
+                    const x = (i * 97.3) % 1000;
+                    const y = 520 + ((i * 53.7) % 200);
+                    ctx.fillRect(x, y, 4, 2);
+                }
             }
         }
 
-        // Initialize
-        createLegs();
-        updateClock();
-        setInterval(updateClock, 1000);
+        function drawWindow(st, t) {
+            const x = 215, y = 110, w = 140, h = 260;
+            ctx.save();
+            ctx.fillStyle = '#20180f';
+            ctx.fillRect(x - 12, y - 12, w + 24, h + 24);
+            ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+            ctx.fillStyle = rgb(st.sky);
+            ctx.fillRect(x, y, w, h);
+            // the endless grey-black building opposite, a hospital
+            const fac = mixRGB(st.sky, [25, 25, 28], 0.65);
+            ctx.fillStyle = rgb(fac);
+            ctx.fillRect(x, y + 70, w, h);
+            const lit = st.dark > 0.45;
+            for (let r = 0; r < 6; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const on = lit && ((r * 7 + c * 3) % 5 === 0);
+                    ctx.fillStyle = on ? 'rgba(235, 200, 120, 0.75)' : 'rgba(10, 10, 12, 0.55)';
+                    ctx.fillRect(x + 10 + c * 34, y + 86 + r * 30, 17, 18);
+                }
+            }
+            if (st.rain) {
+                ctx.strokeStyle = 'rgba(200, 210, 220, 0.35)';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 40; i++) {
+                    const px = x + ((i * 37.7) % w);
+                    const py = y + (((i * 61.3) + t * 260) % (h + 40)) - 20;
+                    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px - 4, py + 16); ctx.stroke();
+                }
+            }
+            ctx.restore();
+            // frame cross
+            ctx.fillStyle = '#20180f';
+            ctx.fillRect(x + w / 2 - 4, y, 8, h);
+            ctx.fillRect(x, y + h * 0.42, w, 8);
+            // sill
+            ctx.fillStyle = '#2a2015';
+            ctx.fillRect(x - 20, y + h + 10, w + 40, 12);
+        }
+
+        function drawPicture(st) {
+            const x = 596, y = 140, w = 80, h = 108;
+            ctx.save();
+            if (st.picture) {
+                ctx.shadowColor = 'rgba(255, 215, 140, 0.8)';
+                ctx.shadowBlur = 30;
+            }
+            ctx.fillStyle = '#a57d3c';
+            ctx.fillRect(x - 9, y - 9, w + 18, h + 18);
+            ctx.restore();
+            ctx.fillStyle = '#d7c8a6';
+            ctx.fillRect(x, y, w, h);
+            // the lady: fur hat, boa, and the heavy muff into which her arm has vanished
+            const cx = x + w / 2;
+            ctx.fillStyle = '#3a2a1c';
+            ctx.beginPath(); ctx.ellipse(cx, y + 26, 20, 11, 0, 0, Math.PI * 2); ctx.fill();     // hat
+            ctx.fillStyle = '#c9a98a';
+            ctx.beginPath(); ctx.arc(cx, y + 38, 10, 0, Math.PI * 2); ctx.fill();                  // face
+            ctx.fillStyle = '#5a4430';
+            ctx.beginPath();                                                                      // dress
+            ctx.moveTo(cx - 16, y + 52); ctx.lineTo(cx + 16, y + 52);
+            ctx.lineTo(cx + 26, y + h); ctx.lineTo(cx - 26, y + h); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#3a2a1c';
+            ctx.beginPath(); ctx.ellipse(cx, y + 54, 22, 9, 0, 0, Math.PI * 2); ctx.fill();      // boa
+            ctx.beginPath(); ctx.ellipse(cx + 4, y + 84, 17, 13, 0, 0, Math.PI * 2); ctx.fill(); // muff
+            if (st.picture) {
+                ctx.fillStyle = 'rgba(80, 52, 24, 0.75)';
+                ctx.beginPath(); ctx.ellipse(cx, y + h / 2 + 6, 34, 50, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = 'rgba(40, 25, 10, 0.9)';
+                ctx.lineWidth = 2;
+                for (let i = 1; i < 6; i++) {
+                    ctx.beginPath(); ctx.ellipse(cx, y + h / 2 + 6 - 50 + i * 17, 30, 6, 0, 0, Math.PI); ctx.stroke();
+                }
+            }
+            // glass sheen
+            ctx.fillStyle = 'rgba(255,255,255,0.06)';
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w * 0.5, y); ctx.lineTo(x, y + h * 0.5); ctx.fill();
+        }
+
+        function drawDoor(st) {
+            const x = 706, y = 190, w = 104, h = 330;
+            ctx.fillStyle = '#20180f';
+            ctx.fillRect(x - 10, y - 10, w + 20, h + 10);
+            if (st.doorOpen) {
+                ctx.fillStyle = st.violin ? '#f0c27a' : '#d9a965';
+                ctx.fillRect(x, y, w, h);
+                // the door leaf swung into the room
+                ctx.fillStyle = '#4b3420';
+                ctx.beginPath();
+                ctx.moveTo(x, y); ctx.lineTo(x + 38, y - 14); ctx.lineTo(x + 38, y + h + 26); ctx.lineTo(x, y + h);
+                ctx.closePath(); ctx.fill();
+                // light thrown across the floor
+                ctx.fillStyle = 'rgba(240, 190, 110, 0.18)';
+                ctx.beginPath();
+                ctx.moveTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - 60, 900); ctx.lineTo(x - 260, 900);
+                ctx.closePath(); ctx.fill();
+            } else {
+                ctx.fillStyle = '#4b3420';
+                ctx.fillRect(x, y, w, h);
+                ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x + 14, y + 18, w - 28, h * 0.4);
+                ctx.strokeRect(x + 14, y + h * 0.5, w - 28, h * 0.42);
+                ctx.fillStyle = '#b8924e';
+                ctx.beginPath(); ctx.arc(x + 16, y + h * 0.5, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#0b0805';
+                ctx.fillRect(x + 14, y + h * 0.5 + 12, 4, 10);   // keyhole
+            }
+        }
+
+        function drawJunk() {
+            ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+            ctx.lineWidth = 3;
+            ctx.fillStyle = '#3d2e1d';                           // crates
+            ctx.fillRect(250, 425, 125, 95);
+            ctx.strokeRect(250, 425, 125, 95);
+            ctx.fillStyle = '#4a3823';
+            ctx.fillRect(272, 372, 82, 53);
+            ctx.strokeRect(272, 372, 82, 53);
+            ctx.fillStyle = '#2f2a24';                           // ash bin
+            ctx.beginPath();
+            ctx.moveTo(606, 448); ctx.lineTo(676, 448); ctx.lineTo(668, 520); ctx.lineTo(614, 520); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#3b352d';
+            ctx.fillRect(600, 440, 82, 10);
+        }
+
+        function drawChest() {
+            const x = 375, y = 345, w = 250, h = 175;
+            ctx.fillStyle = '#5a3c22';
+            ctx.fillRect(x - 8, y - 12, w + 16, 14);       // top
+            ctx.fillStyle = '#4c321c';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 3; i++) {
+                const dy = y + 12 + i * 54;
+                ctx.strokeRect(x + 14, dy, w - 28, 46);
+                ctx.fillStyle = '#b8924e';
+                ctx.beginPath(); ctx.arc(x + w / 2 - 40, dy + 23, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(x + w / 2 + 40, dy + 23, 4, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        // The alarm clock on the chest: the time is read from here.
+        function drawClock(cx, cy, r, date, st, t) {
+            const ms = date.getMilliseconds();
+            const sec = date.getSeconds() + (reduceMotion.matches ? 0 : ms / 1000);
+            const min = date.getMinutes() + sec / 60;
+            const hr = (date.getHours() % 12) + min / 60;
+            const shake = st.ring && !reduceMotion.matches ? Math.sin(t * 70) * 0.12 : 0;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            // shadow on surface
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.beginPath(); ctx.ellipse(0, r * 1.08, r * 1.0, r * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+            // feet
+            ctx.fillStyle = '#8f6f38';
+            [-1, 1].forEach(sd => {
+                ctx.beginPath(); ctx.ellipse(sd * r * 0.6, r * 0.98, r * 0.14, r * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+            });
+            // bells and hammer
+            [-1, 1].forEach(sd => {
+                ctx.save();
+                ctx.translate(sd * r * 0.58, -r * 0.86);
+                ctx.rotate(sd * 0.55 + shake * sd);
+                const g = ctx.createLinearGradient(-r * 0.4, 0, r * 0.4, 0);
+                g.addColorStop(0, '#7a5a26'); g.addColorStop(0.45, '#e2c17f'); g.addColorStop(1, '#6b4d1f');
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.38, Math.PI, 0); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#5e441c';
+                ctx.beginPath(); ctx.arc(0, -r * 0.4, r * 0.06, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            });
+            ctx.strokeStyle = '#6b4d1f';
+            ctx.lineWidth = r * 0.05;
+            ctx.beginPath(); ctx.moveTo(0, -r * 0.98); ctx.lineTo(Math.sin(shake * 8) * r * 0.12, -r * 1.22); ctx.stroke();
+            // carrying handle
+            ctx.lineWidth = r * 0.06;
+            ctx.beginPath(); ctx.arc(0, -r * 1.02, r * 0.3, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+            if (st.ring && !reduceMotion.matches) {
+                ctx.strokeStyle = 'rgba(240, 220, 170, 0.5)';
+                ctx.lineWidth = 2;
+                for (let i = 1; i <= 3; i++) {
+                    const rr = r * (1.25 + 0.18 * i + 0.1 * Math.sin(t * 12 + i));
+                    ctx.beginPath(); ctx.arc(0, -r * 0.3, rr, Math.PI * 1.15, Math.PI * 1.35); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(0, -r * 0.3, rr, Math.PI * 1.65, Math.PI * 1.85); ctx.stroke();
+                }
+            }
+            // case
+            const cg = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.2, 0, 0, r * 1.05);
+            cg.addColorStop(0, '#e8c987'); cg.addColorStop(0.7, '#a7823f'); cg.addColorStop(1, '#5c4219');
+            ctx.fillStyle = cg;
+            ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+            // face
+            ctx.fillStyle = st.dead ? '#cfc4ab' : '#eee3c8';
+            ctx.beginPath(); ctx.arc(0, 0, r * 0.84, 0, Math.PI * 2); ctx.fill();
+            // minute ticks
+            ctx.strokeStyle = '#2a2016';
+            for (let i = 0; i < 60; i++) {
+                const a = i / 60 * Math.PI * 2;
+                const big = i % 5 === 0;
+                ctx.lineWidth = big ? r * 0.03 : r * 0.012;
+                ctx.beginPath();
+                ctx.moveTo(Math.sin(a) * r * 0.8, -Math.cos(a) * r * 0.8);
+                ctx.lineTo(Math.sin(a) * r * (big ? 0.7 : 0.75), -Math.cos(a) * r * (big ? 0.7 : 0.75));
+                ctx.stroke();
+            }
+            // numerals
+            ctx.fillStyle = '#20180f';
+            ctx.font = `500 ${r * 0.2}px 'EB Garamond', Georgia, serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let i = 1; i <= 12; i++) {
+                const a = i / 12 * Math.PI * 2;
+                ctx.fillText(String(i), Math.sin(a) * r * 0.56, -Math.cos(a) * r * 0.56 + r * 0.015);
+            }
+            // alarm hand, set for four
+            hand(4 / 12 * Math.PI * 2, r * 0.42, r * 0.025, '#a37a2c', true);
+            // hour, minute
+            hand(hr / 12 * Math.PI * 2, r * 0.42, r * 0.065, '#15100a');
+            hand(min / 60 * Math.PI * 2, r * 0.66, r * 0.045, '#15100a');
+            // seconds: the hands go calmly on
+            ctx.save();
+            ctx.rotate(sec / 60 * Math.PI * 2);
+            ctx.strokeStyle = '#b3352a';
+            ctx.lineWidth = r * 0.018;
+            ctx.beginPath(); ctx.moveTo(0, r * 0.16); ctx.lineTo(0, -r * 0.74); ctx.stroke();
+            ctx.restore();
+            ctx.fillStyle = '#6b4d1f';
+            ctx.beginPath(); ctx.arc(0, 0, r * 0.05, 0, Math.PI * 2); ctx.fill();
+            // glass highlight
+            ctx.fillStyle = 'rgba(255,255,255,0.12)';
+            ctx.beginPath(); ctx.ellipse(-r * 0.3, -r * 0.38, r * 0.34, r * 0.16, -0.7, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+
+            function hand(a, len, wid, col, arrow) {
+                ctx.save();
+                ctx.rotate(a);
+                ctx.strokeStyle = col;
+                ctx.fillStyle = col;
+                ctx.lineCap = 'round';
+                ctx.lineWidth = wid;
+                ctx.beginPath(); ctx.moveTo(0, len * 0.18); ctx.lineTo(0, -len); ctx.stroke();
+                if (arrow) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, -len - wid * 4); ctx.lineTo(-wid * 2.2, -len + wid); ctx.lineTo(wid * 2.2, -len + wid);
+                    ctx.closePath(); ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        // His brown, domed belly, divided by arched ribs, and the many thin legs
+        // flickering helplessly in front of his eyes
+        function drawBelly(t, alpha) {
+            const u = Math.min(W, H * 1.3);
+            const rx = Math.min(W * 0.46, u * 0.6), ry = u * 0.3;
+            const cx = W / 2, cy = H + u * 0.08;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(cx, cy);
+            ctx.rotate(-0.04);
+
+            const g = ctx.createRadialGradient(-rx * 0.2, -ry * 0.6, ry * 0.1, 0, 0, rx);
+            g.addColorStop(0, '#9a6a34'); g.addColorStop(0.55, '#6a4520'); g.addColorStop(1, '#2c1a0b');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = 'rgba(30, 16, 6, 0.75)';
+            ctx.lineWidth = Math.max(1.5, u * 0.006);
+            for (let i = 1; i <= 4; i++) {
+                const yy = -ry + i * ry * 0.2;
+                const half = rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)));
+                ctx.beginPath();
+                ctx.moveTo(-half * 0.97, yy + ry * 0.06);
+                ctx.quadraticCurveTo(0, yy - ry * 0.1, half * 0.97, yy + ry * 0.06);
+                ctx.stroke();
+            }
+            ctx.strokeStyle = 'rgba(255, 220, 160, 0.14)';
+            ctx.beginPath(); ctx.ellipse(-rx * 0.15, -ry * 0.62, rx * 0.4, ry * 0.16, -0.1, Math.PI * 1.1, Math.PI * 1.7); ctx.stroke();
+
+            // the quilt, about to slide off entirely
+            ctx.fillStyle = '#d4cab2';
+            ctx.beginPath();
+            ctx.moveTo(rx * 0.38, -ry * 0.93);
+            ctx.quadraticCurveTo(rx * 0.75, -ry * 0.8, rx * 1.05, -ry * 0.3);
+            ctx.lineTo(rx * 1.3, ry * 0.3);
+            ctx.lineTo(rx * 0.62, ry * 0.3);
+            ctx.quadraticCurveTo(rx * 0.62, -ry * 0.5, rx * 0.38, -ry * 0.93);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(120, 100, 70, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(rx * 0.55, -ry * 0.78); ctx.quadraticCurveTo(rx * 0.8, -ry * 0.35, rx * 0.85, ry * 0.1); ctx.stroke();
+
+            // legs, rising from the rim of the belly
+            const n = 6;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            for (let sd = -1; sd <= 1; sd += 2) {
+                for (let i = 0; i < n; i++) {
+                    const f = i / (n - 1);                       // 0 near the middle, 1 at the side
+                    const ex = sd * rx * (0.12 + 0.62 * f);
+                    const by = -ry * Math.sqrt(Math.max(0, 1 - (ex * ex) / (rx * rx))) * 0.96;
+                    const phase = t * (2.6 + i * 0.41 + (sd > 0 ? 0.23 : 0)) + i * 1.9 + (sd > 0 ? 2.1 : 0);
+                    const wave = Math.sin(phase) * 0.28 + Math.sin(phase * 2.3) * 0.08;
+                    const len = u * (0.11 + 0.025 * Math.sin(i * 2.7 + sd));
+                    const a1 = -Math.PI / 2 + sd * (0.2 + 0.75 * f) + wave;
+                    const kx = ex + Math.cos(a1) * len, ky = by + Math.sin(a1) * len;
+                    const a2 = a1 + sd * (0.9 + 0.35 * Math.sin(phase * 1.4));
+                    const tx = kx + Math.cos(a2) * len * 0.8, ty = ky + Math.sin(a2) * len * 0.8;
+                    ctx.strokeStyle = '#1f1309';
+                    ctx.lineWidth = Math.max(2, u * 0.009);
+                    ctx.beginPath(); ctx.moveTo(ex, by); ctx.lineTo(kx, ky); ctx.stroke();
+                    ctx.lineWidth = Math.max(1.2, u * 0.005);
+                    ctx.beginPath(); ctx.moveTo(kx, ky); ctx.lineTo(tx, ty); ctx.stroke();
+                    ctx.strokeStyle = 'rgba(190, 140, 80, 0.35)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(ex - 1, by); ctx.lineTo(kx - 1, ky); ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        // Asleep, before the change: a heavy quilt filling the foreground
+        function drawQuilt() {
+            const u = Math.min(W, H * 1.3);
+            ctx.save();
+            const g = ctx.createLinearGradient(0, H - u * 0.35, 0, H);
+            g.addColorStop(0, '#5b5446'); g.addColorStop(1, '#2a261f');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.moveTo(0, H);
+            ctx.lineTo(0, H - u * 0.18);
+            ctx.quadraticCurveTo(W * 0.3, H - u * 0.34, W * 0.55, H - u * 0.24);
+            ctx.quadraticCurveTo(W * 0.8, H - u * 0.16, W, H - u * 0.22);
+            ctx.lineTo(W, H);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // On the floor: a few leg tips at the edges of his sight
+        function drawFloorLegs(t, live) {
+            const u = Math.min(W, H * 1.3);
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = 'rgba(28, 16, 6, 0.95)';
+            for (let sd = -1; sd <= 1; sd += 2) {
+                for (let i = 0; i < 3; i++) {
+                    const w = live ? Math.sin(t * (1.6 + i * 0.4) + i * 2 + sd) * 0.1 : 0;
+                    const bx = -u * 0.02, by = H - u * (0.03 + i * 0.075);
+                    const len = u * (0.14 - i * 0.02);
+                    const a1 = -0.75 + i * 0.18 + w;
+                    const kx = bx + Math.cos(a1) * len, ky = by + Math.sin(a1) * len;
+                    const a2 = a1 + 1.5;
+                    const tx = kx + Math.cos(a2) * len * 0.6, ty = ky + Math.sin(a2) * len * 0.6;
+                    const X = x => sd < 0 ? x : W - x;
+                    ctx.lineWidth = Math.max(2, u * 0.011);
+                    ctx.beginPath(); ctx.moveTo(X(bx), by); ctx.lineTo(X(kx), ky); ctx.stroke();
+                    ctx.lineWidth = Math.max(1.2, u * 0.006);
+                    ctx.beginPath(); ctx.moveTo(X(kx), ky); ctx.lineTo(X(tx), ty); ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        // ------------------------------------------------------------------
+        // Loops: text at 1 Hz; the canvas on rAF, or 1 Hz when motion is reduced
+        // ------------------------------------------------------------------
+        let rafId = 0;
+        let tickId = 0;
+        function frame(now) {
+            draw(now);
+            if (!reduceMotion.matches) rafId = requestAnimationFrame(frame);
+        }
+        function start() {
+            cancelAnimationFrame(rafId);
+            clearInterval(tickId);
+            snapCamera();
+            if (reduceMotion.matches) {
+                draw(performance.now());
+                tickId = setInterval(() => draw(performance.now()), 1000);
+            } else {
+                rafId = requestAnimationFrame(frame);
+            }
+        }
+
+        if (window.ResizeObserver) {
+            new ResizeObserver(resizeCanvas).observe(sceneEl);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', start);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw(performance.now()));
+
+        // Reserve room for the longest passage so the scene never jumps
+        const copyEl = document.getElementById('copy');
+        function reserveCopy() {
+            const probe = copyEl.cloneNode(true);
+            probe.removeAttribute('id');
+            probe.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+            probe.style.cssText = 'position:absolute;visibility:hidden;left:0;right:0;min-height:0';
+            probe.setAttribute('aria-hidden', 'true');
+            copyEl.parentNode.appendChild(probe);
+            const pb = probe.querySelector('.beat'), pq = probe.querySelector('.quote');
+            const pqq = probe.querySelector('q'), pg = probe.querySelector('.gloss');
+            let max = 0;
+            BEATS.forEach(b => {
+                pb.textContent = b.text;
+                pq.hidden = !b.q;
+                pqq.textContent = b.q || '';
+                pg.textContent = b.gloss || '';
+                max = Math.max(max, probe.offsetHeight);
+            });
+            probe.remove();
+            copyEl.style.minHeight = Math.ceil(max) + 'px';
+        }
+        reserveCopy();
+        window.addEventListener('resize', reserveCopy);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserveCopy);
+
+        resizeCanvas();
+        updateText();
+        setInterval(updateText, 1000);
+        start();
+    })();
     </script>
 </body>
 
