@@ -9,8 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300;0,400;1,300&family=Noto+Serif+JP:wght@200;300&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-night: #0b111a;
+            --carriage: #07090d;
+            --frame: #12161d;
+            --frame-edge: #1c222b;
             --snow: #e6f2ff;
+            --caption: #b9c6d6;
+            --caption-dim: #7f8c9c;
         }
 
         * {
@@ -19,218 +23,511 @@
             padding: 0;
         }
 
+        html, body { height: 100%; }
+
         body {
-            background-color: var(--bg-night);
+            background: radial-gradient(ellipse at 50% 40%, #0c1017 0%, var(--carriage) 70%);
+            background-color: var(--carriage);
             color: var(--snow);
             font-family: 'Cormorant Infant', serif;
             min-height: 100vh;
+            min-height: 100svh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: clamp(14px, 2.6vh, 28px);
+            padding: clamp(16px, 3vh, 36px) 16px;
             overflow: hidden;
+        }
+
+        /* The carriage window: a rounded pane set in a dark frame */
+        .window {
             position: relative;
+            width: min(1180px, 100%);
+            flex: 1 1 auto;
+            min-height: 0;
+            border-radius: clamp(18px, 3.2vw, 40px);
+            padding: clamp(8px, 1.2vw, 14px);
+            background: linear-gradient(180deg, var(--frame-edge), var(--frame) 30%, #0d1015);
+            box-shadow:
+                0 30px 60px rgba(0,0,0,0.55),
+                inset 0 1px 0 rgba(255,255,255,0.05);
         }
 
-        /* Ambient gradient mimicking a cold midnight window */
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.05) 0%, transparent 60%);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* The Snow Canvas */
-        #snowCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        /* Clock Display */
-        .clock-container {
+        .pane {
             position: relative;
-            z-index: 10;
-            text-align: center;
-            /* Frost effect */
-            background: rgba(255, 255, 255, 0.01);
-            backdrop-filter: blur(4px);
-            padding: 40px 80px;
-            border-radius: 10px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.03);
+            width: 100%;
+            height: 100%;
+            border-radius: clamp(12px, 2.4vw, 30px);
+            overflow: hidden;
+            background: #0a0f18;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6);
         }
 
-        .time-display {
-            font-size: clamp(4rem, 12vw, 8rem);
-            font-weight: 300;
-            letter-spacing: 15px;
-            margin-right: -15px; /* Offset the tracking */
-            opacity: 0.85;
-            filter: drop-shadow(0 0 10px rgba(230,242,255,0.2));
-            transition: opacity 2s ease;
-        }
-
-        .ampm {
-            font-size: 1.5rem;
-            letter-spacing: 5px;
-            opacity: 0.5;
-            vertical-align: top;
-            margin-left: 10px;
-        }
-
-        .quote-box {
+        #glass {
+            display: block;
             position: absolute;
-            bottom: 50px;
+            inset: 0;
+        }
+
+        /* The time is painted into the glass as a reflection; this copy is for assistive tech */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
+        /* Caption sits on the sill, below the glass, so nothing falls across it */
+        .sill {
+            flex: 0 0 auto;
+            width: min(1180px, 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 10;
-            opacity: 0.6;
-            transition: opacity 3s ease;
+            text-align: center;
+            gap: clamp(6px, 1vh, 10px);
         }
 
         .quote-en {
-            font-size: 1.1rem;
+            font-size: clamp(1rem, 2.2vw, 1.3rem);
             font-style: italic;
-            letter-spacing: 2px;
-            margin-bottom: 15px;
+            font-weight: 300;
+            letter-spacing: 0.04em;
+            color: var(--caption);
+            line-height: 1.35;
         }
 
         .quote-jp {
             font-family: 'Noto Serif JP', serif;
-            font-size: 0.85rem;
-            letter-spacing: 8px;
-            font-weight: 200;
+            font-size: clamp(0.8rem, 1.6vw, 0.95rem);
+            font-weight: 300;
+            letter-spacing: 0.32em;
+            margin-right: -0.32em;
+            color: var(--caption);
+            line-height: 1.6;
         }
 
+        .attrib {
+            font-size: clamp(0.78rem, 1.4vw, 0.9rem);
+            letter-spacing: 0.08em;
+            color: var(--caption-dim);
+        }
+
+        .attrib i { font-style: italic; }
+
+        @media (max-width: 520px) {
+            .quote-jp { letter-spacing: 0.18em; margin-right: -0.18em; }
+        }
     </style>
 </head>
 <body>
 
-    <canvas aria-hidden="true" id="snowCanvas"></canvas>
-
-    <div class="clock-container">
-        <div class="time-display" id="timeDisplay">
-            <span id="t-h">00</span>:<span id="t-m">00</span><span class="ampm" id="t-ap"></span>
+    <div class="window">
+        <div class="pane">
+            <canvas id="glass" aria-hidden="true"></canvas>
+            <div class="sr-only" role="timer" aria-live="polite" id="readout"></div>
         </div>
     </div>
 
-    <div class="quote-box">
-        <div class="quote-en">"The train came out of the long tunnel into the snow country."</div>
-        <div class="quote-jp">国境の長いトンネルを抜けると雪国であった。</div>
+    <div class="sill">
+        <p class="quote-en">&ldquo;The train came out of the long tunnel into the snow country.&rdquo;</p>
+        <p class="quote-jp" lang="ja">国境の長いトンネルを抜けると雪国であった。</p>
+        <p class="attrib">Yasunari Kawabata, <i>Snow Country</i>, tr. Edward G. Seidensticker</p>
     </div>
 
     <script>
-        // Decorative motion only: with reduced motion requested the scene is drawn
-        // once and then left still; the clock itself keeps updating.
+        // The window of an evening train. Behind the glass the snowy country slides past,
+        // its light following the real hour; on the glass, faint as a reflected face,
+        // floats the time. Now and then a far-off lamp drifts through the reflection,
+        // and the pane slowly mists over and clears.
+
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-        // --- Clock Logic ---
-        const tH = document.getElementById('t-h');
-        const tM = document.getElementById('t-m');
-        const tAP = document.getElementById('t-ap');
-
-        function updateClock() {
-            const now = new Date();
-            let h = now.getHours();
-            let m = now.getMinutes().toString().padStart(2, '0');
-            
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12;
-            h = h ? h : 12; // formatting 0 to 12
-            let hStr = h.toString().padStart(2, '0');
-
-            tH.textContent = hStr;
-            tM.textContent = m;
-            tAP.textContent = ampm;
-
-            requestAnimationFrame(updateClock);
-        }
-        updateClock();
-
-        // --- Canvas Snow Particle System ---
-        const canvas = document.getElementById('snowCanvas');
+        const canvas = document.getElementById('glass');
         const ctx = canvas.getContext('2d');
-        
-        let width, height;
+        const pane = canvas.parentElement;
+        const readout = document.getElementById('readout');
 
+        let width = 0, height = 0;
+        let mistTex = null;
+        let flakes = [];
+
+        // ---------- helpers ----------
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const mix = (c1, c2, t) => [lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t)];
+        const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+        const smooth = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+        function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+
+        // Ridge profile: a few incommensurate sines, so the land never visibly repeats.
+        function ridge(x, seed) {
+            return (Math.sin(x * 0.0021 + seed) * 0.5 +
+                    Math.sin(x * 0.0053 + seed * 2.3) * 0.3 +
+                    Math.sin(x * 0.0131 + seed * 5.1) * 0.2) * 0.5 + 0.5;
+        }
+
+        // ---------- light of the hour ----------
+        const NIGHT = { top: [5, 8, 15], bot: [15, 22, 34], far: [20, 27, 40], mid: [36, 45, 60], near: [50, 60, 76], tree: [10, 14, 21] };
+        const DAY   = { top: [64, 76, 92], bot: [104, 115, 128], far: [80, 92, 106], mid: [122, 133, 146], near: [146, 156, 168], tree: [44, 52, 60] };
+        const DUSK  = [104, 78, 88];
+
+        function lightOf(now) {
+            const h = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+            // A short snow-country day: grey light from about 7 to 16:30
+            const day = smooth(5.8, 8.0, h) * (1 - smooth(15.8, 18.2, h));
+            // Twilight warmth on the horizon around dawn and dusk
+            const dusk = Math.max(Math.exp(-Math.pow((h - 17.2) / 0.9, 2)), 0.6 * Math.exp(-Math.pow((h - 6.6) / 0.7, 2)));
+            const p = {};
+            for (const k in NIGHT) p[k] = mix(NIGHT[k], DAY[k], day);
+            p.bot = mix(p.bot, DUSK, dusk * 0.55);
+            p.far = mix(p.far, mix(DUSK, p.far, 0.6), dusk * 0.3);
+            p.day = day;
+            return p;
+        }
+
+        // ---------- sizing ----------
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
-            width = window.innerWidth;
-            height = window.innerHeight;
+            const r = pane.getBoundingClientRect();
+            width = Math.max(1, r.width);
+            height = Math.max(1, r.height);
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            buildMist(dpr);
+            buildFlakes();
         }
-        resizeCanvas();
 
-        const snowflakes = [];
-        const numFlakes = 250;
-
-        class Flake {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 2 + 0.5; // very delicate
-                this.speedY = Math.random() * 0.5 + 0.1; // slow, gentle fall
-                this.speedX = (Math.random() - 0.5) * 0.3; // slight drift
-                this.opacity = Math.random() * 0.5 + 0.1;
-                // Add a subtle wobble
-                this.wobbleSpeed = Math.random() * 0.02;
-                this.wobbleAngle = Math.random() * Math.PI * 2;
+        function buildFlakes() {
+            const n = Math.min(260, Math.round(width * height / 4200));
+            flakes = [];
+            for (let i = 0; i < n; i++) {
+                const depth = Math.random();
+                flakes.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    d: depth,
+                    r: 0.5 + depth * 1.7,
+                    a: 0.25 + depth * 0.5,
+                    w: Math.random() * Math.PI * 2
+                });
             }
+        }
 
-            update() {
-                this.wobbleAngle += this.wobbleSpeed;
-                this.x += this.speedX + Math.sin(this.wobbleAngle) * 0.2;
-                this.y += this.speedY;
-
-                // Wrap around edges
-                if (this.y > height) {
-                    this.y = -5;
-                    this.x = Math.random() * width;
-                }
-                if (this.x > width) this.x = 0;
-                if (this.x < 0) this.x = width;
+        // Condensation: heavier at the edges, patchy in the middle.
+        function buildMist(dpr) {
+            const c = document.createElement('canvas');
+            c.width = Math.round(width * dpr);
+            c.height = Math.round(height * dpr);
+            const m = c.getContext('2d');
+            m.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const g = m.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.2,
+                                             width / 2, height / 2, Math.hypot(width, height) * 0.6);
+            g.addColorStop(0, 'rgba(196,206,220,0.35)');
+            g.addColorStop(1, 'rgba(196,206,220,0.95)');
+            m.fillStyle = g;
+            m.fillRect(0, 0, width, height);
+            for (let i = 0; i < 70; i++) {
+                const x = Math.random() * width, y = Math.random() * height;
+                const rad = 30 + Math.random() * Math.min(width, height) * 0.25;
+                const bg = m.createRadialGradient(x, y, 0, x, y, rad);
+                bg.addColorStop(0, `rgba(210,218,230,${0.12 + Math.random() * 0.18})`);
+                bg.addColorStop(1, 'rgba(210,218,230,0)');
+                m.fillStyle = bg;
+                m.fillRect(x - rad, y - rad, rad * 2, rad * 2);
             }
+            mistTex = c;
+        }
 
-            draw() {
-                ctx.fillStyle = `rgba(230, 242, 255, ${this.opacity})`;
+        // ---------- the land behind the glass ----------
+        const SPEED = { far: 5, lamp: 16, mid: 22, near: 120 }; // px per second
+
+        function drawLand(t, p) {
+            const horizon = height * (width < height ? 0.6 : 0.62);
+
+            const sky = ctx.createLinearGradient(0, 0, 0, horizon);
+            sky.addColorStop(0, rgb(p.top));
+            sky.addColorStop(1, rgb(p.bot));
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, width, height);
+
+            const step = 6;
+
+            // Far mountains
+            const offF = t * SPEED.far;
+            ctx.fillStyle = rgb(p.far);
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            for (let x = 0; x <= width + step; x += step) {
+                ctx.lineTo(x, horizon - height * (0.05 + 0.16 * ridge(x + offF, 1.7)));
+            }
+            ctx.lineTo(width, height);
+            ctx.fill();
+
+            // Distant lamps, between the mountains and the snowfields
+            drawLamps(t, p, horizon, 1);
+
+            // Mid hills, snow-covered, with dark cedars on the crests
+            const offM = t * SPEED.mid;
+            const midY = x => horizon + height * 0.02 - height * 0.07 * ridge(x + offM, 4.2);
+            ctx.fillStyle = rgb(p.mid);
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            for (let x = 0; x <= width + step; x += step) ctx.lineTo(x, midY(x));
+            ctx.lineTo(width, height);
+            ctx.fill();
+
+            ctx.fillStyle = rgb(p.tree, 0.85);
+            const spacing = 14;
+            const first = Math.floor(offM / spacing);
+            for (let i = first; i < first + width / spacing + 2; i++) {
+                const hv = hash(i);
+                if (hv < 0.55) continue;
+                const wx = i * spacing + hash(i + 0.5) * spacing;
+                const x = wx - offM;
+                const r = ridge(wx, 4.2);
+                if (r < 0.45) continue; // trees gather on the higher ground
+                const base = midY(x) + 2;
+                const th = height * (0.012 + 0.022 * hash(i + 0.25));
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.moveTo(x, base - th);
+                ctx.lineTo(x - th * 0.32, base);
+                ctx.lineTo(x + th * 0.32, base);
+                ctx.fill();
+            }
+
+            // Near bank of snow and the poles that flick past
+            const offN = t * SPEED.near;
+            const nearY = x => height * 0.88 - height * 0.05 * ridge(x + offN, 9.3);
+            const near = ctx.createLinearGradient(0, height * 0.8, 0, height);
+            near.addColorStop(0, rgb(p.near));
+            near.addColorStop(1, rgb(mix(p.near, p.tree, 0.35)));
+            ctx.fillStyle = near;
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            for (let x = 0; x <= width + step; x += step) ctx.lineTo(x, nearY(x));
+            ctx.lineTo(width, height);
+            ctx.fill();
+
+            const poleGap = 1100;
+            const fp = Math.floor(offN / poleGap);
+            ctx.fillStyle = rgb(p.tree, 0.5);
+            for (let i = fp; i < fp + width / poleGap + 2; i++) {
+                const x = i * poleGap - offN;
+                ctx.fillRect(x, height * 0.42, Math.max(2, width * 0.003), height * 0.5);
+            }
+        }
+
+        // Lamps are fixed in the world, so the scene is the same whether animated or still.
+        function drawLamps(t, p, horizon, pass) {
+            const seg = 230;
+            const off = t * SPEED.lamp;
+            const first = Math.floor(off / seg) - 1;
+            const strength = 1 - 0.75 * p.day;
+            const prob = 0.22 + 0.18 * (1 - p.day);
+            for (let i = first; i < first + width / seg + 3; i++) {
+                if (hash(i * 3.1) > prob) continue;
+                const x = i * seg + hash(i * 7.7) * seg - off;
+                if (x < -40 || x > width + 40) continue;
+                const y = horizon - height * (0.015 + 0.09 * hash(i * 1.9));
+                const flick = 0.85 + 0.15 * Math.sin(t * 1.3 + i);
+                const a = strength * flick * (0.55 + 0.45 * hash(i * 5.3));
+                const glowR = Math.max(10, height * 0.035) * pass;
+                const g = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+                g.addColorStop(0, `rgba(255,214,160,${0.75 * a})`);
+                g.addColorStop(0.15, `rgba(255,190,130,${0.22 * a})`);
+                g.addColorStop(1, 'rgba(255,180,120,0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(x - glowR, y - glowR, glowR * 2, glowR * 2);
+                ctx.fillStyle = `rgba(255,236,205,${0.9 * a})`;
+                ctx.beginPath();
+                ctx.arc(x, y, Math.max(1.1, height * 0.0028), 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        for (let i = 0; i < numFlakes; i++) {
-            snowflakes.push(new Flake());
-        }
-
-        function animateSnow() {
-            ctx.clearRect(0, 0, width, height);
-            
-            for (let flake of snowflakes) {
-                flake.update();
-                flake.draw();
+        function drawSnow(dt, p) {
+            const col = mix([200, 212, 228], [240, 245, 252], p.day);
+            for (const f of flakes) {
+                if (dt) {
+                    f.w += dt * (0.6 + f.d);
+                    f.x -= (12 + f.d * 140) * dt;
+                    f.y += (10 + f.d * 42 + Math.sin(f.w) * 6) * dt;
+                    if (f.x < -4) { f.x = width + 4; f.y = Math.random() * height; }
+                    if (f.y > height + 4) { f.y = -4; f.x = Math.random() * (width + 60); }
+                }
+                ctx.fillStyle = rgb(col, f.a * (0.55 + 0.45 * (1 - p.day)));
+                ctx.beginPath();
+                if (f.d > 0.85 && dt) {
+                    // the nearest flakes streak a little with the train's speed
+                    ctx.ellipse(f.x, f.y, f.r * 1.7, f.r, -0.25, 0, Math.PI * 2);
+                } else {
+                    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                }
+                ctx.fill();
             }
-            
-            if (!reduceMotion.matches) requestAnimationFrame(animateSnow);
         }
-        animateSnow();
 
-        // Handle resize
-        window.addEventListener('resize', () => {
+        // Mist gathers over about a minute and a half, then clears.
+        function mistLevel(ms) {
+            const period = 110000;
+            const ph = (ms % period) / period;
+            return ph < 0.78 ? smooth(0, 0.78, ph) : 1 - smooth(0.78, 1, ph);
+        }
+
+        // ---------- the reflection ----------
+        let timeStr = '', apStr = '';
+
+        function formatTime(now) {
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            apStr = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            timeStr = h + ':' + m;
+        }
+
+        function drawReflection(p, mist) {
+            const cx = width / 2;
+            const cy = height * (width < height ? 0.43 : 0.45);
+            const ff = '"Cormorant Infant", serif';
+
+            let size = Math.min(height * 0.3, 210);
+            ctx.font = `300 ${size}px ${ff}`;
+            const measure = () => ctx.measureText(timeStr).width + size * 0.06 * (timeStr.length - 1);
+            let tw = measure();
+            // leave room on both sides for the small AM/PM, so the figure stays centred
+            const total = tw + 2 * size * 0.42;
+            if (total > width * 0.84) {
+                size *= (width * 0.84) / total;
+                ctx.font = `300 ${size}px ${ff}`;
+                tw = measure();
+            }
+            const trk = size * 0.06;
+            const apSize = size * 0.16;
+
+            const drawStr = (dx, dy) => {
+                let x = cx - tw / 2 + dx;
+                for (const ch of timeStr) {
+                    ctx.fillText(ch, x, cy + dy);
+                    x += ctx.measureText(ch).width + trk;
+                }
+                ctx.save();
+                ctx.font = `400 ${apSize}px ${ff}`;
+                ctx.fillText(apStr, cx + tw / 2 + size * 0.06 + dx, cy - size * 0.24 + dy);
+                ctx.restore();
+            };
+
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
+
+            // The dim carriage behind the viewer: by day it is what lets the reflection show
+            ctx.save();
+            const shade = 0.12 + 0.3 * p.day;
+            const sg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(tw * 0.75, size));
+            sg.addColorStop(0, `rgba(8,12,18,${shade})`);
+            sg.addColorStop(1, 'rgba(8,12,18,0)');
+            ctx.fillStyle = sg;
+            const sr = Math.max(tw * 0.75, size);
+            ctx.fillRect(cx - sr, cy - sr, sr * 2, sr * 2);
+            ctx.restore();
+
+            const base = (0.8 - 0.05 * p.day) * (1 - 0.22 * mist);
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            // a second, fainter image from the glass's other surface
+            ctx.fillStyle = `rgba(214,226,242,${base * 0.06})`;
+            drawStr(-size * 0.018, -size * 0.012);
+            ctx.shadowColor = `rgba(214,230,255,${0.35 * base})`;
+            ctx.shadowBlur = size * 0.08;
+            ctx.fillStyle = `rgba(224,234,248,${base * 0.82})`;
+            drawStr(0, 0);
+            ctx.restore();
+            return { cy, size };
+        }
+
+        // ---------- frame ----------
+        let lastMs = 0;
+
+        function render(ms, dt) {
+            const now = new Date();
+            const t = ms / 1000;
+            const p = lightOf(now);
+            const mist = mistLevel(ms);
+
+            drawLand(t, p);
+            drawSnow(dt, p);
+
+            ctx.save();
+            ctx.globalAlpha = 0.3 * mist * (0.5 + 0.5 * p.day);
+            ctx.drawImage(mistTex, 0, 0, width, height);
+            ctx.restore();
+
+            drawReflection(p, mist);
+
+            // A lamp passing behind the reflection shines through it, as the light burned in her face.
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 0.35 * (1 - 0.5 * mist);
+            drawLamps(t, p, height * (width < height ? 0.6 : 0.62), 0.6);
+            ctx.restore();
+
+            // faint sheen across the glass
+            const sheen = ctx.createLinearGradient(0, 0, width, height);
+            sheen.addColorStop(0, 'rgba(255,255,255,0.035)');
+            sheen.addColorStop(0.35, 'rgba(255,255,255,0)');
+            sheen.addColorStop(1, 'rgba(255,255,255,0.015)');
+            ctx.fillStyle = sheen;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        // World time runs from the wall clock so the land is continuous across reloads.
+        // With motion reduced, the land is held at the moment it was first drawn.
+        let stillMs = null;
+        function worldMs() {
+            const ms = Date.now() % (1000 * 60 * 60 * 6);
+            if (!reduceMotion.matches) { stillMs = null; return ms; }
+            if (stillMs === null) stillMs = ms;
+            return stillMs;
+        }
+
+        let rafId = null;
+        function animate(ts) {
+            const dt = lastMs ? Math.min(0.1, (ts - lastMs) / 1000) : 0;
+            lastMs = ts;
+            render(worldMs(), dt);
+            if (!reduceMotion.matches) rafId = requestAnimationFrame(animate);
+            else rafId = null;
+        }
+
+        function tick() {
+            const now = new Date();
+            formatTime(now);
+            const spoken = timeStr + ' ' + apStr;
+            if (readout.textContent !== spoken) readout.textContent = spoken;
+            // With motion reduced the scene holds still; repaint only to keep the time true.
+            if (reduceMotion.matches) render(worldMs(), 0);
+        }
+
+        function start() {
             resizeCanvas();
-        });
+            tick();
+            render(worldMs(), 0);
+            if (!reduceMotion.matches && rafId === null) { lastMs = 0; rafId = requestAnimationFrame(animate); }
+        }
+
+        setInterval(tick, 1000);
+        window.addEventListener('resize', () => { resizeCanvas(); render(worldMs(), 0); });
+        reduceMotion.addEventListener('change', start);
+        if (document.fonts && document.fonts.load) {
+            document.fonts.load('300 100px "Cormorant Infant"').then(() => render(worldMs(), 0)).catch(() => {});
+        }
+        start();
     </script>
 </body>
 </html>

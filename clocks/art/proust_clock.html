@@ -7,370 +7,773 @@
     <title>À la recherche du temps perdu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Crimson+Text:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <!-- Cormorant Garamond for the roman capitals and the numerals; EB Garamond
+         for italics, because Cormorant's current italic misplaces the accents
+         on è and ô (La Prisonnière, Le Côté de Guermantes). -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=EB+Garamond:ital@1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --paper: #f3eee3;
+            --paper-deep: #e7dfcf;
+            --ink: #2a231c;
+            --ink-soft: #4a4037;
+            --muted: #5f564b;
+            --rule: #cfc4b0;
+            --tea: #8a5a2b;
+            --ribbon: #8c2f2f;
+            --memory-wash: rgba(176, 128, 72, 0.16);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html, body {
+            min-height: 100%;
+        }
+
         body {
             min-height: 100vh;
-            background: linear-gradient(to bottom, #f4f0e8 0%, #e8e4dc 100%);
-            font-family: 'Crimson Text', serif;
-            padding: 2rem;
-            color: #3a342e;
+            min-height: 100svh;
+            background-color: var(--paper);
+            background-image:
+                radial-gradient(ellipse at 50% 35%, rgba(255, 252, 244, 0.85) 0%, rgba(255, 252, 244, 0) 60%),
+                radial-gradient(ellipse at 50% 120%, var(--paper-deep) 0%, rgba(231, 223, 207, 0) 70%);
+            color: var(--ink);
+            font-family: 'Crimson Text', Georgia, serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Warm wash that rises when a memory surfaces */
+        .wash {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse at 50% 40%, var(--memory-wash) 0%, rgba(176, 128, 72, 0.06) 55%, rgba(176, 128, 72, 0) 80%);
+            opacity: 0;
+            transition: opacity 2.4s ease;
+        }
+
+        body.remembering .wash {
+            opacity: 1;
+        }
+
+        main {
+            width: 100%;
+            max-width: 960px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: clamp(16px, 3vh, 40px) clamp(16px, 4vw, 48px) clamp(14px, 2.4vh, 28px);
             position: relative;
         }
 
-        .page {
-            max-width: 900px;
-            margin: 0 auto;
-            background: #fdfbf7;
-            border: 1px solid #d8d4cc;
-            padding: 4rem 3rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-            position: relative;
-        }
-
-        .header {
+        .masthead {
             text-align: center;
-            margin-bottom: 3rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid #d8d4cc;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(0.72rem, 1.6vw, 0.9rem);
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding-bottom: clamp(10px, 2vh, 18px);
+            border-bottom: 1px solid var(--rule);
         }
 
-        .title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 300;
-            color: #2a241e;
-            margin-bottom: 0.75rem;
+        .masthead em {
+            font-family: 'EB Garamond', Georgia, serif;
             font-style: italic;
-            letter-spacing: 0.02em;
+            text-transform: none;
+            letter-spacing: 0.04em;
+            font-size: 1.02em;
+            color: var(--ink-soft);
         }
 
-        .subtitle {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            font-weight: 400;
-            color: #4a443e;
-            margin-bottom: 0.5rem;
-        }
-
-        .author {
-            font-size: 1rem;
-            color: #6a645e;
-            margin-top: 0.75rem;
-        }
-
-        .time-container {
+        .stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            margin-bottom: 3rem;
+            padding: clamp(14px, 3vh, 36px) 0 clamp(12px, 2.4vh, 26px);
         }
 
-        .time-label {
-            font-size: 0.85rem;
-            color: #6a645e;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin-bottom: 0.5rem;
-        }
-
-        .time-display {
+        .tome {
             font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
-            font-weight: 300;
-            color: #2a241e;
-            margin-bottom: 0.5rem;
+            font-size: clamp(0.78rem, 1.7vw, 0.95rem);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--muted);
         }
 
-        .moment-description {
+        .vol-title {
+            font-family: 'EB Garamond', Georgia, serif;
             font-style: italic;
-            color: #5a544e;
-            font-size: 1rem;
-        }
-
-        .volume-container {
-            background: rgba(216, 212, 204, 0.15);
-            border-left: 4px solid #9a9488;
-            padding: 2rem;
-            margin-bottom: 2.5rem;
-        }
-
-        .volume-number {
-            font-size: 0.75rem;
-            color: #6a645e;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 0.5rem;
-        }
-
-        .volume-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
             font-weight: 400;
-            color: #2a241e;
-            margin-bottom: 1.5rem;
-            font-style: italic;
+            font-size: clamp(1.5rem, 4.2vw, 2.4rem);
+            line-height: 1.1;
+            color: var(--ink);
+            margin-top: 0.3em;
         }
 
-        .memory-container {
-            position: relative;
-            min-height: 400px;
+        .vol-english {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            color: var(--muted);
+            margin-top: 0.25em;
+        }
+
+        .time {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: clamp(4.2rem, min(17vw, 15vh), 8.5rem);
+            line-height: 1;
+            letter-spacing: 0.01em;
+            color: var(--ink);
+            margin: clamp(10px, 2.4vh, 24px) 0 clamp(6px, 1.2vh, 12px);
+            font-variant-numeric: lining-nums tabular-nums;
+            transition: text-shadow 2.4s ease, color 2.4s ease;
+        }
+
+        .time .sec {
+            font-size: 0.32em;
+            color: var(--muted);
+            margin-left: 0.12em;
+            vertical-align: 0.15em;
+        }
+
+        body.remembering .time {
+            color: #3a2a1c;
+            text-shadow: 0.04em 0.03em 0 rgba(138, 90, 43, 0.22), -0.03em -0.02em 0 rgba(138, 90, 43, 0.12);
+        }
+
+        .date {
+            font-style: italic;
+            font-size: clamp(1rem, 2.4vw, 1.2rem);
+            color: var(--ink-soft);
+        }
+
+        /* The two states (reading / remembering) share one grid cell, so the
+           taller of the two sets the height and nothing ever overlaps. */
+        .leaf {
+            display: grid;
+            width: 100%;
+            max-width: 640px;
+            margin-top: clamp(16px, 3vh, 30px);
+        }
+
+        .leaf > section {
+            grid-area: 1 / 1;
+            transition: opacity 1.6s ease, transform 1.6s ease;
+        }
+
+        .reading {
+            opacity: 1;
         }
 
         .memory {
-            font-size: clamp(1.05rem, 2.2vw, 1.2rem);
-            line-height: 2;
-            color: #3a342e;
-            margin-bottom: 1.5rem;
-            text-align: justify;
             opacity: 0;
-            animation: memoryFloat 15s ease-in-out infinite;
+            transform: translateY(6px);
+            visibility: hidden;
+        }
+
+        body.remembering .reading {
+            opacity: 0;
+            transform: translateY(-6px);
+            visibility: hidden;
+            transition: opacity 1.6s ease, transform 1.6s ease, visibility 0s linear 1.6s;
+        }
+
+        body.remembering .memory {
+            opacity: 1;
+            transform: none;
+            visibility: visible;
+        }
+
+        .memory {
+            transition: opacity 1.6s ease, transform 1.6s ease, visibility 0s linear 1.6s;
+        }
+
+        body.remembering .memory {
+            transition: opacity 1.6s ease, transform 1.6s ease, visibility 0s;
+        }
+
+        .setting {
+            font-size: clamp(1.08rem, 2.5vw, 1.24rem);
+            line-height: 1.55;
+            color: var(--ink-soft);
+        }
+
+        .sensation {
+            margin-top: 0.9em;
+            font-size: clamp(0.92rem, 2vw, 1.02rem);
+            color: var(--muted);
+        }
+
+        .sensation b {
+            font-weight: 600;
+            font-size: 0.74em;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--tea);
+            margin-right: 0.5em;
+            white-space: nowrap;
+        }
+
+        .memory .fr {
+            font-family: 'EB Garamond', Georgia, serif;
+            font-style: italic;
+            font-size: clamp(1.15rem, 2.9vw, 1.45rem);
+            line-height: 1.3;
+            color: var(--tea);
+        }
+
+        .memory .en {
+            font-size: clamp(0.95rem, 2vw, 1.05rem);
+            color: var(--muted);
+            margin-top: 0.2em;
+        }
+
+        .memory .then {
+            margin-top: 0.9em;
+            font-size: clamp(1.08rem, 2.5vw, 1.28rem);
+            line-height: 1.55;
+            color: var(--ink-soft);
+        }
+
+        .memory .then strong {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .memory .trigger {
+            margin-top: 0.5em;
+            font-size: clamp(0.92rem, 2vw, 1.02rem);
+            font-style: italic;
+            color: var(--muted);
+        }
+
+        cite {
+            font-style: normal;
+            font-variant: small-caps;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .epigraph {
+            margin-top: clamp(12px, 2.2vh, 24px);
+            max-width: 600px;
+            font-size: clamp(0.95rem, 2.1vw, 1.08rem);
+            line-height: 1.5;
+            color: var(--ink-soft);
+        }
+
+        .epigraph[hidden] {
+            display: none;
+        }
+
+        .epigraph .fr {
+            font-family: 'EB Garamond', Georgia, serif;
+            font-style: italic;
+            font-size: 1.08em;
+            color: var(--ink);
+        }
+
+        .madeleine {
+            flex: none;
+            background: none;
+            border: 1px solid var(--rule);
+            border-radius: 999px;
+            padding: 0.3em 0.95em 0.3em 0.7em;
+            font: inherit;
+            font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+            color: var(--ink-soft);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55em;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+
+        .madeleine:hover {
+            border-color: var(--tea);
+            background-color: rgba(138, 90, 43, 0.06);
+        }
+
+        .madeleine:focus-visible {
+            outline: 2px solid var(--tea);
+            outline-offset: 3px;
+        }
+
+        .madeleine svg {
+            width: 1.5em;
+            height: 1.1em;
+            flex: none;
+        }
+
+        /* The shelf: seven volumes laid across the day */
+        .shelf-wrap {
+            border-top: 1px solid var(--rule);
+            padding-top: clamp(12px, 2.2vh, 20px);
+        }
+
+        .shelf-caption {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1em;
+            font-size: clamp(0.82rem, 1.8vw, 0.95rem);
+            color: var(--muted);
+            margin-bottom: 18px;
+        }
+
+
+        .shelf {
+            position: relative;
+            display: flex;
+            gap: 3px;
+            height: clamp(52px, 8vh, 76px);
+        }
+
+        .spine {
+            position: relative;
+            border-radius: 2px 2px 1px 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Crimson Text', Georgia, serif;
+            font-weight: 600;
+            font-size: clamp(0.8rem, 1.9vw, 1rem);
+            letter-spacing: 0.06em;
+            color: #4a4037;
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.18) 30%, rgba(0, 0, 0, 0.04) 75%, rgba(0, 0, 0, 0.1)), #d9cdb5;
+            overflow: hidden;
+            transition: background-color 1s ease, color 1s ease;
+        }
+
+        .spine::before, .spine::after {
+            content: '';
             position: absolute;
-            top: 0;
             left: 0;
             right: 0;
+            height: 1px;
+            background: rgba(90, 70, 40, 0.35);
         }
 
-        .memory:nth-child(1) { animation-delay: 0s; }
-        .memory:nth-child(2) { animation-delay: 5s; }
-        .memory:nth-child(3) { animation-delay: 10s; }
+        .spine::before { top: 16%; }
+        .spine::after { bottom: 16%; }
 
-        @keyframes memoryFloat {
-            0% { opacity: 0; transform: translateY(10px); }
-            3%, 30% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(10px); }
+        .spine.read {
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.14) 30%, rgba(0, 0, 0, 0.04) 75%, rgba(0, 0, 0, 0.1)), #c7b591;
         }
 
-        .memory em {
-            font-style: italic;
-            color: #5a544e;
+        .spine.current {
+            color: #f6efe0;
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0.1) 30%, rgba(0, 0, 0, 0.06) 75%, rgba(0, 0, 0, 0.22)), #6b4a2e;
         }
 
-        .sensory-note {
-            font-size: 0.9rem;
-            color: #7a745e;
-            font-style: italic;
-            text-align: center;
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid #d8d4cc;
+        .spine.current::before, .spine.current::after {
+            background: rgba(230, 200, 140, 0.55);
         }
 
-        .madeleine-quote {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
+        .ribbon {
+            position: absolute;
+            top: -9px;
+            bottom: -16px;
+            width: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .ribbon.settled {
+            transition: left 1s linear;
+        }
+
+        /* A ribbon bookmark: it peeks out above the books and hangs
+           below them, so it never strikes through a volume number. */
+        .ribbon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            height: 9px;
+            left: -2px;
+            width: 4px;
+            border-radius: 2px 2px 0 0;
+            background: var(--ribbon);
+        }
+
+        .ribbon::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            height: 15px;
+            left: -4px;
+            width: 8px;
+            background: var(--ribbon);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 70%, 0 100%);
+        }
+
+        .ticks {
+            position: relative;
+            height: 1.6em;
+            margin-top: 18px;
+            font-size: clamp(0.72rem, 1.6vw, 0.85rem);
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ticks span {
+            position: absolute;
+            top: 0;
             transform: translateX(-50%);
-            font-size: 0.85rem;
-            color: #6a645e;
-            font-style: italic;
-            text-align: center;
-            max-width: 700px;
         }
 
-        @media (max-width: 768px) {
-            .page {
-                padding: 2.5rem 2rem;
+        .ticks span:first-child { transform: none; }
+        .ticks span:last-child { transform: translateX(-100%); }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 520px) {
+            .masthead .sep { display: none; }
+            .masthead em { display: block; margin-top: 0.3em; }
+            .shelf-caption .within { display: none; }
+            .shelf { gap: 2px; }
+        }
+
+        @media (max-height: 640px) and (min-width: 700px) {
+            .time { font-size: clamp(3.5rem, 14vh, 7rem); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition: none !important;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="page">
-        <div class="header">
-            <h1 class="title">À la recherche du temps perdu</h1>
-            <div class="subtitle">In Search of Lost Time</div>
-            <div class="author">Marcel Proust</div>
-        </div>
+    <div class="wash" aria-hidden="true"></div>
+    <main>
+        <header class="masthead">
+            Marcel Proust<span class="sep"> &nbsp;·&nbsp; </span><em>À la recherche du temps perdu</em>
+        </header>
 
-        <div class="time-container">
-            <div class="time-label">The Present Moment</div>
-            <div class="time-display" id="time">00:00</div>
-            <div class="moment-description" id="momentDesc">Time unfolds in memory</div>
-        </div>
+        <div class="stage">
+            <div class="tome" id="tome">Tome I</div>
+            <h1 class="vol-title" id="volTitle">Du côté de chez Swann</h1>
+            <div class="vol-english" id="volEnglish">Swann's Way</div>
 
-        <div class="volume-container">
-            <div class="volume-number" id="volumeNumber">Volume I</div>
-            <h2 class="volume-title" id="volumeTitle">Du côté de chez Swann</h2>
+            <div class="time" id="time" role="timer" aria-live="off">00:00<span class="sec">00</span></div>
+            <div class="date" id="date">&nbsp;</div>
+            <div class="sr-only" aria-live="polite" id="srTime"></div>
 
-            <div class="memory-container" id="memories">
-                <!-- Memories injected here -->
+            <div class="leaf">
+                <section class="reading" id="reading">
+                    <p class="setting" id="setting"></p>
+                    <p class="sensation" id="sensation"></p>
+                </section>
+                <section class="memory" id="memory" aria-live="polite">
+                    <p class="fr">Et tout d’un coup le souvenir m’est apparu.</p>
+                    <p class="en">“And suddenly the memory returns.” <cite>Swann's Way</cite></p>
+                    <p class="then" id="memThen"></p>
+                    <p class="trigger" id="memTrigger"></p>
+                </section>
             </div>
 
-            <div class="sensory-note" id="sensoryNote">
-                The taste of tea and madeleine unlocks the gates of memory
-            </div>
-        </div>
-    </div>
+            <p class="epigraph" id="epigraph" hidden></p>
 
-    <div class="madeleine-quote">
-        "And suddenly the memory revealed itself..."
-    </div>
+        </div>
+
+        <footer class="shelf-wrap">
+            <div class="shelf-caption">
+                <span id="progress">Read so far</span>
+                <button class="madeleine" id="madeleine" type="button" aria-label="Dip the madeleine in the tea and summon a memory">
+                    <svg viewBox="0 0 30 22" aria-hidden="true">
+                        <path d="M3 18 C2 9 8 2 15 2 C22 2 28 9 27 18 C22 20 8 20 3 18 Z" fill="#d9a865" stroke="#8a5a2b" stroke-width="1.2"/>
+                        <path d="M15 4 V18 M10 5 L8 18 M20 5 L22 18 M6 9 L4 17 M24 9 L26 17" stroke="#8a5a2b" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <span id="madeleineLabel">Dip the madeleine</span>
+                </button>
+            </div>
+            <div class="shelf" id="shelf" aria-hidden="true">
+                <div class="ribbon" id="ribbon"></div>
+            </div>
+            <div class="ticks" id="ticks" aria-hidden="true"></div>
+        </footer>
+    </main>
 
     <script>
-        // The seven volumes of À la recherche du temps perdu mapped to times of day
+        // The novel laid across one day. It opens at night, with a man half
+        // asleep, and closes at midnight on its last word, "Temps", which is
+        // where the narrator resolves to write the book you have just read.
+        // So the day loops back to its own beginning, as the novel does.
+        // Hour spans are loosely weighted by the length of each volume.
         const volumes = [
             {
-                hours: [0, 1, 2, 3],
-                number: "Volume I",
-                title: "Du côté de chez Swann",
-                englishTitle: "Swann's Way",
-                moment: "The depths of night, where memory awakens",
-                sensory: "The taste of tea and madeleine unlocks the gates of memory",
-                memories: [
-                    "For a long time, I went to bed early. Sometimes, the candle barely out, my eyes closed so quickly that I did not have time to tell myself: 'I'm falling asleep.'",
-                    "And suddenly the memory revealed itself. The taste was that of the little piece of madeleine which on Sunday mornings at Combray my aunt Léonie used to give me, dipping it first in her own cup of tea or tisane.",
-                    "The places we have known do not belong solely to the world of space in which we situate them for our greater convenience. They were only a thin slice among contiguous impressions which formed our life at that time."
-                ]
+                start: 0, end: 4, numeral: 'I',
+                title: 'Du côté de chez Swann',
+                english: "Swann's Way",
+                setting: 'Night at Combray. A boy lies awake for his mother’s kiss, and years later, the shape of a whole town rises out of a cup of tea. Then, before the narrator was born, Swann falls in love with Odette.',
+                sensation: 'a crumb of madeleine softened in lime-flower tea'
             },
             {
-                hours: [4, 5, 6],
-                number: "Volume II",
+                start: 4, end: 8, numeral: 'II',
                 title: "À l'ombre des jeunes filles en fleurs",
-                englishTitle: "In the Shadow of Young Girls in Flower",
-                moment: "Dawn breaks, youth and possibility",
-                sensory: "The scent of hawthorn blossoms on the path to Méséglise",
-                memories: [
-                    "The name of a place is not merely a physical location but a vessel containing all our accumulated dreams, associations, and memories of it.",
-                    "To think that I have wasted years of my life, that I have longed for death, that the greatest love that I have ever known has been for a woman who did not please me, who was not my type!",
-                    "Within the little band of girls in flower, I saw Albertine, walking past the sea, and felt that peculiar pang of desire mingled with the impossibility of possession."
-                ]
+                english: 'Within a Budding Grove',
+                setting: 'First light at Balbec. The sea through the windows of the Grand Hotel, a little band of girls along the esplanade, and the painter Elstir in his studio, teaching the narrator how to see.',
+                sensation: 'the salt air off the sea at Balbec'
             },
             {
-                hours: [7, 8, 9],
-                number: "Volume III",
-                title: "Le Côté de Guermantes",
-                englishTitle: "The Guermantes Way",
-                moment: "Morning in society, aristocratic rituals",
-                sensory: "The rustle of silk gowns in the Duchesse's salon",
-                memories: [
-                    "The Duchesse de Guermantes represented not merely a woman but an entire world of aristocratic refinement, a symbol of that society I longed to enter.",
-                    "How often have we seen the most brilliant conversation reduced to mere gossip, the most refined aesthetic judgments revealed as simple snobbery.",
-                    "My grandmother's death came to me not all at once, but in successive waves of realization, each bringing fresh pain as though the loss were happening anew."
-                ]
+                start: 8, end: 12, numeral: 'III',
+                title: 'Le Côté de Guermantes',
+                english: 'The Guermantes Way',
+                setting: 'Morning in Paris. The family lodges in a wing of the Guermantes’ house, the Duchesse becomes a person rather than a name, the salons glitter and disappoint, and the grandmother dies.',
+                sensation: 'a voice on the telephone, small and far away'
             },
             {
-                hours: [10, 11, 12],
-                number: "Volume IV",
-                title: "Sodome et Gomorrhe",
-                englishTitle: "Sodom and Gomorrah",
-                moment: "Midday revelations, hidden truths emerge",
-                sensory: "The heavy perfume of orchids in the Verdurins' garden",
-                memories: [
-                    "I saw then what I had never suspected: Charlus and Jupien meeting in the courtyard, the revelation of an entire hidden world of desire and secrecy.",
-                    "Jealousy is not rational; it feeds on uncertainty, on the infinite possible scenarios of betrayal that our imagination constructs.",
-                    "At Balbec, watching Albertine sleep, I felt that peculiar possessiveness that comes not from love but from the fear of losing what we claim to love."
-                ]
+                start: 12, end: 15, numeral: 'IV',
+                title: 'Sodome et Gomorrhe',
+                english: 'Cities of the Plain',
+                setting: 'Noon in a courtyard, where Charlus and Jupien meet. A second summer at Balbec, and bending to unbutton his boots, the narrator feels his grandmother’s loss for the first time.',
+                sensation: 'stooping to take off a boot'
             },
             {
-                hours: [13, 14, 15],
-                number: "Volume V",
-                title: "La Prisonnière",
-                englishTitle: "The Captive",
-                moment: "Afternoon's anxious watching",
-                sensory: "Albertine's perfume lingering in the room after she has left",
-                memories: [
-                    "To keep Albertine with me, I made her my prisoner, not realizing that in doing so I made myself more captive than she.",
-                    "Every departure she threatened became a crisis, every absence a torment, as I interrogated servants and invented excuses to confine her.",
-                    "Love, I came to understand, is not possession but rather the impossibility of possession, the eternal gap between desire and fulfillment."
-                ]
+                start: 15, end: 18, numeral: 'V',
+                title: 'La Prisonnière',
+                english: 'The Captive',
+                setting: 'An afternoon shut in the Paris flat. Albertine asleep, the street cries below the window, Vinteuil’s septet, and Bergotte dying before a little patch of yellow wall in a Vermeer.',
+                sensation: 'the little phrase of Vinteuil’s music'
             },
             {
-                hours: [16, 17, 18],
-                number: "Volume VI",
-                title: "Albertine disparue",
-                englishTitle: "The Fugitive",
-                moment: "Evening's loss and gradual forgetting",
-                sensory: "The absence of scent where her presence had been",
-                memories: [
-                    "Albertine has gone. The words seemed at first impossible, then inevitable, then finally indifferent as grief slowly transformed into mere memory.",
-                    "We forget our dead not all at once but gradually, each day the memory growing fainter until we realize with shock that whole days have passed without thinking of them.",
-                    "The news of her death came to me without the expected devastation, for in truth I had already begun to forget her, to release her from the prison of my desire."
-                ]
+                start: 18, end: 20, numeral: 'VI',
+                title: 'Albertine disparue',
+                english: 'The Sweet Cheat Gone',
+                setting: 'Evening, and Albertine has left. A telegram, a death, and then the slow work of forgetting her, which ends in Venice with his mother.',
+                sensation: 'the light on the canals at Venice'
             },
             {
-                hours: [19, 20, 21],
-                number: "Volume VII",
-                title: "Le Temps retrouvé",
-                englishTitle: "Time Regained",
-                moment: "Evening's wisdom, time recovered",
-                sensory: "The taste of tea once more, the circle completing",
-                memories: [
-                    "After years of absence, I returned to Paris to find everyone aged, transformed, some barely recognizable—time made visible in faces and bodies.",
-                    "At the Guermantes' matinée, I stumbled on an uneven paving stone and suddenly all of Venice flooded back, entire and perfect, resurrected from the depths of lost time.",
-                    "And then I understood: the true purpose of art is to recover lost time, to defeat death through memory made eternal in the work."
-                ]
-            },
-            {
-                hours: [22, 23],
-                number: "Volume VII",
-                title: "Le Temps retrouvé",
-                englishTitle: "Time Regained (concluded)",
-                moment: "Night's culmination, the work conceived",
-                sensory: "The silence in which the work begins",
-                memories: [
-                    "I finally understood that I must write, that all the years of illness, of wasted time, of social climbing, had been the necessary preparation for the work.",
-                    "The real paradises are the paradises we have lost. It is only when they are gone that we can recapture them in art.",
-                    "And so I resolved to begin, to dedicate what remained of my life to capturing in words what had seemed forever lost: time itself, recovered through the power of involuntary memory."
-                ]
+                start: 20, end: 24, numeral: 'VII',
+                title: 'Le Temps retrouvé',
+                english: 'Time Regained',
+                setting: 'The war, and long years away. At a last party at the Guermantes’, every face has aged into a mask, and in the library the narrator understands at last what his book must be.',
+                sensation: 'an uneven paving stone underfoot'
             }
         ];
 
-        const timeEl = document.getElementById('time');
-        const momentDescEl = document.getElementById('momentDesc');
-        const volumeNumberEl = document.getElementById('volumeNumber');
-        const volumeTitleEl = document.getElementById('volumeTitle');
-        const memoriesEl = document.getElementById('memories');
-        const sensoryNoteEl = document.getElementById('sensoryNote');
+        // What Le Temps retrouvé's own epiphanies, and the madeleine, offer to memory.
+        const triggers = [
+            'a crumb of madeleine softened in lime-flower tea',
+            'an uneven paving stone underfoot',
+            'a spoon knocking against a plate',
+            'a stiff, starched napkin pressed to the lips',
+            'the sound of water in a pipe',
+            'the first page of an old copy of François le Champi',
+            'the scent of hawthorn along a hedge',
+            'the little phrase of Vinteuil’s music'
+        ];
 
-        let currentVolumeIndex = -1;
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+            'August', 'September', 'October', 'November', 'December'];
+        const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
-        function getVolumeForHour(hour) {
-            for (const volume of volumes) {
-                if (volume.hours.includes(hour)) {
-                    return volume;
-                }
+        const $ = id => document.getElementById(id);
+        const els = {
+            tome: $('tome'), volTitle: $('volTitle'), volEnglish: $('volEnglish'),
+            time: $('time'), date: $('date'), srTime: $('srTime'),
+            setting: $('setting'), sensation: $('sensation'),
+            memThen: $('memThen'), memTrigger: $('memTrigger'),
+            epigraph: $('epigraph'), progress: $('progress'),
+            shelf: $('shelf'), ribbon: $('ribbon'), ticks: $('ticks'),
+            madeleine: $('madeleine'), madeleineLabel: $('madeleineLabel')
+        };
+
+        const pad = n => String(n).padStart(2, '0');
+
+        // Build the shelf once: each spine's width is its share of the day.
+        const spines = volumes.map(v => {
+            const s = document.createElement('div');
+            s.className = 'spine';
+            s.style.flex = `${v.end - v.start} 1 0`;
+            s.textContent = v.numeral;
+            s.title = `${v.title} (${pad(v.start)}:00 to ${pad(v.end % 24)}:00)`;
+            els.shelf.insertBefore(s, els.ribbon);
+            return s;
+        });
+        [0, 4, 8, 12, 15, 18, 20, 24].forEach(h => {
+            const t = document.createElement('span');
+            t.style.left = `${(h / 24) * 100}%`;
+            t.textContent = h === 24 ? '24' : pad(h);
+            els.ticks.appendChild(t);
+        });
+
+        function volumeIndexFor(hour) {
+            for (let i = 0; i < volumes.length; i++) {
+                if (hour >= volumes[i].start && hour < volumes[i].end) return i;
             }
-            return volumes[volumes.length - 1];
+            return volumes.length - 1;
         }
 
-        function renderMemories(memories) {
-            memoriesEl.innerHTML = memories.map(memory =>
-                `<div class="memory">${memory}</div>`
-            ).join('');
+        function formatDate(d) {
+            return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
         }
 
-        function updateClock() {
+        // Small deterministic hash, so memories surface at unpredictable but
+        // repeatable moments rather than on a visible schedule.
+        function hash(n) {
+            let x = (n ^ 0x5bd1e995) >>> 0;
+            x = Math.imul(x ^ (x >>> 15), 0x2c1b3c6d) >>> 0;
+            x = Math.imul(x ^ (x >>> 12), 0x297a2d39) >>> 0;
+            return (x ^ (x >>> 15)) >>> 0;
+        }
+
+        // An earlier day at the very same minute.
+        function pastMoment(now, seed) {
+            const kind = seed % 4;
+            const d = new Date(now.getTime());
+            let note;
+            if (kind === 0) {
+                // A Sunday, as the madeleine was a Sunday-morning treat at Combray.
+                const back = d.getDay() === 0 ? 7 : d.getDay();
+                d.setDate(d.getDate() - back);
+                note = 'as at Combray';
+            } else if (kind === 1) {
+                d.setDate(d.getDate() - 7);
+                note = 'a week ago';
+            } else {
+                const years = kind === 2 ? 1 : 2 + (seed >>> 3) % 19;
+                d.setFullYear(d.getFullYear() - years);
+                // 29 February has no twin in an ordinary year.
+                if (d.getDate() !== now.getDate()) d.setDate(0);
+                note = years === 1 ? 'a year ago' : `${years} years ago`;
+            }
+            return { date: d, note };
+        }
+
+        // Memory state. A memory surfaces once in each six-minute stretch, at a
+        // moment the hash chooses, and lingers for twenty-four seconds.
+        const BLOCK = 360, LINGER = 24;
+        let summonedUntil = 0, summonSeed = 0;
+        let shownKey = null, lastVolume = -1, lastMinute = -1;
+
+        function scheduledMemory(now) {
+            const daySec = Math.floor(now.getTime() / 1000);
+            const block = Math.floor(daySec / BLOCK);
+            const seed = hash(block);
+            const at = block * BLOCK + 30 + (seed % (BLOCK - 30 - LINGER));
+            if (daySec >= at && daySec < at + LINGER) return { key: 'b' + block, seed };
+            return null;
+        }
+
+        function activeMemory(now) {
+            if (now.getTime() < summonedUntil) return { key: 's' + summonSeed, seed: summonSeed };
+            return scheduledMemory(now);
+        }
+
+        function renderMemory(now, mem) {
+            const past = pastMoment(now, mem.seed);
+            const hm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            const then = `The same <strong>${hm}</strong>, on <strong>${formatDate(past.date)}</strong>, ${past.note}.`;
+            // Only touch the DOM when the words change, so screen readers hear it once.
+            if (els.memThen.innerHTML !== then) els.memThen.innerHTML = then;
+            const trig = `Summoned by ${triggers[(mem.seed >>> 5) % triggers.length]}.`;
+            if (els.memTrigger.textContent !== trig) els.memTrigger.textContent = trig;
+        }
+
+        function renderVolume(i) {
+            const v = volumes[i];
+            els.tome.textContent = `Tome ${v.numeral} of VII`;
+            els.volTitle.textContent = v.title;
+            els.volEnglish.textContent = v.english;
+            els.setting.textContent = v.setting;
+            els.sensation.innerHTML = `<b>What may return</b>${v.sensation}`;
+            spines.forEach((s, j) => {
+                s.classList.toggle('current', j === i);
+                s.classList.toggle('read', j < i);
+            });
+        }
+
+        // Real lines only: the French text, and Scott Moncrieff's 1922 English.
+        function renderEpigraph(now, i) {
+            const h = now.getHours();
+            let html = '';
+            if (i === 0) {
+                html = '<span class="fr">« Longtemps, je me suis couché de bonne heure. »</span><br>' +
+                    '“For a long time I used to go to bed early.” <cite>Swann\'s Way</cite>';
+            } else if (i === 6 && h === 23) {
+                html = '<span class="fr">« … dans le Temps. »</span><br>' +
+                    'The last words of the novel. At midnight it begins again. <cite>Le Temps retrouvé</cite>';
+            } else if (i === 6) {
+                html = '<span class="fr">« les vrais paradis sont les paradis qu’on a perdus »</span><br>' +
+                    'the true paradises are the paradises we have lost <cite>Le Temps retrouvé</cite>';
+            }
+            els.epigraph.hidden = !html;
+            if (html) els.epigraph.innerHTML = html;
+        }
+
+        function tick() {
             const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
 
-            // Update time
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+            els.time.innerHTML = `${pad(h)}:${pad(m)}<span class="sec">${pad(s)}</span>`;
 
-            // Get current volume
-            const volume = getVolumeForHour(hour);
-            const volumeIndex = volumes.indexOf(volume);
+            const i = volumeIndexFor(h);
+            if (i !== lastVolume) {
+                renderVolume(i);
+                lastVolume = i;
+            }
 
-            // Update content if changed
-            if (volumeIndex !== currentVolumeIndex) {
-                momentDescEl.textContent = volume.moment;
-                volumeNumberEl.textContent = volume.number;
-                volumeTitleEl.innerHTML = `${volume.title}<br><span style="font-size: 0.8em; opacity: 0.8;">${volume.englishTitle}</span>`;
-                renderMemories(volume.memories);
-                sensoryNoteEl.textContent = volume.sensory;
-                currentVolumeIndex = volumeIndex;
+            if (m !== lastMinute) {
+                els.date.textContent = formatDate(now);
+                els.srTime.textContent = `${pad(h)}:${pad(m)}, ${volumes[i].title}`;
+                renderEpigraph(now, i);
+                lastMinute = m;
+            }
+
+            // Position in the whole novel, by the second.
+            const secOfDay = h * 3600 + m * 60 + s;
+            const frac = secOfDay / 86400;
+            els.ribbon.style.left = `${(frac * 100).toFixed(3)}%`;
+            const v = volumes[i];
+            const within = (secOfDay - v.start * 3600) / ((v.end - v.start) * 3600);
+            els.progress.innerHTML =
+                `${Math.floor(frac * 100)}% of the novel read<span class="within"> · ${Math.floor(within * 100)}% into Tome ${v.numeral}</span>`;
+
+            const mem = activeMemory(now);
+            if (mem) {
+                renderMemory(now, mem);
+                shownKey = mem.key;
+                document.body.classList.add('remembering');
+                els.madeleineLabel.textContent = 'Remembering…';
+            } else if (shownKey !== null) {
+                document.body.classList.remove('remembering');
+                els.madeleineLabel.textContent = 'Dip the madeleine';
+                shownKey = null;
             }
         }
 
-        // Initialize
-        updateClock();
-        setInterval(updateClock, 1000);
+        els.madeleine.addEventListener('click', () => {
+            summonSeed = (Math.random() * 0xffffffff) >>> 0;
+            summonedUntil = Date.now() + LINGER * 1000;
+            tick();
+        });
+
+        tick();
+        requestAnimationFrame(() => els.ribbon.classList.add('settled'));
+        setInterval(tick, 1000);
     </script>
 </body>
 

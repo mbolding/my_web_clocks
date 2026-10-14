@@ -3,374 +3,822 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Trial - Bureaucratic Clock</title>
+    <title>The Trial Clock</title>
+    <meta name="description" content="Kafka's Der Process as a court form: the day runs from the arrest at eight to the end at nine in the evening, and the time arrives by amendment.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-paper: #e8e6df;
-            --ink: #2b2b2b;
-            --ink-faded: #555555;
-            --stamp-red: #c0392b;
-            --stamp-blue: #2980b9;
+            --desk: #cfccc2;
+            --paper: #f4f2ea;
+            --slip: #fbf8ec;
+            --slip-old: #ece8da;
+            --ink: #1f1f1f;
+            --ink-soft: #4a4a46;
+            --rule: #8a877d;
+            --red: #a8261b;
+            --blue: #1f4f8a;
+            --violet: #5b3a7a;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--desk); }
 
         body {
-            background-color: var(--bg-paper);
+            background-color: var(--desk);
             color: var(--ink);
-            font-family: 'Courier Prime', monospace;
+            font-family: 'Courier Prime', 'Courier New', monospace;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            padding: 20px;
-            overflow: hidden;
-            position: relative;
+            padding: clamp(10px, 3vw, 36px) clamp(10px, 3vw, 36px) clamp(24px, 4vw, 48px);
+            overflow-x: hidden;
         }
 
-        /* Paper texture */
+        /* Paper grain, over everything but not clickable */
         body::before {
             content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
             pointer-events: none;
             z-index: 100;
         }
 
-        /* The Form Container */
-        .form-container {
-            width: clamp(320px, 90vw, 700px);
-            background-color: #f4f3ec;
+        .form {
+            width: min(100%, 900px);
+            background: var(--paper);
             border: 2px solid var(--ink);
-            padding: 40px;
+            outline: 1px solid var(--ink);
+            outline-offset: -7px;
+            padding: clamp(16px, 4vw, 40px);
             position: relative;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 4px 6px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        /* ---------- Header ---------- */
+        .form-id {
+            position: absolute;
+            top: clamp(12px, 2vw, 16px);
+            right: clamp(14px, 2.4vw, 22px);
+            font-size: clamp(0.62rem, 1.6vw, 0.78rem);
+            color: var(--ink-soft);
+            text-align: right;
+            line-height: 1.3;
         }
 
         .header {
-            border-bottom: 3px double var(--ink);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
             text-align: center;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-        }
-
-        .form-id {
-            font-size: 0.8rem;
-            color: var(--ink-faded);
-            position: absolute;
-            top: 10px;
-            right: 15px;
-        }
-        
-        .barcode {
-            font-family: 'Libre Barcode 39', cursive; /* Simulated with random pipes */
-            font-size: 1.2rem;
-            letter-spacing: -1px;
-            opacity: 0.7;
-        }
-
-        .field-group {
-            display: flex;
-            margin-bottom: 20px;
-            align-items: flex-end;
+            border-bottom: 3px double var(--ink);
+            padding: clamp(18px, 3vw, 8px) 0 clamp(10px, 2vw, 16px);
+            margin-bottom: clamp(12px, 2.4vw, 20px);
             position: relative;
         }
 
-        .field-label {
-            font-weight: bold;
+        .court {
+            font-size: clamp(0.68rem, 1.8vw, 0.82rem);
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            margin-right: 10px;
+            color: var(--ink-soft);
+        }
+
+        h1 {
+            font-size: clamp(1.15rem, 4.2vw, 1.9rem);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin: 0.25em 0 0.15em;
+            line-height: 1.15;
+        }
+
+        .subtitle {
+            font-size: clamp(0.7rem, 1.9vw, 0.85rem);
+            font-style: italic;
+            color: var(--ink-soft);
+        }
+
+        .header-stamp {
+            position: absolute;
+            left: -6px;
+            top: -8px;
+            transform: rotate(-8deg);
+        }
+
+        /* ---------- Body grid ---------- */
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+            grid-template-areas: "fields time" "prospects time";
+            gap: clamp(14px, 3vw, 28px) clamp(14px, 3vw, 32px);
+            align-items: start;
+        }
+        .fields { grid-area: fields; }
+        .time-col { grid-area: time; align-self: center; padding-top: 30px; }
+        .prospects { grid-area: prospects; }
+
+        .fields { display: flex; flex-direction: column; gap: clamp(8px, 1.4vw, 12px); }
+
+        .field {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            column-gap: 0.6em;
+            align-items: baseline;
+            font-size: clamp(0.8rem, 2.1vw, 0.95rem);
+        }
+
+        .field-label {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.82em;
+            letter-spacing: 0.04em;
             white-space: nowrap;
         }
 
         .field-value {
-            flex-grow: 1;
-            border-bottom: 1px dotted var(--ink);
+            font-family: 'Special Elite', 'Courier New', monospace;
+            border-bottom: 1px dotted var(--rule);
             padding-bottom: 2px;
-            font-family: 'Special Elite', cursive;
-            font-size: 1.2rem;
-            color: var(--ink);
+            min-width: 0;
+            overflow-wrap: anywhere;
         }
 
-        .bureaucratic-text {
-            font-size: 0.85rem;
-            line-height: 1.6;
-            margin: 30px 0;
-            text-align: justify;
-            color: var(--ink-faded);
-        }
-
-        /* Dynamic Clock Fields */
-        .clock-declaration {
-            border: 2px solid var(--ink);
-            padding: 20px;
-            margin: 30px 0;
-            position: relative;
-            background: #eef; /* very faint blue tint indicating official area */
-            background-color: rgba(0, 0, 0, 0.02);
-            text-align: center;
-        }
-
-        .urgent-label {
-            position: absolute;
-            top: -12px;
-            left: 20px;
-            background: #f4f3ec;
-            padding: 0 10px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .time-display {
-            font-family: 'Special Elite', cursive;
-            font-size: 1.8rem;
-            margin: 10px 0;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .time-unit {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .time-unit span {
-            font-size: 0.7rem;
+        .field-value small {
             font-family: 'Courier Prime', monospace;
-            text-transform: uppercase;
-            border-top: 1px solid var(--ink);
-            padding-top: 2px;
-            margin-top: 5px;
+            color: var(--ink-soft);
+            font-size: 0.85em;
         }
 
-        /* Randomized Stamps */
-        .stamp {
+        .ref {
+            font-family: 'Courier Prime', monospace;
+            font-style: italic;
+            color: var(--ink-soft);
+        }
+
+        .prospects {
+            margin-top: 4px;
+            font-size: clamp(0.76rem, 2vw, 0.9rem);
+            border: 1px solid var(--rule);
+            padding: 8px 10px;
+        }
+
+        .prospects-title {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 0.06em;
+            margin-bottom: 4px;
+        }
+
+        .prospects ul { list-style: none; display: grid; gap: 3px; }
+        .prospects li { display: grid; grid-template-columns: 1.4em minmax(0, 1fr); align-items: baseline; }
+        .box {
+            display: inline-block;
+            width: 1em; height: 1em;
+            border: 1.5px solid var(--ink);
+            position: relative;
+            top: 0.12em;
+        }
+        .box.ticked::after {
+            content: "";
             position: absolute;
-            font-family: 'Special Elite', cursive;
-            font-size: 2.5rem;
-            font-weight: bold;
+            inset: -3px;
+            background:
+                linear-gradient(45deg, transparent 45%, var(--blue) 45% 58%, transparent 58%),
+                linear-gradient(-45deg, transparent 45%, var(--blue) 45% 58%, transparent 58%);
+        }
+        .struck { text-decoration: line-through; text-decoration-color: var(--red); color: var(--ink-soft); }
+        .margin-note {
+            font-family: 'Special Elite', monospace;
+            color: var(--red);
+            font-size: 0.85em;
+        }
+
+        /* ---------- Amendment slips (the time) ---------- */
+        .time-col { position: relative; }
+
+        .time-ref {
+            font-size: clamp(0.78rem, 2vw, 0.92rem);
+            margin-bottom: 10px;
+        }
+
+        .stack {
+            position: relative;
+            padding: 0 0 0 0;
+        }
+
+        .slip {
+            background: var(--slip);
+            border: 1px solid #b9b4a3;
+            box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.16);
+            padding: clamp(10px, 2vw, 16px) clamp(12px, 2.4vw, 20px);
+            position: relative;
+        }
+
+        .slip.old {
+            position: absolute;
+            inset: 0;
+            background: var(--slip-old);
+            transform: translate(clamp(5px, 1.2vw, 10px), -19px) rotate(1.4deg);
+            box-shadow: none;
+            color: var(--ink-soft);
+            overflow: hidden;
+        }
+
+        .slip.older {
+            transform: translate(clamp(-6px, -1vw, -3px), -36px) rotate(-1.6deg);
+            background: #e4dfcf;
+        }
+
+        .slip.current { transform: rotate(-0.8deg); }
+
+        .clip {
+            position: absolute;
+            top: -14px;
+            left: 22px;
+            width: 16px;
+            height: 40px;
+            border: 2.5px solid #7b7f86;
+            border-radius: 8px;
+            z-index: 3;
+        }
+
+        .slip-head {
+            font-size: clamp(0.66rem, 1.7vw, 0.8rem);
             text-transform: uppercase;
-            border: 4px solid;
-            padding: 5px 15px;
-            border-radius: 5px;
-            opacity: 0;
-            transform: rotate(-15deg) scale(2);
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 4px;
+            padding-left: 34px;
+        }
+
+        .slip-time {
+            font-family: 'Special Elite', 'Courier New', monospace;
+            font-size: clamp(3.6rem, 13vw, 6.6rem);
+            line-height: 1;
+            text-align: center;
+            margin: clamp(8px, 1.6vw, 14px) 0 clamp(4px, 1vw, 8px);
+            letter-spacing: 0.02em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .slip-time .sec {
+            font-size: 0.36em;
+            color: var(--ink-soft);
+            margin-left: 0.08em;
+            vertical-align: 0.95em;
+        }
+
+        .slip-foot {
+            font-size: clamp(0.66rem, 1.7vw, 0.8rem);
+            color: var(--ink-soft);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slip.old .old-text {
+            position: absolute;
+            right: 14px;
+            top: 4px;
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+            text-decoration: line-through;
+            text-decoration-color: var(--red);
+        }
+        .slip.older .old-text { right: auto; left: 52px; }
+
+        .slip-enter { animation: slipIn 420ms ease-out; }
+        @keyframes slipIn {
+            from { transform: translate(18px, -26px) rotate(4deg); opacity: 0.2; }
+            to   { transform: rotate(-0.8deg); opacity: 1; }
+        }
+
+        /* ---------- Stamps ---------- */
+        .stamp {
+            display: inline-block;
+            font-family: 'Special Elite', monospace;
+            text-transform: uppercase;
+            border: 3px solid currentColor;
+            border-radius: 4px;
+            padding: 2px 8px 3px;
+            text-align: center;
+            line-height: 1.05;
+            mix-blend-mode: multiply;
             pointer-events: none;
-            z-index: 50;
+            white-space: nowrap;
+        }
+        .stamp b { display: block; font-weight: 400; font-size: 1em; letter-spacing: 0.06em; }
+        .stamp i { display: block; font-style: normal; font-family: 'Courier Prime', monospace; font-size: 0.5em; letter-spacing: 0.08em; }
+        .stamp.red { color: var(--red); }
+        .stamp.blue { color: var(--blue); }
+        .stamp.violet { color: var(--violet); }
+
+        .header-stamp.stamp { font-size: clamp(0.8rem, 1.9vw, 1.05rem); opacity: 0.82; background: rgba(244, 242, 234, 0.35); }
+
+        .slip .stamp.overlay {
+            flex: none;
+            font-size: clamp(0.62rem, 1.7vw, 0.85rem);
+            transform: rotate(-12deg);
+            opacity: 0.75;
         }
 
-        .stamp.stamp-red {
-            color: var(--stamp-red);
-            border-color: var(--stamp-red);
-        }
-        
-        .stamp.stamp-blue {
-            color: var(--stamp-blue);
-            border-color: var(--stamp-blue);
+        /* ---------- Docket ---------- */
+        .docket {
+            margin-top: clamp(18px, 3vw, 28px);
+            border-top: 1px solid var(--ink);
+            padding-top: clamp(10px, 1.8vw, 14px);
         }
 
-        /* Form Footer */
+        .section-label {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: clamp(0.7rem, 1.8vw, 0.82rem);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .section-label span:last-child { font-weight: 400; color: var(--ink-soft); text-transform: none; letter-spacing: 0; }
+
+        .cells {
+            display: grid;
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            border: 1.5px solid var(--ink);
+        }
+
+        .cell {
+            border-right: 1px solid var(--rule);
+            text-align: center;
+            padding: 5px 0 4px;
+            font-size: clamp(0.62rem, 1.8vw, 0.85rem);
+            position: relative;
+            color: var(--ink-soft);
+        }
+        .cell:last-child { border-right: none; }
+        .cell.done { background: repeating-linear-gradient(135deg, transparent 0 5px, rgba(31,31,31,0.09) 5px 6px); }
+        .cell.done::after {
+            content: "";
+            position: absolute;
+            left: 15%; right: 15%; top: 50%;
+            border-top: 1.5px solid var(--red);
+            transform: rotate(-18deg);
+        }
+        .cell.now { background: var(--ink); color: var(--paper); font-weight: 700; }
+
+        .chapter {
+            margin-top: 10px;
+            display: grid;
+            gap: 3px;
+        }
+        .chapter-de {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(1rem, 2.8vw, 1.3rem);
+        }
+        .chapter-en { font-size: clamp(0.76rem, 2vw, 0.9rem); color: var(--ink-soft); }
+        .chapter-note { font-size: clamp(0.8rem, 2.1vw, 0.95rem); line-height: 1.5; margin-top: 4px; }
+
+        /* ---------- Quote ---------- */
+        .citation {
+            margin-top: clamp(16px, 2.6vw, 24px);
+            border-left: 3px solid var(--ink);
+            padding: 4px 0 4px clamp(10px, 2vw, 16px);
+        }
+        .citation blockquote {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(0.88rem, 2.4vw, 1.08rem);
+            line-height: 1.45;
+        }
+        .citation .src {
+            font-size: clamp(0.68rem, 1.8vw, 0.8rem);
+            color: var(--ink-soft);
+            margin-top: 4px;
+        }
+        .citation .gloss {
+            font-size: clamp(0.76rem, 2vw, 0.9rem);
+            color: var(--ink-soft);
+            font-style: italic;
+            margin-top: 6px;
+            line-height: 1.45;
+        }
+
+        /* ---------- Annotations field ---------- */
+        .annotations {
+            margin-top: clamp(18px, 3vw, 28px);
+        }
+        .stamp-field {
+            position: relative;
+            height: clamp(150px, 22vw, 190px);
+            border: 1px dashed var(--rule);
+            overflow: hidden;
+            background: repeating-linear-gradient(0deg, transparent 0 23px, rgba(138, 135, 125, 0.18) 23px 24px);
+        }
+        .stamp-field .stamp {
+            position: absolute;
+            font-size: clamp(0.7rem, 1.9vw, 0.95rem);
+        }
+        .stamp-new { animation: thump 260ms ease-out; }
+        @keyframes thump {
+            from { transform: var(--rot) scale(1.8); opacity: 0; }
+            to   { transform: var(--rot) scale(1); }
+        }
+
         .footer {
             display: flex;
             justify-content: space-between;
-            margin-top: 40px;
-            font-size: 0.8rem;
+            align-items: flex-end;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: clamp(16px, 2.6vw, 24px);
+            font-size: clamp(0.7rem, 1.9vw, 0.84rem);
+            color: var(--ink-soft);
         }
-        
-        .signature-line {
-            width: 200px;
-            border-bottom: 1px solid var(--ink);
-            position: relative;
+        .sig {
+            min-width: 180px;
+            text-align: center;
+        }
+        .sig .scrawl {
+            font-family: 'Special Elite', monospace;
+            font-size: 1.4em;
+            color: var(--blue);
+            transform: rotate(-4deg) skewX(-14deg);
+            display: inline-block;
+            opacity: 0.8;
+        }
+        .sig .line { border-top: 1px solid var(--ink); padding-top: 2px; }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
         }
 
-        .signature-line::after {
-            content: "Signatory (Illegible)";
-            position: absolute;
-            bottom: -15px;
-            left: 0;
-            font-size: 0.7rem;
-            color: var(--ink-faded);
+        @media (max-width: 680px) {
+            .grid { grid-template-columns: 1fr; }
+            .grid { grid-template-areas: "time" "fields" "prospects"; }
+            .time-col { margin-top: 10px; }
+            .form-id { position: static; margin-bottom: 6px; }
+            .header { padding-top: 0; }
+            .header-stamp { display: none; }
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            .slip-enter, .stamp-new { animation: none; }
+        }
     </style>
 </head>
 <body>
+    <main class="form" id="form">
+        <div class="form-id">FORM 48-B/T<br><span id="fileNo">Akt. Z. —</span></div>
 
-    <div class="form-container" id="formContainer">
-        <div class="form-id">FORM 48-B/T</div>
-        
-        <div class="header">
+        <header class="header">
+            <div class="court">Untersuchungsgericht · Kanzlei, Dachboden</div>
             <h1>Decree of Temporal Status</h1>
-            <div class="barcode">|| | ||| || || | ||| | || |</div>
-            <div style="font-size: 0.8rem; margin-top: 5px;">(Issued by the High Court of Chronology)</div>
-        </div>
+            <div class="subtitle">In the matter of Josef K. · Der Process</div>
+            <div class="header-stamp stamp red" id="headerStamp"><b>VERTAGT</b><i>adjourned</i></div>
+        </header>
 
-        <div class="field-group">
-            <span class="field-label">Subject ID:</span>
-            <span class="field-value" id="subjectId">K-9021</span>
-        </div>
-        
-        <div class="field-group">
-            <span class="field-label">Date of Filing:</span>
-            <span class="field-value" id="filingDate">PENDING AUTHORIZATION</span>
-        </div>
+        <div class="grid">
+            <section class="fields" aria-label="Particulars">
+                <div class="field"><span class="field-label">Accused</span><span class="field-value">Josef K., Prokurist <small id="age">(age 30)</small></span></div>
+                <div class="field"><span class="field-label">Charge</span><span class="field-value">not disclosed <small>(see file)</small></span></div>
+                <div class="field"><span class="field-label">Date</span><span class="field-value" id="dateField">—</span></div>
+                <div class="field"><span class="field-label">Official time</span><span class="field-value"><span class="ref">see Amendment No. <span id="refNo">—</span>, attached</span></span></div>
+                <div class="field"><span class="field-label">Due to appear</span><span class="field-value"><span id="dueTime">—</span> <small>(1 hr 5 min ago)</small></span></div>
+                <div class="field"><span class="field-label">Next sitting</span><span class="field-value" id="sitting">—</span></div>
 
-        <div class="bureaucratic-text">
-            According to subsection IV, paragraph 8(c) of the Infinite Wait Protocol, the Subject is hereby required to acknowledge the exact temporal coordinates presented below. Failure to recognize the precise passing of these units may result in immediate and unexplained detention in the Court's endless corridors.
-        </div>
+            </section>
 
-        <div class="clock-declaration">
-            <div class="urgent-label">OFFICIAL TIME RULING</div>
-            <div class="time-display">
-                <div class="time-unit">
-                    <div id="hourDecl">00</div>
-                    <span>Hour Decree</span>
+            <section class="time-col" aria-label="Official time">
+                <div class="stack" id="stack">
+                    <div class="slip old older" aria-hidden="true"><span class="old-text" id="olderText">—</span></div>
+                    <div class="slip old" aria-hidden="true"><span class="old-text" id="oldText">—</span></div>
+                    <div class="slip current" id="slip">
+                        <div class="clip" aria-hidden="true"></div>
+                        <div class="slip-head"><span>Amendment No. <b id="amendNo">—</b></span><span id="supersedes">supersedes —</span></div>
+                        <div class="slip-time"><span id="hm">--:--</span><span class="sec" id="sec" aria-hidden="true">:--</span></div>
+                        <div class="slip-foot"><span id="validity">Valid until further amendment.</span><span class="stamp overlay blue" aria-hidden="true"><b>VORLÄUFIG</b><i>provisional</i></span></div>
+                    </div>
                 </div>
-                <div class="time-unit">
-                    <div id="minDecl">00</div>
-                    <span>Minute Code</span>
+                <div class="sr-only" aria-live="polite" id="live"></div>
+            </section>
+
+                <div class="prospects" aria-label="Prospects">
+                    <div class="prospects-title">Prospects (mark one)</div>
+                    <ul>
+                        <li><span class="box" aria-hidden="true"></span><span><span class="struck">wirkliche Freisprechung</span> (actual acquittal) <span class="margin-note">no instance on record</span></span></li>
+                        <li><span class="box" id="boxApparent" aria-hidden="true"></span><span>scheinbare Freisprechung (apparent acquittal)</span></li>
+                        <li><span class="box ticked" id="boxProtract" aria-hidden="true"></span><span>Verschleppung (protraction)</span></li>
+                    </ul>
                 </div>
-                <div class="time-unit">
-                    <div id="secDecl">00</div>
-                    <span>Case Ref (Secs)</span>
-                </div>
-            </div>
-            <div style="font-size: 0.75rem; margin-top: 15px; font-style: italic;" id="quoteBox">
-                "Someone must have slandered Josef K., for one morning, without having done anything truly wrong, he was arrested."
-            </div>
         </div>
 
-        <div class="footer">
-            <div>
-                Processed by: <strong>Clerk #448</strong><br>
-                Status: <strong>Awaiting Appeal</strong>
+        <section class="docket" aria-label="Stage of proceedings">
+            <div class="section-label"><span>Stage of proceedings</span><span id="window">—</span></div>
+            <div class="cells" id="cells" aria-hidden="true"></div>
+            <div class="chapter">
+                <div class="chapter-de" id="chapterDe">—</div>
+                <div class="chapter-en" id="chapterEn">—</div>
+                <div class="chapter-note" id="chapterNote">—</div>
             </div>
-            <div class="signature-line">
-                <!-- Signature goes on the line naturally -->
-            </div>
-        </div>
-    </div>
+        </section>
+
+        <section class="citation" aria-label="Citation from the file">
+            <blockquote id="quoteDe">—</blockquote>
+            <div class="src" id="quoteSrc">—</div>
+            <div class="gloss" id="quoteGloss">—</div>
+        </section>
+
+        <section class="annotations" aria-label="Annotations">
+            <div class="section-label"><span>Vermerke · for official use only</span><span id="stampCount">—</span></div>
+            <div class="stamp-field" id="stampField" aria-hidden="true"></div>
+        </section>
+
+        <footer class="footer">
+            <div>Processed by Clerk no. 448. This form is not complete and will not become complete.</div>
+            <div class="sig"><span class="scrawl">~ W. Wllmn ~</span><div class="line">Signatory (illegible)</div></div>
+        </footer>
+    </main>
 
     <script>
-        const quotes = [
-            "Someone must have slandered Josef K., for one morning, without having done anything truly wrong, he was arrested.",
-            "It is not necessary to accept everything as true, one must only accept it as necessary.",
-            "Logic may indeed be unshakeable, but it cannot withstand a man who is determined to live.",
-            "The right understanding of any matter and a misunderstanding of the same matter do not wholly exclude each other.",
-            "Paths are made by walking.",
-            "From a certain point onward there is no longer any turning back. That is the point that must be reached.",
-            "A book must be the axe for the frozen sea within us."
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                        'August', 'September', 'October', 'November', 'December'];
+        const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+        // Quotations: German original of Der Process (1925, public domain).
+        // Glosses are the clerk's own wording, not a published translation.
+        const Q = {
+            jemand: {
+                de: 'Jemand mußte Josef K. verleumdet haben, denn ohne daß er etwas Böses getan hätte, wurde er eines Morgens verhaftet.',
+                src: 'Der Process, I. Verhaftung (opening line)',
+                gloss: 'Somebody must have been telling lies about Josef K. He had done nothing wrong, and one morning he was arrested.'
+            },
+            tuerhueter: {
+                de: 'Vor dem Gesetz steht ein Türhüter.',
+                src: 'Der Process, IX. Im Dom (the parable)',
+                gloss: 'Before the law there stands a doorkeeper. A man from the country asks to be let in, and is told: not now.'
+            },
+            gericht: {
+                de: 'Das Gericht will nichts von dir. Es nimmt dich auf, wenn du kommst, und es entläßt dich, wenn du gehst.',
+                src: 'Der Process, IX. Im Dom',
+                gloss: 'The court wants nothing from you. It takes you in when you come, and lets you go when you leave.'
+            },
+            notwendig: {
+                de: '\u2026 man muß nicht alles für wahr halten, man muß es nur für notwendig halten.',
+                src: 'Der Process, IX. Im Dom (the priest)',
+                gloss: 'You need not hold everything to be true, only to be necessary. The clerk adds: this applies to the time shown above.'
+            },
+            weltordnung: {
+                de: 'Die Lüge wird zur Weltordnung gemacht.',
+                src: 'Der Process, IX. Im Dom (K.)',
+                gloss: 'The lie is made into the order of the world. K.’s reply to the priest, entered in the file without comment.'
+            },
+            logik: {
+                de: 'Die Logik ist zwar unerschütterlich, aber einem Menschen, der leben will, widersteht sie nicht.',
+                src: 'Der Process, X. Ende',
+                gloss: 'Logic cannot be shaken, yet it gives way before someone who wants to live. Noted, and set aside.'
+            },
+            hund: {
+                de: '„Wie ein Hund!“ sagte er, es war, als sollte die Scham ihn überleben.',
+                src: 'Der Process, X. Ende (closing line)',
+                gloss: 'Like a dog, he said, and it was as if the shame would outlive him.'
+            },
+            eingang: {
+                de: 'Dieser Eingang war nur für dich bestimmt. Ich gehe jetzt und schließe ihn.',
+                src: 'Der Process, IX. Im Dom (the doorkeeper)',
+                gloss: 'This entrance was meant for you alone. Now I am going to shut it.'
+            }
+        };
+
+        // The day of the clock is the year of the trial: the cook brings breakfast at
+        // about eight and the warders come instead; the two gentlemen call at about
+        // nine in the evening on the eve of K.'s thirty-first birthday.
+        // Windows are minutes since midnight. Stage 0 and 11 are the night either side.
+        const stages = [
+            { from: 0, to: 480, n: 0, de: 'Vor dem Gesetz', en: 'Before the Law, waiting for the morning',
+              note: 'A man from the country waits before a door that stands open. The proceedings open at eight, when the breakfast should come.',
+              stamp: ['NICHT JETZT', 'not now', 'violet'], quotes: ['tuerhueter', 'gericht'] },
+            { from: 480, to: 540, n: 1, de: 'Verhaftung', en: 'The Arrest',
+              note: 'Frau Grubach’s cook does not bring breakfast at eight. Two warders are waiting in the next room, and K. is thirty today.',
+              stamp: ['VERHAFTET', 'arrested', 'red'], quotes: ['jemand'] },
+            { from: 540, to: 630, n: 2, de: 'Erste Untersuchung', en: 'First Inquiry',
+              note: 'The inquiry is set for a Sunday, in a tenement in the suburbs, and no hour is given. K. arrives late anyway.',
+              stamp: ['VORGELADEN', 'summoned', 'blue'], quotes: ['jemand', 'gericht'] },
+            { from: 630, to: 720, n: 3, de: 'Im leeren Sitzungssaal · Der Student · Die Kanzleien', en: 'The Empty Courtroom, The Student, The Offices',
+              note: 'No sitting today. The examining magistrate’s law books turn out to be full of indecent pictures, and the court offices are up in the attic.',
+              stamp: ['KEINE SITZUNG', 'no sitting', 'red'], quotes: ['gericht', 'notwendig'] },
+            { from: 720, to: 780, n: 4, de: 'Die Freundin des Fräulein Bürstner', en: 'Fräulein Bürstner’s Friend',
+              note: 'Fräulein Montag speaks on Fräulein Bürstner’s behalf. The conversation K. asked for is declined.',
+              stamp: ['ABGELEHNT', 'declined', 'red'], quotes: ['jemand', 'gericht'] },
+            { from: 780, to: 840, n: 5, de: 'Der Prügler', en: 'The Whipper',
+              note: 'In a lumber room at the bank, the two warders K. complained about are being flogged. He shuts the door.',
+              stamp: ['ZUR KENNTNIS', 'noted', 'blue'], quotes: ['gericht', 'weltordnung'] },
+            { from: 840, to: 930, n: 6, de: 'Der Onkel · Leni', en: 'The Uncle, Leni',
+              note: 'K.’s uncle comes up from the country and takes him to the advocate Huld, who is ill in bed. Leni the nurse distracts him.',
+              stamp: ['WEITERGELEITET', 'forwarded', 'blue'], quotes: ['gericht', 'notwendig'] },
+            { from: 930, to: 1050, n: 7, de: 'Advokat · Fabrikant · Maler', en: 'Advocate, Manufacturer, Painter',
+              note: 'The painter Titorelli lays out three outcomes: actual acquittal, apparent acquittal, protraction. He knows of no actual acquittal.',
+              stamp: ['VERSCHLEPPT', 'protracted', 'violet'], quotes: ['notwendig', 'weltordnung'] },
+            { from: 1050, to: 1140, n: 8, de: 'Kaufmann Block · Kündigung des Advokaten', en: 'Block the Merchant, Dismissing the Advocate',
+              note: 'The merchant Block has been on trial for years and kneels at the advocate’s bed. K. dismisses his advocate.',
+              stamp: ['ZURÜCKGESTELLT', 'deferred', 'red'], quotes: ['weltordnung', 'gericht'] },
+            { from: 1140, to: 1260, n: 9, de: 'Im Dom', en: 'In the Cathedral',
+              note: 'In the dark cathedral, a priest calls K. by name and tells him the parable of the doorkeeper.',
+              stamp: ['VOR DEM GESETZ', 'before the law', 'violet'], quotes: ['tuerhueter', 'notwendig', 'weltordnung', 'gericht'] },
+            { from: 1260, to: 1320, n: 10, de: 'Ende', en: 'The End',
+              note: 'On the eve of his thirty-first birthday, at about nine in the evening, two gentlemen in frock coats call at K.’s lodgings.',
+              stamp: ['ENDE', 'end', 'red'], quotes: ['logik', 'hund'] },
+            { from: 1320, to: 1440, n: 11, de: 'Der Eingang wird geschlossen', en: 'The entrance is shut',
+              note: 'The year of the proceedings has run out. The file is not closed: it goes back up to the attic, and the case reopens at eight.',
+              stamp: ['GESCHLOSSEN', 'shut', 'red'], quotes: ['eingang'] }
         ];
 
-        const hourDecl = document.getElementById('hourDecl');
-        const minDecl = document.getElementById('minDecl');
-        const secDecl = document.getElementById('secDecl');
-        const filingDate = document.getElementById('filingDate');
-        const subjectId = document.getElementById('subjectId');
-        const quoteBox = document.getElementById('quoteBox');
-        const formContainer = document.getElementById('formContainer');
+        // Hourly annotations accrue on the form from eight in the morning onward.
+        const accrual = [
+            ['EINGEGANGEN', 'received', 'blue'], ['VORGELADEN', 'summoned', 'red'], ['VERTAGT', 'adjourned', 'red'],
+            ['GESEHEN', 'seen', 'blue'], ['RÜCKFRAGE', 'query', 'violet'], ['VERTAGT', 'adjourned', 'red'],
+            ['WEITERGELEITET', 'forwarded', 'blue'], ['NICHT ZUSTÄNDIG', 'not competent', 'violet'], ['VERTAGT', 'adjourned', 'red'],
+            ['BEIGELEGT', 'attached', 'blue'], ['VERSCHLEPPT', 'protracted', 'violet'], ['VERTAGT', 'adjourned', 'red'],
+            ['ZUR AKTE', 'to the file', 'blue'], ['UNVOLLSTÄNDIG', 'incomplete', 'red'], ['AKTE RUHT', 'file at rest', 'violet'],
+            ['NACHTDIENST', 'night duty', 'blue'], ['VERTAGT', 'adjourned', 'red'], ['RÜCKFRAGE', 'query', 'violet'],
+            ['ZUR AKTE', 'to the file', 'blue'], ['GESEHEN', 'seen', 'blue'], ['VERTAGT', 'adjourned', 'red'],
+            ['UNERLEDIGT', 'outstanding', 'violet'], ['WIEDERVORLAGE', 'resubmit', 'blue'], ['VERTAGT', 'adjourned', 'red']
+        ];
 
-        const stamps = ["DENIED", "REJECTED", "PENDING", "APPROVED", "VOID", "CONFIDENTIAL", "URGENT"];
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const $ = (id) => document.getElementById(id);
+        const pad = (n) => String(n).padStart(2, '0');
+        const hhmm = (mins) => { mins = ((mins % 1440) + 1440) % 1440; return pad(Math.floor(mins / 60)) + ':' + pad(mins % 60); };
 
-        let lastMinute = -1;
-        let lastSecond = -1;
-
-        // Init Form
-        const today = new Date();
-        filingDate.textContent = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        subjectId.textContent = "K-" + Math.floor(Math.random() * 9000 + 1000);
-
-        function triggerStamp() {
-            const stamp = document.createElement('div');
-            const isRed = Math.random() > 0.3;
-            stamp.className = `stamp ${isRed ? 'stamp-red' : 'stamp-blue'}`;
-            stamp.textContent = stamps[Math.floor(Math.random() * stamps.length)];
-            
-            // Random position inside the container
-            const top = Math.random() * 60 + 10;
-            const left = Math.random() * 60 + 10;
-            const rotation = (Math.random() - 0.5) * 60; // -30 to 30 deg
-            
-            stamp.style.top = `${top}%`;
-            stamp.style.left = `${left}%`;
-            
-            formContainer.appendChild(stamp);
-
-            // Animate In
-            stamp.animate([
-                { opacity: 0, transform: `rotate(${rotation}deg) scale(2)` },
-                { opacity: 0.8, transform: `rotate(${rotation}deg) scale(1)` }
-            ], {
-                duration: 150,
-                easing: 'ease-out',
-                fill: 'forwards'
-            });
-
-            // Fade Out slowly
-            setTimeout(() => {
-                stamp.animate([
-                    { opacity: 0.8 },
-                    { opacity: 0 }
-                ], {
-                    duration: 2000,
-                    easing: 'ease-in',
-                    fill: 'forwards'
-                }).onfinish = () => stamp.remove();
-            }, 3000);
+        // Deterministic pseudo-random so a reload shows the same paperwork.
+        function rand(seed) {
+            let t = (seed + 0x6D2B79F5) >>> 0;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         }
 
-        function updateClock() {
-            const now = new Date();
-            
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            hourDecl.textContent = h;
-            minDecl.textContent = m;
-            secDecl.textContent = s;
+        // Docket cells
+        const cells = $('cells');
+        for (let i = 0; i < 10; i++) {
+            const c = document.createElement('div');
+            c.className = 'cell';
+            c.textContent = roman[i];
+            cells.appendChild(c);
+        }
 
-            // Random bureaucratic action every few seconds
-            if(lastSecond !== now.getSeconds()) {
-                lastSecond = now.getSeconds();
-                
-                // 5% chance of a stamp per second
-                if (Math.random() < 0.05) {
-                    triggerStamp();
+        function stageFor(m) { return stages.find(s => m >= s.from && m < s.to); }
+
+        function makeStamp([de, en, color]) {
+            const el = document.createElement('div');
+            el.className = 'stamp ' + color;
+            el.innerHTML = '<b></b><i></i>';
+            el.firstChild.textContent = de;
+            el.lastChild.textContent = en;
+            return el;
+        }
+
+        let last = { minute: -1, stage: -1, stamps: -1, day: -1, quoteKey: '' };
+
+        function renderStamps(count, dateSeed, animateLast) {
+            const field = $('stampField');
+            field.textContent = '';
+            const fw = field.clientWidth, fh = field.clientHeight;
+            for (let i = 0; i < count; i++) {
+                const spec = accrual[i % accrual.length];
+                const el = makeStamp([spec[0], spec[1] + ' · ' + hhmm((8 + i) * 60), spec[2]]);
+                const r1 = rand(dateSeed * 97 + i * 13), r2 = rand(dateSeed * 31 + i * 7 + 1), r3 = rand(dateSeed + i * 101 + 2);
+                // Lay the first twelve out in a loose grid so they stay legible; later
+                // ones land on top, as stamps do. Positions are in pixels so nothing
+                // runs off the edge at phone width.
+                const cols = fw < 520 ? 3 : 4, rows = 3;
+                const slot = i % (cols * rows), row = Math.floor(slot / cols), col = slot % cols;
+                field.appendChild(el);
+                const w = el.offsetWidth, ht = el.offsetHeight;
+                const cellW = fw / cols, cellH = fh / rows;
+                let left = col * cellW + r1 * Math.max(0, cellW - w) + (i >= cols * rows ? cellW * 0.35 : 0);
+                let top = row * cellH + r2 * Math.max(0, cellH - ht) + (i >= cols * rows ? cellH * 0.3 : 0);
+                left = Math.max(4, Math.min(left, fw - w - 6));
+                top = Math.max(4, Math.min(top, fh - ht - 6));
+                const rot = 'rotate(' + ((r3 - 0.5) * 16).toFixed(1) + 'deg)';
+                el.style.left = left + 'px';
+                el.style.top = top + 'px';
+                el.style.setProperty('--rot', rot);
+                el.style.transform = rot;
+                el.style.opacity = (i >= count - 12 ? 0.85 : 0.4).toString();
+                if (animateLast && i === count - 1 && !reduceMotion.matches) el.classList.add('stamp-new');
+            }
+            $('stampCount').textContent = count + (count === 1 ? ' entry' : ' entries') + ' since 08:00';
+        }
+
+        function update() {
+            const now = new Date();
+            const h = now.getHours(), mi = now.getMinutes(), s = now.getSeconds();
+            const m = h * 60 + mi;
+            const dateSeed = now.getFullYear() * 400 + now.getMonth() * 32 + now.getDate();
+
+            $('sec').textContent = ':' + pad(s);
+
+            if (m !== last.minute) {
+                const firstPaint = last.minute === -1;
+                last.minute = m;
+
+                // Amendments are numbered from the arrest at 08:00.
+                const amend = ((m - 480 + 1440) % 1440) + 1;
+                const timeStr = hhmm(m);
+                $('hm').textContent = timeStr;
+                $('amendNo').textContent = amend;
+                $('refNo').textContent = amend;
+                $('supersedes').textContent = amend > 1 ? 'supersedes No. ' + (amend - 1) : 'first entry';
+                $('validity').textContent = 'Valid until ' + hhmm(m + 1) + ', unless further amended.';
+                $('oldText').textContent = 'No. ' + (amend > 1 ? amend - 1 : 1440) + ' · ' + hhmm(m - 1);
+                $('olderText').textContent = 'No. ' + (amend > 2 ? amend - 2 : 1438 + amend) + ' · ' + hhmm(m - 2);
+                $('dueTime').textContent = hhmm(m - 65);
+                $('live').textContent = 'Official time ' + timeStr + ', amendment number ' + amend + '.';
+                $('fileNo').textContent = 'Akt. Z. ' + (now.getFullYear() % 100) + '/' + pad(now.getMonth() + 1) + '-' + amend;
+
+                if (!firstPaint && !reduceMotion.matches) {
+                    const slip = $('slip');
+                    slip.classList.remove('slip-enter');
+                    void slip.offsetWidth;
+                    slip.classList.add('slip-enter');
+                }
+
+                // Date and court sittings: the court sits on Sundays.
+                const day = now.getDay();
+                $('dateField').textContent = days[day] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+                if (day === 0) {
+                    $('sitting').innerHTML = 'today, Sunday <small>(the court is sitting, attic offices)</small>';
+                } else {
+                    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (7 - day));
+                    $('sitting').innerHTML = 'Sunday ' + next.getDate() + ' ' + months[next.getMonth()] + ' <small>(hour not stated)</small>';
+                }
+
+                // Stage of proceedings
+                const st = stageFor(m);
+                const idx = stages.indexOf(st);
+                if (idx !== last.stage) {
+                    last.stage = idx;
+                    const n = st.n;
+                    [...cells.children].forEach((c, i) => {
+                        c.className = 'cell' + (n === 11 || i + 1 < n ? ' done' : '') + (i + 1 === n ? ' now' : '');
+                    });
+                    $('chapterDe').textContent = n >= 1 && n <= 10 ? roman[n - 1] + '. ' + st.de : st.de;
+                    $('chapterEn').textContent = st.en;
+                    $('chapterNote').textContent = st.note;
+                    $('window').textContent = hhmm(st.from) + '–' + hhmm(st.to) + (n >= 1 && n <= 10 ? ' · chapter ' + n + ' of 10' : n === 0 ? ' · not yet opened' : ' · after the end');
+                    const hs = $('headerStamp');
+                    hs.className = 'header-stamp stamp ' + st.stamp[2];
+                    hs.firstChild.textContent = st.stamp[0];
+                    hs.lastChild.textContent = st.stamp[1];
+                    $('age').textContent = n === 0 ? '(30 today, not yet arrested)' : n === 11 ? '(31 at midnight)' : '(age 30)';
+                }
+
+                // Quotation: rotates every ten minutes within the stage's pool.
+                const pool = st.quotes;
+                const key = pool[Math.floor(m / 10) % pool.length];
+                if (key !== last.quoteKey) {
+                    last.quoteKey = key;
+                    $('quoteDe').textContent = '„' + Q[key].de + '“';
+                    $('quoteSrc').textContent = Q[key].src;
+                    $('quoteGloss').textContent = 'Clerk’s gloss: ' + Q[key].gloss;
+                }
+
+                // Hourly stamps since 08:00 (one per started hour; 24 by 07:00).
+                const count = Math.floor(((m - 480 + 1440) % 1440) / 60) + 1;
+                if (count !== last.stamps || dateSeed !== last.day) {
+                    renderStamps(count, dateSeed, !firstPaint);
+                    last.stamps = count;
+                    last.day = dateSeed;
                 }
             }
-
-            // Shuffle Quote Every Minute
-            if (lastMinute !== now.getMinutes()) {
-                lastMinute = now.getMinutes();
-                quoteBox.style.opacity = 0;
-                setTimeout(() => {
-                    quoteBox.textContent = `"${quotes[now.getMinutes() % quotes.length]}"`;
-                    quoteBox.style.opacity = 1;
-                }, 1000);
-            }
-
-            requestAnimationFrame(updateClock);
         }
 
-        updateClock();
+        update();
+        setInterval(update, 1000);
+
+        let resizeTimer;
+        let lastFieldW = $('stampField').clientWidth;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const w = $('stampField').clientWidth;
+                if (w !== lastFieldW) { lastFieldW = w; last.stamps = -1; last.minute = -1; update(); }
+            }, 150);
+        });
+        // Fonts change stamp widths; lay them out again once the typewriter face is in.
+        if (document.fonts) document.fonts.ready.then(() => { last.stamps = -1; last.minute = -1; update(); });
     </script>
 </body>
 </html>

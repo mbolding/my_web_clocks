@@ -4,169 +4,477 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finnegans Wake Clock</title>
+    <meta name="description" content="A river dial for Joyce's Finnegans Wake: the closing words flow into the opening at dawn, and the day turns through Vico's four ages.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --river-dark: #051614;
-            --river-green: #0a352a;
-            --river-light: #528a7b;
-            --foam: #dbebe6;
+            --river-deep: #031210;
+            --river-dark: #051a16;
+            --river-green: #0b3a2e;
+            --river-mid: #1d5a4a;
+            --river-light: #6fa898;
+            --river-text: #9cc9bb;
+            --foam: #e4f2ed;
+            --peat: #c9a96b;
+            --dial: clamp(280px, min(96vw, 100svh - 170px), 820px);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
 
         body {
-            background-color: var(--river-dark);
+            background: radial-gradient(ellipse at 50% 45%, var(--river-green) 0%, var(--river-dark) 55%, var(--river-deep) 100%);
+            background-color: var(--river-deep);
             color: var(--foam);
-            font-family: 'Playfair Display', serif;
-            min-height: 100vh;
+            font-family: 'EB Garamond', Georgia, serif;
+            min-height: 100svh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            gap: clamp(8px, 2svh, 20px);
+            padding: clamp(10px, 2svh, 24px) 16px;
+            overflow-x: hidden;
+        }
+
+        header, footer {
+            text-align: center;
+            max-width: 40rem;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 400;
+            font-size: clamp(0.8rem, 2.4vw, 1rem);
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: var(--river-text);
+        }
+
+        footer {
+            font-size: clamp(0.85rem, 2.6vw, 1rem);
+            line-height: 1.45;
+            color: var(--river-light);
+            font-style: italic;
+        }
+
+        footer strong { color: var(--river-text); font-weight: 500; font-style: normal; }
+
+        /* ---------- the dial ---------- */
+        .dial {
             position: relative;
+            width: var(--dial);
+            height: var(--dial);
+            flex: none;
         }
 
-        /* Murky River Background */
-        body::before {
-            content: "";
+        .dial svg.ring {
             position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, var(--river-green) 0%, var(--river-dark) 100%);
-            opacity: 0.6;
-            z-index: -2;
-        }
-
-        /* SVG Filters definition container (invisible) */
-        .svg-defs {
-            position: absolute;
-            width: 0;
-            height: 0;
-        }
-
-        /* Container for the circular riverrun text */
-        .riverrun-container {
-            position: absolute;
-            width: clamp(300px, 80vmin, 800px);
-            height: clamp(300px, 80vmin, 800px);
-            animation: slowRotate 60s linear infinite;
-        }
-
-        @keyframes slowRotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .riverrun-svg {
+            inset: 0;
             width: 100%;
             height: 100%;
             overflow: visible;
         }
 
-        .riverrun-text {
-            fill: var(--river-light);
-            font-size: 24px;
-            letter-spacing: 2px;
-            opacity: 0.8;
+        .river-text {
+            font-family: 'EB Garamond', Georgia, serif;
             font-style: italic;
+            fill: var(--river-text);
+        }
+        .river-text .seam { fill: var(--foam); font-weight: 500; }
+        .river-text .pages { fill: var(--river-mid); letter-spacing: 0.3em; }
+
+        .age-arc { fill: none; stroke-width: 46; }
+        .age-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 21px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            fill: var(--river-text);
+        }
+        .age-label.current { fill: var(--foam); }
+        .hour-tick { stroke: var(--river-light); stroke-width: 2; }
+        .hour-tick.major { stroke: var(--peat); stroke-width: 3; }
+        .hour-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px;
+            fill: var(--peat);
+            text-anchor: middle;
+            dominant-baseline: central;
         }
 
-        /* The Dream Clock in the center */
-        .dream-clock-container {
-            position: relative;
-            z-index: 10;
-            filter: url(#waterRipple);
-        }
-
-        .dream-clock {
-            font-size: clamp(4rem, 15vw, 9rem);
-            font-weight: 700;
-            text-shadow: 0 0 20px var(--river-light);
-            color: var(--foam);
-            text-align: center;
-        }
-
-        /* Joycean Dream Subtext */
-        .subtext {
+        /* ---------- centre ---------- */
+        .centre {
             position: absolute;
-            bottom: 40px;
-            font-size: 1.2rem;
-            color: var(--river-light);
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            max-width: 600px;
+            pointer-events: none;
+            padding: 0 calc(var(--dial) * 0.2);
+        }
+
+        .book {
+            font-family: 'Playfair Display', serif;
+            font-size: calc(var(--dial) * 0.024);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--peat);
+            margin-bottom: calc(var(--dial) * 0.006);
+        }
+
+        .age-name {
             font-style: italic;
-            opacity: 0.7;
-            animation: pulse 4s ease-in-out infinite alternate;
+            font-size: calc(var(--dial) * 0.042);
+            color: var(--river-text);
+            line-height: 1.1;
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            100% { opacity: 0.8; }
+        .time {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: calc(var(--dial) * 0.16);
+            line-height: 1;
+            color: var(--foam);
+            font-variant-numeric: lining-nums tabular-nums;
+            text-shadow: 0 0 calc(var(--dial) * 0.03) rgba(111, 168, 152, 0.45);
+            margin-top: calc(var(--dial) * 0.012);
+            white-space: nowrap;
+        }
+        .time .sec {
+            font-weight: 400;
+            font-size: 0.32em;
+            color: var(--river-light);
+            margin-left: 0.12em;
+            vertical-align: 0.15em;
         }
 
+        .reflection {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: calc(var(--dial) * 0.16);
+            line-height: 1;
+            height: calc(var(--dial) * 0.07);
+            overflow: hidden;
+            margin-top: calc(var(--dial) * -0.004);
+            color: var(--river-light);
+            white-space: nowrap;
+            font-variant-numeric: lining-nums tabular-nums;
+            opacity: 0.3;
+            filter: url(#ripple);
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+                    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        }
+        .reflection > span { display: block; line-height: 0.74; transform: scaleY(-1); }
+        .reflection .sec { font-weight: 400; font-size: 0.32em; margin-left: 0.12em; }
+
+        .gloss {
+            font-size: calc(var(--dial) * 0.032);
+            line-height: 1.3;
+            color: var(--river-text);
+            margin-top: calc(var(--dial) * 0.012);
+            max-width: calc(var(--dial) * 0.48);
+        }
+        .next {
+            font-size: calc(var(--dial) * 0.027);
+            color: var(--river-light);
+            margin-top: calc(var(--dial) * 0.01);
+            font-style: italic;
+        }
+
+        .thunder {
+            display: none;
+            font-size: calc(var(--dial) * 0.026);
+            line-height: 1.25;
+            color: var(--peat);
+            word-break: break-all;
+            max-width: calc(var(--dial) * 0.5);
+            margin-top: calc(var(--dial) * 0.012);
+            letter-spacing: 0.04em;
+        }
+        .is-thunder .thunder { display: block; }
+        .is-thunder .gloss { display: none; }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+        }
+
+        @media (max-width: 480px) {
+            .centre { padding: 0 calc(var(--dial) * 0.18); }
+            .gloss { font-size: calc(var(--dial) * 0.034); }
+            .next { font-size: calc(var(--dial) * 0.031); }
+            .book { font-size: calc(var(--dial) * 0.028); }
+        }
     </style>
 </head>
 <body>
+    <header>
+        <h1>Finnegans Wake</h1>
+    </header>
 
-    <!-- SVG Filters for the melting/rippling dream logic -->
-    <svg class="svg-defs">
-        <defs>
-            <filter id="waterRipple">
-                <!-- Base turbulence that changes over time via JS -->
-                <feTurbulence type="fractalNoise" baseFrequency="0.01 0.05" numOctaves="2" result="noise" id="turbulenceNode">
-                    <animate attributeName="baseFrequency" values="0.01 0.05; 0.02 0.08; 0.01 0.05" dur="10s" repeatCount="indefinite"/>
-                </feTurbulence>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G">
-                    <animate attributeName="scale" values="10; 30; 10" dur="8s" repeatCount="indefinite"/>
-                </feDisplacementMap>
-            </filter>
-        </defs>
-    </svg>
-
-    <!-- Circular Riverrun Text -->
-    <div class="riverrun-container">
-        <svg class="riverrun-svg" viewBox="0 0 500 500">
+    <main class="dial" id="dial">
+        <svg class="ring" id="ring" viewBox="0 0 1000 1000" aria-hidden="true">
             <defs>
-                <path id="circlePath" d="M 250, 250 m -220, 0 a 220,220 0 1,1 440,0 a 220,220 0 1,1 -440,0" />
+                <!-- path for the river text: clockwise from the top -->
+                <path id="riverPath" d="M 500,62 a 438,438 0 1,1 -0.01,0" />
+                <radialGradient id="glow">
+                    <stop offset="0" stop-color="#e4f2ed" stop-opacity="1"/>
+                    <stop offset="0.4" stop-color="#9cc9bb" stop-opacity="0.6"/>
+                    <stop offset="1" stop-color="#9cc9bb" stop-opacity="0"/>
+                </radialGradient>
+                <filter id="ripple" x="-10%" y="-20%" width="120%" height="140%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.09" numOctaves="2" seed="4" result="noise">
+                        <animate attributeName="baseFrequency" values="0.012 0.09; 0.016 0.12; 0.012 0.09" dur="9s" repeatCount="indefinite"/>
+                    </feTurbulence>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+                </filter>
             </defs>
-            <text class="riverrun-text">
-                <textPath href="#circlePath" startOffset="0%">
-                    riverrun, past Eve and Adam's, from swerve of shore to bend of bay, brings us by a commodius vicus of recirculation back to Howth Castle and Environs. • 
-                </textPath>
-            </text>
+
+            <!-- the turning river: text, ages and hours rotate together -->
+            <g id="turning">
+                <g id="ages"></g>
+                <g id="ticks"></g>
+                <text class="river-text" id="riverText">
+                    <textPath href="#riverPath" id="riverTextPath"><tspan class="seam">riverrun</tspan>, past Eve and Adam’s, from swerve of shore to bend of bay, brings us by a commodius vicus of recirculation back to Howth Castle and Environs.<tspan class="pages"> · · · </tspan>A way a lone a last a loved a long <tspan class="seam">the</tspan>&#160;</textPath>
+                </text>
+            </g>
+
+            <!-- fixed: the stream line, the seconds glint and the reading mark -->
+            <circle cx="500" cy="500" r="418" fill="none" stroke="#1d5a4a" stroke-width="1.5" opacity="0.8"/>
+            <g id="glint"></g>
+            <g id="marker">
+                <line x1="500" y1="16" x2="500" y2="132" stroke="#c9a96b" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+                <path d="M 486,6 L 514,6 L 500,24 Z" fill="#c9a96b"/>
+            </g>
         </svg>
-    </div>
 
-    <!-- The actual time -->
-    <div class="dream-clock-container">
-        <div class="dream-clock" id="timeDisplay">00:00:00</div>
-    </div>
+        <div class="centre" id="centre">
+            <div class="book" id="book">Book I</div>
+            <div class="age-name" id="ageName">the divine age</div>
+            <div class="time" id="time" role="timer" aria-label="Current time"><span id="hm">00:00</span><span class="sec" id="sec">00</span></div>
+            <div class="reflection" aria-hidden="true"><span><span id="rhm">00:00</span><span class="sec" id="rsec">00</span></span></div>
+            <div class="gloss" id="gloss"></div>
+            <div class="thunder" id="thunder" lang="und" aria-label="Thunder">bababadalgharaghtakamminarronnkonnbronntonnerronntuonnthunntrovarrhounawnskawntoohoohoordenenthurnuk!</div>
+            <div class="next" id="next"></div>
+        </div>
+        <div class="sr-only" aria-live="polite" id="announce"></div>
+    </main>
 
-    <div class="subtext">
-        a way a lone a last a loved a long the...
-    </div>
+    <footer>
+        The river turns once a day under the gold mark, through <strong>Vico’s four ages</strong>.
+        At dawn the book’s last word flows back into its first.
+    </footer>
 
     <script>
-        const timeDisplay = document.getElementById('timeDisplay');
+    (function () {
+        const SVGNS = 'http://www.w3.org/2000/svg';
+        const CX = 500, CY = 500;
+        const DAWN = 6; // the seam, "the" into "riverrun", passes the mark at 06:00
 
-        function updateClock() {
-            const now = new Date();
-            
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            timeDisplay.textContent = `${h}:${m}:${s}`;
+        // Vico's ages, a quarter day each, counted from dawn.
+        const AGES = [
+            { start: 6,  name: 'Divine',  book: 'Book I',   phrase: 'the divine age',
+              gloss: 'Thunder speaks and the gods are feared. A fall, a wake, a family.',
+              colour: '#0f4a3b' },
+            { start: 12, name: 'Heroic',  book: 'Book II',  phrase: 'the heroic age',
+              gloss: 'Sons and rivals, games and lessons, letters and battles.',
+              colour: '#135443' },
+            { start: 18, name: 'Human',   book: 'Book III', phrase: 'the human age',
+              gloss: 'Law, talk and the people. A voice carried through the night.',
+              colour: '#0d4235' },
+            { start: 0,  name: 'Ricorso', book: 'Book IV',  phrase: 'the ricorso',
+              gloss: 'The return. Night thins, the river runs to the sea, and all begins again.',
+              colour: '#09342a' }
+        ];
+
+        const turning = document.getElementById('turning');
+        const agesG = document.getElementById('ages');
+        const ticksG = document.getElementById('ticks');
+        const glintG = document.getElementById('glint');
+        const ring = document.getElementById('ring');
+        const riverText = document.getElementById('riverText');
+        const riverTextPath = document.getElementById('riverTextPath');
+
+        // angle (degrees, clockwise from the seam) of a clock hour on the turning ring
+        const hourAngle = h => (((h - DAWN) % 24) + 24) % 24 * 15;
+        const pt = (r, deg) => {
+            const a = (deg - 90) * Math.PI / 180;
+            return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+        };
+        const arcPath = (r, a0, a1) => {
+            const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1);
+            const large = (a1 - a0) > 180 ? 1 : 0;
+            return `M ${x0.toFixed(2)},${y0.toFixed(2)} A ${r},${r} 0 ${large},1 ${x1.toFixed(2)},${y1.toFixed(2)}`;
+        };
+        const arcPathRev = (r, a0, a1) => {
+            const [x0, y0] = pt(r, a1), [x1, y1] = pt(r, a0);
+            return `M ${x0.toFixed(2)},${y0.toFixed(2)} A ${r},${r} 0 0,0 ${x1.toFixed(2)},${y1.toFixed(2)}`;
+        };
+        const el = (tag, attrs) => {
+            const n = document.createElementNS(SVGNS, tag);
+            for (const k in attrs) n.setAttribute(k, attrs[k]);
+            return n;
+        };
+
+        // ---- build the age band ----
+        const ageLabels = [];
+        AGES.forEach((age, i) => {
+            const a0 = hourAngle(age.start), a1 = a0 + 90;
+            agesG.appendChild(el('path', { d: arcPath(375, a0 + 0.4, a1 - 0.4), class: 'age-arc', stroke: age.colour }));
+            const pid = 'agePath' + i;
+            agesG.appendChild(el('path', { id: pid, d: arcPath(368, a0, a1), fill: 'none' }));
+            // the same arc run anticlockwise, so the label can be read the right way up at the bottom
+            agesG.appendChild(el('path', { id: pid + 'r', d: arcPathRev(383, a0, a1), fill: 'none' }));
+            const t = el('text', { class: 'age-label' });
+            const tp = el('textPath', { href: '#' + pid, startOffset: '50%', 'text-anchor': 'middle' });
+            tp.textContent = ['I', 'II', 'III', 'IV'][i] + '  ' + age.name;
+            t.appendChild(tp);
+            agesG.appendChild(t);
+            ageLabels.push(t);
+            t.dataset.mid = a0 + 45;
+            t.dataset.pid = pid;
+        });
+
+        // ---- hour ticks and the four turning hours ----
+        for (let h = 0; h < 24; h++) {
+            const a = hourAngle(h);
+            const major = h % 6 === 0;
+            const [x0, y0] = pt(major ? 322 : 340, a), [x1, y1] = pt(350, a);
+            ticksG.appendChild(el('line', { x1: x0, y1: y0, x2: x1, y2: y1, class: 'hour-tick' + (major ? ' major' : '') }));
+            if (major) {
+                const [nx, ny] = pt(298, a);
+                const n = el('text', { x: nx, y: ny, class: 'hour-num' });
+                n.textContent = String(h).padStart(2, '0');
+                n.dataset.angle = a;
+                ticksG.appendChild(n);
+            }
+        }
+        // small light at the seam: the commodius vicus
+        const [sx, sy] = pt(438, 0);
+        turning.appendChild(el('circle', { cx: sx, cy: sy + 6, r: 9, fill: 'url(#glow)' }));
+
+        // ---- seconds glint on the stream line ----
+        const TRAIL = 8;
+        const glints = [];
+        for (let i = 0; i < TRAIL; i++) {
+            const c = el('circle', { r: i === 0 ? 7 : 5 - i * 0.45, fill: i === 0 ? 'url(#glow)' : '#9cc9bb', opacity: i === 0 ? 1 : (0.55 - i * 0.06) });
+            glintG.appendChild(c);
+            glints.push(c);
         }
 
-        updateClock();
-        setInterval(updateClock, 1000);
+        // ---- fit the river text exactly once around the ring ----
+        const CIRC = 2 * Math.PI * 438;
+        function fitRiver() {
+            riverText.setAttribute('font-size', 24);
+            riverTextPath.removeAttribute('textLength');
+            let len = 0;
+            try { len = riverText.getComputedTextLength(); } catch (e) { len = 0; }
+            if (len > 0) {
+                const size = 24 * (CIRC * 0.985) / len;
+                riverText.setAttribute('font-size', size.toFixed(2));
+                riverTextPath.setAttribute('textLength', (CIRC - 2).toFixed(1));
+                riverTextPath.setAttribute('lengthAdjust', 'spacing');
+            } else {
+                riverText.setAttribute('font-size', 25);
+            }
+        }
+        fitRiver();
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitRiver);
+
+        // ---- time helpers ----
+        const pad = n => String(n).padStart(2, '0');
+        const ageIndexFor = h => (h >= 6 && h < 12) ? 0 : (h >= 12 && h < 18) ? 1 : (h >= 18) ? 2 : 3;
+
+        const $ = id => document.getElementById(id);
+        const centre = $('centre');
+        let lastAge = -1, lastAnnounce = '';
+
+        function updateText() {
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const hm = pad(h) + ':' + pad(m);
+            $('hm').textContent = hm; $('rhm').textContent = hm;
+            $('sec').textContent = pad(s); $('rsec').textContent = pad(s);
+            $('time').setAttribute('aria-label', hm + ':' + pad(s));
+
+            const ai = ageIndexFor(h);
+            const age = AGES[ai];
+            if (ai !== lastAge) {
+                $('book').textContent = age.book;
+                $('ageName').textContent = age.phrase;
+                $('gloss').textContent = age.gloss;
+                ageLabels.forEach((t, i) => t.classList.toggle('current', i === ai));
+                lastAge = ai;
+            }
+
+            // time left in this age
+            const end = (age.start + 6) * 3600;
+            const nowS = h * 3600 + m * 60 + s;
+            const left = Math.max(1, Math.ceil((end - nowS) / 60));
+            const lh = Math.floor(left / 60), lm = left % 60;
+            const span = lh ? (lh + 'h ' + pad(lm) + 'm') : (lm + ' min');
+            const nextAge = AGES[(ai + 1) % 4];
+            $('next').textContent = (ai === 3 ? 'riverrun again in ' : nextAge.name + ' in ') + span;
+
+            // thunder: the first minute of every age
+            centre.classList.toggle('is-thunder', m === 0 && h % 6 === 0);
+
+            const say = hm + ', ' + age.phrase;
+            if (lastAnnounce === '' || (s === 0 && m % 15 === 0 && say !== lastAnnounce)) {
+                $('announce').textContent = say;
+                lastAnnounce = say;
+            }
+        }
+
+        // keep turning-ring numerals upright
+        const hourNums = Array.from(ticksG.querySelectorAll('.hour-num'));
+
+        function frame() {
+            const now = new Date();
+            const secs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000;
+            const phase = (((secs / 3600 - DAWN) % 24) + 24) % 24 / 24; // 0 at dawn
+            const rot = -phase * 360;
+            turning.setAttribute('transform', `rotate(${rot.toFixed(4)} ${CX} ${CY})`);
+            ageLabels.forEach(t => {
+                const abs = ((+t.dataset.mid + rot) % 360 + 360) % 360;
+                const flip = abs > 100 && abs < 260;
+                if (flip !== (t.dataset.flip === '1')) {
+                    t.dataset.flip = flip ? '1' : '0';
+                    t.firstChild.setAttribute('href', '#' + t.dataset.pid + (flip ? 'r' : ''));
+                }
+            });
+            hourNums.forEach(n => {
+                const [x, y] = [n.getAttribute('x'), n.getAttribute('y')];
+                n.setAttribute('transform', `rotate(${(-rot).toFixed(4)} ${x} ${y})`);
+            });
+
+            const sf = (secs % 60) / 60 * 360;
+            glints.forEach((c, i) => {
+                const [x, y] = pt(418, sf - i * 2.2);
+                c.setAttribute('cx', x.toFixed(2));
+                c.setAttribute('cy', y.toFixed(2));
+            });
+            requestAnimationFrame(frame);
+        }
+
+        // decorative shimmer in the reflection holds still under reduced motion
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        function applyMotion() {
+            try { reduceMotion.matches ? ring.pauseAnimations() : ring.unpauseAnimations(); } catch (e) {}
+        }
+        applyMotion();
+        if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', applyMotion);
+
+        updateText();
+        setInterval(updateText, 1000);
+        requestAnimationFrame(frame);
+    })();
     </script>
 </body>
 </html>

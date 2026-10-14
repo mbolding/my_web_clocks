@@ -6,319 +6,604 @@
     <title>Catch-22 Clock</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --paper-color: #e5d9c5;
-            --ink-color: #2b2b2b;
-            --red-stempel: #a52a2a;
-            --military-green: #4a5d23;
-            --gauge-bg: #1a1a1a;
-            --gauge-text: #00ff00;
+            --desk: #28322c;
+            --paper: #ece2cd;
+            --paper-edge: #d9ccb0;
+            --ink: #24221e;
+            --ink-soft: #4e4a40;
+            --rule: #8f8670;
+            --red: #a3241c;
+            --olive: #4a5d23;
+            --olive-dark: #36451a;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--desk); }
 
         body {
-            background-color: #2c3531;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Special Elite', cursive;
-            padding: 20px;
-            color: var(--ink-color);
+            align-items: flex-start;
+            padding: clamp(12px, 4vw, 40px) clamp(10px, 3vw, 32px);
+            background: radial-gradient(ellipse at 50% 20%, #34413a 0%, var(--desk) 70%);
+            color: var(--ink);
+            font-family: 'Courier Prime', 'Courier New', monospace;
         }
 
-        .dossier {
-            background-color: var(--paper-color);
-            background-image: 
-                radial-gradient(var(--ink-color) 1px, transparent 1px),
-                radial-gradient(var(--ink-color) 1px, transparent 1px);
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
-            background-blend-mode: overlay;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 50px rgba(0,0,0,0.1);
-            max-width: 800px;
-            width: 100%;
-            padding: 40px;
-            border-radius: 5px;
+        .form {
             position: relative;
+            width: 100%;
+            max-width: 860px;
+            background: var(--paper);
+            background-image:
+                linear-gradient(135deg, rgba(255,255,255,0.25), rgba(0,0,0,0.04)),
+                repeating-linear-gradient(0deg, transparent 0 31px, rgba(120,100,60,0.05) 31px 32px);
+            border: 1px solid var(--paper-edge);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.55), inset 0 0 60px rgba(120,95,50,0.12);
+            padding: clamp(16px, 4vw, 40px);
             overflow: hidden;
         }
 
-        .dossier::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.05) 100%);
-            pointer-events: none;
-        }
-
-        .header {
-            border-bottom: 2px solid var(--ink-color);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+        /* ---------- header ---------- */
+        .head {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 3px double var(--ink);
+            padding-bottom: clamp(10px, 2vw, 16px);
         }
-
-        .header-title {
-            font-size: 2rem;
+        .unit {
+            font-size: clamp(0.68rem, 1.8vw, 0.82rem);
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            letter-spacing: -1px;
+            color: var(--ink-soft);
+        }
+        h1 {
+            font-family: 'Special Elite', 'Courier New', monospace;
+            font-weight: 400;
+            font-size: clamp(1.6rem, 6vw, 2.6rem);
+            letter-spacing: 0.02em;
+            line-height: 1.05;
+            margin-top: 4px;
+        }
+        .form-no {
+            font-size: clamp(0.66rem, 1.7vw, 0.78rem);
+            color: var(--ink-soft);
+            margin-top: 4px;
+        }
+        .classified {
+            flex: none;
+            font-family: 'Special Elite', monospace;
+            color: var(--red);
+            border: 3px solid var(--red);
+            padding: 4px 10px;
+            font-size: clamp(0.8rem, 2.6vw, 1.25rem);
+            letter-spacing: 0.08em;
+            transform: rotate(-6deg);
+            margin-top: 6px;
+            opacity: 0.85;
         }
 
-        .classification {
-            color: var(--red-stempel);
-            border: 3px solid var(--red-stempel);
-            padding: 5px 10px;
-            font-size: 1.5rem;
-            transform: rotate(-5deg);
-            opacity: 0.8;
-            font-weight: bold;
+        /* ---------- field rows ---------- */
+        .fields {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr 1.2fr;
+            border-bottom: 1px solid var(--ink);
+        }
+        .field {
+            padding: 10px 12px 10px 0;
+            border-right: 1px solid var(--rule);
+            min-width: 0;
+        }
+        .field + .field { padding-left: 12px; }
+        .field:last-child { border-right: none; }
+        .label {
+            display: block;
+            font-size: clamp(0.62rem, 1.6vw, 0.72rem);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+        .value {
+            display: block;
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(0.95rem, 2.6vw, 1.15rem);
+            margin-top: 3px;
+        }
+
+        .time-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: end;
+            gap: clamp(12px, 3vw, 28px);
+            padding: clamp(12px, 2.5vw, 20px) 0;
+            border-bottom: 1px solid var(--ink);
+        }
+        .time {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(2.6rem, 11vw, 5.2rem);
+            line-height: 1;
+            letter-spacing: 0.02em;
+            font-variant-numeric: tabular-nums;
+        }
+        .time .sec {
+            font-size: 0.45em;
+            color: var(--ink-soft);
+            margin-left: 0.1em;
+        }
+        .current {
+            min-width: 0;
+            padding-bottom: 6px;
+        }
+        .current .value { font-size: clamp(0.95rem, 2.6vw, 1.2rem); }
+        .bar {
+            margin-top: 8px;
+            height: 10px;
+            border: 1px solid var(--ink);
+            background: rgba(255,255,255,0.35);
+        }
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--olive);
+        }
+        .bar-note {
+            margin-top: 4px;
+            font-size: clamp(0.66rem, 1.7vw, 0.78rem);
+            color: var(--ink-soft);
+        }
+
+        /* ---------- tally ---------- */
+        .tally {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr;
+            border-bottom: 1px solid var(--ink);
+        }
+        .tally .field { padding-top: 12px; padding-bottom: 12px; }
+        .big {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(2rem, 7vw, 3rem);
+            line-height: 1.1;
+        }
+        .req-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 2px 10px;
+            margin-top: 2px;
+        }
+        .struck {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(1rem, 3vw, 1.35rem);
+            color: var(--ink-soft);
+            text-decoration: line-through;
+            text-decoration-color: var(--red);
+            text-decoration-thickness: 2px;
+        }
+        .req-now {
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+            color: var(--red);
+            font-size: clamp(2.3rem, 8vw, 3.4rem);
+            line-height: 1;
+            transform: rotate(-4deg);
             display: inline-block;
         }
-
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+        .req-note {
+            font-family: 'Caveat', cursive;
+            font-weight: 600;
+            color: var(--red);
+            font-size: clamp(1.05rem, 3vw, 1.3rem);
+            line-height: 1.15;
+            margin-top: 4px;
         }
 
-        @media (max-width: 600px) {
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .info-block {
-            margin-bottom: 20px;
-        }
-
-        .info-label {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            opacity: 0.7;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 1.2rem;
-            border-bottom: 1px dotted var(--ink-color);
-            padding-bottom: 5px;
-            font-family: 'Share Tech Mono', monospace;
-        }
-
-        .gauge-container {
-            background-color: var(--military-green);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
+        /* ---------- mission grid ---------- */
+        .grid-wrap { padding: clamp(12px, 2.5vw, 18px) 0; border-bottom: 1px solid var(--ink); }
+        .grid-head {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: clamp(0.62rem, 1.6vw, 0.72rem);
+            color: var(--ink-soft);
+        }
+        .legend i {
+            display: inline-block;
+            width: 11px; height: 11px;
+            border: 1px solid var(--ink);
+            vertical-align: -1px;
+            margin-right: 4px;
+        }
+        .legend .lg-flown { background: var(--ink); }
+        .legend .lg-now { background: var(--olive); }
+        .legend .lg-req { border: 2px solid var(--red); }
+
+        .missions {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            gap: clamp(2px, 0.6vw, 5px);
+        }
+        .m {
+            position: relative;
+            aspect-ratio: 1;
+            border: 1px solid var(--rule);
+            background: rgba(255,255,255,0.3);
+            font-size: clamp(0.5rem, 1.15vw, 0.66rem);
+            color: var(--rule);
+            display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 20px;
+            font-variant-numeric: tabular-nums;
         }
-
-        .digital-gauge {
-            background-color: var(--gauge-bg);
-            color: var(--gauge-text);
-            font-family: 'Share Tech Mono', monospace;
-            padding: 15px 30px;
-            border-radius: 5px;
-            font-size: 3rem;
-            border: 4px solid #111;
-            box-shadow: inset 0 0 10px rgba(0,255,0,0.2);
-            position: relative;
-            text-shadow: 0 0 5px rgba(0,255,0,0.5);
-            letter-spacing: 2px;
+        .m.flown {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: var(--paper);
         }
-
-        .digital-gauge::after {
+        .m.now {
+            background: var(--olive);
+            border-color: var(--olive-dark);
+            color: #fff;
+            animation: flicker 1.6s ease-in-out infinite;
+        }
+        .m.req {
+            border: 2px solid var(--red);
+            color: var(--red);
+            font-weight: 700;
+            background: rgba(163,36,28,0.08);
+        }
+        .m.beyond { opacity: 0.45; }
+        .m.old-req::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(rgba(255,255,255,0.1) 50%, rgba(0,0,0,0.1) 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-            opacity: 0.3;
+            left: -2px; right: -2px; top: 50%;
+            height: 2px;
+            background: var(--red);
+            transform: rotate(-35deg);
         }
+        @keyframes flicker { 50% { background: var(--olive-dark); } }
 
-        .mission-status {
-            margin-top: 30px;
-            border: 1px solid var(--ink-color);
-            padding: 20px;
-            background-color: rgba(255,255,255,0.5);
+        /* ---------- lower block ---------- */
+        .lower {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid var(--ink);
         }
-
-        .quote-box {
-            font-size: 1.1rem;
+        .lower .field { padding-top: 12px; padding-bottom: 14px; }
+        .remarks {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(0.9rem, 2.4vw, 1.02rem);
             line-height: 1.5;
-            min-height: 100px;
+            margin-top: 6px;
+        }
+        .remarks .new { background: rgba(74,93,35,0.18); }
+        .remarks-meta {
+            margin-top: 6px;
+            font-size: clamp(0.62rem, 1.6vw, 0.72rem);
+            color: var(--ink-soft);
+        }
+        .office {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(0.9rem, 2.4vw, 1.02rem);
+            line-height: 1.5;
+            margin-top: 6px;
+        }
+        .office b { color: var(--red); font-weight: 400; }
+
+        .directive {
+            margin-top: clamp(14px, 3vw, 22px);
+            border: 1px solid var(--ink);
+            padding: clamp(12px, 3vw, 20px);
+            background: rgba(255,255,255,0.35);
+        }
+        .directive blockquote {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(0.95rem, 2.6vw, 1.15rem);
+            line-height: 1.55;
+            margin-top: 8px;
+        }
+        .directive .exchange {
+            margin-top: 10px;
+            font-size: clamp(0.82rem, 2.1vw, 0.95rem);
+            line-height: 1.5;
+            color: var(--ink-soft);
+        }
+        .directive cite {
+            display: block;
+            margin-top: 8px;
+            font-style: normal;
+            font-size: clamp(0.62rem, 1.6vw, 0.72rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+
+        .foot {
             display: flex;
+            justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            margin-top: clamp(14px, 3vw, 20px);
+            font-size: clamp(0.62rem, 1.6vw, 0.72rem);
+            color: var(--ink-soft);
         }
-
-        .paradox-alert {
-            color: var(--red-stempel);
-            font-weight: bold;
-            animation: blink 2s infinite;
-            display: none;
-        }
-
-        @keyframes blink {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0; }
-        }
-
         .stamp {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            color: var(--red-stempel);
-            border: 2px solid var(--red-stempel);
-            padding: 5px;
-            transform: rotate(15deg);
-            opacity: 0.6;
-            font-size: 0.8rem;
+            flex: none;
+            font-family: 'Special Elite', monospace;
+            color: var(--red);
+            border: 2px solid var(--red);
+            padding: 4px 8px;
+            text-align: center;
+            line-height: 1.25;
+            transform: rotate(5deg);
+            opacity: 0.8;
+            font-size: clamp(0.62rem, 1.7vw, 0.78rem);
         }
 
+        @media (max-width: 640px) {
+            .fields { grid-template-columns: 1fr 1fr; }
+            .fields .field:nth-child(2) { border-right: none; }
+            .fields .field:nth-child(3) {
+                grid-column: 1 / -1;
+                border-top: 1px solid var(--rule);
+                padding-left: 0;
+            }
+            .time-row { grid-template-columns: 1fr; gap: 6px; }
+            .tally { grid-template-columns: 1fr 1.5fr; }
+            .missions { grid-template-columns: repeat(10, 1fr); }
+            .m { font-size: clamp(0.55rem, 2.4vw, 0.7rem); }
+            .lower { grid-template-columns: 1fr; }
+            .lower .field { border-right: none; padding-left: 0; }
+            .lower .field + .field { border-top: 1px solid var(--rule); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .m.now { animation: none; }
+        }
     </style>
 </head>
 <body>
-
-    <div class="dossier">
-        <div class="header">
+    <main class="form" aria-labelledby="title">
+        <header class="head">
             <div>
-                <div class="info-label">U.S. Army Air Forces</div>
-                <div class="header-title">Mission Log</div>
+                <div class="unit">256th Squadron &middot; Pianosa</div>
+                <h1 id="title">Mission Log</h1>
+                <div class="form-no">Form 22 &middot; to be completed in triplicate</div>
             </div>
-            <div class="classification">CONFIDENTIAL</div>
-        </div>
+            <div class="classified" aria-hidden="true">CONFIDENTIAL</div>
+        </header>
 
-        <div class="content-grid">
+        <section class="fields">
+            <div class="field">
+                <span class="label">Name</span>
+                <span class="value">Yossarian, John</span>
+            </div>
+            <div class="field">
+                <span class="label">Rank / Duty</span>
+                <span class="value">Capt., Bombardier</span>
+            </div>
+            <div class="field">
+                <span class="label">Date</span>
+                <span class="value" id="date">--</span>
+            </div>
+        </section>
+
+        <section class="time-row">
             <div>
-                <div class="info-block">
-                    <div class="info-label">Pilot / Bombardier</div>
-                    <div class="info-value">Yossarian, J.</div>
-                </div>
-                <div class="info-block">
-                    <div class="info-label">Current Date</div>
-                    <div class="info-value" id="currentDate">--/--/----</div>
-                </div>
-                <div class="info-block">
-                    <div class="info-label">Missions Flown (Seconds)</div>
-                    <div class="info-value" id="missionsFlown">0</div>
-                </div>
-                <div class="info-block">
-                    <div class="info-label">Required Missions</div>
-                    <div class="info-value" id="requiredMissions">0</div>
-                </div>
+                <span class="label">Time</span>
+                <div class="time" id="time" role="timer" aria-live="off">--:--<span class="sec">:--</span></div>
             </div>
-            
-            <div class="gauge-container">
-                <div class="info-label" style="color: #ccc; margin-bottom: 10px;">LOCAL TIME INTERCEPT</div>
-                <div class="digital-gauge" id="clockDisplay">
-                    00:00:00
-                </div>
-                <div class="paradox-alert" id="paradoxAlert">PARADOX LOGIC ENGAGED</div>
+            <div class="current">
+                <span class="label">Mission in progress</span>
+                <span class="value" id="current">--</span>
+                <div class="bar" aria-hidden="true"><div class="bar-fill" id="barFill"></div></div>
+                <div class="bar-note" id="barNote">Each mission: 18 minutes. 80 a day.</div>
             </div>
-        </div>
+        </section>
 
-        <div class="mission-status">
-            <div class="info-label">Official Directive (Catch-22)</div>
-            <div class="quote-box" id="quoteBox">
-                "There was only one catch and that was Catch-22..."
+        <section class="tally">
+            <div class="field">
+                <span class="label">Missions flown</span>
+                <div class="big" id="flown">0</div>
             </div>
-        </div>
+            <div class="field">
+                <span class="label">Missions required to go home</span>
+                <div class="req-line" id="reqLine"></div>
+                <div class="req-note" id="reqNote"></div>
+            </div>
+        </section>
 
-        <div class="stamp">MILITARY INTELLIGENCE<br>CONTRADICTORY</div>
-    </div>
+        <section class="grid-wrap" aria-label="Tour of duty, one box per mission">
+            <div class="grid-head">
+                <span class="label">Tour of duty</span>
+                <span class="legend" aria-hidden="true">
+                    <span><i class="lg-flown"></i>flown</span>
+                    <span><i class="lg-now"></i>in the air</span>
+                    <span><i class="lg-req"></i>required</span>
+                </span>
+            </div>
+            <div class="missions" id="missions" aria-hidden="true"></div>
+        </section>
+
+        <section class="lower">
+            <div class="field">
+                <span class="label">Remarks (Avignon, debriefing)</span>
+                <p class="remarks" id="remarks"></p>
+                <div class="remarks-meta" id="remarksMeta"></div>
+            </div>
+            <div class="field">
+                <span class="label">Squadron commander</span>
+                <p class="office" id="office"></p>
+            </div>
+        </section>
+
+        <section class="directive">
+            <span class="label">Standing directive</span>
+            <blockquote>&ldquo;There was only one catch and that was Catch-22, which specified that a concern for one&rsquo;s own safety in the face of dangers that were real and immediate was the process of a rational mind.&rdquo;</blockquote>
+            <p class="exchange">&ldquo;That&rsquo;s some catch, that Catch-22,&rdquo; &hellip; &ldquo;It&rsquo;s the best there is.&rdquo;</p>
+            <cite>Joseph Heller, Catch-22 (1961), chapter 5</cite>
+        </section>
+
+        <footer class="foot">
+            <span>Requests to be grounded will be granted to any man who is crazy, on request.</span>
+            <span class="stamp" aria-hidden="true">REQUEST<br>DENIED</span>
+        </footer>
+    </main>
 
     <script>
-        const quotes = [
-            "There was only one catch and that was Catch-22, which specified that a concern for one's safety in the face of dangers that were real and immediate was the process of a rational mind.",
-            "Orr would be crazy to fly more missions and sane if he didn't, but if he was sane he had to fly them.",
-            "If he flew them he was crazy and didn't have to; but if he didn't want to he was sane and had to.",
-            "Yossarian saw it clearly in all its spinning reasonableness. There was an elliptical precision about its perfect pairs of parts that was graceful and shocking.",
-            "It doesn't make a damned bit of difference who wins the war to someone who's dead.",
-            "Some men are born mediocre, some men achieve mediocrity, and some men have mediocrity thrust upon them.",
-            "Anything worth dying for is certainly worth living for.",
-            "He was going to live forever, or die in the attempt.",
-            "To know the time you must look at the clock, but if you look at the clock, you are acknowledging time passes, which is crazy.",
-            "You have to be crazy to ask to be grounded, but as soon as you ask, you're sane, so you must keep flying."
+        // Colonel Cathcart's escalation of the tour, as the novel gives it.
+        const LADDER = [25, 30, 35, 40, 45, 50, 55, 60, 70, 80];
+        const MISSION_MIN = 18;           // 1440 / 18 = 80 missions a day
+        const TOTAL = 80;
+
+        // Debriefing notes on the Avignon mission. The novel keeps circling back
+        // to Snowden and tells a little more each time; so does the log, one
+        // more line every three hours. (Log-clerk prose, not quotations.)
+        const AVIGNON = [
+            'Avignon.',
+            'Snowden, the radio-gunner, was hit.',
+            'Yossarian crawled back to him through the plane.',
+            'Snowden said he was cold.',
+            'Yossarian dressed the wound in his thigh and felt he had done well.',
+            'Snowden still said he was cold.',
+            'Yossarian opened the flak suit and found the other wound.',
+            'Afterwards Yossarian would not wear a uniform, not even to receive his medal.'
         ];
 
-        const clockDisplay = document.getElementById('clockDisplay');
-        const currentDate = document.getElementById('currentDate');
-        const missionsFlown = document.getElementById('missionsFlown');
-        const requiredMissions = document.getElementById('requiredMissions');
-        const quoteBox = document.getElementById('quoteBox');
-        const paradoxAlert = document.getElementById('paradoxAlert');
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+            'August', 'September', 'October', 'November', 'December'];
 
-        let isParadoxActive = false;
-        let lastMinute = -1;
-
-        function updateClock() {
-            const now = new Date();
-            
-            // Format time
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds();
-            let ms = now.getMilliseconds();
-
-            // Paradox logic: Sometimes seconds loop backwards slightly before going forward
-            if (s % 15 === 0 && ms < 100) {
-                isParadoxActive = true;
-                paradoxAlert.style.display = 'block';
-            } else if (s % 15 === 5) {
-                isParadoxActive = false;
-                paradoxAlert.style.display = 'none';
-            }
-
-            let displayS = s;
-            if (isParadoxActive) {
-                // Time glitch effect
-                displayS = (s - Math.floor(Math.random() * 3)) % 60;
-                if (displayS < 0) displayS += 60;
-            }
-
-            clockDisplay.textContent = `${h}:${m}:${displayS.toString().padStart(2, '0')}`;
-
-            // Update Date
-            currentDate.textContent = now.toLocaleDateString();
-
-            // Missions = seconds passed today (simulate an ever-increasing number)
-            const secondsToday = now.getHours() * 3600 + now.getMinutes() * 60 + displayS;
-            missionsFlown.textContent = secondsToday;
-
-            // Required missions is ALWAYS missions flown + 5
-            requiredMissions.textContent = secondsToday + (Math.floor(Math.random() * 2) === 0 ? 5 : 7);
-
-            // Change quote every minute
-            if (lastMinute !== now.getMinutes()) {
-                lastMinute = now.getMinutes();
-                quoteBox.textContent = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
-            }
-
-            requestAnimationFrame(updateClock);
+        const $ = id => document.getElementById(id);
+        const missionsEl = $('missions');
+        const boxes = [];
+        for (let i = 1; i <= TOTAL; i++) {
+            const b = document.createElement('div');
+            b.className = 'm';
+            b.textContent = i;
+            missionsEl.appendChild(b);
+            boxes.push(b);
         }
 
-        updateClock();
+        const pad = n => String(n).padStart(2, '0');
+
+        // Cathcart raises the number whenever a man comes within one mission of it.
+        // The ladder ends at 80, so the last mission of the day is spent one short.
+        function requiredFor(flown) {
+            for (const r of LADDER) if (r > flown + 1) return r;
+            return LADDER[LADDER.length - 1];
+        }
+
+        let lastKey = '';
+
+        function update() {
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const minuteOfDay = h * 60 + m;
+            const flown = Math.floor(minuteOfDay / MISSION_MIN);   // 0..79
+            const inMission = minuteOfDay % MISSION_MIN + s / 60;  // minutes into current
+            const current = flown + 1;                             // 1..80
+
+            $('time').firstChild.nodeValue = pad(h) + ':' + pad(m);
+            $('time').lastChild.textContent = ':' + pad(s);
+            $('barFill').style.width = (inMission / MISSION_MIN * 100).toFixed(2) + '%';
+            const left = MISSION_MIN * 60 - (minuteOfDay % MISSION_MIN) * 60 - s;
+            $('barNote').textContent = 'Back at ' + (() => {
+                const end = (flown + 1) * MISSION_MIN;
+                return end >= 1440 ? '00:00' : pad(Math.floor(end / 60)) + ':' + pad(end % 60);
+            })() + ', ' + Math.floor(left / 60) + ' min ' + pad(left % 60) + ' s to go.';
+
+            const key = now.toDateString() + '|' + minuteOfDay;
+            if (key === lastKey) return;
+            lastKey = key;
+
+            // ---- per-minute updates ----
+            $('date').textContent = now.getDate() + ' ' + MONTHS[now.getMonth()] + ' 1944';
+            $('time').setAttribute('aria-label', 'Time ' + pad(h) + ':' + pad(m));
+            $('current').textContent = 'No. ' + current + ' of the day, over target';
+            $('flown').textContent = flown;
+
+            const req = requiredFor(flown);
+            const prevReq = flown > 0 ? requiredFor(flown - 1) : req;
+            const struck = LADDER.filter(r => r < req);
+            const line = $('reqLine');
+            line.textContent = '';
+            struck.forEach(r => {
+                const sp = document.createElement('span');
+                sp.className = 'struck';
+                sp.textContent = r;
+                line.appendChild(sp);
+            });
+            const nowReq = document.createElement('span');
+            nowReq.className = 'req-now';
+            nowReq.textContent = req;
+            line.appendChild(nowReq);
+            line.setAttribute('aria-label', 'Required: ' + req +
+                (struck.length ? '. Previously ' + struck.join(', ') : ''));
+
+            const short = req - flown;
+            let note;
+            if (req === LADDER[LADDER.length - 1] && short === 1) {
+                note = 'One to go. The matter is under review at Group.';
+            } else if (req !== prevReq) {
+                note = 'Raised from ' + prevReq + ' to ' + req + ' by Col. Cathcart, just now.';
+            } else if (struck.length === 0) {
+                note = 'Fly ' + short + ' more and you can go home. Probably.';
+            } else {
+                note = short + ' to go. Col. Cathcart has raised it ' + struck.length +
+                    (struck.length === 1 ? ' time' : ' times') + ' today.';
+            }
+            $('reqNote').textContent = note;
+
+            boxes.forEach((b, i) => {
+                const n = i + 1;
+                b.className = 'm' +
+                    (n <= flown ? ' flown' : '') +
+                    (n === current ? ' now' : '') +
+                    (n === req && n !== current ? ' req' : '') +
+                    (n > req ? ' beyond' : '') +
+                    (struck.includes(n) && n > flown ? ' old-req' : '');
+            });
+
+            // Remarks: one more sentence of Avignon every three hours.
+            const band = Math.floor(h / 3);                        // 0..7
+            const rem = $('remarks');
+            rem.textContent = '';
+            AVIGNON.slice(0, band + 1).forEach((t, i) => {
+                const sp = document.createElement('span');
+                if (i === band && band > 0) sp.className = 'new';
+                sp.textContent = (i ? ' ' : '') + t;
+                rem.appendChild(sp);
+            });
+            const nextBand = (band + 1) * 3;
+            $('remarksMeta').textContent = band < 7
+                ? 'Debriefing continues at ' + pad(nextBand) + ':00.'
+                : 'Account complete. It starts again at 00:00.';
+
+            // Major Major: in his office only when he is out.
+            const office = $('office');
+            office.innerHTML = '';
+            office.append('Major Major Major Major. Status: ');
+            const b = document.createElement('b');
+            b.textContent = 'OUT.';
+            office.append(b, ' You may go in now. While he is in, nobody may go in.');
+        }
+
+        update();
+        setInterval(update, 1000);
     </script>
 </body>
 </html>
