@@ -3,399 +3,1136 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mrs Dalloway Clock</title>
+    <meta name="description" content="Big Ben strikes the hour and its leaden circles spread across 1923 London, handing the day from Clarissa to Septimus to Peter Walsh as they pass.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
+        /* Palette tokens. JS sets data-phase on <html> by the hour:
+           day (6-17), evening (18-20, the party lamps), night (21-5). */
+        :root {
+            --paper: #f2ede3;
+            --paper-2: #e8e1d4;
+            --ink: #2a2420;
+            --muted: #5c544d;
+            --faint: #8a8178;
+            --rule: #cfc6b8;
+            --lead: #4c525c;
+            --water: #c3cdd0;
+            --park: #d3d8c3;
+            --street: #ddd5c7;
+            --accent: #7a3b2e;
+            --accent-soft: rgba(122, 59, 46, 0.14);
+        }
+
+        :root[data-phase="evening"] {
+            --paper: #efe3d1;
+            --paper-2: #e5d6c0;
+            --ink: #2d2219;
+            --muted: #5d4c3e;
+            --faint: #8c7a68;
+            --rule: #cdb99f;
+            --lead: #4e4c55;
+            --water: #c0c4c6;
+            --park: #d2d0b5;
+            --street: #dccbb2;
+            --accent: #8a3a26;
+            --accent-soft: rgba(138, 58, 38, 0.15);
+        }
+
+        :root[data-phase="night"] {
+            --paper: #1c1f27;
+            --paper-2: #23272f;
+            --ink: #ece5d8;
+            --muted: #bdb4a6;
+            --faint: #8f887e;
+            --rule: #3a3e48;
+            --lead: #cfc8ba;
+            --water: #2b3945;
+            --park: #262f27;
+            --street: #2c3039;
+            --accent: #e0a487;
+            --accent-soft: rgba(224, 164, 135, 0.16);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            background: var(--paper);
+            color: var(--ink);
+        }
+
         body {
             min-height: 100vh;
-            background: linear-gradient(to bottom, #e8e4dc 0%, #d8d4cc 100%);
-            font-family: 'Crimson Text', serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: #3a3430;
-            position: relative;
+            font-family: 'Crimson Text', Georgia, serif;
+            transition: background-color 1.5s ease, color 1.5s ease;
         }
 
-        .page {
-            max-width: 900px;
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(320px, 1fr);
+            min-height: 100vh;
+        }
+
+        /* ---------- the map ---------- */
+        .map-wrap {
+            position: relative;
+            min-height: 100vh;
+            border-right: 1px solid var(--rule);
+        }
+
+        canvas#map {
+            position: absolute;
+            inset: 0;
+            display: block;
             width: 100%;
-            background: #f8f6f2;
-            border: 1px solid #b8b4ac;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            padding: 3rem 2.5rem;
-            position: relative;
+            height: 100%;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #c8c4bc;
+        .map-caption {
+            position: absolute;
+            left: clamp(12px, 2vw, 24px);
+            bottom: clamp(10px, 1.6vw, 20px);
+            font-size: clamp(0.78rem, 1.1vw, 0.9rem);
+            font-style: italic;
+            color: var(--muted);
+            max-width: 40ch;
+            line-height: 1.35;
+            pointer-events: none;
+        }
+
+        /* ---------- the reading panel ---------- */
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(1rem, 2.2vh, 1.6rem);
+            padding: clamp(1.25rem, 3.5vw, 3rem) clamp(16px, 3vw, 2.75rem);
+            background: var(--paper-2);
+        }
+
+        .masthead {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 0.6rem;
         }
 
         .title {
             font-family: 'Playfair Display', serif;
-            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-style: italic;
             font-weight: 400;
-            color: #2a2420;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.05em;
+            font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+            letter-spacing: 0.01em;
         }
 
-        .subtitle {
-            font-size: clamp(1rem, 2.5vw, 1.3rem);
-            font-style: italic;
-            color: #5a5450;
-            margin-bottom: 0.5rem;
+        .byline {
+            font-size: clamp(0.85rem, 1.1vw, 0.95rem);
+            color: var(--muted);
+            text-align: right;
+            white-space: nowrap;
         }
 
-        .date-line {
-            font-size: 0.95rem;
-            color: #7a7470;
-            margin-top: 0.75rem;
+        .time-block {
+            display: flex;
+            align-items: baseline;
+            gap: clamp(0.75rem, 2vw, 1.25rem);
+            flex-wrap: wrap;
         }
 
-        .big-ben {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .clock-face {
+        .time {
             font-family: 'Playfair Display', serif;
-            font-size: clamp(2.5rem, 6vw, 5rem);
             font-weight: 600;
-            color: #2a2420;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.05em;
+            font-size: clamp(2.8rem, 6vw, 4.6rem);
+            line-height: 1;
+            font-variant-numeric: lining-nums tabular-nums;
+            letter-spacing: 0.02em;
         }
 
-        .chime-text {
-            font-size: 0.9rem;
-            color: #5a5450;
-            font-style: italic;
-            animation: chime 2s ease-in-out infinite;
+        .time .ampm {
+            font-size: 0.32em;
+            font-weight: 400;
+            letter-spacing: 0.12em;
+            margin-left: 0.3em;
+            color: var(--muted);
         }
 
-        @keyframes chime {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
+        .strike-line {
+            font-size: clamp(1rem, 1.4vw, 1.15rem);
+            color: var(--muted);
+            line-height: 1.4;
+            flex: 1 1 14rem;
         }
 
-        .stream-container {
-            background: rgba(200, 196, 188, 0.1);
-            border-left: 3px solid #8a8480;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .thoughts-container {
-            position: relative;
-            min-height: 250px;
-            margin-top: 1rem;
-        }
-
-        .character-label {
+        .scene {
             font-family: 'Playfair Display', serif;
-            font-size: 0.85rem;
-            color: #5a5450;
+            font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+            font-weight: 400;
+            line-height: 1.3;
+        }
+
+        .scene small {
+            display: block;
+            font-family: 'Crimson Text', serif;
+            font-size: 0.72em;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 1rem;
+            color: var(--muted);
+            margin-bottom: 0.25rem;
         }
 
-        .thought {
-            font-size: clamp(1rem, 2.2vw, 1.2rem);
-            line-height: 1.9;
-            color: #3a3430;
+        .voice {
+            border-left: 3px solid var(--accent);
+            padding: 0.2rem 0 0.2rem clamp(0.9rem, 1.6vw, 1.25rem);
+            min-height: 9.5rem;
+            transition: opacity 0.6s ease;
+        }
+
+        .voice.fading {
             opacity: 0;
-            animation: thoughtFade 9s ease-in-out infinite;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
         }
 
-        .thought:nth-child(1) { animation-delay: 0s; }
-        .thought:nth-child(2) { animation-delay: 3s; }
-        .thought:nth-child(3) { animation-delay: 6s; }
-
-        @keyframes thoughtFade {
-            0% { opacity: 0; transform: translateY(5px); }
-            5%, 28% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(5px); }
-        }
-
-        .thought em {
-            font-style: italic;
-            color: #5a5450;
-        }
-
-        .moment-label {
+        .who {
             font-family: 'Playfair Display', serif;
-            font-size: clamp(1.1rem, 2.5vw, 1.5rem);
-            color: #2a2420;
-            margin-bottom: 1rem;
-            font-weight: 600;
+            font-size: clamp(0.8rem, 1vw, 0.88rem);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--accent);
         }
 
-        .location {
-            font-size: 0.95rem;
-            color: #6a6460;
-            margin-bottom: 1.5rem;
+        .where {
+            font-style: italic;
+            color: var(--muted);
+            font-size: clamp(0.92rem, 1.1vw, 1rem);
+            margin: 0.1rem 0 0.6rem;
+        }
+
+        .line {
+            font-size: clamp(1.15rem, 1.9vw, 1.5rem);
+            line-height: 1.5;
+        }
+
+        .line.prose {
             font-style: italic;
         }
 
-        .flowers {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.85rem;
-            color: #7a7470;
-            font-style: italic;
-            text-align: center;
+        .note {
+            margin-top: 0.5rem;
+            font-size: clamp(0.92rem, 1.1vw, 1rem);
+            color: var(--muted);
+            line-height: 1.45;
         }
 
-        @media (max-width: 768px) {
-            .page {
-                padding: 2rem 1.5rem;
+        /* the hour's chain of consciousness */
+        .chain-label,
+        .day-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.45rem;
+        }
+
+        .chain {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem 0.5rem;
+        }
+
+        .chain li {
+            font-size: clamp(0.88rem, 1.05vw, 0.98rem);
+            padding: 0.15rem 0.6rem;
+            border: 1px solid var(--rule);
+            border-radius: 999px;
+            color: var(--faint);
+            white-space: nowrap;
+        }
+
+        .chain li.reached {
+            color: var(--muted);
+            border-color: var(--faint);
+        }
+
+        .chain li.current {
+            color: var(--ink);
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .chain li .m {
+            font-variant-numeric: tabular-nums;
+            opacity: 0.8;
+            margin-left: 0.3em;
+            font-size: 0.85em;
+        }
+
+        /* the day strip, morning flowers to evening party */
+        .day {
+            margin-top: auto;
+        }
+
+        .strip {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            gap: 2px;
+            height: 22px;
+        }
+
+        .strip span {
+            background: var(--rule);
+            opacity: 0.55;
+            border-radius: 2px;
+        }
+
+        .strip span.novel {
+            opacity: 1;
+            background: var(--faint);
+        }
+
+        .strip span.memory {
+            opacity: 0.9;
+            background: repeating-linear-gradient(135deg, var(--rule) 0 3px, transparent 3px 6px);
+        }
+
+        .strip span.now {
+            background: var(--accent);
+            opacity: 1;
+        }
+
+        .strip-marks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 0.3rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .legend {
+            margin-top: 0.5rem;
+            font-size: clamp(0.85rem, 1vw, 0.92rem);
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border-top: 1px solid var(--rule);
+            padding-top: 0.7rem;
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+
+        .bells {
+            font: inherit;
+            color: var(--ink);
+            background: transparent;
+            border: 1px solid var(--faint);
+            border-radius: 999px;
+            padding: 0.3rem 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .bells[aria-pressed="true"] {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .bells:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 860px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .map-wrap {
+                min-height: 0;
+                height: min(92vw, 62vh);
+                border-right: none;
+                border-bottom: 1px solid var(--rule);
+            }
+
+            .panel {
+                padding-top: 1.1rem;
+            }
+
+            .voice {
+                min-height: 8rem;
+            }
+
+            .map-caption {
+                bottom: auto;
+                left: auto;
+                top: 10px;
+                right: 16px;
+                max-width: 19ch;
+                text-align: right;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            body,
+            .voice {
+                transition: none;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="page">
-        <div class="header">
-            <h1 class="title">Mrs Dalloway</h1>
-            <div class="subtitle">Virginia Woolf</div>
-            <div class="date-line">A June day in London, 1923</div>
+    <div class="layout">
+        <div class="map-wrap" aria-hidden="true">
+            <canvas id="map"></canvas>
+            <div class="map-caption" id="mapCaption">Westminster, a Wednesday in June, 1923</div>
         </div>
 
-        <div class="big-ben">
-            <div class="clock-face" id="time">00:00</div>
-            <div class="chime-text" id="chime">Big Ben strikes the hour</div>
-        </div>
+        <main class="panel">
+            <header class="masthead">
+                <h1 class="title">Mrs Dalloway</h1>
+                <div class="byline">Virginia Woolf, 1925</div>
+            </header>
 
-        <div class="stream-container">
-            <div class="character-label" id="character">Clarissa Dalloway</div>
-            <div class="moment-label" id="moment">Morning</div>
-            <div class="location" id="location">Westminster, London</div>
-            <div class="thoughts-container">
-                <div id="thoughts">
-                    <!-- Thoughts injected here -->
-                </div>
+            <div class="time-block">
+                <div class="time" id="time" role="timer" aria-live="off">--:--</div>
+                <div class="strike-line" id="strike">Big Ben</div>
             </div>
-        </div>
-    </div>
 
-    <div class="flowers">
-        "I will buy the flowers myself," said Mrs Dalloway
+            <div class="scene" id="scene"><small>The hour</small>&nbsp;</div>
+
+            <section class="voice" id="voice" aria-live="polite">
+                <div class="who" id="who">&nbsp;</div>
+                <div class="where" id="where">&nbsp;</div>
+                <p class="line" id="line">&nbsp;</p>
+                <p class="note" id="note" hidden></p>
+            </section>
+
+            <section>
+                <div class="chain-label">The circles reach, this hour</div>
+                <ul class="chain" id="chain"></ul>
+            </section>
+
+            <section class="day">
+                <div class="day-label">The day of the novel</div>
+                <div class="strip" id="strip"></div>
+                <div class="strip-marks"><span>midnight</span><span>6</span><span>noon</span><span>6</span><span>midnight</span></div>
+                <p class="legend">Each hour Big Ben sends out one ring per stroke. The rings travel outward across London for sixty minutes, and whoever they reach takes up the story. St Margaret’s answers a little after, from just beside it.</p>
+            </section>
+
+            <footer class="footer">
+                <span>Quotations from the 1925 text</span>
+                <button class="bells" id="bells" type="button" aria-pressed="false">Bells off</button>
+            </footer>
+        </main>
     </div>
 
     <script>
-        const moments = [
-            {
-                hours: [0, 1, 2, 3, 4, 5],
-                moment: "Before Dawn",
-                character: "The City Sleeping",
-                location: "London in darkness",
-                thoughts: [
-                    "The city lay sleeping, the great wheel of London turning silently in the night, Big Ben preparing to sound the hours.",
-                    "Even now, in the darkness, preparations were being made—the florists arranging their flowers, the servants rising to light the fires.",
-                    "London slept, but <em>she</em> would wake, Mrs Dalloway would wake, and say she would buy the flowers herself."
-                ]
-            },
-            {
-                hours: [6, 7, 8, 9],
-                moment: "Morning — The Flowers",
-                character: "Clarissa Dalloway",
-                location: "Westminster, walking to the florist",
-                thoughts: [
-                    "What a lark! What a plunge! For so it had always seemed to her when, with a little squeak of the hinges, she had burst open the French windows and plunged at Bourton into the open air.",
-                    "In people's eyes, in the swing, tramp, and trudge; in the bellow and the uproar; the carriages, motor cars, omnibuses, vans, sandwich men shuffling and swinging; brass bands; barrel organs; in the triumph and the jingle and the strange high singing of some aeroplane overhead was what she loved; life; London; this moment of June.",
-                    "She would buy the flowers herself. For Lucy had her work cut out for her. The doors would be taken off their hinges; Rumpelmayer's men were coming."
-                ]
-            },
-            {
-                hours: [10, 11],
-                moment: "Late Morning",
-                character: "Septimus Warren Smith",
-                location: "Regent's Park",
-                thoughts: [
-                    "The world has raised its whip; where will it descend?",
-                    "Men must not cut down trees. There is a God. He noted such revelations on the backs of envelopes.",
-                    "But Septimus could not see her. <em>Evans</em> was behind the railings. The dead were in the trees."
-                ]
-            },
-            {
-                hours: [12, 13],
-                moment: "Midday",
-                character: "Clarissa Dalloway",
-                location: "Westminster, preparing",
-                thoughts: [
-                    "She felt very young; at the same time unspeakably aged. She sliced like a knife through everything; at the same time was outside, looking on.",
-                    "That was her self—pointed; dartlike; definite. That was her self when some effort, some call on her to be her self, drew the parts together.",
-                    "For Heaven only knows why one loves it so, how one sees it so, making it up, building it round one, tumbling it, creating it every moment afresh."
-                ]
-            },
-            {
-                hours: [14, 15, 16],
-                moment: "Afternoon",
-                character: "Peter Walsh",
-                location: "Walking through London",
-                thoughts: [
-                    "For why go back like this to the past? Why make him think of it again? Why make him suffer, when she had tortured him so infernally?",
-                    "The compensation of growing old, Peter Walsh thought, coming out of Regent's Park, was simply this; that the passions remain as strong as ever.",
-                    "Clarissa, he said. For there she was."
-                ]
-            },
-            {
-                hours: [17, 18, 19],
-                moment: "Evening — The Party Begins",
-                character: "Clarissa Dalloway",
-                location: "Westminster, the party",
-                thoughts: [
-                    "Every time she gave a party she had this feeling of being something not herself, and that every one was unreal in one way; much more real in another.",
-                    "She had a perpetual sense, as she watched the taxi cabs, of being out, out, far out to sea and alone; she always had the feeling that it was very, very dangerous to live even one day.",
-                    "But to go deeper, beneath what people said (and these judgements, how superficial, how fragmentary they are!) in her own mind now, what did it mean to her, this thing she called life?"
-                ]
-            },
-            {
-                hours: [20, 21, 22],
-                moment: "The Party in Full",
-                character: "Clarissa Dalloway",
-                location: "The party at Westminster",
-                thoughts: [
-                    "There! That was satisfactory. And she had not said either, that she would not ask Ellie Henderson! Here was dear Mrs Hilbery making straight for her.",
-                    "What a lark! What a plunge! How surprised they would be, these dull women, if they knew!",
-                    "And there is a dignity in people; a solitude; even between husband and wife a gulf; and that one must respect."
-                ]
-            },
-            {
-                hours: [23],
-                moment: "Late Night — News Arrives",
-                character: "Clarissa Dalloway",
-                location: "The party ending",
-                thoughts: [
-                    "Oh! thought Clarissa, in the middle of my party, here's death, she thought.",
-                    "She had once thrown a shilling into the Serpentine, never anything more. But he had flung it away. They went on living. She had never been so happy.",
-                    "She must go back to them. But what an extraordinary night! She felt somehow very like him—the young man who had killed himself."
-                ]
-            }
+        // ------------------------------------------------------------
+        // London, in kilometres east (x) and north (y) of Big Ben.
+        // ------------------------------------------------------------
+        const PLACES = {
+            bigben:     { x: 0,     y: 0,     label: 'Big Ben',           side: 'r' },
+            stmarg:     { x: -0.13, y: -0.04, label: '',                  side: 'l' },
+            parliament: { x: 0.06,  y: -0.16, label: 'the House',         side: 'r' },
+            house:      { x: -0.42, y: -0.32, label: 'Clarissa’s house',  side: 'r', dy: 1 },
+            victoria:   { x: -0.85, y: -0.45, label: 'Victoria Street',   side: 'l' },
+            stjames:    { x: -0.62, y: 0.2,   label: 'St James’s Park',   side: 'l' },
+            trafalgar:  { x: -0.05, y: 0.82,  label: 'Whitehall',         side: 'r' },
+            piccadilly: { x: -1.05, y: 0.72,  label: 'Piccadilly',        side: 'l' },
+            bond:       { x: -1.3,  y: 1.35,  label: 'Bond Street',       side: 'r' },
+            brook:      { x: -1.62, y: 1.6,   label: 'Brook Street',      side: 'l' },
+            harley:     { x: -1.5,  y: 2.32,  label: 'Harley Street',     side: 'l' },
+            regents:    { x: -1.25, y: 3.35,  label: 'Regent’s Park',     side: 'r' },
+            tottenham:  { x: -0.45, y: 2.1,   label: 'Tottenham Ct Rd',   side: 'r' },
+            bloomsbury: { x: 0.2,   y: 2.5,   label: 'Bloomsbury',        side: 'r' },
+            strand:     { x: 0.55,  y: 0.98,  label: 'the Strand',        side: 'r' },
+            fleet:      { x: 1.5,   y: 1.08,  label: 'Fleet Street',      side: 'r' }
+        };
+
+        const BOUNDS = { x0: -2.45, x1: 2.25, y0: -1.15, y1: 4.0 };
+        const R_MAX = 4.1;   // km travelled by the circles in sixty minutes
+        const STROKE_GAP = 0.085; // km between successive strokes of the hour
+
+        // ------------------------------------------------------------
+        // Quotations. Only these are shown in quotation marks.
+        // ------------------------------------------------------------
+        const Q = {
+            strike: 'There! Out it boomed. First a warning, musical; then the hour, irrevocable. The leaden circles dissolved in the air.',
+            pause: 'an indescribable pause; a suspense (but that might be her heart, affected, they said, by influenza) before Big Ben strikes.',
+            flowers: 'Mrs. Dalloway said she would buy the flowers herself.',
+            lucy: 'For Lucy had her work cut out for her. The doors would be taken off their hinges; Rumpelmayer’s men were coming.',
+            lark: 'What a lark! What a plunge!',
+            june: 'life; London; this moment of June.',
+            mrsRichard: 'this being Mrs. Dalloway; not even Clarissa any more; this being Mrs. Richard Dalloway.',
+            whip: 'The world has raised its whip; where will it descend?',
+            twelve: 'twelve o’clock struck as Clarissa Dalloway laid her green dress on her bed, and the Warren Smiths walked down Harley Street.',
+            harley: 'Shredding and slicing, dividing and subdividing, the clocks of Harley Street nibbled at the June day',
+            knife: 'She sliced like a knife through everything; at the same time was outside, looking on.',
+            sea: 'she always had the feeling that it was very, very dangerous to live even one day.',
+            give: 'I’ll give it you!',
+            death: 'Oh! thought Clarissa, in the middle of my party, here’s death, she thought.',
+            fear: 'Fear no more the heat o’ the sun',
+            terror: 'What is this terror? what is this ecstasy? he thought to himself.',
+            there: 'It is Clarissa, he said. For there she was.',
+            narrow: 'Narrower and narrower would her bed be.'
+        };
+
+        // ------------------------------------------------------------
+        // The day, hour by hour. 05:00 to midnight follows the novel's
+        // Wednesday; the small hours belong to Bourton, in memory.
+        // Each voice: who, at (place), text, q (a real quotation), note.
+        // ------------------------------------------------------------
+        const HOURS = [
+            { scene: 'The party thins', voices: [
+                { who: 'Clarissa', at: 'house', text: 'In the little room she watches the old lady opposite climb the stairs and put out her light.' },
+                { who: 'Sally Seton', at: 'house', text: 'Lady Rosseter now, with five great boys, she sits with Peter and talks of Bourton.' },
+                { who: 'Peter Walsh', at: 'house', text: Q.there, q: true, note: 'The last lines of the novel.' }
+            ]},
+            { scene: 'After the party', voices: [
+                { who: 'Clarissa', at: 'house', text: Q.narrow, q: true, note: 'She sleeps alone in the attic room, since her illness.' },
+                { who: 'Peter Walsh', at: 'bloomsbury', text: 'At his hotel he lies awake, turning her over and over, as he has for thirty years.' }
+            ]},
+            { scene: 'Bourton, in memory', voices: [
+                { who: 'Clarissa, at eighteen', at: 'house', text: Q.lark, q: true, note: 'The squeak of the hinges as she bursts open the French windows at Bourton, into the morning air.' },
+                { who: 'Peter Walsh', at: 'bloomsbury', text: 'He remembers the fountain at Bourton, the morning she refused him.' }
+            ]},
+            { scene: 'Bourton, in memory', voices: [
+                { who: 'Clarissa, at eighteen', at: 'house', text: 'On the terrace at Bourton, by a stone urn, Sally Seton picks a flower and kisses her on the lips.' },
+                { who: 'Peter Walsh', at: 'bloomsbury', text: 'He comes upon the two of them on the terrace, and the moment is over.' }
+            ]},
+            { scene: 'Before light', voices: [
+                { who: 'Clarissa', at: 'house', text: 'The house is still. Downstairs the doors hang on their hinges for a few hours more.' },
+                { who: 'Peter Walsh', at: 'bloomsbury', text: 'Back from India after five years, he thinks of Daisy, who is waiting there for him to arrange her divorce.' }
+            ]},
+            { scene: 'First light', voices: [
+                { who: 'Lucy', at: 'house', text: 'The parlourmaid is up before anyone. There is the silver to see to, and the chairs.' },
+                { who: 'Septimus Warren Smith', at: 'tottenham', text: 'In the lodgings off the Tottenham Court Road he wakes before Rezia. Since the war he cannot feel.' }
+            ]},
+            { scene: 'The house wakes', voices: [
+                { who: 'Lucy', at: 'house', text: Q.lucy, q: true },
+                { who: 'Peter Walsh', at: 'bloomsbury', text: 'He is back in London. Clarissa does not know it yet.' }
+            ]},
+            { scene: 'Morning in Bloomsbury', voices: [
+                { who: 'Richard Dalloway', at: 'parliament', text: 'A committee at the House this morning, and luncheon at Lady Bruton’s.' },
+                { who: 'Rezia', at: 'tottenham', text: 'Dr Holmes says there is nothing the matter with him. She wants to take him to Regent’s Park.' },
+                { who: 'Septimus', at: 'tottenham', text: 'The sparrows sing to him in Greek. Evans, killed in the war, is somewhere behind the railings.' }
+            ]},
+            { scene: 'The house, upstairs', voices: [
+                { who: 'Elizabeth', at: 'house', text: 'She is shut upstairs with Miss Kilman, at her history, or praying, Clarissa suspects.' },
+                { who: 'Miss Kilman', at: 'victoria', text: 'In her green mackintosh, poor and pious, she resents everything the Dalloways have.' }
+            ]},
+            { scene: 'She would buy the flowers', voices: [
+                { who: 'Clarissa', at: 'house', text: Q.flowers, q: true, note: 'The first line of the novel.' },
+                { who: 'Clarissa', at: 'victoria', text: Q.june, q: true, note: 'Crossing Victoria Street, in love with the noise of it.' }
+            ]},
+            { scene: 'Bond Street', voices: [
+                { who: 'Clarissa', at: 'stjames', text: 'In St James’s Park she meets Hugh Whitbread, up from the country to see the doctors with Evelyn.' },
+                { who: 'Clarissa', at: 'piccadilly', text: Q.knife, q: true, note: 'Walking up Piccadilly, past Hatchards’ window.' },
+                { who: 'Clarissa', at: 'bond', text: Q.mrsRichard, q: true },
+                { who: 'Septimus', at: 'bond', text: Q.whip, q: true, note: 'A motor car backfires outside the florist’s. Everyone stops, and he cannot move.' }
+            ]},
+            { scene: 'Peter Walsh comes back', voices: [
+                { who: 'Clarissa', at: 'house', text: 'Home again, mending her green silk dress, she hears the bell. Peter, unannounced, after five years.' },
+                { who: 'Peter Walsh', at: 'trafalgar', text: 'He strides off up Whitehall opening and shutting his pocket-knife. She had refused him.' },
+                { who: 'Septimus', at: 'regents', text: 'An aeroplane writes letters in smoke over Regent’s Park. He believes they are meant for him.' }
+            ]},
+            { scene: 'Noon, Harley Street', voices: [
+                { who: 'Clarissa', at: 'house', text: Q.twelve, q: true },
+                { who: 'Septimus', at: 'harley', text: Q.harley, q: true, note: 'Sir William Bradshaw prescribes rest, and a sense of proportion.' },
+                { who: 'Peter Walsh', at: 'regents', text: 'He wakes on a bench in Regent’s Park, and passes the young couple quarrelling.' }
+            ]},
+            { scene: 'Luncheon in Brook Street', voices: [
+                { who: 'Clarissa', at: 'house', text: 'She minds, absurdly, that Lady Bruton has asked Richard to lunch without her.' },
+                { who: 'Richard Dalloway', at: 'brook', text: 'At Lady Bruton’s, he and Hugh help her compose a letter to The Times about emigration.' },
+                { who: 'Rezia', at: 'tottenham', text: 'She brings him home. Sir William will arrange a rest home in the country.' }
+            ]},
+            { scene: 'Through Green Park', voices: [
+                { who: 'Clarissa', at: 'house', text: 'On the sofa after lunch, as the doctor ordered, she thinks of Peter, and of the party.' },
+                { who: 'Richard Dalloway', at: 'piccadilly', text: 'He carries red and white roses home through Green Park. He means to tell her that he loves her.' }
+            ]},
+            { scene: 'The roses', voices: [
+                { who: 'Richard Dalloway', at: 'house', text: 'He gives her the roses. He cannot say it. She understands without his speaking.' },
+                { who: 'Miss Kilman', at: 'victoria', text: 'She takes Elizabeth to the Army and Navy Stores, hating Clarissa all the way.' },
+                { who: 'Septimus', at: 'tottenham', text: 'He and Rezia trim a hat for Mrs Peters. For a moment he is himself, and laughs.' }
+            ]},
+            { scene: 'The omnibus', voices: [
+                { who: 'Clarissa', at: 'house', text: 'Elizabeth has gone out with Miss Kilman. Across the way, the old lady opposite moves from room to room.' },
+                { who: 'Miss Kilman', at: 'victoria', text: 'At the tea table in the Stores she finishes her eclair, and Elizabeth goes.' },
+                { who: 'Elizabeth', at: 'strand', text: 'She climbs to the top of an omnibus and is carried up the Strand, free.' },
+                { who: 'Elizabeth', at: 'fleet', text: 'Up Fleet Street she thinks she might be a doctor, or a farmer, or go into Parliament.' }
+            ]},
+            { scene: 'Late afternoon', voices: [
+                { who: 'Lucy', at: 'house', text: 'The flowers have come, and the candles. The silver is laid out for tonight.' },
+                { who: 'Elizabeth', at: 'strand', text: 'She waits for an omnibus home. Her mother will want her for the party.' },
+                { who: 'Septimus', at: 'tottenham', text: 'Rezia sews. He watches the light on the wall and is not afraid.' }
+            ]},
+            { scene: 'The window', voices: [
+                { who: 'Clarissa', at: 'house', text: 'She is dressing. She has never heard of Septimus Warren Smith, and never will.' },
+                { who: 'Septimus', at: 'tottenham', text: Q.give, q: true, note: 'Dr Holmes is on the stairs. Septimus flings himself from the window onto the railings.' },
+                { who: 'Peter Walsh', at: 'bloomsbury', text: 'Walking back to his hotel he hears the ambulance bell, and thinks it a triumph of civilisation.' }
+            ]},
+            { scene: 'Dinner', voices: [
+                { who: 'Richard Dalloway', at: 'parliament', text: 'Home from the House to dress for his wife’s party.' },
+                { who: 'Peter Walsh', at: 'bloomsbury', text: 'He dines alone at his hotel and decides, after all, to go to Clarissa’s party.' }
+            ]},
+            { scene: 'The doors are off', voices: [
+                { who: 'Clarissa', at: 'house', text: 'The doors are off their hinges and the candles lit. She is in the green dress.' },
+                { who: 'Peter Walsh', at: 'trafalgar', text: 'He walks down Whitehall towards Westminster, through the warm June dark.' }
+            ]},
+            { scene: 'The party', voices: [
+                { who: 'Clarissa', at: 'house', text: Q.sea, q: true, note: 'She receives at the top of the stairs. The Prime Minister comes.' },
+                { who: 'Sally Seton', at: 'house', text: 'Unexpected, unasked, Lady Rosseter now. Clarissa has not seen her for years.' }
+            ]},
+            { scene: 'The Bradshaws', voices: [
+                { who: 'Sir William Bradshaw', at: 'house', text: 'He and Lady Bradshaw arrive late. A young man has killed himself, one of his patients.' },
+                { who: 'Clarissa', at: 'house', text: Q.death, q: true }
+            ]},
+            { scene: 'The little room', voices: [
+                { who: 'Clarissa', at: 'house', text: Q.fear, q: true, note: 'At the window she feels very like him, the young man who had killed himself.' },
+                { who: 'Peter Walsh', at: 'house', text: Q.terror, q: true }
+            ]}
         ];
 
-        const timeEl = document.getElementById('time');
-        const chimeEl = document.getElementById('chime');
-        const characterEl = document.getElementById('character');
-        const momentEl = document.getElementById('moment');
-        const locationEl = document.getElementById('location');
-        const thoughtsEl = document.getElementById('thoughts');
+        // Rough marks for the strip: hours the novel narrates vs. memory.
+        const MEMORY_HOURS = new Set([1, 2, 3, 4]);
+        const NOVEL_KEY_HOURS = new Set([9, 10, 11, 12, 13, 15, 16, 18, 21, 22, 23, 0]);
 
-        let currentMomentIndex = -1;
-        let lastHour = -1;
-        let audioContext = null;
+        const WORDS = ['twelve', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+        const ORD_HOUR = h => {
+            if (h === 0) return 'Midnight';
+            if (h === 12) return 'Noon';
+            const w = WORDS[h % 12];
+            return w.charAt(0).toUpperCase() + w.slice(1) + ' o’clock';
+        };
 
-        function getMomentForHour(hour) {
-            for (const moment of moments) {
-                if (moment.hours.includes(hour)) {
-                    return moment;
-                }
-            }
-            return moments[0];
+        function dist(p) {
+            return Math.hypot(p.x, p.y);
         }
 
-        function renderThoughts(thoughts) {
-            thoughtsEl.innerHTML = thoughts.map(thought => `
-                <div class="thought">${thought}</div>
-            `).join('');
+        // Minute at which the circles reach each voice. Voices in the same
+        // place are taken up in turn, a few minutes apart.
+        function schedule(hourEntry) {
+            const out = [];
+            let prev = -Infinity;
+            let prevAt = null;
+            hourEntry.voices.forEach(v => {
+                let m = dist(PLACES[v.at]) / R_MAX * 60;
+                if (prevAt !== null && m < prev + 6) m = prev + 6;
+                out.push(Object.assign({}, v, { minute: Math.min(m, 57) }));
+                prev = m;
+                prevAt = v.at;
+            });
+            return out;
+        }
+        const SCHEDULES = HOURS.map(schedule);
+
+        // ------------------------------------------------------------
+        // Elements
+        // ------------------------------------------------------------
+        const root = document.documentElement;
+        const canvas = document.getElementById('map');
+        const ctx = canvas.getContext('2d');
+        const wrap = canvas.parentElement;
+        const el = id => document.getElementById(id);
+        const timeEl = el('time'), strikeEl = el('strike'), sceneEl = el('scene');
+        const voiceEl = el('voice'), whoEl = el('who'), whereEl = el('where'), lineEl = el('line'), noteEl = el('note');
+        const chainEl = el('chain'), stripEl = el('strip'), mapCaption = el('mapCaption');
+        const bellsBtn = el('bells');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        for (let h = 0; h < 24; h++) {
+            const s = document.createElement('span');
+            s.title = (h === 0 ? 'Midnight' : h === 12 ? 'Noon' : (h % 12) + (h < 12 ? ' am' : ' pm')) + ': ' + HOURS[h].scene;
+            if (MEMORY_HOURS.has(h)) s.classList.add('memory');
+            else if (NOVEL_KEY_HOURS.has(h)) s.classList.add('novel');
+            stripEl.appendChild(s);
         }
 
-        function playBigBen(hour) {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const now = audioContext.currentTime;
+        // ------------------------------------------------------------
+        // Canvas
+        // ------------------------------------------------------------
+        let W = 0, H = 0, scale = 1, ox = 0, oy = 0;
+        let colors = {};
 
-            // Big Ben's famous E note (Westminster Quarters)
-            const notes = [659.25, 493.88, 587.33, 392.00]; // E, B, C#, G#
-
-            notes.forEach((freq, i) => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                const filter = audioContext.createBiquadFilter();
-
-                filter.type = 'lowpass';
-                filter.frequency.value = 2000;
-                filter.Q.value = 1;
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioContext.destination);
-
-                osc.type = 'sine';
-                osc.frequency.value = freq;
-
-                const startTime = now + i * 0.4;
-                gain.gain.setValueAtTime(0, startTime);
-                gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 2);
-
-                osc.start(startTime);
-                osc.stop(startTime + 2.5);
+        function readColors() {
+            const cs = getComputedStyle(root);
+            ['paper', 'ink', 'muted', 'faint', 'rule', 'lead', 'water', 'park', 'street', 'accent'].forEach(k => {
+                colors[k] = cs.getPropertyValue('--' + k).trim();
             });
         }
 
-        function updateClock() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-
-            // Update time (12-hour format like Big Ben)
-            const hour12 = hour % 12 || 12;
-            const ampm = hour < 12 ? 'AM' : 'PM';
-            timeEl.textContent = `${String(hour12).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-
-            // Update chime text
-            if (minute === 0) {
-                chimeEl.textContent = `Big Ben strikes ${hour12 === 1 ? 'one' : hour12} ${ampm === 'AM' ? 'in the morning' : 'in the evening'}`;
-            } else {
-                chimeEl.textContent = 'The hours pass in London';
-            }
-
-            // Get current moment
-            const moment = getMomentForHour(hour);
-            const momentIndex = moments.indexOf(moment);
-
-            // Update content if moment changed
-            if (momentIndex !== currentMomentIndex) {
-                characterEl.textContent = moment.character;
-                momentEl.textContent = moment.moment;
-                locationEl.textContent = moment.location;
-                renderThoughts(moment.thoughts);
-                currentMomentIndex = momentIndex;
-            }
-
-            // Play Big Ben on the hour
-            if (hour !== lastHour && lastHour !== -1 && minute === 0) {
-                playBigBen(hour);
-            }
-            lastHour = hour;
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const r = wrap.getBoundingClientRect();
+            W = Math.max(1, r.width);
+            H = Math.max(1, r.height);
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const bw = BOUNDS.x1 - BOUNDS.x0, bh = BOUNDS.y1 - BOUNDS.y0;
+            scale = Math.min(W / bw, H / bh);
+            ox = (W - bw * scale) / 2 - BOUNDS.x0 * scale;
+            oy = (H - bh * scale) / 2 + BOUNDS.y1 * scale;
         }
 
-        // Initialize
-        updateClock();
-        setInterval(updateClock, 1000);
+        const px = x => ox + x * scale;
+        const py = y => oy - y * scale;
+
+        function withAlpha(hex, a) {
+            const h = hex.replace('#', '');
+            const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+            return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+        }
+
+        function drawBase() {
+            ctx.fillStyle = colors.paper;
+            ctx.fillRect(0, 0, W, H);
+
+            // a few street lines, Whitehall, Piccadilly, Regent Street, Oxford Street, the Strand
+            ctx.strokeStyle = colors.street;
+            ctx.lineWidth = Math.max(1.5, scale * 0.03);
+            ctx.lineCap = 'round';
+            const streets = [
+                [[0, 0.05], [-0.05, 0.82], [0.55, 0.98], [1.5, 1.08], [2.3, 1.12]],
+                [[-0.05, 0.82], [-1.05, 0.72], [-2.4, 0.9]],
+                [[-0.55, 0.88], [-0.95, 1.55], [-1.0, 2.6], [-1.15, 3.0]],
+                [[-2.4, 1.85], [-0.65, 1.65], [0.35, 1.7]],
+                [[-0.42, -0.32], [-0.85, -0.45], [-1.6, -0.6]],
+                [[-0.45, 1.65], [-0.45, 2.1], [-0.6, 2.9]]
+            ];
+            streets.forEach(s => {
+                ctx.beginPath();
+                s.forEach(([x, y], i) => i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y)));
+                ctx.stroke();
+            });
+
+            // parks
+            ctx.fillStyle = colors.park;
+            const parks = [
+                [-0.62, 0.22, 0.48, 0.13, -0.15],
+                [-1.12, 0.45, 0.3, 0.24, 0.3],
+                [-2.35, 1.1, 0.75, 0.55, 0.1],
+                [-1.25, 3.42, 0.6, 0.55, 0]
+            ];
+            parks.forEach(([x, y, rx, ry, a]) => {
+                ctx.beginPath();
+                ctx.ellipse(px(x), py(y), rx * scale, ry * scale, a, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // the Thames
+            const river = [[-2.6, -1.55], [-1.6, -1.42], [-0.7, -1.33], [-0.15, -1.08], [0.12, -0.5], [0.15, 0.0], [0.2, 0.45], [0.45, 0.72], [1.0, 0.8], [1.6, 0.86], [2.5, 0.76]];
+            ctx.strokeStyle = colors.water;
+            ctx.lineWidth = Math.max(6, scale * 0.16);
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            river.forEach(([x, y], i) => {
+                if (i === 0) { ctx.moveTo(px(x), py(y)); return; }
+                const [x0, y0] = river[i - 1];
+                ctx.quadraticCurveTo(px(x0), py(y0), px((x0 + x) / 2), py((y0 + y) / 2));
+            });
+            ctx.stroke();
+        }
+
+        function drawRings(minutes, hour12) {
+            const front = minutes / 60 * R_MAX;
+
+            // St Margaret's comes in second, fainter, from just beside Big Ben.
+            const sm = PLACES.stmarg;
+            const lagFront = front - 0.12;
+            ctx.lineWidth = 1;
+            for (let k = 0; k < hour12; k++) {
+                const r = lagFront - k * STROKE_GAP;
+                if (r <= 0) continue;
+                const fade = Math.max(0, 1 - r / R_MAX);
+                ctx.strokeStyle = withAlpha(colors.lead, 0.16 * fade);
+                ctx.beginPath();
+                ctx.arc(px(sm.x), py(sm.y), r * scale, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // quarter chimes: thin, musical
+            [15, 30, 45].forEach(q => {
+                if (minutes < q) return;
+                const r = (minutes - q) / 60 * R_MAX;
+                if (r <= 0) return;
+                const fade = Math.max(0, 1 - r / R_MAX) * 0.35;
+                ctx.setLineDash([2, 5]);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = withAlpha(colors.lead, fade);
+                ctx.beginPath();
+                ctx.arc(px(0), py(0), r * scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            });
+
+            // while the hour is striking, Big Ben is lit
+            if (minutes < 1) {
+                ctx.fillStyle = withAlpha(colors.accent, 0.16);
+                ctx.beginPath();
+                ctx.arc(px(0), py(0), Math.max(18, scale * 0.16), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // the hour, one leaden circle per stroke, dissolving as it goes
+            for (let k = 0; k < hour12; k++) {
+                const r = front - k * STROKE_GAP;
+                if (r <= 0) continue;
+                const t = r / R_MAX;
+                const fade = Math.max(0.12, 1 - t * 0.8);
+                ctx.lineWidth = Math.max(1, (k === 0 ? 3.2 : 2.2) * (1 - t * 0.6));
+                ctx.strokeStyle = withAlpha(colors.lead, (k === 0 ? 0.85 : 0.6) * fade);
+                ctx.beginPath();
+                ctx.arc(px(0), py(0), r * scale, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function drawPlaces(hourSched, currentIdx, minutes) {
+            const active = new Map();
+            hourSched.forEach((v, i) => {
+                const state = i === currentIdx ? 'current' : (minutes >= v.minute ? 'reached' : 'waiting');
+                const prev = active.get(v.at);
+                const rank = { current: 3, reached: 2, waiting: 1 };
+                if (!prev || rank[state] > rank[prev.state]) active.set(v.at, { state, who: v.who });
+            });
+
+            const fontSize = Math.round(Math.min(15, Math.max(10.5, scale * 0.085)));
+            ctx.textBaseline = 'middle';
+
+            Object.entries(PLACES).forEach(([key, p]) => {
+                if (key === 'bigben' || key === 'stmarg') return;
+                const a = active.get(key);
+                const x = px(p.x), y = py(p.y);
+                if (!a && !p.label) return;
+                let dotR = 2.2, fill = colors.faint, label = p.label, labelColor = colors.faint, italic = true;
+                if (a) {
+                    dotR = a.state === 'current' ? 6 : 3.6;
+                    fill = a.state === 'current' ? colors.accent : (a.state === 'reached' ? colors.ink : colors.muted);
+                    labelColor = a.state === 'current' ? colors.accent : colors.muted;
+                    italic = false;
+                    label = a.state === 'current' ? a.who : p.label;
+                }
+                if (a && a.state === 'current') {
+                    ctx.fillStyle = withAlpha(colors.accent, 0.18);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.fillStyle = fill;
+                ctx.beginPath();
+                ctx.arc(x, y, dotR, 0, Math.PI * 2);
+                ctx.fill();
+                if (a && a.state === 'waiting') {
+                    ctx.strokeStyle = colors.muted;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(x, y, dotR + 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                if (!label) return;
+                const weight = a && a.state === 'current' ? '600 ' : '';
+                const size = a && a.state === 'current' ? fontSize + 1 : fontSize;
+                ctx.font = `${italic ? 'italic ' : ''}${weight}${size}px "Crimson Text", Georgia, serif`;
+                ctx.fillStyle = labelColor;
+                const gap = dotR + 6;
+                const ly = y + (p.dy ? p.dy * (size + 2) : 0);
+                if (p.side === 'l') {
+                    ctx.textAlign = 'right';
+                    ctx.fillText(label, x - gap, ly);
+                } else {
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, x + gap, ly);
+                }
+            });
+
+            // Big Ben itself
+            const bx = px(0), by = py(0);
+            ctx.fillStyle = colors.ink;
+            const tw = Math.max(5, scale * 0.045), th = Math.max(16, scale * 0.17);
+            ctx.fillRect(bx - tw / 2, by - th, tw, th);
+            ctx.beginPath();
+            ctx.moveTo(bx - tw / 2 - 1, by - th);
+            ctx.lineTo(bx, by - th - tw * 1.6);
+            ctx.lineTo(bx + tw / 2 + 1, by - th);
+            ctx.fill();
+            ctx.fillStyle = colors.paper;
+            ctx.beginPath();
+            ctx.arc(bx, by - th * 0.72, tw * 0.32, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = `600 ${fontSize + 1}px "Playfair Display", Georgia, serif`;
+            ctx.fillStyle = colors.ink;
+            ctx.textAlign = 'left';
+            ctx.fillText('Big Ben', bx + tw + 6, by - th * 0.6);
+        }
+
+        // ------------------------------------------------------------
+        // State and text
+        // ------------------------------------------------------------
+        let lastVoiceKey = '';
+        let lastPhase = '';
+        let fadeTimer = null;
+
+        function phaseFor(h) {
+            if (h >= 6 && h < 18) return 'day';
+            if (h >= 18 && h < 21) return 'evening';
+            return 'night';
+        }
+
+        function setVoice(v, key) {
+            if (key === lastVoiceKey) return;
+            const apply = () => {
+                whoEl.textContent = v.who;
+                whereEl.textContent = v.where;
+                lineEl.textContent = v.q ? '“' + v.text + '”' : v.text;
+                lineEl.classList.toggle('prose', !v.q);
+                if (v.note) {
+                    noteEl.textContent = v.note;
+                    noteEl.hidden = false;
+                } else {
+                    noteEl.hidden = true;
+                }
+                voiceEl.classList.remove('fading');
+            };
+            const first = lastVoiceKey === '';
+            lastVoiceKey = key;
+            clearTimeout(fadeTimer);
+            if (first || reduceMotion.matches) {
+                apply();
+            } else {
+                voiceEl.classList.add('fading');
+                fadeTimer = setTimeout(apply, 600);
+            }
+        }
+
+        function placeName(key) {
+            const map = {
+                house: 'Clarissa’s house, Westminster',
+                parliament: 'the House of Commons',
+                tottenham: 'lodgings off the Tottenham Court Road',
+                trafalgar: 'Whitehall',
+                piccadilly: 'Piccadilly',
+                brook: 'Lady Bruton’s, Brook Street'
+            };
+            return map[key] || PLACES[key].label;
+        }
+
+        function nearestReachedPlace(front) {
+            let best = null, bd = Infinity;
+            Object.entries(PLACES).forEach(([k, p]) => {
+                if (!p.label || k === 'bigben') return;
+                const d = dist(p);
+                if (d <= front && front - d < bd) { bd = front - d; best = p.label; }
+            });
+            return best;
+        }
+
+        let ctxNow = null;
+
+        function update() {
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+            const minutes = m + s / 60;
+            const hour12 = h % 12 || 12;
+
+            const phase = phaseFor(h);
+            if (phase !== lastPhase) {
+                root.dataset.phase = phase;
+                lastPhase = phase;
+                readColors();
+            }
+
+            // readout
+            timeEl.innerHTML = `${hour12}:${String(m).padStart(2, '0')}<span class="ampm">${h < 12 ? 'AM' : 'PM'}</span>`;
+            timeEl.setAttribute('aria-label', `${hour12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`);
+            const front = minutes / 60 * R_MAX;
+            const strokes = hour12 === 1 ? 'one stroke' : WORDS[hour12] + ' strokes';
+            const over = nearestReachedPlace(front);
+            let strike;
+            if (m === 0) strike = `Big Ben is striking ${WORDS[hour12]}.`;
+            else if (m >= 59) strike = `The circles have all but dissolved. The ${h === 23 ? 'midnight' : 'next'} hour is coming.`;
+            else strike = `${strokes.charAt(0).toUpperCase() + strokes.slice(1)}, ${m} minute${m === 1 ? '' : 's'} ago. The leaden circles are ${front.toFixed(1)}\u00a0km out${over ? ', over ' + over : ''}.`;
+            strikeEl.textContent = strike;
+
+            sceneEl.innerHTML = '';
+            const small = document.createElement('small');
+            small.textContent = ORD_HOUR(h);
+            sceneEl.appendChild(small);
+            sceneEl.appendChild(document.createTextNode(HOURS[h].scene));
+
+            // who holds the story now
+            const sched = SCHEDULES[h];
+            let idx = -1;
+            sched.forEach((v, i) => { if (minutes >= v.minute) idx = i; });
+
+            if (m >= 59) {
+                setVoice({ who: 'Clarissa', where: 'listening, in Westminster', text: Q.pause, q: true }, h + ':pause');
+            } else if (idx === -1) {
+                setVoice({ who: 'Big Ben', where: 'Westminster', text: Q.strike, q: true }, h + ':strike');
+            } else {
+                const v = sched[idx];
+                setVoice({ who: v.who, where: placeName(v.at), text: v.text, q: v.q, note: v.note }, h + ':' + idx);
+            }
+
+            // the chain
+            const chainKey = h + ':' + idx;
+            if (chainEl.dataset.key !== chainKey) {
+                chainEl.dataset.key = chainKey;
+                chainEl.innerHTML = '';
+                const bb = document.createElement('li');
+                bb.className = idx === -1 && m < 59 ? 'current' : 'reached';
+                bb.innerHTML = 'Big Ben<span class="m">:00</span>';
+                chainEl.appendChild(bb);
+                sched.forEach((v, i) => {
+                    const li = document.createElement('li');
+                    li.className = i === idx && m < 59 ? 'current' : (i <= idx ? 'reached' : '');
+                    li.textContent = v.who;
+                    const sp = document.createElement('span');
+                    sp.className = 'm';
+                    sp.textContent = ':' + String(Math.floor(v.minute)).padStart(2, '0');
+                    li.appendChild(sp);
+                    chainEl.appendChild(li);
+                });
+            }
+
+            // the strip
+            [...stripEl.children].forEach((c, i) => c.classList.toggle('now', i === h));
+
+            mapCaption.textContent = MEMORY_HOURS.has(h)
+                ? 'Bourton is far beyond the circles. The past arrives anyway.'
+                : (h >= 5 ? 'Westminster, a Wednesday in June, 1923' : 'Westminster, the night of the party');
+
+            ctxNow = { minutes, hour12, sched, idx };
+            draw();
+            chime(h, m);
+        }
+
+        function draw() {
+            if (!ctxNow) return;
+            drawBase();
+            drawRings(ctxNow.minutes, ctxNow.hour12);
+            drawPlaces(ctxNow.sched, ctxNow.idx, ctxNow.minutes);
+        }
+
+        // ------------------------------------------------------------
+        // Bells: Westminster Quarters and the hour bell, opt-in only.
+        // ------------------------------------------------------------
+        let audio = null;
+        let bellsOn = false;
+        let lastChimeKey = '';
+        const N = { gs4: 415.30, fs4: 369.99, e4: 329.63, b3: 246.94, e3: 164.81 };
+        const CHANGES = [
+            [N.gs4, N.fs4, N.e4, N.b3],
+            [N.e4, N.gs4, N.fs4, N.b3],
+            [N.e4, N.fs4, N.gs4, N.e4],
+            [N.gs4, N.e4, N.fs4, N.b3],
+            [N.b3, N.fs4, N.gs4, N.e4]
+        ];
+        const QUARTER_CHANGES = { 15: [0], 30: [1, 2], 45: [3, 4, 0], 0: [1, 2, 3, 4] };
+
+        function bell(freq, t, dur, vol) {
+            const partials = [[1, 1], [2, 0.5], [2.4, 0.3], [3, 0.18], [4.2, 0.1]];
+            const out = audio.createGain();
+            out.gain.setValueAtTime(0.0001, t);
+            out.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+            out.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            out.connect(audio.destination);
+            partials.forEach(([mult, amp]) => {
+                const o = audio.createOscillator();
+                const g = audio.createGain();
+                o.type = 'sine';
+                o.frequency.value = freq * mult;
+                g.gain.value = amp;
+                o.connect(g);
+                g.connect(out);
+                o.start(t);
+                o.stop(t + dur + 0.05);
+            });
+        }
+
+        function playQuarter(minute, hour12) {
+            if (!audio) return;
+            let t = audio.currentTime + 0.1;
+            (QUARTER_CHANGES[minute] || []).forEach(ci => {
+                CHANGES[ci].forEach((f, ni) => {
+                    bell(f, t, ni === 3 ? 2.4 : 1.6, 0.12);
+                    t += ni === 3 ? 1.2 : 0.6;
+                });
+                t += 0.4;
+            });
+            if (minute === 0) {
+                t += 1.2;
+                for (let k = 0; k < hour12; k++) {
+                    bell(N.e3, t, 4, 0.22);
+                    t += 2.2;
+                }
+            }
+        }
+
+        function chime(h, m) {
+            const key = h + ':' + m;
+            if (key === lastChimeKey) return;
+            const first = lastChimeKey === '';
+            lastChimeKey = key;
+            if (first || !bellsOn) return;
+            if (m % 15 === 0) playQuarter(m, h % 12 || 12);
+        }
+
+        bellsBtn.addEventListener('click', () => {
+            bellsOn = !bellsOn;
+            bellsBtn.setAttribute('aria-pressed', String(bellsOn));
+            bellsBtn.textContent = bellsOn ? 'Bells on' : 'Bells off';
+            if (bellsOn) {
+                try {
+                    if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audio.state === 'suspended') audio.resume();
+                    playQuarter(15, 1); // a short sample so you know they're on
+                } catch (e) {
+                    bellsOn = false;
+                    bellsBtn.textContent = 'Bells unavailable';
+                }
+            }
+        });
+
+        // ------------------------------------------------------------
+        // Start
+        // ------------------------------------------------------------
+        readColors();
+        resizeCanvas();
+        new ResizeObserver(() => { resizeCanvas(); draw(); }).observe(wrap);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+        update();
+        setInterval(update, 1000);
     </script>
 </body>
 
