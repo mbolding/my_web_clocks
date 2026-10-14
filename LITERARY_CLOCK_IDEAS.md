@@ -21,24 +21,24 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes laid across the day as a bookshelf, with involuntary memories of the same minute on earlier days)
 
 #### Other Literary & Thematic Works
-- ✅ **The Metamorphosis** - Franz Kafka
+- ✅ **The Metamorphosis** - Franz Kafka (the time read from Gregor's alarm clock, from his back, the floor and the ceiling)
 - ✅ **Slaughterhouse-Five** - Kurt Vonnegut
 - ✅ **The Divine Comedy** - Dante Alighieri
 - ✅ **The Canterbury Tales** - Geoffrey Chaucer
 - ✅ **The Odyssey** - Homer
 - ✅ **Hamlet** - William Shakespeare
 - ✅ **The Old Man and the Sea** - Ernest Hemingway
-- ✅ **The Stranger** - Albert Camus
-- ✅ **The Sisyphus Clock** - Albert Camus' "The Myth of Sisyphus," rendered as a flat cutout-collage, with a Giant Foot gag on the hour
-- ✅ **Crime and Punishment** - Fyodor Dostoevsky
+- ✅ **The Stranger** - Albert Camus (the sun as the clock, peaking at the beach at two, then a cell until the stars)
+- ✅ **The Sisyphus Clock** - Albert Camus' "The Myth of Sisyphus," in flat cutout collage: the boulder up each minute, then the walk back down, the hour he is aware, and a Giant Foot on the hour
+- ✅ **Crime and Punishment** - Fyodor Dostoevsky (the 730 steps to the pawnbroker's as the minute hand, with a fever chart)
 - ✅ **On the Road** - Jack Kerouac
-- ✅ **Catch-22** - Joseph Heller
+- ✅ **Catch-22** - Joseph Heller (a mission log where Cathcart keeps raising the number required to go home)
 - ✅ **Dune** - Frank Herbert
 - ✅ **Don Quixote** - Miguel de Cervantes
 - ✅ **Ghost in the Shell** - Masamune Shirow
 - ✅ **The Lord of the Rings** - J.R.R. Tolkien
 - ✅ **The Great Gatsby** - F. Scott Fitzgerald
-- ✅ **The Trial** - Franz Kafka
+- ✅ **The Trial** - Franz Kafka (a court form where the time arrives by numbered amendment, arrest at eight to the end at nine)
 - ✅ **House of Leaves** - Mark Z. Danielewski
 - ✅ **The Sound and the Fury** - William Faulkner (four narrators, four clocks: Quentin's handless watch, Dilsey's one-hand kitchen clock)
 - ✅ **If on a winter's night a traveler** - Italo Calvino
@@ -49,7 +49,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **2001: A Space Odyssey** - Arthur C. Clarke
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
 - ✅ **Bach Clock** - J. S. Bach. Three concentric staves engraved with the subject of Contrapunctus I from *Die Kunst der Fuge*, read by three playheads at one note per second, minute and hour. Because the voices share one subject and differ only in speed, the clock's 1:60:720 hand ratio is literally a canon by augmentation. Optional Web Audio plays the three voices an octave apart; the hour is marked with B♭–A–C–B♮.
-- ✅ **Candide** - Voltaire
+- ✅ **Candide** - Voltaire (the journey's disasters behind Pangloss's certified hour, and a garden that grows until dusk)
 - ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
 - ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
