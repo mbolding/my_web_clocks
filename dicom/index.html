@@ -435,6 +435,15 @@
             color: var(--muted);
         }
 
+        .empty-card .load-problem {
+            padding: 8px 10px;
+            border: 1px solid var(--warn);
+            border-radius: 8px;
+            color: var(--warn);
+            text-align: left;
+            overflow-wrap: anywhere;
+        }
+
         .empty-card .row {
             display: flex;
             flex-wrap: wrap;
@@ -817,6 +826,7 @@
             <div class="empty" id="empty">
                 <div class="empty-card">
                     <h2>Drop DICOM files or a folder here</h2>
+                    <p class="load-problem" id="load-problem" hidden></p>
                     <p>Series are grouped and sorted by position, then shown as axial, coronal and sagittal planes. Every
                         tag, including sequences and private tags, is browsable on the right.</p>
                     <div class="row">
@@ -824,7 +834,7 @@
                         <button class="btn" data-act="folder">Open folder</button>
                         <button class="btn" data-act="demo">Try the demo</button>
                     </div>
-                    <p>Files are read in this tab and never uploaded. Uncompressed, deflated, RLE and baseline JPEG
+                    <p>Files are read in this tab and never uploaded. A .zip of a folder works too. Uncompressed, deflated, RLE and baseline JPEG
                         pixel data display; other compressed images still show their headers.</p>
                 </div>
             </div>
@@ -1358,18 +1368,49 @@ FFFCFFFC OB DataSetTrailingPadding`;
             return { frags, p: Math.min(p, end) };
         }
 
-        async function inflateRaw(u8) {
-            const run = async (b) => {
-                const stream = new Blob([b]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-                return new Uint8Array(await new Response(stream).arrayBuffer());
-            };
+        // Inflate a stream, keeping everything decoded before an error: DICOM
+        // writers pad deflated data to an even length, and the browser's
+        // inflater rejects trailing bytes after the end of the stream.
+        async function inflate(u8, format = 'deflate-raw') {
+            const reader = new Blob([u8]).stream().pipeThrough(new DecompressionStream(format)).getReader();
+            const chunks = [];
             try {
-                return await run(u8);
+                for (; ;) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                }
             } catch (e) {
-                // Writers pad the stream to an even length, and the browser's
-                // inflater rejects that trailing byte.
-                return run(u8.subarray(0, u8.length - 1));
+                if (!chunks.length) throw e;
             }
+            return concatBytes(chunks);
+        }
+
+        // Entries of a ZIP archive (stored or deflated; no ZIP64 or encryption).
+        function zipEntries(u8) {
+            const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+            let e = -1;
+            for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
+                if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+            }
+            if (e < 0) throw new Error('damaged or incomplete ZIP');
+            const n = dv.getUint16(e + 10, true), cd = dv.getUint32(e + 16, true);
+            if (cd === 0xFFFFFFFF || n === 0xFFFF) throw new Error('ZIP64 archives aren\u2019t supported; unzip it first');
+            const utf8 = new TextDecoder();
+            const out = [];
+            let p = cd;
+            for (let k = 0; k < n && p + 46 <= u8.length && dv.getUint32(p, true) === 0x02014b50; k++) {
+                const flags = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true);
+                const csize = dv.getUint32(p + 20, true);
+                const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+                const lho = dv.getUint32(p + 42, true);
+                const name = utf8.decode(u8.subarray(p + 46, p + 46 + nl));
+                p += 46 + nl + xl + cl;
+                if (name.endsWith('/') || /(^|\/)__MACOSX\/|(^|\/)\._/.test(name)) continue;
+                const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+                out.push({ name, method, encrypted: !!(flags & 1), data: u8.subarray(start, start + csize) });
+            }
+            return out;
         }
 
         function getEl(els, tag) {
@@ -1449,18 +1490,21 @@ FFFCFFFC OB DataSetTrailingPadding`;
                     meta.push(el);
                     p = el.end;
                 }
-            } else if (!pre) {
-                // No preamble: accept a bare data set that opens in group 0008.
-                if (u8.length < 16 || dv.getUint16(0, true) !== 0x0008) return null;
             }
             let ts = str(meta, 0x00020010);
             if (!ts) {
+                // No transfer syntax: work it out from the first element. A bare
+                // data set (no preamble) must open with a low, even group number.
+                if (u8.length < p + 16) return null;
+                const plausible = (g) => g % 2 === 0 && g >= 0x0002 && g <= 0x0028;
+                const le = plausible(dv.getUint16(p, true)), be = !le && plausible(dv.getUint16(p, false));
+                if (!pre && !le && !be) return null;
                 const vr = String.fromCharCode(u8[p + 4], u8[p + 5]);
-                ts = VALID_VR.has(vr) ? TS_EXPLICIT : TS_IMPLICIT;
+                ts = be ? TS_BIG : VALID_VR.has(vr) ? TS_EXPLICIT : TS_IMPLICIT;
             }
             let dsU8 = u8, start = p;
             if (ts === TS_DEFLATE) {
-                dsU8 = await inflateRaw(u8.subarray(p));
+                dsU8 = await inflate(u8.subarray(p));
                 start = 0;
             }
             const c = {
@@ -1470,6 +1514,8 @@ FFFCFFFC OB DataSetTrailingPadding`;
             c.root = c;
             const ds = parseSet(c, start, dsU8.length).els;
             if (!ds.length && !meta.length) return null;
+            // A bare data set is only a guess: insist on a few sane elements.
+            if (!pre && !meta.length && (ds.length < 3 || ds.some((e, i) => i && e.tag <= ds[i - 1].tag))) return null;
             const cs = str(ds, 0x00080005).split('\\').map((s) => s.trim()).filter(Boolean);
             const label = CHARSETS[cs[cs.length - 1]] || CHARSETS[cs[0]];
             if (label && label !== 'latin1') {
@@ -2893,42 +2939,83 @@ FFFCFFFC OB DataSetTrailingPadding`;
         // =====================================================================
         // Loading
         // =====================================================================
+        // What a rejected file looks like, so the message can say why.
+        function sniff(u8, name) {
+            const b = (i) => u8[i];
+            if (!u8.length) return 'empty (0 bytes)';
+            if (u8.length >= 348 && String.fromCharCode(b(344), b(345), b(346)) === 'n+1') return 'NIfTI, not DICOM';
+            if (b(0) === 0x89 && b(1) === 0x50) return 'PNG image';
+            if (b(0) === 0xFF && b(1) === 0xD8) return 'JPEG image';
+            if (b(0) === 0x25 && b(1) === 0x50 && b(2) === 0x44 && b(3) === 0x46) return 'PDF';
+            if (/\.(txt|xml|html?|json|csv|ini|log|md)$/i.test(name)) return 'text file';
+            return 'not DICOM';
+        }
+
         async function loadFiles(items) {
-            if (!items.length) return;
-            $('#empty').hidden = true;
-            setStatus(`Reading ${items.length} file${items.length === 1 ? '' : 's'}…`);
-            const files = [];
-            let skipped = 0, failed = 0;
-            for (let i = 0; i < items.length; i++) {
-                const it = items[i];
-                const name = it.webkitRelativePath || it.relPath || it.name;
+            const empty = $('#empty');
+            if (!items.length) {
+                showLoadProblem('The picker returned no files. Some phones can\u2019t open folders; pick the files themselves, or a .zip of the folder.');
+                return;
+            }
+            empty.hidden = true;
+            setStatus(`Reading ${items.length} file${items.length === 1 ? '' : 's'}\u2026`);
+            const files = [], rejected = [], failed = [];
+            const queue = items.map((it) => ({ it, name: it.webkitRelativePath || it.relPath || it.name }));
+            let zips = 0;
+            for (let i = 0; i < queue.length; i++) {
+                const { it, name } = queue[i];
                 try {
-                    const bytes = it.bytes || new Uint8Array(await it.arrayBuffer());
+                    let bytes = it.bytes || new Uint8Array(await it.arrayBuffer());
+                    if (it.method === 8) bytes = await inflate(bytes);
+                    if (bytes[0] === 0x1F && bytes[1] === 0x8B) bytes = await inflate(bytes, 'gzip');
+                    if (bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 0x03 && bytes[3] === 0x04) {
+                        zips++;
+                        for (const z of zipEntries(bytes)) {
+                            if (z.encrypted) { failed.push(`${name}/${z.name}: encrypted`); continue; }
+                            if (z.method !== 0 && z.method !== 8) { failed.push(`${name}/${z.name}: unsupported ZIP compression`); continue; }
+                            queue.push({ it: { bytes: z.data, method: z.method }, name: `${name}/${z.name}` });
+                        }
+                        continue;
+                    }
                     const f = await parseFile(name, bytes);
-                    if (f) files.push(f); else skipped++;
+                    if (f) files.push(f); else rejected.push(`${name.split('/').pop()} (${sniff(bytes, name)})`);
                 } catch (e) {
-                    failed++;
+                    failed.push(`${name.split('/').pop()}: ${e.message || e.name || e}`);
                     console.warn(name, e);
                 }
                 if (i % 32 === 31) {
-                    setStatus(`Reading ${i + 1} / ${items.length}…`);
+                    setStatus(`Reading ${i + 1} / ${queue.length}\u2026`);
                     await new Promise((r) => setTimeout(r));
                 }
             }
+            const total = queue.length - zips;
+            const why = [
+                rejected.length && `${rejected.length} not recognised as DICOM, e.g. ${rejected.slice(0, 3).join(', ')}`,
+                failed.length && `${failed.length} couldn\u2019t be read, e.g. ${failed.slice(0, 2).join('; ')}`,
+            ].filter(Boolean).join('. ');
             if (!files.length) {
-                setStatus(`No DICOM files found in ${items.length} file${items.length === 1 ? '' : 's'}.`);
-                if (!S.files.length) $('#empty').hidden = false;
+                showLoadProblem(`No DICOM files found in ${total} file${total === 1 ? '' : 's'}${zips ? ` (from ${zips} ZIP${zips === 1 ? '' : 's'})` : ''}. ${why}.`);
                 return;
             }
             S.files = files;
             S.stacks = buildStacks(files);
             S.open.clear();
-            const extra = [skipped && `${skipped} non-DICOM skipped`, failed && `${failed} unreadable`].filter(Boolean).join(', ');
+            const extra = [rejected.length && `${rejected.length} non-DICOM skipped`, failed.length && `${failed.length} unreadable`].filter(Boolean).join(', ');
             setStatus(`${files.length} DICOM file${files.length === 1 ? '' : 's'} in ${S.stacks.length} series${extra ? ' · ' + extra : ''}`);
             renderSeries();
             const imgs = S.stacks.filter((s) => s.kind === 'img');
             const pick = imgs.length ? imgs.reduce((a, b) => (b.frames.length > a.frames.length ? b : a)) : S.stacks[0];
             await selectStack(pick);
+        }
+
+        function showLoadProblem(msg) {
+            setStatus(msg);
+            if (!S.files.length) {
+                $('#empty').hidden = false;
+                const el = $('#load-problem');
+                el.textContent = msg;
+                el.hidden = false;
+            }
         }
 
         async function filesFromDrop(dt) {
