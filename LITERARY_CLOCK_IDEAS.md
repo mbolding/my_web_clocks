@@ -18,7 +18,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Mrs Dalloway** - Virginia Woolf (Big Ben's leaden circles spread over a map of London, handing the story between characters)
 - ✅ **One Hundred Years of Solitude** - Gabriel García Márquez, implemented twice on purpose: `one_hundred_years_clock.html` takes the structural reading (Macondo's circular time as concentric rings, Buendía generations) and `solitude_clock.html` the atmospheric one (the time dissolving into memory among the yellow butterflies). Two readings, one novel; don't add a third without a distinct angle.
 - ✅ **Infinite Jest** - David Foster Wallace (subsidized years, footnotes, E.T.A./Ennet House)
-- ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes, involuntary memory)
+- ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes laid across the day as a bookshelf, with involuntary memories of the same minute on earlier days)
 
 #### Other Literary & Thematic Works
 - ✅ **The Metamorphosis** - Franz Kafka
