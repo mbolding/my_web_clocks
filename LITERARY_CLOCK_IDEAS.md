@@ -13,9 +13,9 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **The Deodand Clock** - Supernatural entities governing each hour
 
 #### Modernist Literature
-- ✅ **Bloomsday** - James Joyce's Ulysses (18 episodes through June 16, 1904)
-- ✅ **The Waste Land** - T.S. Eliot (five sections with fragmentary voices)
-- ✅ **Mrs Dalloway** - Virginia Woolf (single June day in London with Big Ben)
+- ✅ **Bloomsday** - James Joyce's Ulysses (18 episodes at their Gilbert-schema hours, the time retold in each episode's style)
+- ✅ **The Waste Land** - T.S. Eliot (a torn collage keyed to the hours the poem names: the stroke of nine, the violet hour, closing time)
+- ✅ **Mrs Dalloway** - Virginia Woolf (Big Ben's leaden circles spread over a map of London, handing the story between characters)
 - ✅ **One Hundred Years of Solitude** - Gabriel García Márquez, implemented twice on purpose: `one_hundred_years_clock.html` takes the structural reading (Macondo's circular time as concentric rings, Buendía generations) and `solitude_clock.html` the atmospheric one (the time dissolving into memory among the yellow butterflies). Two readings, one novel; don't add a third without a distinct angle.
 - ✅ **Infinite Jest** - David Foster Wallace (subsidized years, footnotes, E.T.A./Ennet House)
 - ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes, involuntary memory)
@@ -40,10 +40,11 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **The Great Gatsby** - F. Scott Fitzgerald
 - ✅ **The Trial** - Franz Kafka
 - ✅ **House of Leaves** - Mark Z. Danielewski
-- ✅ **The Sound and the Fury** - William Faulkner
+- ✅ **The Sound and the Fury** - William Faulkner (four narrators, four clocks: Quentin's handless watch, Dilsey's one-hand kitchen clock)
 - ✅ **If on a winter's night a traveler** - Italo Calvino
-- ✅ **Finnegans Wake** - James Joyce
-- ✅ **Snow Country** - Yasunari Kawabata
+- ✅ **Finnegans Wake** - James Joyce (riverrun ring turning once a day through Vico's four ages)
+- ✅ **Snow Country** - Yasunari Kawabata (the time as a reflection in the night train's window)
+- ✅ **The Magic Mountain** - Thomas Mann (seven chapters on a dial where story time accelerates, plus the Berghof's seven-minute thermometer)
 - ✅ **Macbeth** - William Shakespeare
 - ✅ **2001: A Space Odyssey** - Arthur C. Clarke
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
