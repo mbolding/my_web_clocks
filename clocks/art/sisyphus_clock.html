@@ -476,8 +476,8 @@
                         <rect class="leg-front" x="29" y="54" width="9" height="34" rx="4"></rect>
                         <path d="M13,58 Q8,34 24,14 L41,19 Q43,40 34,58 Z"></path>
                         <g class="arm-push">
-                            <rect x="33" y="15" width="24" height="8" rx="4" transform="rotate(-84 35 19)"></rect>
-                            <rect x="32" y="19" width="23" height="8" rx="4" transform="rotate(-70 34 23)"></rect>
+                            <rect x="33" y="15" width="24" height="8" rx="4" transform="rotate(-60 35 19)"></rect>
+                            <rect x="32" y="19" width="23" height="8" rx="4" transform="rotate(-46 34 23)"></rect>
                         </g>
                         <rect class="arm-swing" x="25" y="20" width="9" height="30" rx="4.5" transform="rotate(-12 29 22)"></rect>
                         <circle cx="25" cy="14" r="8"></circle>
@@ -531,8 +531,9 @@
 
         // Mountain geometry in % of the scene, switched for portrait screens.
         const LAYOUTS = {
-            wide: { foot: { x: 18, y: 88 }, peak: { x: 62, y: 20 }, right: [[76, 38], [84, 46], [100, 58]] },
-            tall: { foot: { x: 20, y: 90 }, peak: { x: 80, y: 42 }, right: [[84, 50], [100, 60]] }
+            // Slopes of roughly 30 degrees, gentle enough to push a stone up.
+            wide: { foot: { x: 8, y: 88 }, peak: { x: 72, y: 30 }, right: [[82, 40], [90, 48], [100, 58]] },
+            tall: { foot: { x: 4, y: 90 }, peak: { x: 88, y: 60 }, right: [[93, 65], [100, 70]] }
         };
 
         let geo = null;   // pixel geometry, rebuilt on resize
@@ -618,7 +619,7 @@
             const b = slopePoint(sb);
             const bc = { x: b.x + geo.n.x * geo.r, y: b.y + geo.n.y * geo.r };
             const th = pushLean() * Math.PI / 180;
-            const vx = geo.figW * (39 / 60 - 0.5), vy = -geo.figH * (90 / 90);
+            const vx = geo.figW * (47 / 60 - 0.5), vy = -geo.figH * (86 / 90);
             const hx = vx * Math.cos(th) - vy * Math.sin(th);
             const hy = vx * Math.sin(th) + vy * Math.cos(th);
             // Walk up from well below until the hands reach the rock's surface.
