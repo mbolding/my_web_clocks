@@ -6,357 +6,1298 @@
     <title>Candide Clock</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
         :root {
-            --sky-calm: #87CEEB;
-            --sky-storm: #2c3e50;
-            --sky-fire: #7a1c1c;
-            --frame-gold: #d4af37;
+            --gold: #c99a2e;
+            --gold-light: #e8c766;
+            --ink: #2a2118;
+            --ink-soft: #5a4a38;
+            --paper: #fbf6e9;
+            --sky1: #0b1026;
+            --sky2: #1b2447;
+            --ground: #3d3428;
+            --sea: #23465e;
+            --scene-h: min(54vh, 42vw);
+            --garden-h: 120px;
+            --route-h: clamp(40px, 6vh, 52px);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* -------------------------------------
-           THE ABSURD WORLD (Background)
-           ------------------------------------- */
+        html, body { height: 100%; }
+
         body {
-            background-color: var(--sky-calm);
+            background: linear-gradient(to bottom, var(--sky1), var(--sky2));
+            background-color: var(--sky2);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            min-height: 100dvh;
             overflow: hidden;
             position: relative;
-            transition: background-color 0.5s ease;
+            font-family: 'EB Garamond', Georgia, serif;
+            color: var(--ink);
         }
 
-        /* Disaster states toggled by JS */
-        body.disaster-storm {
-            background-color: var(--sky-storm);
+        /* ---------- the sky and the world ---------- */
+        .stars {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            transition: opacity 2s;
         }
-        
-        body.disaster-fire {
-            background-color: var(--sky-fire);
+        .stars i {
+            position: absolute; width: 2px; height: 2px; border-radius: 50%;
+            background: #fff; opacity: .8;
         }
-
-        body.disaster-earthquake .scenery-layer {
-            animation: violentShake 0.1s infinite;
-        }
-
-        @keyframes violentShake {
-            0% { transform: translate(5px, 5px) rotate(0deg); }
-            10% { transform: translate(-5px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        .tint {
+            position: absolute; inset: 0; pointer-events: none;
+            transition: background 1.5s;
         }
 
-        /* A layer that holds everything except the clock and canvas so they can shake */
-        .scenery-layer {
+        #world {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1;
+            left: 0; right: 0; top: 0;
+            bottom: var(--garden-h);
+            overflow: hidden;
             pointer-events: none;
         }
 
-        /* Random lightning flashes */
-        .lightning-flash {
+        .ground-band {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            height: calc(var(--scene-h) * 0.075 + 1px);
+            background: var(--ground);
+        }
+
+        .scene {
             position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: white;
-            opacity: 0;
+            bottom: 0; left: 50%;
+            height: var(--scene-h);
+            aspect-ratio: 1000 / 400;
+            transform: translateX(-50%);
+            overflow: visible;
+        }
+        .scene [class] { transform-box: fill-box; }
+
+        /* full-width effect layers */
+        .fx { position: absolute; inset: 0; pointer-events: none; }
+
+        .fx-sea {
+            top: auto; height: calc(var(--scene-h) * 0.22 + 1px);
+            background: linear-gradient(to bottom, var(--sea), #0d2233);
+        }
+        .fx-sea::before {
+            content: ''; position: absolute; left: 0; right: 0; top: -9px; height: 18px;
+            background: radial-gradient(ellipse 30px 9px at 30px 9px, var(--sea) 98%, transparent 100%) 0 0 / 60px 18px repeat-x;
+            animation: seaRoll 3s linear infinite;
+        }
+        .fx-sea.rough::before { animation-duration: 1.2s; top: -14px; height: 28px;
+            background: radial-gradient(ellipse 40px 14px at 40px 14px, var(--sea) 98%, transparent 100%) 0 0 / 80px 28px repeat-x; }
+        @keyframes seaRoll { to { background-position: 60px 0; } }
+
+        .fx-snow {
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, #fff 50%, transparent 51%),
+                radial-gradient(3px 3px at 80px 120px, #fff 50%, transparent 51%),
+                radial-gradient(2px 2px at 150px 60px, #fff 50%, transparent 51%),
+                radial-gradient(3px 3px at 190px 170px, #fff 50%, transparent 51%),
+                radial-gradient(2px 2px at 110px 190px, #fff 50%, transparent 51%);
+            background-size: 210px 210px;
+            animation: snowFall 9s linear infinite;
+            opacity: .85;
+        }
+        @keyframes snowFall { to { background-position: 60px 210px; } }
+
+        .fx-rain {
+            background-image: repeating-linear-gradient(105deg, transparent 0 14px, rgba(200,215,235,.35) 14px 15px, transparent 15px 31px);
+            background-size: 200px 200px;
+            animation: rainFall .35s linear infinite;
+        }
+        @keyframes rainFall { to { background-position: -40px 200px; } }
+
+        .fx-flash { background: #f4f6ff; opacity: 0; animation: lightning 6s infinite; }
+        @keyframes lightning {
+            0%, 61%, 100% { opacity: 0; }
+            62% { opacity: .85; } 63% { opacity: .1; } 64% { opacity: .6; } 68% { opacity: 0; }
+        }
+
+        .fx-smoke {
+            background:
+                radial-gradient(ellipse 30% 18% at 30% 70%, rgba(40,32,30,.45), transparent 70%),
+                radial-gradient(ellipse 35% 20% at 70% 60%, rgba(40,32,30,.4), transparent 70%),
+                radial-gradient(ellipse 40% 22% at 50% 40%, rgba(60,50,45,.3), transparent 70%);
+            animation: smokeDrift 14s ease-in-out infinite alternate;
+        }
+        @keyframes smokeDrift { from { transform: translateX(-4%); } to { transform: translateX(4%); } }
+
+        .fx-pox { background-image:
+                radial-gradient(circle at 12% 30%, rgba(170,40,50,.55) 0 7px, transparent 8px),
+                radial-gradient(circle at 88% 22%, rgba(170,40,50,.5) 0 9px, transparent 10px),
+                radial-gradient(circle at 6% 70%, rgba(140,150,40,.5) 0 6px, transparent 7px),
+                radial-gradient(circle at 94% 62%, rgba(170,40,50,.5) 0 8px, transparent 9px),
+                radial-gradient(circle at 20% 52%, rgba(140,150,40,.45) 0 5px, transparent 6px),
+                radial-gradient(circle at 80% 45%, rgba(140,150,40,.45) 0 6px, transparent 7px);
+            animation: poxThrob 3s ease-in-out infinite alternate;
+        }
+        @keyframes poxThrob { from { opacity: .55; } to { opacity: 1; } }
+
+        .shaking { animation: quakeLoop 12s infinite; }
+
+        /* ---------- shared scene motion ---------- */
+        .flick { transform-origin: 50% 100%; animation: flick .45s ease-in-out infinite alternate; }
+        .flick.b { animation-duration: .6s; animation-delay: -.2s; }
+        .flick.c { animation-duration: .38s; animation-delay: -.1s; }
+        @keyframes flick { from { transform: scale(1, 1) skewX(-3deg); } to { transform: scale(.9, 1.18) skewX(4deg); } }
+
+        .puff { transform-origin: 50% 50%; animation: puff 5s linear infinite; opacity: .5; }
+        @keyframes puff { from { transform: translate(0, 0) scale(.6); opacity: .7; } to { transform: translate(30px, -160px) scale(2.2); opacity: 0; } }
+
+        /* Westphalie */
+        .w-boot { transform-origin: 90% 10%; transform: rotate(-35deg); animation: bootKick 6s infinite; }
+        @keyframes bootKick { 0%, 6% { transform: rotate(25deg); } 10% { transform: rotate(-40deg); } 20%, 100% { transform: rotate(-35deg); } }
+        .w-fly { transform-origin: 50% 50%; transform: translate(110px, -150px) rotate(220deg); animation: fly 6s infinite; }
+        @keyframes fly {
+            0%, 9% { transform: translate(0, 0) rotate(0); opacity: 1; }
+            20% { transform: translate(60px, -130px) rotate(150deg); }
+            30% { transform: translate(120px, -160px) rotate(300deg); }
+            42% { transform: translate(176px, -40px) rotate(480deg); }
+            46% { transform: translate(186px, 16px) rotate(520deg); }
+            80% { transform: translate(186px, 16px) rotate(520deg); opacity: 1; }
+            90%, 100% { transform: translate(186px, 16px) rotate(520deg); opacity: 0; }
+        }
+
+        /* Bulgares */
+        .b-ballL { animation: ballL 2.6s ease-in infinite; transform: translate(150px, -150px); }
+        .b-ballR { animation: ballR 2.6s ease-in infinite; animation-delay: -1.3s; transform: translate(-150px, -150px); }
+        @keyframes ballL { 0% { transform: translate(0, 0); opacity: 1; } 25% { transform: translate(60px, -120px); } 50% { transform: translate(130px, -160px); } 75% { transform: translate(195px, -120px); } 100% { transform: translate(250px, -20px); opacity: 1; } }
+        @keyframes ballR { 0% { transform: translate(0, 0); opacity: 1; } 25% { transform: translate(-60px, -120px); } 50% { transform: translate(-130px, -160px); } 75% { transform: translate(-195px, -120px); } 100% { transform: translate(-250px, -20px); opacity: 1; } }
+        .b-muzzle { transform-origin: 50% 50%; animation: muzzle 2.6s infinite; opacity: .9; }
+        .b-muzzle.r { animation-delay: -1.3s; }
+        @keyframes muzzle { 0% { transform: scale(1.4); opacity: 1; } 12% { transform: scale(.2); opacity: 0; } 100% { opacity: 0; } }
+        .b-burst { transform-origin: 50% 50%; animation: burst 2.6s infinite; }
+        .b-burst.r { animation-delay: -1.3s; }
+        @keyframes burst { 0%, 95% { transform: scale(.1); opacity: 0; } 97% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+        .b-march { animation: march .5s steps(2) infinite; }
+        @keyframes march { 50% { transform: translateY(-2px); } }
+
+        /* Hollande */
+        .h-sails { transform-origin: 50% 50%; animation: spin 9s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .h-pus { transform-origin: 50% 50%; animation: pus 4s ease-out infinite; }
+        @keyframes pus { 0% { transform: scale(0); } 20% { transform: scale(1.25); } 30%, 100% { transform: scale(1); } }
+        .h-beggar { transform-origin: 50% 100%; animation: totter 2.4s ease-in-out infinite alternate; }
+        @keyframes totter { from { transform: rotate(-4deg); } to { transform: rotate(5deg); } }
+
+        /* Tempete */
+        .t-ship { transform-origin: 50% 80%; transform: rotate(-12deg); animation: pitch 3.2s ease-in-out infinite alternate; }
+        @keyframes pitch { from { transform: rotate(-16deg) translateY(4px); } to { transform: rotate(14deg) translateY(-6px); } }
+        .t-mast { transform-origin: 50% 100%; transform: rotate(-58deg); animation: mastBreak 8s infinite; }
+        @keyframes mastBreak { 0%, 40% { transform: rotate(0); } 46% { transform: rotate(-20deg); } 60%, 100% { transform: rotate(-58deg); } }
+        .t-wave { animation: waveSlide 2.4s linear infinite; }
+        .t-wave.back { animation-duration: 3.6s; animation-direction: reverse; }
+        @keyframes waveSlide { to { transform: translateX(-100px); } }
+        .t-fall { transform-origin: 50% 50%; transform: translate(40px, 120px) rotate(160deg); animation: overboard 8s infinite; }
+        .t-bolt { opacity: 0; animation: lightning 6s infinite; }
+        @keyframes overboard { 0%, 50% { transform: translate(0, 0); opacity: 1; } 62% { transform: translate(30px, 60px) rotate(120deg); } 70% { transform: translate(40px, 120px) rotate(170deg); opacity: 1; } 76%, 100% { transform: translate(40px, 140px) rotate(180deg); opacity: 0; } }
+
+        /* Lisbonne */
+        @keyframes quakeLoop {
+            0%, 8%, 48%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-6px, 3px) rotate(-.4deg); } 12% { transform: translate(7px, -2px) rotate(.5deg); }
+            14% { transform: translate(-8px, 1px); } 16% { transform: translate(6px, 4px) rotate(-.6deg); }
+            18% { transform: translate(-5px, -3px) rotate(.4deg); } 20% { transform: translate(8px, 2px); }
+            22% { transform: translate(-7px, 3px) rotate(.5deg); } 24% { transform: translate(5px, -2px) rotate(-.4deg); }
+            27% { transform: translate(-6px, 2px); } 30% { transform: translate(7px, -3px) rotate(.3deg); }
+            33% { transform: translate(-5px, 3px); } 36% { transform: translate(4px, -1px); }
+            40% { transform: translate(-3px, 2px); } 44% { transform: translate(2px, -1px); }
+        }
+        .l-house { transform-origin: 50% 100%; }
+        .l-fall1 { transform: rotate(-14deg) translateY(30px); animation: fall1 12s infinite; }
+        .l-fall2 { transform: rotate(11deg) translateY(40px); animation: fall2 12s infinite; }
+        .l-fall3 { transform: translateY(70px) scaleY(.4); animation: fall3 12s infinite; }
+        @keyframes fall1 { 0%, 20% { transform: none; } 30%, 92% { transform: rotate(-14deg) translateY(30px); } 100% { transform: none; } }
+        @keyframes fall2 { 0%, 26% { transform: none; } 36%, 92% { transform: rotate(11deg) translateY(40px); } 100% { transform: none; } }
+        @keyframes fall3 { 0%, 30% { transform: none; } 38%, 92% { transform: translateY(70px) scaleY(.4); } 100% { transform: none; } }
+        .l-fire { transform-origin: 50% 100%; animation: fireIn 12s infinite; }
+        @keyframes fireIn { 0%, 4% { transform: scale(.5); } 12%, 92% { transform: scale(1); } 100% { transform: scale(.5); } }
+        .l-wave { transform: translateX(-200px); animation: tsunami 12s infinite; }
+        @keyframes tsunami { 0%, 48% { transform: translateX(-1100px); } 70% { transform: translateX(-200px); } 82% { transform: translateX(80px); opacity: 1; } 92%, 100% { transform: translateX(200px); opacity: 0; } }
+        .l-dust { transform-origin: 50% 100%; animation: dust 12s infinite; opacity: .55; }
+        @keyframes dust { 0%, 22% { opacity: 0; transform: scale(.4); } 40% { opacity: .7; transform: scale(1.1); } 70% { opacity: .4; transform: scale(1.4); } 85%, 100% { opacity: 0; transform: scale(1.6); } }
+
+        /* Auto-da-fe */
+        .a-swing { transform-origin: 50% 0; animation: swing 3s ease-in-out infinite alternate; }
+        @keyframes swing { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+        .a-flog { transform-origin: 90% 90%; animation: flog .8s ease-in-out infinite alternate; }
+        @keyframes flog { from { transform: rotate(-30deg); } to { transform: rotate(40deg); } }
+        .a-crowd { animation: sway 1.6s ease-in-out infinite alternate; }
+        @keyframes sway { to { transform: translateX(4px); } }
+
+        /* Paraguay */
+        .p-bubble { transform-origin: 50% 50%; animation: bubble 1.8s ease-in infinite; }
+        @keyframes bubble { 0% { transform: translateY(0) scale(.4); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-40px) scale(1.2); opacity: 0; } }
+        .p-dance { animation: dance .7s ease-in-out infinite alternate; }
+        .p-dance.b { animation-delay: -.35s; }
+        @keyframes dance { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+        .p-arrow { transform: translateX(300px); animation: arrow 2.2s linear infinite; }
+        .p-arrow.b { animation-delay: -1.1s; animation-duration: 2.6s; }
+        @keyframes arrow { from { transform: translateX(-200px); } to { transform: translateX(1200px); } }
+
+        /* Eldorado */
+        .e-sheep { animation: sheepLost 15s linear infinite; }
+        @keyframes sheepLost {
+            0% { transform: translate(0, 0); opacity: 0; }
+            4% { opacity: 1; }
+            78% { transform: translate(380px, 0) rotate(0); }
+            84% { transform: translate(408px, 40px) rotate(40deg); }
+            100% { transform: translate(430px, 260px) rotate(130deg); opacity: 0; }
+        }
+        .e-glint { transform-origin: 50% 50%; animation: glint 2.4s ease-in-out infinite alternate; }
+        @keyframes glint { from { opacity: .3; transform: scale(.6); } to { opacity: 1; transform: scale(1.1); } }
+
+        /* Surinam */
+        .s-ship { transform-origin: 50% 90%; transform: translate(150px, 40px) rotate(18deg); animation: sink 14s infinite; }
+        @keyframes sink {
+            0% { transform: translate(-120px, 0) rotate(0); opacity: 1; }
+            40% { transform: translate(60px, 0) rotate(-2deg); }
+            55% { transform: translate(100px, 4px) rotate(4deg); }
+            80% { transform: translate(150px, 70px) rotate(22deg); opacity: 1; }
+            90%, 100% { transform: translate(160px, 130px) rotate(30deg); opacity: 0; }
+        }
+        .s-fire { transform-origin: 50% 100%; animation: sFire 14s infinite; }
+        @keyframes sFire { 0%, 45% { transform: scale(0); } 52%, 82% { transform: scale(1); } 90%, 100% { transform: scale(0); } }
+        .s-flash { transform-origin: 50% 50%; animation: sFlash 14s infinite; }
+        @keyframes sFlash { 0%, 40% { opacity: 0; transform: scale(.2); } 42% { opacity: 1; transform: scale(1.3); } 46%, 100% { opacity: 0; transform: scale(.2); } }
+        .s-float { animation: bob 1.6s ease-in-out infinite alternate, floatIn 14s infinite; }
+        @keyframes bob { from { translate: 0 0; } to { translate: 0 -5px; } }
+        @keyframes floatIn { 0%, 82% { opacity: 0; transform: translateX(0); } 88% { opacity: 1; } 100% { opacity: 1; transform: translateX(-60px); } }
+
+        /* Paris */
+        .pa-coin { transform-origin: 50% 50%; animation: fleece 4s ease-in infinite; }
+        @keyframes fleece { 0% { transform: translate(0, 0) scale(.5); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--dx), -150px) scale(1); opacity: 0; } }
+        .pa-card { transform-origin: 50% 50%; animation: cardFly 3s ease-out infinite; }
+        @keyframes cardFly { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(var(--dx), -90px) rotate(260deg); opacity: 0; } }
+
+        /* Portsmouth */
+        .po-flash { transform-origin: 0% 50%; animation: volley 5s infinite; }
+        @keyframes volley { 0%, 58% { opacity: 0; transform: scale(.2); } 60% { opacity: 1; transform: scale(1.3); } 66%, 100% { opacity: 0; transform: scale(.4); } }
+        .po-smoke { transform-origin: 0% 50%; animation: volleySmoke 5s infinite; }
+        @keyframes volleySmoke { 0%, 59% { opacity: 0; transform: scale(.3); } 64% { opacity: .8; transform: scale(1); } 100% { opacity: 0; transform: translate(-20px, -40px) scale(2.2); } }
+        .po-admiral { transform-origin: 50% 100%; transform: rotate(80deg); animation: shot 5s infinite; }
+        @keyframes shot { 0%, 60% { transform: rotate(0); } 66%, 92% { transform: rotate(82deg); } 100% { transform: rotate(0); } }
+        .po-ship { animation: roll 4s ease-in-out infinite alternate; transform-origin: 50% 90%; }
+        @keyframes roll { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+
+        /* Venise */
+        .v-crown { transform-origin: 50% 100%; animation: crownOff 12s infinite; }
+        @keyframes crownOff {
+            0%, 10% { transform: translate(0, 0) rotate(0); opacity: 1; }
+            14% { transform: translate(6px, -22px) rotate(30deg); }
+            30% { transform: translate(30px, 120px) rotate(200deg); opacity: 1; }
+            34%, 92% { transform: translate(30px, 130px) rotate(200deg); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 1; }
+        }
+        .v-gondola { transform-origin: 50% 50%; animation: roll 2.8s ease-in-out infinite alternate; }
+        .v-fw { transform-origin: 50% 50%; animation: firework 3.4s ease-out infinite; }
+        @keyframes firework { 0%, 40% { transform: scale(0); opacity: 0; } 45% { opacity: 1; } 80% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.15); opacity: 0; } }
+
+        /* Jardin */
+        .j-hoe { transform-origin: 50% 100%; animation: hoe 2.2s ease-in-out infinite; }
+        @keyframes hoe { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(14deg); } 60% { transform: rotate(-4deg); } }
+        .j-smoke { transform-origin: 50% 100%; animation: puff 7s linear infinite; }
+
+        /* ---------- the garden ---------- */
+        #garden {
+            position: absolute; left: 0; bottom: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .motto {
+            position: absolute; left: 0; right: 0;
+            bottom: clamp(6px, 1.4vh, 14px);
+            z-index: 8;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: clamp(0.78rem, 1.7vw, 1.15rem);
+            letter-spacing: .08em;
+            padding: 0 16px;
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6);
+        }
+        .motto .done { color: #fdf3d2; }
+        .motto .todo { color: rgba(253,243,210,.32); }
+        .motto .gloss { display: block; font-family: 'EB Garamond', serif; font-style: italic; font-weight: 400;
+            letter-spacing: 0; font-size: clamp(.78rem, 1.3vw, .95rem); color: #f1e4c0; margin-top: 2px; }
+
+        /* ---------- route across the top ---------- */
+        .route {
+            position: absolute; top: 0; left: 0; right: 0;
+            height: var(--route-h);
+            z-index: 12;
+            background: linear-gradient(to bottom, rgba(20,14,8,.78), rgba(20,14,8,.55));
+            border-bottom: 1px solid rgba(232,199,102,.45);
+            --route-pad: clamp(10px, 2vw, 28px);
+            padding: 0 var(--route-pad);
+        }
+        .route ol {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            height: 100%;
+            position: relative;
+        }
+        .route ol::before {
+            content: ''; position: absolute; left: calc(100% / 26); right: calc(100% / 26);
+            top: 34%; height: 1px; background: rgba(232,199,102,.5);
+        }
+        .route li {
+            position: relative;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: flex-start;
+            padding-top: calc(var(--route-h) * .34 - 4px);
+            min-width: 0;
+        }
+        .route .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #2a2118; border: 1px solid var(--gold-light);
+            position: relative; z-index: 1;
+        }
+        .route li.past .dot { background: var(--gold); }
+        .route li.now .dot { background: var(--gold-light); box-shadow: 0 0 0 3px rgba(232,199,102,.35); }
+        .route .lbl {
+            font-family: 'Cinzel', serif; font-weight: 600;
+            font-size: clamp(8.5px, .8vw, 11.5px);
+            color: rgba(246,234,200,.72);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+        }
+        .route li.now .lbl { color: #ffe9a8; }
+        .route .marker {
+            position: absolute; top: calc(var(--route-h) * .34 - 9px);
+            width: 0; height: 0;
+            border-left: 6px solid transparent; border-right: 6px solid transparent;
+            border-top: 7px solid #ff7a5c;
+            transform: translateX(-6px);
+            z-index: 2;
+            transition: left 1s linear;
+        }
+
+        /* ---------- HUD: Pangloss's card and the chapter caption ---------- */
+        .hud {
+            position: absolute;
+            top: calc(var(--route-h) + clamp(10px, 2.2vh, 24px));
+            left: clamp(12px, 2.5vw, 36px); right: clamp(12px, 2.5vw, 36px);
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 20px;
             z-index: 10;
             pointer-events: none;
         }
 
-        .is-lightning {
-            animation: lightningAnim 0.3s ease-out;
-        }
-
-        @keyframes lightningAnim {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            20% { opacity: 0; }
-            30% { opacity: 0.5; }
-            100% { opacity: 0; }
-        }
-
-        /* -------------------------------------
-           THE PANGLOSSIAN CLOCK
-           ------------------------------------- */
-        .clock-wrapper {
+        .card {
             position: relative;
-            z-index: 20;
-            /* The clock itself never shakes, it is perfectly optimistic */
-            background: #fff;
-            padding: 40px 60px;
-            border: 8px solid var(--frame-gold);
-            border-radius: 15px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1), 0 20px 40px rgba(0,0,0,0.5);
+            width: clamp(280px, 34vw, 430px);
+            background: var(--paper);
+            border: 5px solid var(--gold);
+            border-radius: 12px;
+            padding: clamp(12px, 2vh, 20px) clamp(16px, 2.2vw, 28px) clamp(12px, 1.8vh, 18px);
             text-align: center;
+            box-shadow: 0 16px 34px rgba(0,0,0,.45);
+            pointer-events: auto;
         }
-
-        /* Inner gold trim */
-        .clock-wrapper::after {
-            content: '';
-            position: absolute;
-            top: 5px; left: 5px; right: 5px; bottom: 5px;
-            border: 2px solid var(--frame-gold);
-            border-radius: 5px;
-            pointer-events: none;
+        .card::after {
+            content: ''; position: absolute; inset: 4px;
+            border: 1.5px solid var(--gold); border-radius: 6px; pointer-events: none;
         }
-
-        .clock-title {
+        .card .who {
+            font-family: 'Cinzel', serif; font-weight: 600;
+            font-size: clamp(.62rem, .9vw, .74rem);
+            letter-spacing: .14em; text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+        .card .time {
+            font-family: 'Cinzel', serif; font-weight: 700;
+            font-size: clamp(2.3rem, 5vw, 4rem);
+            line-height: 1.1;
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
+            margin: 2px 0 0;
+        }
+        .card .best {
             font-family: 'Great Vibes', cursive;
-            font-size: 2.5rem;
-            color: #555;
-            margin-bottom: 20px;
-            line-height: 1;
+            font-size: clamp(1.45rem, 2.4vw, 2rem);
+            line-height: 1.05;
+            color: #7a5410;
+        }
+        .card .also {
+            font-style: italic;
+            font-size: clamp(.92rem, 1.25vw, 1.06rem);
+            color: var(--ink-soft);
+            margin-top: 2px;
+        }
+        .card .also b { font-style: normal; font-weight: 500; color: #8f2a14; }
+        .card .doctrine {
+            margin-top: clamp(6px, 1vh, 10px);
+            padding-top: clamp(6px, 1vh, 9px);
+            border-top: 1px solid rgba(201,154,46,.5);
+            font-size: clamp(.95rem, 1.3vw, 1.1rem);
+            color: var(--ink);
+        }
+        .card .doctrine span { display: block; font-style: italic; font-size: .85em; color: var(--ink-soft); }
+
+        .caption {
+            width: clamp(260px, 30vw, 400px);
+            background: rgba(251,246,233,.93);
+            border-left: 4px solid #a2321c;
+            border-radius: 4px;
+            padding: 10px 14px 11px;
+            box-shadow: 0 10px 24px rgba(0,0,0,.35);
+            pointer-events: auto;
+        }
+        .caption .ch {
+            font-family: 'Cinzel', serif; font-weight: 600;
+            font-size: clamp(.62rem, .85vw, .72rem);
+            letter-spacing: .1em; text-transform: uppercase;
+            color: #8f2a14;
+        }
+        .caption .place {
+            font-family: 'Cinzel', serif; font-weight: 700;
+            font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+            color: var(--ink); line-height: 1.15; margin: 1px 0 4px;
+        }
+        .caption .ev { font-size: clamp(.92rem, 1.15vw, 1.02rem); line-height: 1.3; color: var(--ink); }
+        .caption .q { margin-top: 6px; font-size: clamp(.95rem, 1.2vw, 1.06rem); line-height: 1.3; color: #3b2b1a; }
+        .caption .q i { display: block; font-size: .88em; color: var(--ink-soft); }
+        .caption .next {
+            margin-top: 6px; font-size: .82rem; color: var(--ink-soft);
+            font-variant-numeric: tabular-nums;
         }
 
-        .time-display {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 700;
-            color: #222;
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+        @media (max-width: 980px) {
+            .route .lbl { display: none; }
+            .route li.now .lbl {
+                display: block; position: absolute; top: calc(var(--route-h) * .34 + 8px);
+                max-width: none; overflow: visible; font-size: 11px;
+            }
+            .route li.now:first-child .lbl { left: 0; }
+            .route li.now:last-child .lbl { right: 0; }
+            .hud { flex-direction: column; align-items: center; gap: 10px; }
+            .card { width: min(100%, 420px); }
+            .caption { width: min(100%, 420px); }
+        }
+        @media (max-width: 980px) and (min-height: 700px) {
+            :root { --scene-h: min(34vh, 62vw); }
+        }
+        @media (max-width: 700px) {
+            :root { --scene-h: min(30vh, 62vw); }
+            .scene { aspect-ratio: 520 / 340; }
+            .card .doctrine span, .caption .q i { font-size: .82em; }
+            .caption { padding: 8px 12px 9px; }
+            .caption .next { display: none; }
+        }
+        @media (max-height: 620px) {
+            .caption .q { display: none; }
+            .card .doctrine { display: none; }
         }
 
-        .clock-subtitle {
-            font-family: 'Cinzel', serif;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #888;
-            margin-top: 15px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+        /* The disasters are decoration: with reduced motion they hold one telling pose. */
+        @media (prefers-reduced-motion: reduce) {
+            #world *, #world *::before, #world *::after, .shaking { animation: none !important; }
+            .fx-flash { opacity: 0; }
+            .route .marker { transition: none; }
         }
-
-        /* -------------------------------------
-           "CULTIVATE OUR GARDEN"
-           ------------------------------------- */
-        #gardenCanvas {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100vw;
-            height: clamp(150px, 30vh, 400px);
-            z-index: 30; /* Over everything */
-            pointer-events: none;
-        }
-        
-        .quote-garden {
-            position: absolute;
-            bottom: 20px;
-            z-index: 40;
-            font-family: 'Cinzel', serif;
-            font-size: 1.2rem;
-            color: #fff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            letter-spacing: 3px;
-        }
-
     </style>
 </head>
 <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <linearGradient id="gFlame" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0" stop-color="#ffe98a"/>
+                <stop offset=".45" stop-color="#ff8a1f"/>
+                <stop offset="1" stop-color="#c8231a" stop-opacity=".85"/>
+            </linearGradient>
+            <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ffe27a"/>
+                <stop offset="1" stop-color="#c8901c"/>
+            </linearGradient>
+            <linearGradient id="gWave" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#5d93ad"/>
+                <stop offset="1" stop-color="#1c3f55"/>
+            </linearGradient>
+            <symbol id="man" viewBox="0 0 20 50"><circle cx="10" cy="6" r="5"/><path d="M10 12 L3 34 L7 34 L7 49 L9.4 49 L9.4 37 L10.6 37 L10.6 49 L13 49 L13 34 L17 34 Z"/></symbol>
+            <symbol id="sheep" viewBox="0 0 44 30"><rect x="9" y="17" width="3" height="12" fill="#3a1410"/><rect x="28" y="17" width="3" height="12" fill="#3a1410"/><ellipse cx="20" cy="15" rx="15" ry="9" fill="#c0392b"/><ellipse cx="37" cy="11" rx="6" ry="4.5" fill="#6b1d14"/><rect x="11" y="2" width="17" height="8" rx="2" fill="#f2c335" stroke="#8a6410"/></symbol>
+            <symbol id="flame" viewBox="0 0 30 50"><path d="M15 0 C21 14 30 20 28 34 C27 44 21 50 15 50 C9 50 3 44 2 34 C0 22 11 18 15 0Z" fill="url(#gFlame)"/><path d="M15 20 C18 28 22 32 21 40 C20 46 17 48 15 48 C13 48 10 46 9.5 40 C9 33 13 29 15 20Z" fill="#fff6c4" opacity=".8"/></symbol>
+            <symbol id="crown" viewBox="0 0 20 14"><path d="M1 13 L1 4 L6 8 L10 1 L14 8 L19 4 L19 13Z" fill="#f2c335" stroke="#8a6410"/></symbol>
+            <symbol id="ship" viewBox="0 0 200 170">
+                <path d="M100 8 L100 120" stroke="#3a2412" stroke-width="5"/>
+                <path d="M50 30 L50 120 M150 40 L150 120" stroke="#3a2412" stroke-width="4"/>
+                <path d="M62 22 Q100 40 138 22 L134 100 Q100 110 66 100Z" fill="#efe6d0" stroke="#b9ab8a"/>
+                <path d="M24 46 Q50 56 76 46 L74 104 Q50 110 26 104Z" fill="#e8dec4" stroke="#b9ab8a"/>
+                <path d="M128 54 Q150 62 172 54 L170 106 Q150 112 130 106Z" fill="#e8dec4" stroke="#b9ab8a"/>
+                <path d="M4 116 L196 116 L180 160 L28 160 Z" fill="#5a3418"/>
+                <path d="M150 100 L196 100 L196 116 L150 116Z" fill="#6d4220"/>
+                <path d="M12 128 L188 128" stroke="#c99a2e" stroke-width="3"/>
+            </symbol>
+        </defs>
+    </svg>
 
-    <div class="scenery-layer" id="sceneryLayer">
-        <!-- Any background shapes/mountains could go here, for now it's just the sky shifting -->
-    </div>
-    <div class="lightning-flash" id="lightningFlash"></div>
+    <div class="stars" id="stars" aria-hidden="true"></div>
+    <div class="tint" id="tint" aria-hidden="true"></div>
+    <div id="world" aria-hidden="true"></div>
 
-    <div class="clock-wrapper">
-        <div class="clock-title">It is exactly...</div>
-        <div class="time-display" id="timeDisplay">00:00:00</div>
-        <div class="clock-subtitle">The Best of All Possible Times!</div>
-    </div>
+    <canvas id="garden" aria-hidden="true"></canvas>
+    <p class="motto" id="motto"></p>
 
-    <canvas aria-hidden="true" id="gardenCanvas"></canvas>
-    <div class="quote-garden">"Il faut cultiver notre jardin."</div>
+    <nav class="route" aria-label="Candide's journey through the day">
+        <ol id="routeList"></ol>
+        <div class="marker" id="marker"></div>
+    </nav>
+
+    <main class="hud">
+        <section class="card" aria-label="Doctor Pangloss's clock">
+            <div class="who">Maître Pangloss certifies the hour</div>
+            <div class="time" id="time" role="timer" aria-atomic="true">00:00:00</div>
+            <div class="best">the best of all possible times</div>
+            <div class="also" id="also">and the best of all possible <b>castles</b></div>
+            <div class="doctrine" id="doctrine">« tout est au mieux »<span>all is for the best</span></div>
+        </section>
+        <section class="caption" id="caption" aria-live="polite">
+            <div class="ch" id="capCh"></div>
+            <div class="place" id="capPlace"></div>
+            <div class="ev" id="capEv"></div>
+            <div class="q" id="capQ"></div>
+            <div class="next" id="capNext"></div>
+        </section>
+    </main>
 
     <script>
-        // Decorative motion only: with reduced motion requested the scene is drawn
-        // once and then left still; the clock itself keeps updating.
+    (function () {
+        'use strict';
+
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-        // --- Clock Core ---
-        const timeDisplay = document.getElementById('timeDisplay');
-        
-        function updateClock() {
-            const now = new Date();
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            timeDisplay.textContent = `${h}:${m}:${s}`;
-            requestAnimationFrame(updateClock);
-        }
-        updateClock();
+        /* ------------------------------------------------------------------
+           The day as Candide's journey. Minutes from midnight. Quotations are
+           Voltaire's French (1759); the italic lines under them are glosses.
+           ------------------------------------------------------------------ */
+        const STATIONS = [
+            { key: 'westphalie', start: 0, label: 'Westphalie', ch: 'Chapitre I',
+              place: 'Westphalie, the castle of Thunder-ten-tronckh',
+              ev: 'Caught kissing Cunégonde behind a screen, Candide is thrown out of the castle.',
+              q: '« à grands coups de pied dans le derrière »', gl: 'with great kicks to the backside',
+              best: 'castles', ground: '#d8dee8' },
+            { key: 'bulgares', start: 120, label: 'Bulgares', ch: 'Chapitres II–III',
+              place: 'The war of the Bulgars and the Abars',
+              ev: 'Press-ganged into the Bulgar army, Candide hides while both kings sing Te Deums.',
+              q: '« cette boucherie héroïque »', gl: 'this heroic butchery',
+              best: 'wars', ground: '#3a2a20' },
+            { key: 'hollande', start: 240, label: 'Hollande', ch: 'Chapitre IV',
+              place: 'Holland',
+              ev: 'A beggar covered in pustules, his nose eaten away, turns out to be Pangloss.',
+              q: '« un ingrédient nécessaire »', gl: 'the pox is a necessary ingredient of the best of worlds, he explains',
+              best: 'poxes', ground: '#5d6b3e' },
+            { key: 'tempete', start: 330, label: 'Tempête', ch: 'Chapitre V',
+              place: 'A storm in sight of Lisbon',
+              ev: 'The ship splits, the good Anabaptist Jacques is thrown overboard and drowns.',
+              q: '« la rade de Lisbonne avait été formée exprès pour que cet anabaptiste s’y noyât »',
+              gl: 'the harbour of Lisbon was made on purpose for him to drown in',
+              best: 'shipwrecks', sea: '#2c4a5c' },
+            { key: 'lisbonne', start: 420, label: 'Lisbonne', ch: 'Chapitre V',
+              place: 'Lisbon, 1 November 1755',
+              ev: 'The earth shakes, the sea rises in the harbour, the city burns. The real quake struck at about 9:40 in the morning.',
+              q: '« tout ceci est ce qu’il y a de mieux »', gl: 'all this is for the very best, says Pangloss in the rubble',
+              best: 'earthquakes', ground: '#6b5a44' },
+            { key: 'autodafe', start: 600, label: 'Auto-da-fé', ch: 'Chapitre VI',
+              place: 'Lisbon, the auto-da-fé',
+              ev: 'To keep the earth from shaking, the sages burn a few people. Candide is flogged, Pangloss hanged, and the earth shakes again.',
+              q: '« Si c’est ici le meilleur des mondes possibles, que sont donc les autres ? »',
+              gl: 'if this is the best of all possible worlds, what are the others like? (Candide)',
+              best: 'auto-da-fés', ground: '#7a6650' },
+            { key: 'paraguay', start: 690, label: 'Paraguay', ch: 'Chapitres XIV–XVI',
+              place: 'Paraguay',
+              ev: 'Candide runs the Baron through, flees in a Jesuit’s cassock, and the Oreillons put the pot on.',
+              q: '« mangeons du jésuite »', gl: 'let us eat Jesuit',
+              best: 'suppers', ground: '#2f4a22' },
+            { key: 'eldorado', start: 780, label: 'Eldorado', ch: 'Chapitres XVII–XIX',
+              place: 'Leaving Eldorado',
+              ev: 'They quit the one country where all goes well, with red sheep laden with gold. The sheep sink in bogs and tumble off cliffs.',
+              q: '« les richesses de ce monde sont périssables »', gl: 'the riches of this world are perishable',
+              best: 'fortunes', ground: '#a07a2a' },
+            { key: 'surinam', start: 870, label: 'Surinam', ch: 'Chapitres XIX–XX',
+              place: 'Surinam',
+              ev: 'A slave missing a hand and a leg explains the sugar trade. Then Vanderdendur sails off with the last sheep, and is sunk.',
+              q: '« C’est à ce prix que vous mangez du sucre en Europe. »', gl: 'it is at this price that you eat sugar in Europe',
+              best: 'bargains', sea: '#2b5566' },
+            { key: 'paris', start: 960, label: 'Paris', ch: 'Chapitres XXI–XXII',
+              place: 'Paris',
+              ev: 'Candide falls ill, loses at cards, and an abbé from Périgord helps him out of his diamonds.',
+              q: '', gl: '',
+              best: 'evenings out', ground: '#4a4048' },
+            { key: 'portsmouth', start: 1020, label: 'Portsmouth', ch: 'Chapitre XXIII',
+              place: 'Portsmouth',
+              ev: 'From their ship they watch an admiral shot on his own deck.',
+              q: '« pour encourager les autres »', gl: 'to encourage the others',
+              best: 'admirals', sea: '#34586a' },
+            { key: 'venise', start: 1050, label: 'Venise', ch: 'Chapitres XXIV–XXVI',
+              place: 'Venice, at carnival',
+              ev: 'Supper with six dethroned kings, and a visit to Pococurante, who owns everything and enjoys none of it.',
+              q: '', gl: '',
+              best: 'carnivals', sea: '#3c5e6e' },
+            { key: 'jardin', start: 1110, label: 'Le jardin', ch: 'Chapitre XXX',
+              place: 'A small farm near Constantinople',
+              ev: 'No more disasters. The little company works the land and each finds a talent.',
+              q: '« Le travail éloigne de nous trois grands maux, l’ennui, le vice, et le besoin. »',
+              gl: 'work keeps three great evils away: boredom, vice and need',
+              best: 'gardens', sea: '#3d5a78' }
+        ];
+        STATIONS.forEach((s, i) => { s.end = i + 1 < STATIONS.length ? STATIONS[i + 1].start : 1440; });
+        const GARDEN_DONE = 1110;     // by 18:30 the garden line is earned
 
-        // --- Event Manager (The Disasters) ---
-        const bodyEl = document.body;
-        const lightningFlash = document.getElementById('lightningFlash');
-        
-        const disasters = ['disaster-storm', 'disaster-fire', 'disaster-earthquake'];
-        let activeDisasters = [];
+        /* ------------------------------------------------------------------
+           Scenes: inline SVG (viewBox 0 0 1000 400) animated with CSS. The
+           ground sits at y=370 at both edges so it meets the full-width band.
+           ------------------------------------------------------------------ */
+        const fl = (x, y, w, cls) => `<use href="#flame" class="flick ${cls || ''}" x="${x}" y="${y}" width="${w}" height="${w * 5 / 3}"/>`;
+        const man = (x, y, h, fill, cls, extra) => `<use href="#man" ${cls ? `class="${cls}"` : ''} x="${x}" y="${y}" width="${h * .4}" height="${h}" fill="${fill}" ${extra || ''}/>`;
+        const puff = (x, y, r, d) => `<circle class="puff" cx="${x}" cy="${y}" r="${r}" fill="#3b3330" style="animation-delay:${d}s"/>`;
+        const groundPath = (fill, mid) => `<path d="M0 400 L0 370 L60 370 ${mid || 'Q500 352 940 370'} L1000 370 L1000 400Z" fill="${fill}"/>`;
 
-        function triggerRandomDisaster() {
-            // Un-trigger everything
-            bodyEl.className = '';
-            
-            // 70% chance a disaster happens
-            if (Math.random() < 0.7) {
-                // Pick a disaster
-                const d = disasters[Math.floor(Math.random() * disasters.length)];
-                bodyEl.classList.add(d);
+        const SCENES = {
+            westphalie: () => `
+                ${groundPath('#d8dee8', 'Q300 345 520 356 T940 370')}
+                <g fill="#2e2a44">
+                    <rect x="430" y="210" width="160" height="150"/>
+                    <path d="M430 210 v-14 h16 v14 h16 v-14 h16 v14 h16 v-14 h16 v14 h16 v-14 h16 v14 h16 v-14 h16 v14 h16 v-14 h16 v14z"/>
+                    <rect x="388" y="160" width="52" height="200"/>
+                    <path d="M382 162 L414 96 L446 162Z" fill="#4a2a3a"/>
+                    <rect x="580" y="160" width="52" height="200"/>
+                    <path d="M574 162 L606 96 L638 162Z" fill="#4a2a3a"/>
+                    <path d="M492 360 L492 318 Q510 296 528 318 L528 360Z" fill="#14111f"/>
+                </g>
+                <g fill="#ffd27a">
+                    <rect x="404" y="190" width="10" height="16" rx="5"/><rect x="596" y="190" width="10" height="16" rx="5"/>
+                    <rect x="455" y="240" width="12" height="18" rx="6"/><rect x="553" y="240" width="12" height="18" rx="6"/>
+                    <rect x="404" y="250" width="10" height="16" rx="5"/><rect x="606" y="252" width="10" height="16" rx="5"/>
+                </g>
+                <rect x="490" y="232" width="40" height="40" fill="#ffd27a" opacity=".55"/>
+                <g class="w-boot"><path d="M500 318 l18 0 l0 26 l22 6 l0 10 l-40 0 z" fill="#5a2d14"/></g>
+                <g class="w-fly">${man(522, 312, 44, '#7a3b8c')}</g>`,
+
+            bulgares: () => `
+                ${groundPath('#3a2a20', 'Q200 330 320 345 Q500 362 680 345 Q800 330 940 370')}
+                <g fill="#1b1512">
+                    <rect x="220" y="318" width="44" height="12" rx="5" transform="rotate(-18 242 324)"/>
+                    <circle cx="232" cy="338" r="10"/>
+                    <rect x="736" y="318" width="44" height="12" rx="5" transform="rotate(18 758 324)"/>
+                    <circle cx="768" cy="338" r="10"/>
+                </g>
+                <circle class="b-muzzle" cx="268" cy="308" r="16" fill="#ffd36b"/>
+                <circle class="b-muzzle r" cx="732" cy="308" r="16" fill="#ffd36b"/>
+                <circle class="b-ballL" cx="268" cy="308" r="6" fill="#111"/>
+                <circle class="b-ballR" cx="732" cy="308" r="6" fill="#111"/>
+                <g fill="#5b3a2a">
+                    <path d="M420 362 v-40 l30 -26 l30 26 v40z"/>
+                    <path d="M478 362 v-54 l28 -24 l28 24 v54z" fill="#4a2f22"/>
+                    <path d="M532 362 v-36 l26 -22 l26 22 v36z"/>
+                </g>
+                ${fl(424, 270, 30)}${fl(470, 250, 40, 'b')}${fl(520, 262, 34, 'c')}${fl(552, 280, 26)}
+                <circle class="b-burst" cx="518" cy="290" r="40" fill="#ffb347"/>
+                <circle class="b-burst r" cx="482" cy="296" r="36" fill="#ffd36b"/>
+                ${puff(450, 260, 20, 0)}${puff(500, 250, 26, -1.6)}${puff(550, 262, 22, -3.2)}
+                <g class="b-march">${[0,1,2,3,4].map(i => man(290 + i * 20, 330, 26, '#28487a')).join('')}</g>
+                <g class="b-march" style="animation-delay:-.25s">${[0,1,2,3,4].map(i => man(612 + i * 20, 330, 26, '#8a2a22')).join('')}</g>`,
+
+            hollande: () => {
+                const pus = [];
+                const pts = [[300,180],[360,240],[420,150],[470,300],[520,210],[580,260],[640,170],[700,290],[740,220],[260,280],[330,330],[560,330],[690,340],[450,220],[610,120],[380,110],[780,160],[230,200],[500,120],[660,240]];
+                pts.forEach(([x, y], i) => pus.push(`<circle class="h-pus" cx="${x}" cy="${y}" r="${7 + (i * 7) % 9}" fill="${i % 3 ? '#b8323c' : '#9aa23a'}" stroke="#5a1418" stroke-opacity=".5" style="animation-delay:${-(i * 0.37).toFixed(2)}s"/>`));
+                return `
+                ${groundPath('#5d6b3e', 'Q500 366 940 370')}
+                <path d="M0 372 L1000 372" stroke="#7aa0b0" stroke-width="5"/>
+                <path d="M640 362 L652 220 L688 220 L700 362Z" fill="#6a4a3a"/>
+                <path d="M646 224 L670 196 L694 224Z" fill="#3e2a22"/>
+                <rect x="662" y="320" width="16" height="42" fill="#2a1a14"/>
+                <g class="h-sails">
+                    <path d="M670 220 L670 120 L684 120 L684 216Z M670 220 L770 220 L770 234 L674 234Z M670 220 L670 320 L656 320 L656 224Z M670 220 L570 220 L570 206 L666 206Z" fill="#e8dcc0" stroke="#6a4a3a" stroke-width="2"/>
+                    <circle cx="670" cy="220" r="7" fill="#3e2a22"/>
+                </g>
+                <g class="h-beggar">${man(370, 270, 92, '#5a5040', '', 'transform="rotate(12 388 362)"')}</g>
+                <path d="M408 342 q12 10 24 0" stroke="#8a7a50" stroke-width="6" fill="none"/>
+                ${pus.join('')}`;
+            },
+
+            tempete: () => `
+                <rect x="0" y="312" width="1000" height="88" fill="#2c4a5c"/>
+                <g class="t-wave back"><path d="M-100 318 ${Array.from({length: 13}, (_, i) => `q25 -22 50 0 q25 22 50 0`).join(' ')} V400 H-100Z" fill="#355a6e"/></g>
+                <g class="t-ship">
+                    <use href="#ship" x="390" y="160" width="220" height="187"/>
+                    <g class="t-mast"><path d="M500 167 L500 80" stroke="#3a2412" stroke-width="6"/><path d="M470 90 Q500 100 530 90 L528 130 Q500 136 472 130Z" fill="#efe6d0"/></g>
+                    <g class="t-fall">${man(470, 268, 30, '#2a2a2a')}</g>
+                </g>
+                <g class="t-wave"><path d="M-100 336 ${Array.from({length: 13}, () => `q25 -26 50 0 q25 26 50 0`).join(' ')} V400 H-100Z" fill="#244154"/></g>
+                <path d="M720 40 L690 120 L712 120 L680 200" stroke="#fff8d0" stroke-width="4" fill="none" class="t-bolt"/>`,
+
+            lisbonne: () => {
+                const cols = ['#e9d6b0', '#d9a77a', '#f0e2c4', '#c98e6a', '#e7c99a', '#d6b48a', '#efd9b5', '#c7a07a'];
+                const houses = [];
+                const xs = [210, 270, 330, 560, 620, 680, 740];
+                const fall = ['l-fall1', '', 'l-fall3', 'l-fall2', '', 'l-fall1', 'l-fall3'];
+                xs.forEach((x, i) => {
+                    const h = 70 + (i * 23) % 40;
+                    houses.push(`<g class="l-house ${fall[i]}"><rect x="${x}" y="${370 - h}" width="56" height="${h}" fill="${cols[i]}"/><path d="M${x - 4} ${370 - h} L${x + 28} ${350 - h} L${x + 60} ${370 - h}Z" fill="#a4482c"/><rect x="${x + 10}" y="${385 - h}" width="10" height="14" fill="#5a3a2a"/><rect x="${x + 34}" y="${385 - h}" width="10" height="14" fill="#5a3a2a"/></g>`);
+                });
+                return `
+                <g class="shaking">
+                ${groundPath('#6b5a44')}
+                ${houses.join('')}
+                <g class="l-house l-fall2">
+                    <rect x="400" y="230" width="140" height="140" fill="#efe4cc"/>
+                    <path d="M396 232 L470 190 L544 232Z" fill="#9a4a30"/>
+                    <rect x="448" y="120" width="44" height="112" fill="#e7d9bb"/>
+                    <path d="M444 122 L470 82 L496 122Z" fill="#9a4a30"/>
+                    <path d="M466 82 v-16 M460 72 h12" stroke="#5a3a2a" stroke-width="3"/>
+                    <circle cx="470" cy="150" r="10" fill="#5a3a2a"/>
+                    <path d="M456 370 v-50 q14 -18 28 0 v50z" fill="#5a3a2a"/>
+                </g>
+                ${fl(232, 300, 28, 'l-fire')}${fl(350, 296, 34, 'l-fire')}${fl(430, 250, 40, 'l-fire')}${fl(590, 290, 30, 'l-fire')}${fl(700, 300, 36, 'l-fire')}
+                <ellipse class="l-dust" cx="480" cy="360" rx="320" ry="60" fill="#b8a888"/>
+                </g>
+                <g class="l-wave">
+                    <path d="M-60 400 L-60 250 Q60 150 200 170 Q290 182 300 240 Q260 210 230 230 Q260 260 330 290 Q420 330 520 370 L520 400Z" fill="url(#gWave)" opacity=".92"/>
+                    <path d="M200 172 Q280 178 298 236 Q270 208 232 226" fill="none" stroke="#e6f2f5" stroke-width="6"/>
+                </g>`;
+            },
+
+            autodafe: () => `
+                <g class="shaking" style="animation-duration:9s">
+                ${groundPath('#7a6650')}
+                <path d="M300 370 V170 h40 v-30 h40 v30 h240 v-30 h40 v30 h40 V370Z" fill="#b9a585" opacity=".7"/>
+                <path d="M470 170 V120 q30 -40 60 0 V170Z" fill="#b9a585" opacity=".7"/>
+                <g>
+                    <rect x="358" y="250" width="6" height="110" fill="#3a2412"/>
+                    <path d="M330 368 l60 0 l-8 -16 l-44 0z" fill="#5a3418"/>
+                    ${man(352, 260, 50, '#e9d27a')}
+                    <path d="M354 262 L361 228 L368 262Z" fill="#e9d27a" stroke="#8a2a14"/>
+                    ${fl(330, 300, 34)}${fl(356, 296, 38, 'b')}${fl(380, 304, 30, 'c')}
+                </g>
+                <g>
+                    <rect x="558" y="250" width="6" height="110" fill="#3a2412"/>
+                    <path d="M530 368 l60 0 l-8 -16 l-44 0z" fill="#5a3418"/>
+                    ${man(552, 260, 50, '#e9d27a')}
+                    <path d="M554 262 L561 228 L568 262Z" fill="#e9d27a" stroke="#8a2a14"/>
+                    ${fl(532, 302, 32, 'b')}${fl(556, 294, 40)}${fl(580, 306, 28, 'c')}
+                </g>
+                <path d="M690 370 V220 H770 M690 236 L706 220" stroke="#3a2412" stroke-width="7" fill="none"/>
+                <g class="a-swing" style="transform-origin:752px 220px"><path d="M752 220 V244" stroke="#3a2412" stroke-width="2"/>${man(744, 242, 44, '#2a2420')}</g>
+                <g>${man(440, 308, 54, '#3a4a6a')}<g class="a-flog"><path d="M468 312 L496 300" stroke="#3a2412" stroke-width="3"/></g>${man(480, 306, 56, '#2a2420')}</g>
+                <g class="a-crowd" fill="#2c2420">${Array.from({length: 24}, (_, i) => { const x = 200 + i * 26, y = 384 - (i % 3) * 4; return `<circle cx="${x}" cy="${y - 14}" r="8"/><path d="M${x - 13} ${y + 20} v-14 q0 -10 13 -10 q13 0 13 10 v14z"/>`; }).join('')}</g>
+                ${puff(356, 280, 18, 0)}${puff(556, 280, 20, -2.4)}
+                </g>`,
+
+            paraguay: () => `
+                ${groundPath('#2f4a22', 'Q500 362 940 370')}
+                ${[220, 300, 700, 780].map((x, i) => `<path d="M${x} 370 q${i % 2 ? 8 : -8} -90 ${i % 2 ? -4 : 4} -170" stroke="#5a3a1c" stroke-width="10" fill="none"/>
+                    <g fill="#3f7a2a">${[0, 60, 120, 180, 240, 300].map(a => `<ellipse cx="${x + (i % 2 ? -4 : 4)}" cy="200" rx="58" ry="12" transform="rotate(${a + 15} ${x + (i % 2 ? -4 : 4)} 200)"/>`).join('')}</g>`).join('')}
+                ${fl(456, 312, 34)}${fl(484, 304, 40, 'b')}${fl(516, 314, 32, 'c')}
+                <path d="M420 300 Q500 340 580 300 L572 260 L428 260Z" fill="#1d1d1d"/>
+                <ellipse cx="500" cy="260" rx="74" ry="12" fill="#6a7a5a"/>
+                ${man(474, 214, 50, '#1a1a1a')}${man(508, 220, 46, '#7a5a3a')}
+                ${[0, 1, 2, 3, 4].map(i => `<circle class="p-bubble" cx="${460 + i * 20}" cy="258" r="5" fill="#cfd9c0" style="animation-delay:${-i * .36}s"/>`).join('')}
+                <g class="p-dance">${man(360, 300, 56, '#7a3a1a')}${man(640, 300, 56, '#7a3a1a')}</g>
+                <g class="p-dance b">${man(396, 306, 52, '#6a2a12')}${man(600, 306, 52, '#6a2a12')}</g>
+                <g class="p-arrow"><path d="M0 150 h46 M40 146 l8 4 l-8 4" stroke="#2a1a0a" stroke-width="2.5" fill="none"/></g>
+                <g class="p-arrow b"><path d="M0 110 h46 M40 106 l8 4 l-8 4" stroke="#2a1a0a" stroke-width="2.5" fill="none"/></g>`,
+
+            eldorado: () => `
+                <path d="M0 370 L0 200 L80 120 L160 210 L250 90 L360 200 L380 260 L0 370Z" fill="#c9a23a" opacity=".55"/>
+                <path d="M0 400 L0 370 L780 370 L790 400Z" fill="#a07a2a"/>
+                <path d="M860 400 L870 380 L1000 370 L1000 400Z" fill="#6a5020"/>
+                <g fill="url(#gGold)">
+                    <rect x="190" y="290" width="40" height="80"/><circle cx="210" cy="290" r="20"/>
+                    <rect x="240" y="250" width="56" height="120"/><circle cx="268" cy="250" r="28"/>
+                    <rect x="304" y="300" width="36" height="70"/><circle cx="322" cy="300" r="18"/>
+                    <path d="M266 222 v-20" stroke="#ffe27a" stroke-width="3"/>
+                </g>
+                ${[[260, 230], [210, 278], [322, 290], [276, 330], [230, 340]].map(([x, y], i) => `<circle class="e-glint" cx="${x}" cy="${y}" r="5" fill="#fff6c4" style="animation-delay:${-i * .5}s"/>`).join('')}
+                <path d="M776 370 L790 400" stroke="#5a4012" stroke-width="3"/>
+                ${Array.from({length: 10}, (_, i) => `<g class="e-sheep" style="animation-delay:${(-i * 1.5).toFixed(1)}s"><use href="#sheep" x="372" y="340" width="44" height="30"/></g>`).join('')}
+                ${man(520, 318, 52, '#3a2a5a')}${man(492, 320, 50, '#7a4a2a')}`,
+
+            surinam: () => `
+                <rect x="-700" y="312" width="2400" height="88" fill="#2b5566"/>
+                <path d="M-700 400 L-700 300 L220 300 Q260 300 280 312 L280 400Z" fill="#5a6a2a"/>
+                ${Array.from({length: 40}, (_, i) => `<path d="M${-560 + i * 20} 300 q${i % 2 ? 4 : -4} -40 ${i % 2 ? 2 : -2} -70" stroke="#7aa03a" stroke-width="4" fill="none"/>`).join('')}
+                <path d="M180 300 V250 h50 V300Z" fill="#8a6a4a"/><path d="M176 252 L205 230 L234 252Z" fill="#5a3a2a"/>
+                <g class="s-ship">
+                    <use href="#ship" x="520" y="160" width="190" height="162"/>
+                    <use href="#sheep" x="600" y="236" width="32" height="22"/>
+                    <use href="#sheep" x="636" y="238" width="30" height="20"/>
+                    ${fl(560, 214, 30, 's-fire')}${fl(610, 196, 38, 's-fire')}${fl(660, 214, 30, 's-fire')}
+                </g>
+                <use href="#ship" x="820" y="200" width="150" height="128" style="transform:scaleX(-1);transform-origin:895px 0"/>
+                <circle class="s-flash" cx="826" cy="296" r="20" fill="#ffd36b"/>
+                <g class="s-float"><use href="#sheep" x="700" y="304" width="36" height="25"/></g>
+                <path d="M280 322 ${Array.from({length: 30}, () => 'q25 -10 50 0').join(' ')}" stroke="#4a7a8a" stroke-width="3" fill="none"/>`,
+
+            paris: () => `
+                ${groundPath('#4a4048', 'Q500 370 940 370')}
+                <g fill="#5d5266">
+                    <rect x="200" y="250" width="90" height="120"/><path d="M196 252 L245 222 L294 252Z"/>
+                    <rect x="300" y="180" width="40" height="190"/><rect x="380" y="180" width="40" height="190"/>
+                    <rect x="330" y="230" width="60" height="140"/>
+                    <circle cx="360" cy="260" r="16" fill="#a8a0b8"/>
+                    <rect x="640" y="240" width="70" height="130"/><path d="M636 242 L675 214 L714 242Z"/>
+                    <rect x="720" y="270" width="80" height="100"/><path d="M716 272 L760 246 L804 272Z"/>
+                </g>
+                <g fill="#ffe2a0" opacity=".8"><rect x="652" y="270" width="10" height="14"/><rect x="684" y="300" width="10" height="14"/><rect x="740" y="296" width="10" height="14"/><rect x="214" y="280" width="10" height="14"/></g>
+                <rect x="430" y="318" width="150" height="10" fill="#6b2a1a"/><rect x="440" y="328" width="6" height="40" fill="#4a1a10"/><rect x="564" y="328" width="6" height="40" fill="#4a1a10"/>
+                ${man(410, 300, 64, '#3a4a6a')}
+                ${man(586, 298, 66, '#1a1a1a')}
+                <circle cx="599" cy="300" r="6" fill="#1a1a1a"/>
+                ${[-90, -40, 20, 60, -120, -10, 90, -60].map((dx, i) => `<circle class="pa-coin" cx="440" cy="310" r="${8 + i % 3 * 2}" fill="${i % 2 ? '#f2c335' : '#cfe8ff'}" stroke="#8a6410" style="--dx:${dx}px;animation-delay:${-i * .5}s"/>`).join('')}
+                ${[60, -50, 110].map((dx, i) => `<rect class="pa-card" x="500" y="300" width="20" height="28" rx="2" fill="#fff" stroke="#8a2a14" style="--dx:${dx}px;animation-delay:${-i}s"/>`).join('')}`,
+
+            portsmouth: () => `
+                <rect x="-700" y="312" width="2400" height="88" fill="#34586a"/>
+                <path d="M-700 400 L-700 300 L200 300 L230 312 L230 400Z" fill="#5a5a4a"/>
+                <g fill="#2a2a2a">${Array.from({length: 16}, (_, i) => `<path d="M${-200 + i * 24} 300 v-6 q0 -10 10 -10 q10 0 10 10 v6z"/><circle cx="${-190 + i * 24}" cy="278" r="6"/>`).join('')}</g>
                 
-                // If storm, maybe trigger lightning
-                if (d === 'disaster-storm' && Math.random() < 0.5) {
-                    setTimeout(() => {
-                        lightningFlash.classList.add('is-lightning');
-                        setTimeout(() => lightningFlash.classList.remove('is-lightning'), 400);
-                    }, Math.random() * 2000);
-                }
+                <g class="po-ship">
+                    <path d="M300 320 L760 320 L730 368 L330 368Z" fill="#5a3418"/>
+                    <path d="M300 320 L760 320" stroke="#c99a2e" stroke-width="4"/>
+                    <path d="M420 320 V120 M560 320 V100 M680 320 V140" stroke="#3a2412" stroke-width="6"/>
+                    <path d="M380 140 Q420 150 460 140 L458 230 Q420 238 382 230Z M518 120 Q560 132 602 120 L600 220 Q560 228 520 220Z M646 160 Q680 168 714 160 L712 240 Q680 246 648 240Z" fill="#e8dec4" opacity=".9"/>
+                    <g class="po-admiral">${man(626, 266, 54, '#1e2a4a')}</g>
+                    ${[470, 496, 522, 548].map(x => man(x, 262, 58, '#a02a20')).join('')}
+                    ${[470, 496, 522, 548].map(x => `<path d="M${x + 18} 282 h26" stroke="#2a1a0a" stroke-width="2.5"/><circle class="po-flash" cx="${x + 46}" cy="282" r="9" fill="#ffd36b"/><circle class="po-smoke" cx="${x + 48}" cy="280" r="12" fill="#cfcfcf"/>`).join('')}
+                </g>
+                <path d="M230 322 ${Array.from({length: 30}, () => 'q25 -10 50 0').join(' ')}" stroke="#5a8a9a" stroke-width="3" fill="none"/>`,
+
+            venise: () => `
+                <g fill="#c9a07a">
+                    <rect x="160" y="170" width="200" height="150"/><rect x="640" y="190" width="200" height="130"/>
+                </g>
+                <g fill="#7a4a3a">${[0, 1, 2, 3, 4].map(i => `<path d="M${176 + i * 36} 320 v-40 q12 -16 24 0 v40z M${656 + i * 36} 320 v-40 q12 -16 24 0 v40z"/>`).join('')}</g>
+                <rect x="360" y="270" width="280" height="50" fill="#b88a5a"/>
+                <rect x="380" y="250" width="240" height="10" fill="#f0e2c4"/>
+                ${Array.from({length: 6}, (_, i) => {
+                    const x = 386 + i * 40;
+                    return `${man(x, 192, 64, ['#5a2a4a', '#2a3a6a', '#6a3a1a', '#2a5a4a', '#4a2a2a', '#3a3a5a'][i])}<g class="v-crown" style="animation-delay:${-i * 2}s"><use href="#crown" x="${x - 1}" y="178" width="28" height="19"/></g>`;
+                }).join('')}
+                <rect x="0" y="320" width="1000" height="80" fill="#3c5e6e"/>
+                <g class="v-gondola"><path d="M600 352 Q700 372 820 340 L826 330 Q700 360 596 344Z" fill="#111"/>${man(780, 300, 44, '#111')}<path d="M800 300 L770 360" stroke="#111" stroke-width="2"/></g>
+                ${[[240, 90, '#ffd36b'], [760, 70, '#ff8aa0'], [520, 60, '#9fd3ff']].map(([x, y, c], i) => `<g class="v-fw" style="animation-delay:${-i * 1.1}s">${Array.from({length: 10}, (_, k) => {
+                    const a = k / 10 * Math.PI * 2;
+                    return `<path d="M${x} ${y} L${(x + Math.cos(a) * 34).toFixed(1)} ${(y + Math.sin(a) * 34).toFixed(1)}" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>`;
+                }).join('')}</g>`).join('')}
+                <path d="M0 330 ${Array.from({length: 20}, () => 'q25 -8 50 0').join(' ')}" stroke="#6a9aaa" stroke-width="2" fill="none"/>`,
+
+            jardin: () => `
+                <path d="M0 320 Q200 290 420 310 T1000 300 L1000 340 L0 340Z" fill="#4a5a6a" opacity=".55"/>
+                <path d="M120 300 v-50 h8 v-20 l6 -10 l6 10 v20 h8 v50Z M820 296 v-40 h6 v-26 l5 -9 l5 9 v26 h6 v40Z" fill="#3a4658" opacity=".7"/>
+                <path d="M190 300 q30 -40 60 0Z" fill="#3a4658" opacity=".7"/>
+                <rect x="0" y="330" width="1000" height="22" fill="var(--sea)" opacity=".85"/>
+                ${groundPath('#4a3a28', 'Q500 350 940 370')}
+                <rect x="600" y="290" width="110" height="66" fill="#c8b08a"/>
+                <path d="M592 292 L655 256 L718 292Z" fill="#8a4a2a"/>
+                <rect x="644" y="320" width="20" height="36" fill="#4a3020"/>
+                <rect x="616" y="304" width="16" height="14" fill="#ffd27a"/>
+                <rect x="684" y="250" width="10" height="24" fill="#6a4a3a"/>
+                <circle class="j-smoke" cx="689" cy="244" r="8" fill="#ccc" opacity=".4"/>
+                <g class="j-hoe" style="transform-origin:402px 362px">${man(392, 312, 50, '#5a3a6a')}<path d="M410 324 L436 364 M430 362 h12" stroke="#5a3a1a" stroke-width="3"/></g>
+                ${man(520, 316, 46, '#8a4a3a')}`
+        };
+
+        const FX = {
+            westphalie: ['fx-snow'],
+            bulgares: ['fx-smoke'],
+            hollande: ['fx-pox'],
+            tempete: ['fx-sea rough', 'fx-rain', 'fx-flash'],
+            lisbonne: ['fx-smoke'],
+            autodafe: ['fx-smoke'],
+            surinam: ['fx-sea'],
+            portsmouth: ['fx-sea'],
+            venise: ['fx-sea'],
+            paraguay: [], eldorado: [], paris: [], jardin: []
+        };
+
+        const TINT = {
+            westphalie: 'linear-gradient(to bottom, rgba(10,12,40,.25), rgba(10,12,40,0))',
+            bulgares: 'radial-gradient(ellipse 80% 70% at 50% 100%, rgba(255,90,20,.55), rgba(120,20,10,.25) 60%, rgba(0,0,0,0))',
+            hollande: 'linear-gradient(to bottom, rgba(150,170,60,.28), rgba(120,40,40,.12))',
+            tempete: 'linear-gradient(to bottom, rgba(20,24,34,.72), rgba(30,40,50,.45))',
+            lisbonne: 'radial-gradient(ellipse 90% 70% at 50% 100%, rgba(255,110,30,.45), rgba(80,40,20,.2) 60%, rgba(0,0,0,0))',
+            autodafe: 'radial-gradient(ellipse 70% 60% at 50% 100%, rgba(255,120,40,.42), rgba(0,0,0,0))',
+            paraguay: 'linear-gradient(to bottom, rgba(30,80,30,.18), rgba(30,80,30,.06))',
+            eldorado: 'linear-gradient(to bottom, rgba(255,210,90,.30), rgba(255,200,80,.10))',
+            surinam: 'radial-gradient(ellipse 50% 40% at 62% 80%, rgba(255,120,40,.22), rgba(0,0,0,0))',
+            paris: 'linear-gradient(to bottom, rgba(50,30,60,.18), rgba(0,0,0,0))',
+            portsmouth: 'linear-gradient(to bottom, rgba(90,100,110,.32), rgba(0,0,0,0))',
+            venise: 'linear-gradient(to bottom, rgba(120,60,120,.22), rgba(0,0,0,0))',
+            jardin: 'none'
+        };
+
+        /* ------------------------------------------------------------------
+           Sky colour through the day
+           ------------------------------------------------------------------ */
+        const SKY = [
+            [0, '#0b1026', '#1d2a50'], [300, '#141c3c', '#2a3462'], [370, '#47507e', '#e59a7a'],
+            [430, '#7fa9d6', '#f4d0a4'], [540, '#6fb0e2', '#cfe7f5'], [960, '#78b2df', '#d9ecf5'],
+            [1080, '#5f7fb8', '#f2b07a'], [1140, '#3c3f78', '#e47f5c'], [1200, '#1f2552', '#5a4a7a'],
+            [1290, '#0d1330', '#202a52'], [1440, '#0b1026', '#1d2a50']
+        ];
+        const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+        const mix = (a, b, t) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; };
+        function skyAt(m) {
+            for (let i = 0; i < SKY.length - 1; i++) {
+                const [t0, a0, b0] = SKY[i], [t1, a1, b1] = SKY[i + 1];
+                if (m >= t0 && m < t1) { const t = (m - t0) / (t1 - t0); return [mix(a0, a1, t), mix(b0, b1, t)]; }
             }
-
-            // Reschedule next check in 3-8 seconds
-            setTimeout(triggerRandomDisaster, Math.random() * 5000 + 3000);
+            return [SKY[0][1], SKY[0][2]];
         }
-        
-        // Start disasters loop
-        setTimeout(triggerRandomDisaster, 5000);
+        function nightness(m) {
+            if (m < 330 || m >= 1230) return 1;
+            if (m < 420) return 1 - (m - 330) / 90;
+            if (m >= 1140) return (m - 1140) / 90;
+            return 0;
+        }
 
-        // --- The Garden System (Procedural Canvas) ---
-        const canvas = document.getElementById('gardenCanvas');
+        /* ------------------------------------------------------------------
+           DOM setup
+           ------------------------------------------------------------------ */
+        const $ = id => document.getElementById(id);
+        const root = document.documentElement;
+        const world = $('world'), tint = $('tint'), stars = $('stars');
+        const routeList = $('routeList'), marker = $('marker');
+        const timeEl = $('time'), alsoEl = $('also'), doctrineEl = $('doctrine');
+        const capCh = $('capCh'), capPlace = $('capPlace'), capEv = $('capEv'), capQ = $('capQ'), capNext = $('capNext');
+        const motto = $('motto');
+
+        routeList.innerHTML = STATIONS.map(s => `<li title="${s.label}, from ${fmt(s.start)}"><span class="dot"></span><span class="lbl">${s.label}</span></li>`).join('');
+        const routeItems = Array.from(routeList.children);
+
+        (function makeStars() {
+            let seed = 30;
+            const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+            let html = '';
+            for (let i = 0; i < 90; i++) html += `<i style="left:${(r() * 100).toFixed(2)}%;top:${(r() * 70).toFixed(2)}%;opacity:${(.3 + r() * .7).toFixed(2)}"></i>`;
+            stars.innerHTML = html;
+        })();
+
+        function fmt(mins) {
+            const h = Math.floor(mins / 60) % 24, m = Math.floor(mins % 60);
+            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+        const pad = n => String(n).padStart(2, '0');
+
+        function stationIndex(m) {
+            for (let i = STATIONS.length - 1; i >= 0; i--) if (m >= STATIONS[i].start) return i;
+            return 0;
+        }
+
+        let currentKey = null;
+        let narrow = null;
+        function buildScene(s) {
+            const fx = (FX[s.key] || []).map(c => `<div class="fx ${c}"></div>`).join('');
+            const ground = s.ground ? `<div class="ground-band" style="background:${s.ground}"></div>` : '';
+            world.innerHTML = `${fx}${ground}<svg class="scene" viewBox="${narrow ? '240 60 520 340' : '0 0 1000 400'}" preserveAspectRatio="xMidYMax meet">${SCENES[s.key]()}</svg>`;
+            if (s.sea) root.style.setProperty('--sea', s.sea);
+            tint.style.background = TINT[s.key] || 'none';
+        }
+
+        function setText(el, html) { if (el.innerHTML !== html) el.innerHTML = html; }
+
+        function updateStation(i, m) {
+            const s = STATIONS[i];
+            const wasNarrow = narrow;
+            narrow = window.innerWidth <= 700;
+            if (s.key !== currentKey || wasNarrow !== narrow) {
+                currentKey = s.key;
+                buildScene(s);
+                capCh.textContent = s.ch;
+                capPlace.textContent = s.place;
+                capEv.textContent = s.ev;
+                capQ.innerHTML = s.q ? `${s.q}<i>${s.gl}</i>` : '';
+                capQ.style.display = s.q ? '' : 'none';
+                alsoEl.innerHTML = `and the best of all possible <b>${s.best}</b>`;
+                if (s.key === 'jardin') {
+                    doctrineEl.innerHTML = '« Tous les événements sont enchaînés dans le meilleur des mondes possibles »<span>all events are linked in the best of all possible worlds</span>';
+                } else {
+                    doctrineEl.innerHTML = '« tout est au mieux »<span>all is for the best</span>';
+                }
+                routeItems.forEach((li, k) => {
+                    li.classList.toggle('past', k < i);
+                    li.classList.toggle('now', k === i);
+                    if (k === i) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+                });
+            }
+            const nxt = STATIONS[i + 1];
+            setText(capNext, nxt ? `Next: ${nxt.label} at ${fmt(nxt.start)}` : 'Until midnight, when Westphalie begins again');
+            // from this stop's dot towards the next; the garden only edges a little way on
+            const frac = (m - s.start) / (s.end - s.start);
+            const x = (i + 0.5 + frac * (nxt ? 1 : 0.4)) / STATIONS.length;
+            marker.style.left = `calc(var(--route-pad) + (100% - 2 * var(--route-pad)) * ${x.toFixed(5)})`;
+        }
+
+        /* ------------------------------------------------------------------
+           The garden: seeded so the same plant always sprouts at the same
+           minute. It fills slowly through the day and comes into its own
+           once the travels are over at 18:30.
+           ------------------------------------------------------------------ */
+        const canvas = $('garden');
         const ctx = canvas.getContext('2d');
-        
-        let width, height;
-        
-        function initCanvas() {
-            width = window.innerWidth;
-            // The canvas is positioned at bottom, but its internal coordinate system spans from 0 to height
-            height = canvas.getBoundingClientRect().height; 
+        let W = 0, GH = 0, CH = 0, VH = 0;
+        let plants = [], trees = [];
+
+        function gardenHeightFor(m) {
+            const day = Math.min(1, m / GARDEN_DONE);
+            const evening = Math.max(0, Math.min(1, (m - GARDEN_DONE) / 150));
+            const frac = 0.10 + 0.14 * day + (W < 700 ? 0.07 : 0.12) * evening;
+            return Math.round(Math.max(70, VH * frac));
+        }
+
+        function rng(seed) {
+            return function () {
+                seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+                let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        function seedGarden() {
+            const r = rng(1759);
+            plants = [];
+            const unit = Math.max(26, Math.min(44, W / 34));
+            const ROWS = 4;
+            for (let row = 0; row < ROWS; row++) {
+                const scale = 0.62 + row * 0.16;
+                const step = unit * scale;
+                const n = Math.ceil(W / step) + 1;
+                const off = r() * step;
+                for (let i = 0; i < n; i++) {
+                    const tr = r();
+                    const type = tr < .3 ? 'chou' : tr < .5 ? 'salade' : tr < .7 ? 'fleur' : tr < .85 ? 'ble' : 'haricot';
+                    plants.push({
+                        row, scale, type,
+                        x: off + i * step + (r() - .5) * step * .3,
+                        sprout: r() * (GARDEN_DONE - 140),
+                        hue: Math.floor(r() * 5),
+                        phase: r() * Math.PI * 2
+                    });
+                }
+            }
+            trees = [];
+            const nt = Math.max(3, Math.round(W / 220));
+            const kinds = ['orange', 'citron', 'pistache'];
+            for (let i = 0; i < nt; i++) {
+                trees.push({
+                    x: (i + .5) * W / nt + (r() - .5) * 40,
+                    kind: kinds[i % 3],
+                    sprout: GARDEN_DONE + (i / nt) * 160,
+                    phase: r() * Math.PI * 2
+                });
+            }
+        }
+
+        function resize() {
+            VH = window.innerHeight;
+            W = window.innerWidth;
+            seedGarden();
+            sizeGarden(nowMinutes());
+            currentKey = null;      // rebuild the scene (viewBox may change)
+            tick();
+        }
+
+        function sizeGarden(m) {
+            const gh = gardenHeightFor(m);
+            if (gh === GH && canvas.width) return;
+            GH = gh;
+            CH = Math.round(GH * 1.6);           // headroom above the soil for tall plants and trees
             const dpr = window.devicePixelRatio || 1;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            canvas.width = Math.round(width * dpr);
-            canvas.height = Math.round(height * dpr);
+            canvas.style.width = W + 'px';
+            canvas.style.height = CH + 'px';
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(CH * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            root.style.setProperty('--garden-h', (GH - 2) + 'px');
         }
-        initCanvas();
-        window.addEventListener('resize', initCanvas);
 
-        // We will grow vines procedurally up from the bottom over time.
-        const vines = [];
+        const FLOWERS = ['#e8506a', '#f4a62a', '#f6e04a', '#9a5ad0', '#ff7a4a'];
 
-        class Vine {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = height + 10; // start slightly below canvas
-                this.angle = -Math.PI / 2; // point straight up
-                this.thickness = Math.random() * 4 + 2;
-                // Green shades
-                const g = Math.floor(Math.random() * 100 + 100);
-                this.color = `rgb(30, ${g}, 50)`;
-                this.growthSpeed = Math.random() * 0.5 + 0.1;
-                this.curve = (Math.random() - 0.5) * 0.1;
-                this.alive = true;
-                
-                this.leaves = [];
+        function drawGarden(m, t) {
+            const soilTop = CH - GH;
+            ctx.clearRect(0, 0, W, CH);
+
+            // soil
+            const g = ctx.createLinearGradient(0, soilTop, 0, CH);
+            g.addColorStop(0, '#5b4128'); g.addColorStop(1, '#2e2014');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, soilTop, W, GH);
+            // grass lip
+            ctx.fillStyle = '#4f6b2a';
+            ctx.fillRect(0, soilTop - 3, W, 6);
+
+            const rowY = row => soilTop + GH * (0.16 + row * 0.15);
+            // furrows
+            ctx.strokeStyle = 'rgba(30,18,8,.55)';
+            for (let row = 0; row < 4; row++) {
+                ctx.lineWidth = 2 + row;
+                ctx.beginPath(); ctx.moveTo(0, rowY(row) + 3); ctx.lineTo(W, rowY(row) + 3); ctx.stroke();
             }
 
-            update() {
-                if (!this.alive) return;
+            const sway = reduceMotion.matches ? 0 : 1;
 
-                const prevX = this.x;
-                const prevY = this.y;
-
-                // Wander slightly
-                this.angle += this.curve + (Math.random() - 0.5) * 0.1;
-
-                this.x += Math.cos(this.angle) * this.growthSpeed;
-                this.y += Math.sin(this.angle) * this.growthSpeed;
-
-                // Draw segment
-                ctx.beginPath();
-                ctx.moveTo(prevX, prevY);
-                ctx.lineTo(this.x, this.y);
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = this.thickness;
-                ctx.lineCap = 'round';
-                ctx.stroke();
-
-                // Chance to spawn a bud/leaf
-                if (Math.random() < 0.05) {
-                    this.drawLeaf(this.x, this.y);
+            // trees behind, in the evening
+            trees.forEach(tr => {
+                const gr = Math.max(0, Math.min(1, (m - tr.sprout) / 120));
+                if (gr <= 0) return;
+                const base = rowY(0) - 2;
+                const h = GH * 0.95 * gr;
+                const lean = sway * Math.sin(t / 1800 + tr.phase) * 2 * gr;
+                ctx.strokeStyle = '#4a3020'; ctx.lineWidth = 3 + 4 * gr;
+                ctx.beginPath(); ctx.moveTo(tr.x, base); ctx.lineTo(tr.x + lean, base - h); ctx.stroke();
+                const rad = GH * 0.32 * gr;
+                ctx.fillStyle = tr.kind === 'pistache' ? '#6a8a3a' : '#2f6a2a';
+                ctx.beginPath(); ctx.arc(tr.x + lean, base - h, rad, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,.08)';
+                ctx.beginPath(); ctx.arc(tr.x + lean - rad * .3, base - h - rad * .3, rad * .55, 0, Math.PI * 2); ctx.fill();
+                if (gr > .6) {
+                    ctx.fillStyle = tr.kind === 'orange' ? '#f39a1e' : tr.kind === 'citron' ? '#f3e04a' : '#b9c86a';
+                    for (let k = 0; k < 7; k++) {
+                        const a = tr.phase + k * 2.4, rr = rad * (.35 + (k % 3) * .2);
+                        ctx.beginPath(); ctx.arc(tr.x + lean + Math.cos(a) * rr, base - h + Math.sin(a) * rr, Math.max(2, rad * .12), 0, Math.PI * 2); ctx.fill();
+                    }
                 }
+            });
 
-                // If it grows too high or thickness goes below 0, stops
-                this.thickness -= 0.005;
-                if (this.thickness <= 0.2 || this.y < 0) {
-                    this.alive = false;
-                    // If a vine dies, blossom a flower at the tip
-                    this.drawFlower(this.x, this.y);
+            // rows, far to near
+            const unitH = GH * 0.22;
+            for (let row = 0; row < 4; row++) {
+                const y = rowY(row);
+                for (const p of plants) {
+                    if (p.row !== row) continue;
+                    const gr = Math.max(0, Math.min(1, (m - p.sprout) / 140));
+                    if (gr <= 0) continue;
+                    const s = unitH * p.scale * (0.25 + 0.75 * gr);
+                    const wob = sway * Math.sin(t / 900 + p.phase) * 0.08 * gr;
+                    drawPlant(p, p.x, y, s, gr, wob);
                 }
             }
+        }
 
-            drawLeaf(lx, ly) {
-                ctx.fillStyle = `rgb(50, ${Math.floor(Math.random()*100 + 150)}, 50)`;
-                ctx.beginPath();
-                ctx.arc(lx + (Math.random()-0.5)*10, ly + (Math.random()-0.5)*10, Math.random()*4+2, 0, Math.PI*2);
-                ctx.fill();
-            }
-
-            drawFlower(fx, fy) {
-                // Vibrant colors regardless of disaster
-                const colors = ['#FF69B4', '#FFA500', '#FFFF00', '#8A2BE2', '#FF4500'];
-                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-                
-                // Draw 5 petals
-                for(let i=0; i<5; i++) {
-                    const angle = (i/5) * Math.PI * 2;
-                    ctx.beginPath();
-                    ctx.arc(fx + Math.cos(angle)*5, fy + Math.sin(angle)*5, 4, 0, Math.PI*2);
-                    ctx.fill();
+        function drawPlant(p, x, y, s, gr, wob) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(wob);
+            switch (p.type) {
+                case 'chou': {
+                    ctx.fillStyle = '#5f9a4a';
+                    ctx.beginPath(); ctx.ellipse(0, -s * .32, s * .55, s * .36, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#8cc46a';
+                    ctx.beginPath(); ctx.ellipse(0, -s * .38, s * .32, s * .22, 0, 0, Math.PI * 2); ctx.fill();
+                    break;
                 }
-                // Center
-                ctx.fillStyle = '#FFF';
-                ctx.beginPath();
-                ctx.arc(fx, fy, 2, 0, Math.PI*2);
-                ctx.fill();
+                case 'salade': {
+                    ctx.fillStyle = '#9ad05a';
+                    for (let k = -2; k <= 2; k++) {
+                        ctx.beginPath(); ctx.ellipse(k * s * .14, -s * .3, s * .14, s * .32, k * .35, 0, Math.PI * 2); ctx.fill();
+                    }
+                    break;
+                }
+                case 'fleur': {
+                    ctx.strokeStyle = '#4a7a2a'; ctx.lineWidth = Math.max(1.2, s * .07);
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 1.1); ctx.stroke();
+                    ctx.fillStyle = '#5a8a3a';
+                    ctx.beginPath(); ctx.ellipse(s * .14, -s * .45, s * .16, s * .07, -.5, 0, Math.PI * 2); ctx.fill();
+                    if (gr > .55) {
+                        ctx.fillStyle = FLOWERS[p.hue];
+                        const pr = s * .17 * Math.min(1, (gr - .55) / .3);
+                        for (let k = 0; k < 5; k++) {
+                            const a = k / 5 * Math.PI * 2;
+                            ctx.beginPath(); ctx.arc(Math.cos(a) * pr, -s * 1.1 + Math.sin(a) * pr, pr * .8, 0, Math.PI * 2); ctx.fill();
+                        }
+                        ctx.fillStyle = '#fff2b0';
+                        ctx.beginPath(); ctx.arc(0, -s * 1.1, pr * .5, 0, Math.PI * 2); ctx.fill();
+                    }
+                    break;
+                }
+                case 'ble': {
+                    ctx.strokeStyle = gr > .8 ? '#d8b04a' : '#8ab04a'; ctx.lineWidth = Math.max(1, s * .05);
+                    for (let k = -2; k <= 2; k++) {
+                        ctx.beginPath(); ctx.moveTo(k * s * .05, 0); ctx.quadraticCurveTo(k * s * .1, -s * .6, k * s * .18, -s * 1.15); ctx.stroke();
+                    }
+                    break;
+                }
+                case 'haricot': {
+                    ctx.strokeStyle = '#7a5a3a'; ctx.lineWidth = Math.max(1.2, s * .06);
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 1.5); ctx.stroke();
+                    ctx.fillStyle = '#4f8a3a';
+                    const n = Math.floor(2 + gr * 5);
+                    for (let k = 0; k < n; k++) {
+                        const yy = -s * (.15 + k * .22);
+                        ctx.beginPath(); ctx.ellipse((k % 2 ? 1 : -1) * s * .14, yy, s * .14, s * .08, (k % 2 ? -.4 : .4), 0, Math.PI * 2); ctx.fill();
+                    }
+                    break;
+                }
             }
+            ctx.restore();
         }
 
-        // Spawn a new vine every few seconds (constantly cultivating the garden)
-        function spawnVine() {
-            if (vines.length < 150) { // arbitrary cap to prevent extreme lag
-                vines.push(new Vine());
+        /* the garden line, earned letter by letter through the day */
+        const MOTTO = 'il faut cultiver notre jardin';
+        function updateMotto(m) {
+            if (m >= GARDEN_DONE) {
+                setText(motto, `<span class="done">« Cela est bien dit, répondit Candide, mais il faut cultiver notre jardin. »</span><span class="gloss">That is well said, answered Candide, but we must cultivate our garden.</span>`);
+                return;
             }
-            setTimeout(spawnVine, Math.random() * 2000 + 500);
-        }
-        
-        // Initial burst
-        for(let i=0; i<10; i++) spawnVine();
-
-        // We do *not* clear the canvas in the animation loop. 
-        // We let the vines accumulate permanently at the bottom.
-        function animateGarden() {
-            vines.forEach(v => v.update());
-            if (!reduceMotion.matches) requestAnimationFrame(animateGarden);
+            const n = Math.floor(MOTTO.length * m / GARDEN_DONE);
+            setText(motto, `<span class="done">${MOTTO.slice(0, n)}</span><span class="todo">${MOTTO.slice(n)}</span><span class="gloss">we must cultivate our garden, a few letters at a time until 18:30</span>`);
         }
 
-        animateGarden();
+        /* ------------------------------------------------------------------
+           Clock
+           ------------------------------------------------------------------ */
+        function nowMinutes() {
+            const d = new Date();
+            return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+        }
 
+        function tick() {
+            const d = new Date();
+            const m = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+            timeEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            const i = stationIndex(m);
+            updateStation(i, m);
+            const [s1, s2] = skyAt(m);
+            root.style.setProperty('--sky1', s1);
+            root.style.setProperty('--sky2', s2);
+            stars.style.opacity = nightness(m).toFixed(2);
+            sizeGarden(m);
+            updateMotto(m);
+            if (reduceMotion.matches || !animating) drawGarden(m, 0);
+        }
+
+        let animating = false;
+        function frame(t) {
+            if (reduceMotion.matches) { animating = false; tick(); return; }
+            drawGarden(nowMinutes(), t);
+            requestAnimationFrame(frame);
+        }
+        function startLoop() {
+            if (!reduceMotion.matches && !animating) { animating = true; requestAnimationFrame(frame); }
+        }
+
+        window.addEventListener('resize', resize);
+        if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', () => { tick(); startLoop(); });
+
+        resize();
+        setInterval(tick, 1000);
+        startLoop();
+    })();
     </script>
 </body>
 </html>
