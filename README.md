@@ -18,6 +18,8 @@ A growing collection of creative, self-contained web clock implementations — e
 
 `games/` holds standalone games rather than clocks — currently `chasm.html`, an original cavern flyer written to the Atari 2600's hardware limits, which does tell the time, in the same pixel font it draws everything else with. Games are listed under "Other Apps" at the foot of the gallery, not among the clocks.
 
+`brain/` is Brain Explorer, a three-plane MNI152 brain viewer with eight public atlases (Harvard-Oxford, Schaefer/Yeo, FreeSurfer aseg, DKT, thalamic nuclei). Click anywhere to read every atlas's label at that point, and drop in your own NIfTI maps as overlays. It needs to be served rather than opened from disk; see [`brain/README.md`](./brain/README.md).
+
 `plate/` is a separate, standalone installable PWA (a QR code generator) hosted alongside the clocks but unrelated to the collection — it isn't part of the gallery.
 
 ## Viewing it

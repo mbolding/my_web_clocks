@@ -1,0 +1,2714 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Explorer</title>
+    <meta name="description"
+        content="Three-plane MNI152 brain viewer with eight public atlases. Click anywhere to read the label from every atlas at once, and drop in your own NIfTI maps as overlays.">
+    <style>
+        :root {
+            --bg: #0c0e11;
+            --panel: #14171b;
+            --panel-2: #1b1f25;
+            --border: #262b33;
+            --text: #e6e8eb;
+            --muted: #8a93a1;
+            --accent: #3ee0c5;
+            --accent-ink: #052620;
+            --warn: #ffb454;
+            --header-h: 56px;
+            color-scheme: dark;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #eceef1;
+                --panel: #ffffff;
+                --panel-2: #f4f5f7;
+                --border: #dcdfe4;
+                --text: #15181c;
+                --muted: #5b6370;
+                --accent: #0e9682;
+                --accent-ink: #ffffff;
+                --warn: #b26a00;
+                color-scheme: light;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+            color: inherit;
+        }
+
+        /* ---------- header ---------- */
+        .top {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: var(--header-h);
+            padding: 0 16px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            min-width: 0;
+            white-space: nowrap;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 650;
+            letter-spacing: -0.01em;
+        }
+
+        .brand .sub {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            max-width: 460px;
+            margin-left: auto;
+        }
+
+        #search {
+            width: 100%;
+            padding: 7px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel-2);
+            outline: none;
+        }
+
+        #search:focus {
+            border-color: var(--accent);
+        }
+
+        .results {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            max-height: min(70vh, 520px);
+            overflow-y: auto;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+            padding: 6px;
+        }
+
+        .results .group {
+            padding: 8px 8px 4px;
+            color: var(--muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .results .hit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 6px 8px;
+            border: 0;
+            border-radius: 6px;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .results .hit.on,
+        .results .hit:hover {
+            background: var(--panel-2);
+        }
+
+        .results .empty {
+            padding: 10px;
+            color: var(--muted);
+        }
+
+        .icon-btn {
+            flex: none;
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--panel-2);
+            cursor: pointer;
+            font-weight: 650;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--accent);
+        }
+
+        /* ---------- layout ---------- */
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            height: calc(100dvh - var(--header-h));
+        }
+
+        .views {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            grid-template-areas: "sag cor" "axi read";
+            gap: 2px;
+            min-height: 0;
+            background: #000;
+        }
+
+        .view {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            background: #000;
+            touch-action: none;
+        }
+
+        .view[data-view="sag"] {
+            grid-area: sag;
+        }
+
+        .view[data-view="cor"] {
+            grid-area: cor;
+        }
+
+        .view[data-view="axi"] {
+            grid-area: axi;
+        }
+
+        .view canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .view.active::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 0 1px rgba(62, 224, 197, 0.35);
+        }
+
+        .readout {
+            grid-area: read;
+            min-height: 0;
+            overflow: auto;
+            padding: 14px 16px;
+            background: var(--panel);
+        }
+
+        .panel {
+            min-height: 0;
+            overflow-y: auto;
+            background: var(--panel);
+            border-left: 1px solid var(--border);
+        }
+
+        /* ---------- readout ---------- */
+        .coords {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 10px;
+        }
+
+        .coords label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .coords input {
+            width: 4.4em;
+            appearance: textfield;
+            -moz-appearance: textfield;
+            padding: 3px 6px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--panel-2);
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+        }
+
+        .coords input::-webkit-inner-spin-button,
+        .coords input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .coords .unit {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .coords .spacer {
+            flex: 1;
+        }
+
+        .small-btn {
+            padding: 3px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--panel-2);
+            cursor: pointer;
+            font-size: 0.82rem;
+        }
+
+        .small-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .vox {
+            margin: 6px 0 10px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        table.labels {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table.labels tr {
+            cursor: pointer;
+        }
+
+        table.labels th,
+        table.labels td {
+            padding: 4px 6px;
+            text-align: left;
+            vertical-align: top;
+            border-top: 1px solid var(--border);
+        }
+
+        table.labels th {
+            width: 34%;
+            color: var(--muted);
+            font-weight: 500;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        table.labels tr.active th {
+            color: var(--accent);
+        }
+
+        table.labels tr.active td {
+            font-weight: 600;
+        }
+
+        table.labels tr:hover td,
+        table.labels tr:hover th {
+            background: var(--panel-2);
+        }
+
+        table.labels td.none {
+            color: var(--muted);
+        }
+
+        .sw {
+            display: inline-block;
+            flex: none;
+            width: 10px;
+            height: 10px;
+            margin-right: 7px;
+            border-radius: 3px;
+            vertical-align: -1px;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+        }
+
+        .ovl-values {
+            margin-top: 12px;
+        }
+
+        .ovl-values div {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 3px 6px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        .ovl-values span:last-child {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---------- side panel ---------- */
+        .card {
+            padding: 14px 16px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            font-size: 0.78rem;
+            font-weight: 650;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .card select,
+        .card input[type="search"],
+        .card input[type="url"],
+        .card input[type="number"] {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--panel-2);
+        }
+
+        .note {
+            margin: 8px 0 10px;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        .note a {
+            color: var(--accent);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 76px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .row>label {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .row output {
+            min-width: 3.2em;
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+        }
+
+        .check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .check input {
+            accent-color: var(--accent);
+        }
+
+        .seg {
+            display: flex;
+            margin: 10px 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .seg button {
+            flex: 1;
+            padding: 5px 0;
+            border: 0;
+            border-left: 1px solid var(--border);
+            background: var(--panel-2);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .seg button:first-child {
+            border-left: 0;
+        }
+
+        .seg button[aria-checked="true"] {
+            background: var(--accent);
+            color: var(--accent-ink);
+            font-weight: 600;
+        }
+
+        .region-list {
+            position: relative;
+            max-height: 300px;
+            margin: 8px 0 0;
+            padding: 0;
+            overflow-y: auto;
+            list-style: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .region-list li {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-top: 1px solid var(--border);
+        }
+
+        .region-list li:first-child {
+            border-top: 0;
+        }
+
+        .region-list li:hover {
+            background: var(--panel-2);
+        }
+
+        .region-list li.current {
+            background: var(--panel-2);
+            box-shadow: inset 3px 0 0 var(--accent);
+            font-weight: 600;
+        }
+
+        .region-list .nm {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .region-list .vol {
+            color: var(--muted);
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--panel-2);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-ink);
+            font-weight: 600;
+        }
+
+        .inline {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .inline> :first-child {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        .ovl {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--panel-2);
+        }
+
+        .ovl-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ovl-head .nm {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .ovl-head button {
+            border: 0;
+            background: none;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1;
+            padding: 2px 4px;
+        }
+
+        .ovl-head button:hover {
+            color: var(--text);
+        }
+
+        .ovl .row {
+            grid-template-columns: 64px minmax(0, 1fr) auto;
+        }
+
+        .ovl .row input[type="number"] {
+            padding: 3px 6px;
+        }
+
+        .ovl select {
+            padding: 4px 6px;
+        }
+
+        .ovl .warn {
+            margin: 6px 0 0;
+            color: var(--warn);
+            font-size: 0.8rem;
+        }
+
+        .ovl .meta {
+            margin: 2px 0 6px;
+            color: var(--muted);
+            font-size: 0.75rem;
+        }
+
+        .cbar {
+            height: 8px;
+            margin: 6px 0 2px;
+            border-radius: 4px;
+        }
+
+        .cbar-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ovl.hidden-layer .cbar,
+        .ovl.hidden-layer .nm {
+            opacity: 0.45;
+        }
+
+        .error {
+            margin: 8px 0 0;
+            color: var(--warn);
+            font-size: 0.82rem;
+        }
+
+        /* ---------- floating bits ---------- */
+        .tooltip {
+            position: fixed;
+            z-index: 20;
+            max-width: 280px;
+            padding: 6px 9px;
+            border-radius: 7px;
+            background: rgba(10, 12, 15, 0.92);
+            color: #f1f3f5;
+            font-size: 0.82rem;
+            pointer-events: none;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+        }
+
+        .tooltip .c {
+            color: #9aa3b0;
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .drop {
+            position: fixed;
+            inset: 12px;
+            z-index: 30;
+            display: grid;
+            place-items: center;
+            border: 2px dashed var(--accent);
+            border-radius: 16px;
+            background: rgba(6, 30, 26, 0.82);
+            color: #e9fffa;
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        .loading {
+            position: fixed;
+            inset: var(--header-h) 0 0 0;
+            z-index: 15;
+            display: grid;
+            place-items: center;
+            background: var(--bg);
+            color: var(--muted);
+            text-align: center;
+            padding: 16px;
+        }
+
+        .loading strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text);
+            font-size: 1.05rem;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 20px;
+            z-index: 25;
+            transform: translateX(-50%);
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: var(--text);
+            color: var(--bg);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        dialog {
+            width: min(680px, calc(100vw - 32px));
+            max-height: calc(100dvh - 48px);
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        .dlg {
+            padding: 20px 24px 24px;
+        }
+
+        .dlg h2 {
+            margin: 0 0 4px;
+            font-size: 1.2rem;
+        }
+
+        .dlg h3 {
+            margin: 20px 0 6px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .dlg p,
+        .dlg li {
+            font-size: 0.9rem;
+        }
+
+        .dlg ul {
+            padding-left: 18px;
+            margin: 6px 0;
+        }
+
+        .dlg a {
+            color: var(--accent);
+        }
+
+        .dlg kbd {
+            padding: 1px 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--panel-2);
+            font: 0.8rem ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        .dlg table {
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        .dlg td {
+            padding: 3px 12px 3px 0;
+            vertical-align: top;
+        }
+
+        .dlg .close {
+            float: right;
+        }
+
+        .credits li {
+            margin-bottom: 6px;
+        }
+
+        .credits .lic {
+            color: var(--muted);
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        /* ---------- narrow screens ---------- */
+        @media (max-width: 1000px) {
+            .layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .views {
+                grid-template-rows: 50vw 82vw auto;
+                grid-template-areas: "sag cor" "axi axi" "read read";
+            }
+
+            .readout {
+                overflow: visible;
+            }
+
+            .panel {
+                border-left: 0;
+                border-top: 1px solid var(--border);
+            }
+
+            .loading {
+                position: fixed;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .top {
+                gap: 10px;
+                padding: 0 12px;
+            }
+
+            .brand .sub {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="top">
+        <div class="brand">
+            <h1>Brain Explorer</h1>
+            <span class="sub">MNI152 2009c &middot; <span id="atlas-count">8</span> atlases</span>
+        </div>
+        <div class="search-wrap">
+            <input id="search" type="search" placeholder="Find a region…" autocomplete="off" spellcheck="false"
+                aria-label="Find a region in any atlas" aria-controls="results" aria-expanded="false">
+            <div id="results" class="results" role="listbox" hidden></div>
+        </div>
+        <button id="help-btn" class="icon-btn" aria-label="Help and data credits" title="Help and credits">?</button>
+    </header>
+
+    <main class="layout">
+        <section class="views" id="views" aria-label="Brain views">
+            <div class="view" data-view="sag"><canvas aria-label="Sagittal view"></canvas></div>
+            <div class="view" data-view="cor"><canvas aria-label="Coronal view"></canvas></div>
+            <div class="view active" data-view="axi"><canvas aria-label="Axial view"></canvas></div>
+            <div class="readout">
+                <div class="coords">
+                    <label>x <input id="mni-x" type="number" step="1" aria-label="MNI x"></label>
+                    <label>y <input id="mni-y" type="number" step="1" aria-label="MNI y"></label>
+                    <label>z <input id="mni-z" type="number" step="1" aria-label="MNI z"></label>
+                    <span class="unit">mm</span>
+                    <span class="spacer"></span>
+                    <button class="small-btn" id="copy-coords" title="Copy the MNI coordinate">Copy</button>
+                    <button class="small-btn" id="copy-link" title="Copy a link to this spot">Link</button>
+                </div>
+                <div class="vox" id="vox"></div>
+                <table class="labels">
+                    <tbody id="readout-rows"></tbody>
+                </table>
+                <div class="ovl-values" id="readout-ovl"></div>
+            </div>
+        </section>
+
+        <aside class="panel">
+            <section class="card">
+                <h2>Atlas</h2>
+                <select id="atlas-select" aria-label="Atlas shown on the views"></select>
+                <p class="note" id="atlas-note"></p>
+                <div class="seg" role="radiogroup" aria-label="Atlas style" id="atlas-style">
+                    <button role="radio" data-style="fill">Fill</button>
+                    <button role="radio" data-style="outline">Outline</button>
+                    <button role="radio" data-style="both">Both</button>
+                    <button role="radio" data-style="off">Off</button>
+                </div>
+                <div class="row">
+                    <label for="atlas-opacity">Opacity</label>
+                    <input type="range" id="atlas-opacity" min="0.05" max="1" step="0.05">
+                    <output id="atlas-opacity-out"></output>
+                </div>
+                <label class="check"><input type="checkbox" id="isolate"> Show only the region at the cursor</label>
+                <input type="search" id="region-filter" placeholder="Filter regions…" aria-label="Filter regions">
+                <ul class="region-list" id="region-list" aria-label="Regions in this atlas"></ul>
+            </section>
+
+            <section class="card">
+                <h2>Overlays</h2>
+                <div class="inline">
+                    <select id="builtin-select" aria-label="Built-in overlay"></select>
+                    <button class="btn" id="builtin-add">Add</button>
+                </div>
+                <div class="inline">
+                    <button class="btn primary" id="open-file">Open NIfTI…</button>
+                    <span class="hint" style="align-self:center">or drop a .nii / .nii.gz anywhere</span>
+                </div>
+                <input type="file" id="file-input" accept=".nii,.gz,.nii.gz" multiple hidden>
+                <div class="inline">
+                    <input type="url" id="url-input" placeholder="https://… .nii.gz" aria-label="Overlay URL">
+                    <button class="btn" id="url-add">Load</button>
+                </div>
+                <p class="hint">Maps should already be in MNI space. Values at the cursor show in the readout.</p>
+                <p class="error" id="overlay-error" hidden></p>
+                <div id="overlay-list"></div>
+            </section>
+
+            <section class="card">
+                <h2>Display</h2>
+                <div class="row">
+                    <label for="bg-select">Template</label>
+                    <select id="bg-select"></select>
+                    <span></span>
+                </div>
+                <label class="check"><input type="checkbox" id="skull"> Hide skull and scalp</label>
+                <div class="row">
+                    <label for="win-lo">Black</label>
+                    <input type="range" id="win-lo" min="0" max="250" step="1">
+                    <output id="win-lo-out"></output>
+                </div>
+                <div class="row">
+                    <label for="win-hi">White</label>
+                    <input type="range" id="win-hi" min="5" max="255" step="1">
+                    <output id="win-hi-out"></output>
+                </div>
+                <div class="row">
+                    <label for="zoom">Zoom</label>
+                    <input type="range" id="zoom" min="1" max="8" step="0.05">
+                    <output id="zoom-out"></output>
+                </div>
+                <label class="check"><input type="checkbox" id="crosshair"> Crosshair</label>
+                <label class="check"><input type="checkbox" id="radio"> Radiological (left hemisphere on the
+                    right)</label>
+                <div class="inline">
+                    <button class="btn" id="reset-view">Reset view</button>
+                </div>
+            </section>
+        </aside>
+    </main>
+
+    <div id="tooltip" class="tooltip" hidden></div>
+    <div id="drop" class="drop" hidden>Drop a NIfTI file to add it as an overlay</div>
+    <div id="toast" class="toast" hidden></div>
+    <div id="loading" class="loading"><div><strong>Loading the template…</strong><span id="loading-detail">About
+                3 MB in all, then it is cached.</span></div></div>
+
+    <dialog id="help">
+        <div class="dlg">
+            <button class="btn close" id="help-close">Close</button>
+            <h2>Brain Explorer</h2>
+            <p class="hint">An MNI152 viewer with public atlases. Not a clinical tool.</p>
+
+            <h3>Getting around</h3>
+            <table>
+                <tr>
+                    <td>Click or drag</td>
+                    <td>Move the crosshair. Every atlas reports its label in the readout.</td>
+                </tr>
+                <tr>
+                    <td>Scroll</td>
+                    <td>Step through slices in that view</td>
+                </tr>
+                <tr>
+                    <td><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd> + scroll, pinch</td>
+                    <td>Zoom around the pointer</td>
+                </tr>
+                <tr>
+                    <td><kbd>Shift</kbd> + drag, right-drag</td>
+                    <td>Pan a zoomed view</td>
+                </tr>
+                <tr>
+                    <td><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></td>
+                    <td>Nudge the crosshair 1 mm in the active view</td>
+                </tr>
+                <tr>
+                    <td><kbd>PgUp</kbd> <kbd>PgDn</kbd></td>
+                    <td>Next or previous slice in the active view</td>
+                </tr>
+                <tr>
+                    <td><kbd>+</kbd> <kbd>-</kbd> <kbd>0</kbd></td>
+                    <td>Zoom in, out, reset</td>
+                </tr>
+                <tr>
+                    <td><kbd>[</kbd> <kbd>]</kbd></td>
+                    <td>Previous or next atlas</td>
+                </tr>
+                <tr>
+                    <td><kbd>/</kbd></td>
+                    <td>Search regions across every atlas</td>
+                </tr>
+                <tr>
+                    <td><kbd>X</kbd></td>
+                    <td>Toggle the crosshair</td>
+                </tr>
+            </table>
+
+            <h3>Your own maps</h3>
+            <p>Open or drop any NIfTI-1 or NIfTI-2 file (.nii or .nii.gz) that is already in MNI space: a z-map,
+                a mask, a meta-analysis map. It is read in your browser and never uploaded. Files on a different
+                grid are resampled on the fly, trilinear for continuous data and nearest-neighbour for integer
+                data. For 4D files the first volume is shown.</p>
+
+            <h3>Data and credits</h3>
+            <ul class="credits" id="credits"></ul>
+            <p class="hint">Volumes come from <a href="https://www.templateflow.org/" target="_blank"
+                    rel="noopener">TemplateFlow</a>, all in the MNI152NLin2009cAsym space. The build script and
+                full notes are in <code>brain/README.md</code>.</p>
+            <p class="hint"><a href="../">More from Web Clocks</a></p>
+        </div>
+    </dialog>
+
+    <script>
+        'use strict';
+
+        const DATA = 'data/';
+        const $ = (s) => document.querySelector(s);
+        const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+        // ================================================================
+        // NIfTI reading
+        // ================================================================
+
+        async function gunzip(bytes) {
+            if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes;
+            if (typeof DecompressionStream === 'undefined') {
+                throw new Error('This browser cannot decompress .gz files; try a recent Chrome, Firefox or Safari.');
+            }
+            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+            return new Uint8Array(await new Response(stream).arrayBuffer());
+        }
+
+        const NIFTI_TYPES = {
+            2: [Uint8Array, 1, 'getUint8'], 4: [Int16Array, 2, 'getInt16'], 8: [Int32Array, 4, 'getInt32'],
+            16: [Float32Array, 4, 'getFloat32'], 64: [Float64Array, 8, 'getFloat64'],
+            256: [Int8Array, 1, 'getInt8'], 512: [Uint16Array, 2, 'getUint16'], 768: [Uint32Array, 4, 'getUint32'],
+        };
+
+        function quatToAffine([b, c, d], [qx, qy, qz], pixdim) {
+            let a = 1 - (b * b + c * c + d * d);
+            if (a < 1e-7) {
+                const s = 1 / Math.hypot(b, c, d);
+                b *= s; c *= s; d *= s; a = 0;
+            } else a = Math.sqrt(a);
+            const qfac = pixdim[0] < 0 ? -1 : 1;
+            const dx = pixdim[1] || 1, dy = pixdim[2] || 1, dz = (pixdim[3] || 1) * qfac;
+            return [
+                (a * a + b * b - c * c - d * d) * dx, 2 * (b * c - a * d) * dy, 2 * (b * d + a * c) * dz, qx,
+                2 * (b * c + a * d) * dx, (a * a + c * c - b * b - d * d) * dy, 2 * (c * d - a * b) * dz, qy,
+                2 * (b * d - a * c) * dx, 2 * (c * d + a * b) * dy, (a * a + d * d - c * c - b * b) * dz, qz,
+            ];
+        }
+
+        // Invert a 3x4 affine (row-major).
+        function invAffine(A) {
+            const [a, b, c, tx, d, e, f, ty, g, h, i, tz] = A;
+            const c11 = e * i - f * h, c12 = -(d * i - f * g), c13 = d * h - e * g;
+            const det = a * c11 + b * c12 + c * c13;
+            if (!det) throw new Error('The file has a degenerate orientation matrix.');
+            const r = [c11, -(b * i - c * h), b * f - c * e,
+                c12, a * i - c * g, -(a * f - c * d),
+                c13, -(a * h - b * g), a * e - b * d].map((v) => v / det);
+            return [r[0], r[1], r[2], -(r[0] * tx + r[1] * ty + r[2] * tz),
+            r[3], r[4], r[5], -(r[3] * tx + r[4] * ty + r[5] * tz),
+            r[6], r[7], r[8], -(r[6] * tx + r[7] * ty + r[8] * tz)];
+        }
+
+        function parseNifti(bytes) {
+            const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+            if (bytes.byteLength < 348) throw new Error('Not a NIfTI file (too short).');
+            let le = true, size = dv.getInt32(0, true);
+            if (size !== 348 && size !== 540) { le = false; size = dv.getInt32(0, false); }
+            if (size !== 348 && size !== 540) throw new Error('Not a NIfTI file.');
+            const v2 = size === 540;
+            const i16 = (o) => dv.getInt16(o, le), i32 = (o) => dv.getInt32(o, le);
+            const f32 = (o) => dv.getFloat32(o, le), f64 = (o) => dv.getFloat64(o, le);
+            const i64 = (o) => Number(dv.getBigInt64(o, le));
+            const magic = String.fromCharCode(...bytes.subarray(v2 ? 4 : 344, v2 ? 7 : 347));
+            if (magic === 'ni1' || magic === 'ni2') throw new Error('Separate .hdr/.img pairs are not supported; convert to a single .nii first.');
+            if (magic !== 'n+1' && magic !== 'n+2') throw new Error('Not a NIfTI-1 or NIfTI-2 file.');
+            let dim, datatype, pixdim, voxOffset, slope, inter, qcode, scode, quat, qoff, srow, descrip;
+            if (!v2) {
+                dim = Array.from({ length: 8 }, (_, k) => i16(40 + 2 * k));
+                datatype = i16(70);
+                pixdim = Array.from({ length: 8 }, (_, k) => f32(76 + 4 * k));
+                voxOffset = f32(108); slope = f32(112); inter = f32(116);
+                qcode = i16(252); scode = i16(254);
+                quat = [f32(256), f32(260), f32(264)];
+                qoff = [f32(268), f32(272), f32(276)];
+                srow = Array.from({ length: 12 }, (_, k) => f32(280 + 4 * k));
+                descrip = bytes.subarray(148, 228);
+            } else {
+                datatype = i16(12);
+                dim = Array.from({ length: 8 }, (_, k) => i64(16 + 8 * k));
+                pixdim = Array.from({ length: 8 }, (_, k) => f64(104 + 8 * k));
+                voxOffset = i64(168); slope = f64(176); inter = f64(184);
+                qcode = i32(344); scode = i32(348);
+                quat = [f64(352), f64(360), f64(368)];
+                qoff = [f64(376), f64(384), f64(392)];
+                srow = Array.from({ length: 12 }, (_, k) => f64(400 + 8 * k));
+                descrip = bytes.subarray(240, 320);
+            }
+            const type = NIFTI_TYPES[datatype];
+            if (!type) throw new Error(`NIfTI datatype ${datatype} is not supported.`);
+            const [T, bpv, getter] = type;
+            const nd = dim[0];
+            const dims = [dim[1], nd >= 2 ? dim[2] : 1, nd >= 3 ? dim[3] : 1].map((v) => Math.max(1, v));
+            let nvols = 1;
+            for (let k = 4; k <= Math.min(nd, 7); k++) nvols *= Math.max(1, dim[k]);
+            const n = dims[0] * dims[1] * dims[2];
+            const start = voxOffset || size + 4;
+            if (start + n * bpv > bytes.byteLength) throw new Error('The file is truncated.');
+            let data;
+            if (le) {
+                data = new T(bytes.buffer.slice(bytes.byteOffset + start, bytes.byteOffset + start + n * bpv));
+            } else {
+                data = new T(n);
+                for (let k = 0; k < n; k++) data[k] = dv[getter](start + k * bpv, false);
+            }
+            const isInt = !(data instanceof Float32Array || data instanceof Float64Array);
+            if (slope && isFinite(slope) && !(slope === 1 && !inter)) {
+                const out = new Float32Array(n);
+                for (let k = 0; k < n; k++) out[k] = data[k] * slope + (inter || 0);
+                data = out;
+            }
+            let affine;
+            if (scode > 0) affine = srow;
+            else if (qcode > 0) affine = quatToAffine(quat, qoff, pixdim);
+            else affine = [pixdim[1] || 1, 0, 0, 0, 0, pixdim[2] || 1, 0, 0, 0, 0, pixdim[3] || 1, 0];
+            const text = new TextDecoder().decode(descrip).replace(/\0.*$/s, '').trim();
+            return { dims, data, affine, inv: invAffine(affine), isInt: isInt && !(data instanceof Float32Array), nvols, descrip: text, spaceCode: scode > 0 ? scode : qcode };
+        }
+
+        async function fetchBytes(url) {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
+            return new Uint8Array(await res.arrayBuffer());
+        }
+
+        async function loadNifti(url) {
+            return parseNifti(await gunzip(await fetchBytes(url)));
+        }
+
+        // The T1/T2 templates ship as a WebP mosaic of axial slices (see
+        // tools/build_data.py); the browser decodes it and we unpack the tiles.
+        async function loadMosaic(file, cols) {
+            const [X, Y, Z] = GRID.dims;
+            const res = await fetch(DATA + file);
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${file}`);
+            const url = URL.createObjectURL(await res.blob());
+            const img = new Image();
+            try {
+                img.src = url;
+                await img.decode();
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+            const cv = document.createElement('canvas');
+            cv.width = img.naturalWidth;
+            cv.height = img.naturalHeight;
+            const cx = cv.getContext('2d', { willReadFrequently: true });
+            cx.drawImage(img, 0, 0);
+            const px = cx.getImageData(0, 0, cv.width, cv.height).data;
+            const w = cv.width;
+            const vol = new Uint8Array(X * Y * Z);
+            for (let k = 0; k < Z; k++) {
+                const r0 = Math.floor(k / cols) * Y, c0 = (k % cols) * X;
+                for (let j = 0; j < Y; j++) {
+                    let q = ((r0 + j) * w + c0) * 4;
+                    const o = X * (j + Y * k);
+                    for (let i = 0; i < X; i++, q += 4) vol[o + i] = px[q];
+                }
+            }
+            cv.width = cv.height = 0;
+            return vol;
+        }
+
+        // ================================================================
+        // Colour maps
+        // ================================================================
+
+        const CMAPS = {
+            'red-yellow': [[0, [210, 0, 0]], [1, [255, 255, 0]]],
+            'hot': [[0, [150, 0, 0]], [0.35, [255, 40, 0]], [0.7, [255, 215, 0]], [1, [255, 255, 235]]],
+            'blue-lightblue': [[0, [0, 40, 255]], [1, [0, 225, 255]]],
+            'cool': [[0, [0, 255, 255]], [1, [255, 0, 255]]],
+            'winter': [[0, [0, 70, 255]], [1, [0, 255, 150]]],
+            'green': [[0, [0, 130, 40]], [1, [150, 255, 120]]],
+            'viridis': [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]],
+            'plasma': [[0, [13, 8, 135]], [0.25, [126, 3, 168]], [0.5, [204, 71, 120]], [0.75, [248, 149, 64]], [1, [240, 249, 33]]],
+            'grey': [[0, [90, 90, 90]], [1, [255, 255, 255]]],
+        };
+        const lutCache = {};
+        function getLut(name) {
+            if (lutCache[name]) return lutCache[name];
+            const pts = CMAPS[name] || CMAPS['red-yellow'];
+            const lut = new Uint8Array(256 * 3);
+            for (let k = 0; k < 256; k++) {
+                const t = k / 255;
+                let s = 0;
+                while (s < pts.length - 2 && t > pts[s + 1][0]) s++;
+                const [t0, c0] = pts[s], [t1, c1] = pts[s + 1];
+                const f = clamp((t - t0) / (t1 - t0), 0, 1);
+                for (let ch = 0; ch < 3; ch++) lut[k * 3 + ch] = Math.round(c0[ch] + (c1[ch] - c0[ch]) * f);
+            }
+            return (lutCache[name] = lut);
+        }
+        const negPartner = (name) => (name === 'blue-lightblue' || name === 'winter' || name === 'cool' ? 'red-yellow' : 'blue-lightblue');
+        // Colour bar for an overlay: positive ramp only, or the negative ramp
+        // mirrored on the left with a gap for the sub-threshold band.
+        function barGradient(o) {
+            const stops = [];
+            const ramp = (name, from, to, reverse) => {
+                const lut = getLut(name);
+                for (let k = 0; k <= 4; k++) {
+                    const t = k / 4, li = Math.round((reverse ? 1 - t : t) * 255) * 3;
+                    stops.push(`rgb(${lut[li]},${lut[li + 1]},${lut[li + 2]}) ${(from + (to - from) * t) * 100}%`);
+                }
+            };
+            if (o.neg) {
+                ramp(negPartner(o.cmap), 0, 0.45, true);
+                stops.push('transparent 45%', 'transparent 55%');
+                ramp(o.cmap, 0.55, 1, false);
+            } else ramp(o.cmap, 0, 1, false);
+            return `linear-gradient(90deg, ${stops.join(',')})`;
+        }
+
+        // ================================================================
+        // State
+        // ================================================================
+
+        let META, GRID, STRIDE;
+        const ATLASES = [];            // runtime atlas records
+        const BG = {};                 // background id -> Uint8Array volume
+        let MASK = null;               // brain mask, Uint8Array
+
+        const S = {
+            cur: [0, 0, 0],            // crosshair, voxel indices on the template grid
+            zoom: 1,
+            atlasId: 'ho_cort',
+            atlasStyle: 'both',
+            atlasOpacity: 0.55,
+            isolate: false,
+            bgId: 't1',
+            skull: false,
+            winLo: 0,
+            winHi: 255,
+            crosshair: true,
+            radiological: false,
+            overlays: [],
+            ovVersion: 0,
+            activeView: 'axi',
+            hover: null,               // {view, label}
+        };
+
+        const VIEW_DEFS = {
+            sag: { name: 'Sagittal', slice: 0, h: 1, v: 2, axis: 'x' },
+            cor: { name: 'Coronal', slice: 1, h: 0, v: 2, axis: 'y' },
+            axi: { name: 'Axial', slice: 2, h: 0, v: 1, axis: 'z' },
+        };
+        const views = [];
+
+        const mni = (idx) => idx.map((v, a) => GRID.origin[a] + v);
+        const lin = (idx) => idx[0] + STRIDE[1] * idx[1] + STRIDE[2] * idx[2];
+        const atlasById = (id) => ATLASES.find((a) => a.id === id);
+        const activeAtlas = () => atlasById(S.atlasId);
+        function labelAt(atlas, idx = S.cur) {
+            if (!atlas || !atlas.vol) return 0;
+            return atlas.vol.data[lin(idx)];
+        }
+
+        // ================================================================
+        // Views: geometry
+        // ================================================================
+
+        // Sagittal shows anterior on the left; the other two show the
+        // subject's left on the left unless radiological is on.
+        const hFlip = (view) => (view.id === 'sag' ? true : S.radiological);
+
+        function scaleOf(view) {
+            return (Math.min(view.cw, view.ch) / Math.max(...GRID.dims)) * S.zoom;
+        }
+
+        function clampCenter(view) {
+            const s = scaleOf(view);
+            const halfW = view.cw / (2 * s), halfH = view.ch / (2 * s);
+            view.cx = view.W <= 2 * halfW ? view.W / 2 : clamp(view.cx, halfW, view.W - halfW);
+            view.cy = view.H <= 2 * halfH ? view.H / 2 : clamp(view.cy, halfH, view.H - halfH);
+        }
+
+        function geom(view) {
+            const s = scaleOf(view);
+            return { s, tx: view.cw / 2 - view.cx * s, ty: view.ch / 2 - view.cy * s };
+        }
+
+        function voxelToPixel(view, idx) {
+            const { h, v } = view.def;
+            return [hFlip(view) ? view.W - 1 - idx[h] : idx[h], view.H - 1 - idx[v]];
+        }
+
+        function pixelToVoxel(view, c, r) {
+            const { h, v } = view.def;
+            const idx = S.cur.slice();
+            idx[h] = hFlip(view) ? view.W - 1 - c : c;
+            idx[v] = view.H - 1 - r;
+            return idx;
+        }
+
+        function screenToPixel(view, x, y) {
+            const { s, tx, ty } = geom(view);
+            return [(x - tx) / s, (y - ty) / s];
+        }
+
+        function ensureVisible(view) {
+            if (S.zoom <= 1) return;
+            const [c, r] = voxelToPixel(view, S.cur);
+            const { s, tx, ty } = geom(view);
+            const x = tx + (c + 0.5) * s, y = ty + (r + 0.5) * s;
+            const m = Math.min(view.cw, view.ch) * 0.08;
+            if (x < m || x > view.cw - m || y < m || y > view.ch - m) {
+                view.cx = c + 0.5;
+                view.cy = r + 0.5;
+                clampCenter(view);
+            }
+        }
+
+        function centerOnCursor() {
+            for (const v of views) {
+                const [c, r] = voxelToPixel(v, S.cur);
+                v.cx = c + 0.5;
+                v.cy = r + 0.5;
+                clampCenter(v);
+            }
+        }
+
+        // Zoom, keeping the point under (x, y) in `anchor` fixed on screen.
+        // Without an anchor (slider, keys) every view zooms on the crosshair.
+        function setZoom(z, anchor, x, y) {
+            z = clamp(z, 1, 8);
+            if (anchor) {
+                const [u, w] = screenToPixel(anchor, x, y);
+                const s1 = (Math.min(anchor.cw, anchor.ch) / Math.max(...GRID.dims)) * z;
+                anchor.cx = u - (x - anchor.cw / 2) / s1;
+                anchor.cy = w - (y - anchor.ch / 2) / s1;
+            }
+            S.zoom = z;
+            if (!anchor) centerOnCursor();
+            for (const v of views) clampCenter(v);
+            syncZoomUi();
+            requestRender();
+        }
+
+        // ================================================================
+        // Views: layers
+        // ================================================================
+
+        // Copy one slice of an on-grid volume into `out` (W x H, row 0 at top).
+        function extractSlice(view, data, out) {
+            const { W, H } = view;
+            const { h, v, slice } = view.def;
+            const flip = hFlip(view);
+            const hs = STRIDE[h], vs = STRIDE[v];
+            const base = S.cur[slice] * STRIDE[slice];
+            const step = flip ? -hs : hs;
+            let o = 0;
+            for (let r = 0; r < H; r++) {
+                let p = base + (H - 1 - r) * vs + (flip ? (W - 1) * hs : 0);
+                for (let c = 0; c < W; c++, p += step) out[o++] = data[p];
+            }
+        }
+
+        // Sample an arbitrary-grid volume along the current slice. NaN = no data.
+        function sampleSlice(view, vol, out, linear) {
+            const { W, H } = view;
+            const { h, v, slice } = view.def;
+            const flip = hFlip(view);
+            const idx0 = [0, 0, 0];
+            idx0[slice] = S.cur[slice];
+            idx0[h] = flip ? W - 1 : 0;
+            idx0[v] = H - 1;
+            const w0 = mni(idx0);
+            const dc = [0, 0, 0], dr = [0, 0, 0];
+            dc[h] = flip ? -1 : 1;
+            dr[v] = -1;
+            const M = vol.inv;
+            const ap = (w) => [0, 1, 2].map((a) => M[a * 4] * w[0] + M[a * 4 + 1] * w[1] + M[a * 4 + 2] * w[2] + M[a * 4 + 3]);
+            const al = (w) => [0, 1, 2].map((a) => M[a * 4] * w[0] + M[a * 4 + 1] * w[1] + M[a * 4 + 2] * w[2]);
+            const p0 = ap(w0), pc = al(dc), pr = al(dr);
+            const [X, Y, Z] = vol.dims;
+            const XY = X * Y, d = vol.data;
+            let o = 0;
+            for (let r = 0; r < H; r++) {
+                let x = p0[0] + r * pr[0], y = p0[1] + r * pr[1], z = p0[2] + r * pr[2];
+                for (let c = 0; c < W; c++, x += pc[0], y += pc[1], z += pc[2]) {
+                    out[o++] = linear ? trilinear(d, X, Y, Z, XY, x, y, z) : nearest(d, X, Y, Z, XY, x, y, z);
+                }
+            }
+        }
+
+        function nearest(d, X, Y, Z, XY, x, y, z) {
+            const i = Math.round(x), j = Math.round(y), k = Math.round(z);
+            if (i < 0 || j < 0 || k < 0 || i >= X || j >= Y || k >= Z) return NaN;
+            return d[i + X * j + XY * k];
+        }
+
+        function trilinear(d, X, Y, Z, XY, x, y, z) {
+            if (x < -0.5 || y < -0.5 || z < -0.5 || x > X - 0.5 || y > Y - 0.5 || z > Z - 0.5) return NaN;
+            x = clamp(x, 0, X - 1); y = clamp(y, 0, Y - 1); z = clamp(z, 0, Z - 1);
+            const i = Math.min(Math.floor(x), X - 2 < 0 ? 0 : X - 2);
+            const j = Math.min(Math.floor(y), Y - 2 < 0 ? 0 : Y - 2);
+            const k = Math.min(Math.floor(z), Z - 2 < 0 ? 0 : Z - 2);
+            const fx = X > 1 ? x - i : 0, fy = Y > 1 ? y - j : 0, fz = Z > 1 ? z - k : 0;
+            const di = X > 1 ? 1 : 0, dj = Y > 1 ? X : 0, dk = Z > 1 ? XY : 0;
+            const p = i + X * j + XY * k;
+            const c00 = d[p] * (1 - fx) + d[p + di] * fx;
+            const c10 = d[p + dj] * (1 - fx) + d[p + dj + di] * fx;
+            const c01 = d[p + dk] * (1 - fx) + d[p + dk + di] * fx;
+            const c11 = d[p + dk + dj] * (1 - fx) + d[p + dk + dj + di] * fx;
+            return (c00 * (1 - fy) + c10 * fy) * (1 - fz) + (c01 * (1 - fy) + c11 * fy) * fz;
+        }
+
+        function sampleAt(vol, idx, linear) {
+            const p = vol.inv, w = mni(idx);
+            const x = p[0] * w[0] + p[1] * w[1] + p[2] * w[2] + p[3];
+            const y = p[4] * w[0] + p[5] * w[1] + p[6] * w[2] + p[7];
+            const z = p[8] * w[0] + p[9] * w[1] + p[10] * w[2] + p[11];
+            const [X, Y, Z] = vol.dims;
+            return linear ? trilinear(vol.data, X, Y, Z, X * Y, x, y, z) : nearest(vol.data, X, Y, Z, X * Y, x, y, z);
+        }
+
+        function makeLayer(W, H) {
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            return { canvas, ctx, img: ctx.createImageData(W, H), key: null };
+        }
+
+        function buildBackground(view) {
+            const vol = BG[S.bgId];
+            const L = view.bg, px = L.img.data, buf = view.u8a;
+            extractSlice(view, vol, buf);
+            let mask = null;
+            if (S.skull && MASK) { mask = view.u8b; extractSlice(view, MASK, mask); }
+            const lut = windowLut();
+            for (let p = 0, q = 0; p < buf.length; p++, q += 4) {
+                const g = mask && !mask[p] ? 0 : lut[buf[p]];
+                px[q] = px[q + 1] = px[q + 2] = g;
+                px[q + 3] = 255;
+            }
+            L.ctx.putImageData(L.img, 0, 0);
+        }
+
+        let winLutCache = null, winLutKey = '';
+        function windowLut() {
+            const key = S.winLo + ',' + S.winHi;
+            if (key === winLutKey) return winLutCache;
+            const lut = new Uint8Array(256), lo = S.winLo, span = Math.max(1, S.winHi - S.winLo);
+            for (let k = 0; k < 256; k++) lut[k] = clamp(Math.round(((k - lo) / span) * 255), 0, 255);
+            winLutKey = key;
+            return (winLutCache = lut);
+        }
+
+        function buildAtlas(view, atlas, iso) {
+            const { W, H } = view;
+            const L = view.at, px = L.img.data, lab = view.u16;
+            extractSlice(view, atlas.vol.data, lab);
+            const lut = atlas.lut;
+            for (let p = 0, q = 0; p < lab.length; p++, q += 4) {
+                const v = lab[p];
+                if (v && (iso < 0 || v === iso)) {
+                    px[q] = lut[v * 3]; px[q + 1] = lut[v * 3 + 1]; px[q + 2] = lut[v * 3 + 2]; px[q + 3] = 255;
+                } else px[q + 3] = 0;
+            }
+            L.ctx.putImageData(L.img, 0, 0);
+
+            // Region boundaries as vector paths on voxel edges, so they stay
+            // one pixel wide at any zoom. Runs of the same pair are merged.
+            const paths = new Map(), all = new Path2D();
+            const pathFor = (v) => {
+                let p = paths.get(v);
+                if (!p) paths.set(v, (p = new Path2D()));
+                return p;
+            };
+            const seg = (a, b, x0, y0, x1, y1) => {
+                all.moveTo(x0, y0); all.lineTo(x1, y1);
+                if (a) { const p = pathFor(a); p.moveTo(x0, y0); p.lineTo(x1, y1); }
+                if (b) { const p = pathFor(b); p.moveTo(x0, y0); p.lineTo(x1, y1); }
+            };
+            // Vertical edges: between (c-1, r) and (c, r).
+            for (let c = 1; c < W; c++) {
+                let r = 0;
+                while (r < H) {
+                    const a = lab[r * W + c - 1], b = lab[r * W + c];
+                    if (a === b) { r++; continue; }
+                    let r1 = r + 1;
+                    while (r1 < H && lab[r1 * W + c - 1] === a && lab[r1 * W + c] === b) r1++;
+                    seg(a, b, c, r, c, r1);
+                    r = r1;
+                }
+            }
+            // Horizontal edges: between (c, r-1) and (c, r).
+            for (let r = 1; r < H; r++) {
+                let c = 0;
+                const o0 = (r - 1) * W, o1 = r * W;
+                while (c < W) {
+                    const a = lab[o0 + c], b = lab[o1 + c];
+                    if (a === b) { c++; continue; }
+                    let c1 = c + 1;
+                    while (c1 < W && lab[o0 + c1] === a && lab[o1 + c1] === b) c1++;
+                    seg(a, b, c, r, c1, r);
+                    c = c1;
+                }
+            }
+            view.paths = paths;
+            view.allPath = all;
+        }
+
+        function buildOverlays(view) {
+            const L = view.ov, px = L.img.data, buf = view.f32;
+            view.hasOverlay = S.overlays.some((o) => o.visible);
+            if (!view.hasOverlay) return;
+            px.fill(0);
+            for (const o of S.overlays) {
+                if (!o.visible) continue;
+                if (o.vol.onGrid) extractSlice(view, o.vol.data, buf);
+                else sampleSlice(view, o.vol, buf, o.linear);
+                const lo = o.min, k = 1 / Math.max(o.max - o.min, 1e-12);
+                const pos = getLut(o.cmap), neg = getLut(negPartner(o.cmap));
+                const a = o.opacity;
+                for (let p = 0, q = 0; p < buf.length; p++, q += 4) {
+                    const v = buf[p];
+                    if (v !== v || v === 0) continue;
+                    let t, lut;
+                    if (v >= lo) { t = (v - lo) * k; lut = pos; }
+                    else if (o.neg && v <= -lo) { t = (-v - lo) * k; lut = neg; }
+                    else continue;
+                    const li = (t >= 1 ? 255 : (t * 255) | 0) * 3;
+                    const da = px[q + 3] / 255;
+                    if (da === 0) {
+                        px[q] = lut[li]; px[q + 1] = lut[li + 1]; px[q + 2] = lut[li + 2]; px[q + 3] = a * 255;
+                    } else {
+                        const oa = a + da * (1 - a), w = da * (1 - a);
+                        px[q] = (lut[li] * a + px[q] * w) / oa;
+                        px[q + 1] = (lut[li + 1] * a + px[q + 1] * w) / oa;
+                        px[q + 2] = (lut[li + 2] * a + px[q + 2] * w) / oa;
+                        px[q + 3] = oa * 255;
+                    }
+                }
+            }
+            L.ctx.putImageData(L.img, 0, 0);
+        }
+
+        function updateLayers(view) {
+            const sl = S.cur[view.def.slice], flip = hFlip(view);
+            if (BG[S.bgId]) {
+                const key = [S.bgId, sl, flip, S.winLo, S.winHi, S.skull && !!MASK].join();
+                if (key !== view.bg.key) { buildBackground(view); view.bg.key = key; }
+            }
+            const atlas = activeAtlas();
+            const iso = S.isolate ? labelAt(atlas) : -1;
+            const akey = atlas && atlas.vol ? [atlas.id, sl, flip, iso].join() : '';
+            if (akey !== view.at.key) {
+                if (akey) buildAtlas(view, atlas, iso);
+                else { view.paths = null; view.allPath = null; }
+                view.at.key = akey;
+            }
+            const okey = [S.ovVersion, sl, flip].join();
+            if (okey !== view.ov.key) { buildOverlays(view); view.ov.key = okey; }
+        }
+
+        // ================================================================
+        // Views: drawing
+        // ================================================================
+
+        function compose(view) {
+            const { ctx, cw, ch, dpr, W, H } = view;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, cw, ch);
+            if (!BG[S.bgId]) return;
+            const { s, tx, ty } = geom(view);
+            const dw = W * s, dh = H * s;
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(view.bg.canvas, tx, ty, dw, dh);
+
+            const atlas = activeAtlas();
+            const style = S.atlasStyle;
+            const atlasOn = atlas && atlas.vol && style !== 'off' && view.paths;
+            if (atlasOn && (style === 'fill' || style === 'both')) {
+                ctx.imageSmoothingEnabled = false;
+                ctx.globalAlpha = S.atlasOpacity;
+                ctx.drawImage(view.at.canvas, tx, ty, dw, dh);
+                ctx.globalAlpha = 1;
+            }
+            if (view.hasOverlay) {
+                ctx.imageSmoothingEnabled = true;
+                ctx.drawImage(view.ov.canvas, tx, ty, dw, dh);
+            }
+
+            const cur = labelAt(atlas);
+            if (atlasOn) {
+                ctx.save();
+                ctx.translate(tx, ty);
+                ctx.scale(s, s);
+                ctx.lineCap = 'square';
+                if (style === 'outline') {
+                    ctx.lineWidth = 1.4 / s;
+                    ctx.globalAlpha = Math.min(1, S.atlasOpacity + 0.35);
+                    for (const [v, p] of view.paths) {
+                        if (S.isolate && v !== cur) continue;
+                        ctx.strokeStyle = atlas.colors[v] || '#fff';
+                        ctx.stroke(p);
+                    }
+                } else if (style === 'both' && !S.isolate) {
+                    ctx.lineWidth = 1 / s;
+                    ctx.globalAlpha = Math.min(0.7, S.atlasOpacity);
+                    ctx.strokeStyle = '#000';
+                    ctx.stroke(view.allPath);
+                }
+                ctx.globalAlpha = 1;
+                // The region under the pointer, faintly.
+                const hv = S.hover && S.hover.view === view && S.hover.label !== cur ? S.hover.label : 0;
+                if (hv && view.paths.get(hv)) {
+                    ctx.lineWidth = 1.2 / s;
+                    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                    ctx.setLineDash([3 / s, 3 / s]);
+                    ctx.stroke(view.paths.get(hv));
+                    ctx.setLineDash([]);
+                }
+                // The region at the crosshair, in every view.
+                const cp = cur && view.paths.get(cur);
+                if (cp) {
+                    ctx.lineWidth = 3.2 / s;
+                    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+                    ctx.stroke(cp);
+                    ctx.lineWidth = 1.6 / s;
+                    ctx.strokeStyle = '#fff';
+                    ctx.stroke(cp);
+                }
+                ctx.restore();
+            }
+
+            const [c, r] = voxelToPixel(view, S.cur);
+            if (S.crosshair) {
+                const px = Math.round((tx + (c + 0.5) * s) * dpr) / dpr + 0.5 / dpr;
+                const py = Math.round((ty + (r + 0.5) * s) * dpr) / dpr + 0.5 / dpr;
+                const g = Math.max(5, s * 0.6 + 3);
+                ctx.strokeStyle = '#3ee0c5';
+                ctx.lineWidth = 1 / dpr * Math.max(1, Math.round(dpr));
+                ctx.beginPath();
+                ctx.moveTo(Math.max(0, tx), py); ctx.lineTo(px - g, py);
+                ctx.moveTo(px + g, py); ctx.lineTo(Math.min(cw, tx + dw), py);
+                ctx.moveTo(px, Math.max(0, ty)); ctx.lineTo(px, py - g);
+                ctx.moveTo(px, py + g); ctx.lineTo(px, Math.min(ch, ty + dh));
+                ctx.stroke();
+            }
+
+            // Orientation letters, view name, slice position.
+            ctx.shadowColor = 'rgba(0,0,0,0.9)';
+            ctx.shadowBlur = 3;
+            const [left, right] = view.id === 'sag' ? ['A', 'P'] : hFlip(view) ? ['R', 'L'] : ['L', 'R'];
+            const [top, bottom] = view.id === 'axi' ? ['A', 'P'] : ['S', 'I'];
+            ctx.font = '600 12px system-ui, -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left'; ctx.fillText(left, 8, ch / 2);
+            ctx.textAlign = 'right'; ctx.fillText(right, cw - 8, ch / 2);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top'; ctx.fillText(top, cw / 2, 8);
+            ctx.textBaseline = 'bottom'; ctx.fillText(bottom, cw / 2, ch - 8);
+            ctx.font = '12px system-ui, -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.65)';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(view.def.name, 10, 9);
+            ctx.textBaseline = 'bottom';
+            const pos = mni(S.cur)[view.def.slice];
+            ctx.fillText(`${view.def.axis} = ${fmtSigned(pos)}`, 10, ch - 9);
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+        }
+
+        const fmtSigned = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
+
+        let frameQueued = false, readoutDirty = true;
+        function requestRender(readout) {
+            if (readout) readoutDirty = true;
+            if (frameQueued) return;
+            frameQueued = true;
+            requestAnimationFrame(() => {
+                frameQueued = false;
+                for (const v of views) {
+                    if (!v.cw) continue;
+                    updateLayers(v);
+                    compose(v);
+                }
+                if (readoutDirty) { readoutDirty = false; updateReadout(); }
+            });
+        }
+
+        function resizeView(view) {
+            const rect = view.el.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            view.cw = rect.width;
+            view.ch = rect.height;
+            view.dpr = dpr;
+            view.canvas.width = Math.max(1, Math.round(rect.width * dpr));
+            view.canvas.height = Math.max(1, Math.round(rect.height * dpr));
+            clampCenter(view);
+            requestRender();
+        }
+
+        function setupViews() {
+            for (const el of document.querySelectorAll('.view')) {
+                const id = el.dataset.view, def = VIEW_DEFS[id];
+                const W = GRID.dims[def.h], H = GRID.dims[def.v], n = W * H;
+                const canvas = el.querySelector('canvas');
+                const view = {
+                    id, def, el, canvas, ctx: canvas.getContext('2d'), W, H, cw: 0, ch: 0, dpr: 1,
+                    cx: W / 2, cy: H / 2,
+                    bg: makeLayer(W, H), at: makeLayer(W, H), ov: makeLayer(W, H),
+                    u8a: new Uint8Array(n), u8b: new Uint8Array(n), u16: new Uint16Array(n), f32: new Float32Array(n),
+                    paths: null, allPath: null, hasOverlay: false,
+                    pointers: new Map(), mode: null, pinch: null, wheelAcc: 0,
+                };
+                views.push(view);
+                new ResizeObserver(() => resizeView(view)).observe(el);
+                bindViewEvents(view);
+            }
+            window.addEventListener('resize', () => views.forEach(resizeView));
+        }
+
+        // ================================================================
+        // Views: interaction
+        // ================================================================
+
+        function setActiveView(view) {
+            if (S.activeView === view.id) return;
+            S.activeView = view.id;
+            for (const v of views) v.el.classList.toggle('active', v === view);
+        }
+
+        function moveCursor(idx, source) {
+            const next = idx.map((v, a) => clamp(Math.round(v), 0, GRID.dims[a] - 1));
+            if (next.every((v, a) => v === S.cur[a])) return;
+            S.cur = next;
+            for (const v of views) if (v !== source) ensureVisible(v);
+            scheduleHash();
+            requestRender(true);
+        }
+
+        function cursorFromScreen(view, x, y) {
+            const [u, w] = screenToPixel(view, x, y);
+            const c = clamp(Math.floor(u), 0, view.W - 1), r = clamp(Math.floor(w), 0, view.H - 1);
+            moveCursor(pixelToVoxel(view, c, r), view);
+        }
+
+        function localXY(view, e) {
+            const rect = view.canvas.getBoundingClientRect();
+            return [e.clientX - rect.left, e.clientY - rect.top];
+        }
+
+        function bindViewEvents(view) {
+            const cv = view.canvas;
+            cv.addEventListener('contextmenu', (e) => e.preventDefault());
+            cv.addEventListener('pointerdown', (e) => {
+                setActiveView(view);
+                cv.setPointerCapture(e.pointerId);
+                const [x, y] = localXY(view, e);
+                view.pointers.set(e.pointerId, { x, y });
+                hideTooltip();
+                if (view.pointers.size === 2) {
+                    const [a, b] = [...view.pointers.values()];
+                    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+                    view.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: S.zoom, p: screenToPixel(view, mx, my) };
+                    view.mode = 'pinch';
+                } else if (view.pointers.size === 1) {
+                    view.mode = e.button === 1 || e.button === 2 || e.shiftKey ? 'pan' : 'cursor';
+                    if (view.mode === 'cursor') cursorFromScreen(view, x, y);
+                }
+            });
+            cv.addEventListener('pointermove', (e) => {
+                const [x, y] = localXY(view, e);
+                const p = view.pointers.get(e.pointerId);
+                if (!p) {
+                    if (e.pointerType === 'mouse') hoverAt(view, x, y, e);
+                    return;
+                }
+                const dx = x - p.x, dy = y - p.y;
+                p.x = x; p.y = y;
+                if (view.mode === 'pinch' && view.pointers.size >= 2) {
+                    const [a, b] = [...view.pointers.values()];
+                    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+                    const z = clamp(view.pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / view.pinch.d, 1, 8);
+                    const s1 = (Math.min(view.cw, view.ch) / Math.max(...GRID.dims)) * z;
+                    view.cx = view.pinch.p[0] - (mx - view.cw / 2) / s1;
+                    view.cy = view.pinch.p[1] - (my - view.ch / 2) / s1;
+                    S.zoom = z;
+                    for (const v of views) clampCenter(v);
+                    syncZoomUi();
+                    requestRender();
+                } else if (view.mode === 'pan') {
+                    const s = scaleOf(view);
+                    view.cx -= dx / s;
+                    view.cy -= dy / s;
+                    clampCenter(view);
+                    requestRender();
+                } else if (view.mode === 'cursor') {
+                    cursorFromScreen(view, x, y);
+                }
+            });
+            const end = (e) => {
+                view.pointers.delete(e.pointerId);
+                if (view.pointers.size < 2 && view.mode === 'pinch') view.mode = view.pointers.size ? 'pan' : null;
+                if (!view.pointers.size) view.mode = null;
+            };
+            cv.addEventListener('pointerup', end);
+            cv.addEventListener('pointercancel', end);
+            cv.addEventListener('pointerleave', (e) => {
+                if (e.pointerType === 'mouse') { hideTooltip(); setHover(null); }
+            });
+            cv.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                setActiveView(view);
+                const [x, y] = localXY(view, e);
+                const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+                if (!dy) return;
+                if (e.ctrlKey || e.metaKey) {
+                    setZoom(S.zoom * Math.exp(-dy * 0.01), view, x, y);
+                    return;
+                }
+                // A mouse notch (line/page mode, or a big pixel delta) is one
+                // slice; trackpads send many small deltas, so add those up.
+                let steps = 0;
+                if (e.deltaMode !== 0 || Math.abs(dy) >= 40) {
+                    view.wheelAcc = 0;
+                    steps = dy < 0 ? 1 : -1;
+                } else {
+                    view.wheelAcc += dy;
+                    while (Math.abs(view.wheelAcc) >= 24) {
+                        const sgn = Math.sign(view.wheelAcc);
+                        steps -= sgn;
+                        view.wheelAcc -= sgn * 24;
+                    }
+                }
+                if (steps) stepSlice(view, steps);
+                hoverAt(view, x, y, e);
+            }, { passive: false });
+        }
+
+        function stepSlice(view, n) {
+            const idx = S.cur.slice();
+            idx[view.def.slice] += n;
+            moveCursor(idx, null);
+        }
+
+        function setHover(h) {
+            const old = S.hover;
+            if ((old && old.view) === (h && h.view) && (old && old.label) === (h && h.label)) return;
+            S.hover = h;
+            requestRender();
+        }
+
+        const tooltip = $('#tooltip');
+        function hideTooltip() { tooltip.hidden = true; }
+
+        function hoverAt(view, x, y, e) {
+            const [u, w] = screenToPixel(view, x, y);
+            const c = Math.floor(u), r = Math.floor(w);
+            const atlas = activeAtlas();
+            if (c < 0 || r < 0 || c >= view.W || r >= view.H || !atlas || !atlas.vol) {
+                hideTooltip();
+                setHover(null);
+                return;
+            }
+            const idx = pixelToVoxel(view, c, r);
+            const v = labelAt(atlas, idx);
+            setHover(v ? { view, label: v } : null);
+            const p = mni(idx);
+            const info = atlas.byValue[v];
+            tooltip.innerHTML = '';
+            const name = document.createElement('div');
+            if (info) {
+                const sw = document.createElement('span');
+                sw.className = 'sw';
+                sw.style.background = info.color;
+                name.append(sw, info.name);
+            } else name.textContent = '—';
+            const coord = document.createElement('div');
+            coord.className = 'c';
+            coord.textContent = `${p.map(fmtSigned).join(', ')} mm`;
+            tooltip.append(name, coord);
+            tooltip.hidden = false;
+            const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+            let left = e.clientX + 14, top = e.clientY + 16;
+            if (left + tw > window.innerWidth - 8) left = e.clientX - tw - 14;
+            if (top + th > window.innerHeight - 8) top = e.clientY - th - 12;
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+        }
+
+        // ================================================================
+        // Readout
+        // ================================================================
+
+        function updateReadout() {
+            const p = mni(S.cur);
+            for (const [k, el] of [['x', $('#mni-x')], ['y', $('#mni-y')], ['z', $('#mni-z')]]) {
+                if (document.activeElement !== el) el.value = p['xyz'.indexOf(k)];
+            }
+            const bg = BG[S.bgId];
+            const bgName = (META.backgrounds.find((b) => b.id === S.bgId) || {}).name || '';
+            $('#vox').textContent = `voxel ${S.cur.join(', ')}` + (bg ? ` · ${bgName.split('-')[0]} ${bg[lin(S.cur)]}` : '');
+
+            const tbody = $('#readout-rows');
+            if (!tbody.children.length) {
+                for (const a of ATLASES) {
+                    const tr = document.createElement('tr');
+                    tr.dataset.atlas = a.id;
+                    tr.title = `Show ${a.name}`;
+                    tr.innerHTML = '<th></th><td></td>';
+                    tr.firstChild.textContent = a.short;
+                    tr.addEventListener('click', () => setAtlas(a.id));
+                    tbody.append(tr);
+                }
+            }
+            for (const tr of tbody.children) {
+                const a = atlasById(tr.dataset.atlas);
+                tr.classList.toggle('active', a.id === S.atlasId);
+                const td = tr.lastChild;
+                td.textContent = '';
+                if (!a.vol) { td.className = 'none'; td.textContent = a.error ? 'failed to load' : 'loading…'; continue; }
+                const info = a.byValue[labelAt(a)];
+                if (!info) { td.className = 'none'; td.textContent = '—'; continue; }
+                td.className = '';
+                const sw = document.createElement('span');
+                sw.className = 'sw';
+                sw.style.background = info.color;
+                td.append(sw, info.name);
+            }
+
+            const ov = $('#readout-ovl');
+            ov.textContent = '';
+            for (const o of S.overlays) {
+                const v = o.vol.onGrid ? o.vol.data[lin(S.cur)] : sampleAt(o.vol, S.cur, o.linear);
+                const row = document.createElement('div');
+                const a = document.createElement('span'), b = document.createElement('span');
+                a.textContent = o.name;
+                b.textContent = v === v ? fmtValue(v) : 'outside';
+                row.append(a, b);
+                ov.append(row);
+            }
+            syncRegionList();
+        }
+
+        function fmtValue(v) {
+            if (v === 0) return '0';
+            const a = Math.abs(v);
+            if (a >= 1000 || a < 0.001) return v.toExponential(2);
+            return Number(v.toPrecision(3)).toString();
+        }
+
+        // ================================================================
+        // Atlas panel
+        // ================================================================
+
+        function hexToRgb(h) {
+            return [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16));
+        }
+
+        function buildAtlasRecords() {
+            for (const m of META.atlases) {
+                const max = Math.max(...m.labels.map((l) => l.v));
+                const lut = new Uint8Array((max + 1) * 3);
+                const byValue = [], colors = [];
+                for (const l of m.labels) {
+                    byValue[l.v] = l;
+                    colors[l.v] = l.color;
+                    lut.set(hexToRgb(l.color), l.v * 3);
+                }
+                ATLASES.push({ ...m, lut, byValue, colors, vol: null, loading: null, error: null });
+            }
+        }
+
+        function loadAtlas(a) {
+            if (!a.loading) {
+                a.loading = loadNifti(DATA + a.file).then((vol) => {
+                    const ok = vol.dims.every((d, k) => d === GRID.dims[k]);
+                    if (!ok) throw new Error('unexpected grid');
+                    a.vol = vol;
+                    for (const v of views) if (a.id === S.atlasId) v.at.key = null;
+                    requestRender(true);
+                    return a;
+                }).catch((err) => {
+                    a.error = err;
+                    console.error(a.file, err);
+                    requestRender(true);
+                });
+            }
+            return a.loading;
+        }
+
+        function setupAtlasPanel() {
+            const sel = $('#atlas-select');
+            for (const group of ['Anatomical', 'Functional']) {
+                const og = document.createElement('optgroup');
+                og.label = group;
+                for (const a of ATLASES.filter((x) => x.group === group)) {
+                    const o = document.createElement('option');
+                    o.value = a.id;
+                    o.textContent = a.name;
+                    og.append(o);
+                }
+                sel.append(og);
+            }
+            sel.addEventListener('change', () => setAtlas(sel.value));
+            for (const b of document.querySelectorAll('#atlas-style button')) {
+                b.addEventListener('click', () => setStyle(b.dataset.style));
+            }
+            const op = $('#atlas-opacity');
+            op.addEventListener('input', () => {
+                S.atlasOpacity = +op.value;
+                $('#atlas-opacity-out').textContent = Math.round(S.atlasOpacity * 100) + '%';
+                requestRender();
+            });
+            $('#isolate').addEventListener('change', (e) => { S.isolate = e.target.checked; requestRender(); });
+            $('#region-filter').addEventListener('input', renderRegionList);
+            $('#atlas-count').textContent = ATLASES.length;
+        }
+
+        function setStyle(style) {
+            S.atlasStyle = style;
+            for (const b of document.querySelectorAll('#atlas-style button')) {
+                b.setAttribute('aria-checked', String(b.dataset.style === style));
+            }
+            requestRender();
+        }
+
+        function setAtlas(id) {
+            const a = atlasById(id);
+            if (!a) return;
+            S.atlasId = id;
+            $('#atlas-select').value = id;
+            const note = $('#atlas-note');
+            note.textContent = '';
+            note.append(a.note + ' ' + a.cite + '. ');
+            const link = document.createElement('a');
+            link.href = a.url;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = 'Source';
+            note.append(link, ` · ${a.license}`);
+            $('#region-filter').value = '';
+            $('#region-filter').placeholder = `Filter ${a.labels.length} regions…`;
+            renderRegionList();
+            loadAtlas(a);
+            for (const v of views) v.at.key = null;
+            scheduleHash();
+            requestRender(true);
+        }
+
+        let regionItems = [];
+        function renderRegionList() {
+            const a = activeAtlas();
+            const list = $('#region-list');
+            const q = $('#region-filter').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+            list.textContent = '';
+            regionItems = [];
+            const frag = document.createDocumentFragment();
+            for (const l of a.labels) {
+                const text = (l.name + ' ' + (l.raw || '')).toLowerCase();
+                if (q.length && !q.every((t) => text.includes(t))) continue;
+                const li = document.createElement('li');
+                li.dataset.v = l.v;
+                li.title = l.raw ? `${l.name}\n${l.raw}` : l.name;
+                const sw = document.createElement('span');
+                sw.className = 'sw';
+                sw.style.background = l.color;
+                const nm = document.createElement('span');
+                nm.className = 'nm';
+                nm.textContent = l.name;
+                const vol = document.createElement('span');
+                vol.className = 'vol';
+                vol.textContent = (l.n / 1000).toFixed(l.n < 10000 ? 1 : 0) + ' cm³';
+                li.append(sw, nm, vol);
+                li.addEventListener('click', () => jumpTo(l.at));
+                frag.append(li);
+                regionItems.push(li);
+            }
+            if (!regionItems.length) {
+                const li = document.createElement('li');
+                li.className = 'hint';
+                li.textContent = 'No matching regions';
+                frag.append(li);
+            }
+            list.append(frag);
+            lastListed = -1;
+            syncRegionList();
+        }
+
+        let lastListed = -1;
+        function syncRegionList() {
+            const v = labelAt(activeAtlas());
+            if (v === lastListed) return;
+            lastListed = v;
+            const list = $('#region-list');
+            for (const li of regionItems) {
+                const on = +li.dataset.v === v;
+                li.classList.toggle('current', on);
+                if (on && !list.matches(':hover')) {
+                    const top = li.offsetTop;
+                    if (top < list.scrollTop || top + li.offsetHeight > list.scrollTop + list.clientHeight) {
+                        list.scrollTop = top - list.clientHeight / 2 + li.offsetHeight / 2;
+                    }
+                }
+            }
+        }
+
+        function jumpTo(idx) {
+            moveCursor(idx, null);
+            centerOnCursor();
+            requestRender(true);
+        }
+
+        // ================================================================
+        // Search across every atlas
+        // ================================================================
+
+        let searchIndex = null, hits = [], hitSel = -1;
+        function buildSearchIndex() {
+            searchIndex = [];
+            for (const a of ATLASES) {
+                for (const l of a.labels) {
+                    searchIndex.push({ a, l, name: l.name.toLowerCase(), text: `${l.name} ${l.raw || ''} ${a.short} ${a.name}`.toLowerCase() });
+                }
+            }
+        }
+
+        function runSearch() {
+            const box = $('#results'), input = $('#search');
+            const q = input.value.trim().toLowerCase();
+            box.textContent = '';
+            hits = [];
+            hitSel = -1;
+            if (!q) { box.hidden = true; input.setAttribute('aria-expanded', 'false'); return; }
+            const toks = q.split(/\s+/);
+            const found = searchIndex.filter((e) => toks.every((t) => e.text.includes(t)));
+            const score = (e) => (e.name.startsWith(q) ? 0 : e.name.includes(q) ? 1 : 2);
+            found.sort((x, y) => score(x) - score(y));
+            const byAtlas = new Map();
+            for (const e of found) {
+                const g = byAtlas.get(e.a) || [];
+                if (g.length < 8) g.push(e);
+                byAtlas.set(e.a, g);
+            }
+            for (const a of ATLASES) {
+                const g = byAtlas.get(a);
+                if (!g) continue;
+                const head = document.createElement('div');
+                head.className = 'group';
+                head.textContent = a.name;
+                box.append(head);
+                for (const e of g) {
+                    const b = document.createElement('button');
+                    b.className = 'hit';
+                    b.setAttribute('role', 'option');
+                    const sw = document.createElement('span');
+                    sw.className = 'sw';
+                    sw.style.background = e.l.color;
+                    b.append(sw, e.l.name);
+                    b.addEventListener('mousedown', (ev) => ev.preventDefault());
+                    b.addEventListener('click', () => pickHit(e));
+                    box.append(b);
+                    hits.push({ e, el: b });
+                }
+            }
+            if (!hits.length) {
+                const d = document.createElement('div');
+                d.className = 'empty';
+                d.textContent = 'No region matches that.';
+                box.append(d);
+            }
+            box.hidden = false;
+            input.setAttribute('aria-expanded', 'true');
+        }
+
+        function pickHit(e) {
+            setAtlas(e.a.id);
+            jumpTo(e.l.at);
+            $('#results').hidden = true;
+            $('#search').setAttribute('aria-expanded', 'false');
+            $('#search').blur();
+        }
+
+        function setupSearch() {
+            const input = $('#search');
+            input.addEventListener('input', runSearch);
+            input.addEventListener('focus', () => { if (input.value) runSearch(); });
+            input.addEventListener('blur', () => setTimeout(() => { $('#results').hidden = true; }, 120));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (!hits.length) return;
+                    hitSel = (hitSel + (e.key === 'ArrowDown' ? 1 : -1) + hits.length) % hits.length;
+                    hits.forEach((h, k) => h.el.classList.toggle('on', k === hitSel));
+                    hits[hitSel].el.scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const h = hits[hitSel >= 0 ? hitSel : 0];
+                    if (h) pickHit(h.e);
+                } else if (e.key === 'Escape') {
+                    input.value = '';
+                    runSearch();
+                    input.blur();
+                }
+            });
+        }
+
+        // ================================================================
+        // Overlays
+        // ================================================================
+
+        let overlaySeq = 0;
+
+        function robustRange(data) {
+            const n = data.length, step = Math.max(1, Math.floor(n / 200000));
+            const vals = [];
+            let neg = false, pos = false;
+            for (let k = 0; k < n; k += step) {
+                const v = data[k];
+                if (v !== v || v === 0) continue;
+                if (v < 0) neg = true; else pos = true;
+                vals.push(Math.abs(v));
+            }
+            if (!vals.length) return { hi: 1, neg, pos };
+            vals.sort((a, b) => a - b);
+            return { hi: vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.995))] || vals[vals.length - 1], neg, pos };
+        }
+
+        function onGrid(vol) {
+            if (!vol.dims.every((d, k) => d === GRID.dims[k])) return false;
+            const A = vol.affine, o = GRID.origin;
+            const want = [1, 0, 0, o[0], 0, 1, 0, o[1], 0, 0, 1, o[2]];
+            return want.every((v, k) => Math.abs(A[k] - v) < 1e-3);
+        }
+
+        // Does the file's box overlap the template's at all?
+        function overlapsTemplate(vol) {
+            const [X, Y, Z] = vol.dims, A = vol.affine;
+            const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+            for (const i of [0, X - 1]) for (const j of [0, Y - 1]) for (const k of [0, Z - 1]) {
+                for (let a = 0; a < 3; a++) {
+                    const w = A[a * 4] * i + A[a * 4 + 1] * j + A[a * 4 + 2] * k + A[a * 4 + 3];
+                    lo[a] = Math.min(lo[a], w); hi[a] = Math.max(hi[a], w);
+                }
+            }
+            return [0, 1, 2].every((a) => hi[a] >= GRID.origin[a] && lo[a] <= GRID.origin[a] + GRID.dims[a] - 1);
+        }
+
+        function addOverlay(vol, name, opts = {}) {
+            vol.onGrid = onGrid(vol);
+            const r = robustRange(vol.data);
+            const hi = opts.max != null ? opts.max : Number(r.hi.toPrecision(3));
+            const o = {
+                id: ++overlaySeq, name, vol, visible: true,
+                min: opts.min != null ? opts.min : Number((hi * 0.3).toPrecision(2)),
+                max: hi,
+                cmap: opts.cmap || 'red-yellow',
+                neg: opts.neg != null ? opts.neg : r.neg,
+                opacity: opts.opacity != null ? opts.opacity : 0.85,
+                linear: !vol.isInt,
+                range: Math.max(r.hi * 1.5, hi),
+                warn: [],
+            };
+            if (!overlapsTemplate(vol)) o.warn.push('This file does not overlap MNI space at all. Is it in native space?');
+            else if (vol.spaceCode === 1) o.warn.push('The header says scanner space, not a standard space; check it is registered to MNI.');
+            if (vol.nvols > 1) o.warn.push(`4D file: showing volume 1 of ${vol.nvols}.`);
+            S.overlays.push(o);
+            S.ovVersion++;
+            renderOverlayList();
+            requestRender(true);
+            return o;
+        }
+
+        function showOverlayError(msg) {
+            const el = $('#overlay-error');
+            el.textContent = msg || '';
+            el.hidden = !msg;
+        }
+
+        async function addOverlayFromFile(file) {
+            showOverlayError('');
+            try {
+                const bytes = await gunzip(new Uint8Array(await file.arrayBuffer()));
+                addOverlay(parseNifti(bytes), file.name.replace(/\.nii(\.gz)?$|\.gz$/i, ''));
+            } catch (err) {
+                showOverlayError(`${file.name}: ${err.message}`);
+            }
+        }
+
+        async function addOverlayFromUrl(url) {
+            showOverlayError('');
+            try {
+                const vol = parseNifti(await gunzip(await fetchBytes(url)));
+                const name = decodeURIComponent(url.split('/').pop().split('?')[0]).replace(/\.nii(\.gz)?$|\.gz$/i, '') || 'overlay';
+                addOverlay(vol, name);
+            } catch (err) {
+                const cors = err instanceof TypeError;
+                showOverlayError(cors ? 'Could not fetch that URL. The server may not allow cross-origin requests; download the file and open it instead.' : err.message);
+            }
+        }
+
+        async function addBuiltin(id) {
+            const m = META.overlays.find((o) => o.id === id);
+            if (!m) return;
+            showOverlayError('');
+            const btn = $('#builtin-add');
+            btn.disabled = true;
+            try {
+                const vol = await loadNifti(DATA + m.file);
+                addOverlay(vol, m.name, { cmap: m.cmap, min: m.min, max: m.max, neg: false, opacity: 0.7 });
+            } catch (err) {
+                showOverlayError(`${m.name}: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function overlayChanged(o, rebuildCard) {
+            S.ovVersion++;
+            if (rebuildCard) renderOverlayList();
+            requestRender(true);
+        }
+
+        function renderOverlayList() {
+            const host = $('#overlay-list');
+            host.textContent = '';
+            for (const o of S.overlays) {
+                const card = document.createElement('div');
+                card.className = 'ovl' + (o.visible ? '' : ' hidden-layer');
+                const step = Number((o.range / 200).toPrecision(1)) || 0.01;
+                card.innerHTML = `
+                    <div class="ovl-head">
+                        <input type="checkbox" class="vis" aria-label="Show overlay">
+                        <span class="nm"></span>
+                        <button class="up" title="Move up" aria-label="Move up">&uarr;</button>
+                        <button class="rm" title="Remove" aria-label="Remove overlay">&times;</button>
+                    </div>
+                    <div class="meta"></div>
+                    <div class="cbar"></div>
+                    <div class="cbar-labels"><span class="lo"></span><span class="hi"></span></div>
+                    <div class="row"><label>Threshold</label><input type="range" class="thr" min="0" step="${step}"><input type="number" class="thr-n" step="${step}" style="width:5.5em"></div>
+                    <div class="row"><label>Max</label><input type="range" class="mx" min="0" step="${step}"><input type="number" class="mx-n" step="${step}" style="width:5.5em"></div>
+                    <div class="row"><label>Opacity</label><input type="range" class="op" min="0.05" max="1" step="0.05"><output></output></div>
+                    <div class="row"><label>Colours</label><select class="cm"></select><span></span></div>
+                    <label class="check"><input type="checkbox" class="neg"> Negative values too</label>
+                    <label class="check"><input type="checkbox" class="lin"> Smooth (trilinear)</label>`;
+                const q = (s) => card.querySelector(s);
+                q('.nm').textContent = o.name;
+                q('.nm').title = o.name;
+                const d = o.vol.dims;
+                q('.meta').textContent = `${d.join('×')}` + (o.vol.onGrid ? ' · template grid' : ' · resampled') + (o.vol.descrip ? ` · ${o.vol.descrip}` : '');
+                q('.vis').checked = o.visible;
+                for (const name of Object.keys(CMAPS)) {
+                    const opt = document.createElement('option');
+                    opt.value = opt.textContent = name;
+                    q('.cm').append(opt);
+                }
+                q('.cm').value = o.cmap;
+                q('.neg').checked = o.neg;
+                q('.lin').checked = o.linear;
+                for (const s of ['.thr', '.mx']) q(s).max = o.range;
+                q('.thr').value = q('.thr-n').value = o.min;
+                q('.mx').value = q('.mx-n').value = o.max;
+                q('.op').value = o.opacity;
+                q('.op + output').textContent = Math.round(o.opacity * 100) + '%';
+                const paintBar = () => {
+                    q('.cbar').style.background = barGradient(o);
+                    q('.lo').textContent = o.neg ? `−${fmtValue(o.max)}` : fmtValue(o.min);
+                    q('.hi').textContent = fmtValue(o.max);
+                };
+                paintBar();
+                for (const w of o.warn) {
+                    const p = document.createElement('p');
+                    p.className = 'warn';
+                    p.textContent = w;
+                    card.append(p);
+                }
+                q('.vis').addEventListener('change', (e) => {
+                    o.visible = e.target.checked;
+                    card.classList.toggle('hidden-layer', !o.visible);
+                    overlayChanged(o);
+                });
+                q('.rm').addEventListener('click', () => {
+                    S.overlays.splice(S.overlays.indexOf(o), 1);
+                    overlayChanged(o, true);
+                });
+                q('.up').addEventListener('click', () => {
+                    const k = S.overlays.indexOf(o);
+                    if (k > 0) { S.overlays.splice(k, 1); S.overlays.splice(k - 1, 0, o); overlayChanged(o, true); }
+                });
+                const num = (el) => { const v = parseFloat(el.value); return isFinite(v) ? v : null; };
+                const setMin = (v) => { if (v == null) return; o.min = Math.max(0, v); q('.thr').value = q('.thr-n').value = o.min; paintBar(); overlayChanged(o); };
+                const setMax = (v) => { if (v == null) return; o.max = Math.max(v, 1e-9); q('.mx').value = q('.mx-n').value = o.max; paintBar(); overlayChanged(o); };
+                q('.thr').addEventListener('input', (e) => setMin(num(e.target)));
+                q('.thr-n').addEventListener('change', (e) => setMin(num(e.target)));
+                q('.mx').addEventListener('input', (e) => setMax(num(e.target)));
+                q('.mx-n').addEventListener('change', (e) => setMax(num(e.target)));
+                q('.op').addEventListener('input', (e) => {
+                    o.opacity = +e.target.value;
+                    q('.op + output').textContent = Math.round(o.opacity * 100) + '%';
+                    overlayChanged(o);
+                });
+                q('.cm').addEventListener('change', (e) => { o.cmap = e.target.value; paintBar(); overlayChanged(o); });
+                q('.neg').addEventListener('change', (e) => { o.neg = e.target.checked; paintBar(); overlayChanged(o); });
+                q('.lin').addEventListener('change', (e) => { o.linear = e.target.checked; overlayChanged(o); });
+                if (o.vol.onGrid) q('.lin').closest('label').hidden = true;
+                host.append(card);
+            }
+        }
+
+        function setupOverlayPanel() {
+            const sel = $('#builtin-select');
+            for (const m of META.overlays) {
+                const o = document.createElement('option');
+                o.value = m.id;
+                o.textContent = m.name;
+                sel.append(o);
+            }
+            $('#builtin-add').addEventListener('click', () => addBuiltin(sel.value));
+            const fi = $('#file-input');
+            $('#open-file').addEventListener('click', () => fi.click());
+            fi.addEventListener('change', () => {
+                for (const f of fi.files) addOverlayFromFile(f);
+                fi.value = '';
+            });
+            const go = () => { const u = $('#url-input').value.trim(); if (u) addOverlayFromUrl(u); };
+            $('#url-add').addEventListener('click', go);
+            $('#url-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+
+            const drop = $('#drop');
+            let depth = 0;
+            const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+            window.addEventListener('dragenter', (e) => { if (hasFiles(e)) { depth++; drop.hidden = false; } });
+            window.addEventListener('dragleave', (e) => { if (hasFiles(e) && --depth <= 0) { depth = 0; drop.hidden = true; } });
+            window.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+            window.addEventListener('drop', (e) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                depth = 0;
+                drop.hidden = true;
+                for (const f of e.dataTransfer.files) addOverlayFromFile(f);
+            });
+        }
+
+        // ================================================================
+        // Display panel
+        // ================================================================
+
+        function syncZoomUi() {
+            $('#zoom').value = S.zoom;
+            $('#zoom-out').textContent = S.zoom.toFixed(1) + '×';
+        }
+
+        async function setBackground(id) {
+            const m = META.backgrounds.find((b) => b.id === id);
+            if (!m) return;
+            S.bgId = id;
+            $('#bg-select').value = id;
+            if (!BG[id]) {
+                try {
+                    BG[id] = await loadMosaic(m.file, m.cols);
+                } catch (err) {
+                    toast(`Could not load the ${m.name} template`);
+                    console.error(err);
+                    return;
+                }
+            }
+            requestRender(true);
+        }
+
+        function setupDisplayPanel() {
+            const bs = $('#bg-select');
+            for (const m of META.backgrounds) {
+                const o = document.createElement('option');
+                o.value = m.id;
+                o.textContent = m.name;
+                bs.append(o);
+            }
+            bs.addEventListener('change', () => setBackground(bs.value));
+            $('#skull').addEventListener('change', (e) => { S.skull = e.target.checked; requestRender(); });
+            const lo = $('#win-lo'), hi = $('#win-hi');
+            const win = () => {
+                S.winLo = Math.min(+lo.value, S.winHi - 5);
+                S.winHi = Math.max(+hi.value, S.winLo + 5);
+                lo.value = S.winLo; hi.value = S.winHi;
+                $('#win-lo-out').textContent = S.winLo;
+                $('#win-hi-out').textContent = S.winHi;
+                requestRender();
+            };
+            lo.addEventListener('input', () => { S.winLo = +lo.value; win(); });
+            hi.addEventListener('input', () => { S.winHi = +hi.value; win(); });
+            lo.value = S.winLo; hi.value = S.winHi;
+            $('#win-lo-out').textContent = S.winLo;
+            $('#win-hi-out').textContent = S.winHi;
+            $('#zoom').addEventListener('input', (e) => setZoom(+e.target.value));
+            $('#crosshair').checked = S.crosshair;
+            $('#crosshair').addEventListener('change', (e) => { S.crosshair = e.target.checked; requestRender(); });
+            $('#radio').checked = S.radiological;
+            $('#radio').addEventListener('change', (e) => {
+                S.radiological = e.target.checked;
+                centerOnCursor();
+                requestRender();
+            });
+            $('#reset-view').addEventListener('click', () => {
+                S.zoom = 1;
+                for (const v of views) { v.cx = v.W / 2; v.cy = v.H / 2; clampCenter(v); }
+                S.winLo = 0; S.winHi = 255;
+                lo.value = 0; hi.value = 255;
+                $('#win-lo-out').textContent = 0;
+                $('#win-hi-out').textContent = 255;
+                syncZoomUi();
+                requestRender();
+            });
+            syncZoomUi();
+        }
+
+        // ================================================================
+        // Coordinates, links, keyboard, help
+        // ================================================================
+
+        function setupCoords() {
+            for (const [k, id] of [[0, '#mni-x'], [1, '#mni-y'], [2, '#mni-z']]) {
+                const el = $(id);
+                el.addEventListener('change', () => {
+                    const v = parseFloat(el.value);
+                    if (!isFinite(v)) { requestRender(true); return; }
+                    const idx = S.cur.slice();
+                    idx[k] = v - GRID.origin[k];
+                    jumpTo(idx);
+                });
+                el.addEventListener('keydown', (e) => { if (e.key === 'Enter') el.blur(); });
+            }
+            $('#copy-coords').addEventListener('click', () => copy(mni(S.cur).join(', '), 'Coordinate copied'));
+            $('#copy-link').addEventListener('click', () => { writeHash(); copy(location.href, 'Link copied'); });
+        }
+
+        function copy(text, msg) {
+            const done = () => toast(msg);
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => toast(text));
+            else toast(text);
+        }
+
+        let toastTimer = 0;
+        function toast(msg) {
+            const t = $('#toast');
+            t.textContent = msg;
+            t.hidden = false;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { t.hidden = true; }, 1800);
+        }
+
+        let hashTimer = 0;
+        function scheduleHash() {
+            clearTimeout(hashTimer);
+            hashTimer = setTimeout(writeHash, 300);
+        }
+
+        function writeHash() {
+            const [x, y, z] = mni(S.cur);
+            const h = `#x=${x}&y=${y}&z=${z}&atlas=${S.atlasId}`;
+            if (location.hash !== h) history.replaceState(null, '', h);
+        }
+
+        function readHash() {
+            const p = new URLSearchParams(location.hash.slice(1));
+            const xyz = ['x', 'y', 'z'].map((k) => parseFloat(p.get(k)));
+            if (xyz.every(isFinite)) S.cur = xyz.map((v, a) => clamp(Math.round(v - GRID.origin[a]), 0, GRID.dims[a] - 1));
+            if (p.get('atlas') && atlasById(p.get('atlas'))) S.atlasId = p.get('atlas');
+        }
+
+        function setupKeys() {
+            document.addEventListener('keydown', (e) => {
+                const t = e.target;
+                if (t.closest && t.closest('select, textarea, dialog, input:not([type="checkbox"])')) return;
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
+                const view = views.find((v) => v.id === S.activeView);
+                const move = (dc, dr) => {
+                    const [c, r] = voxelToPixel(view, S.cur);
+                    moveCursor(pixelToVoxel(view, clamp(c + dc, 0, view.W - 1), clamp(r + dr, 0, view.H - 1)), null);
+                };
+                const order = ATLASES.map((a) => a.id);
+                switch (e.key) {
+                    case 'ArrowLeft': move(-1, 0); break;
+                    case 'ArrowRight': move(1, 0); break;
+                    case 'ArrowUp': move(0, -1); break;
+                    case 'ArrowDown': move(0, 1); break;
+                    case 'PageUp': stepSlice(view, 1); break;
+                    case 'PageDown': stepSlice(view, -1); break;
+                    case '+': case '=': setZoom(S.zoom * 1.25); break;
+                    case '-': case '_': setZoom(S.zoom / 1.25); break;
+                    case '0': setZoom(1); break;
+                    case '[': setAtlas(order[(order.indexOf(S.atlasId) - 1 + order.length) % order.length]); break;
+                    case ']': setAtlas(order[(order.indexOf(S.atlasId) + 1) % order.length]); break;
+                    case '/': $('#search').focus(); break;
+                    case 'x': case 'X':
+                        S.crosshair = !S.crosshair;
+                        $('#crosshair').checked = S.crosshair;
+                        requestRender();
+                        break;
+                    case '?': $('#help').showModal(); break;
+                    default: return;
+                }
+                e.preventDefault();
+            });
+        }
+
+        function setupHelp() {
+            const dlg = $('#help');
+            $('#help-btn').addEventListener('click', () => dlg.showModal());
+            $('#help-close').addEventListener('click', () => dlg.close());
+            dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+            const ul = $('#credits');
+            const add = (title, detail, lic, url) => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = title;
+                const l = document.createElement('span');
+                l.className = 'lic';
+                l.textContent = ` · ${lic}`;
+                li.append(a, ` — ${detail}`, l);
+                ul.append(li);
+            };
+            add('ICBM 152 nonlinear asymmetric 2009c template', 'Fonov et al. 2011, NeuroImage; Fonov et al. 2009. Copyright 1993–2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University',
+                'free to use and redistribute with this notice', 'https://nist.mni.mcgill.ca/icbm-152-nonlinear-atlases-2009/');
+            for (const a of ATLASES) add(a.name, `${a.cite}. ${a.source}`, a.license, a.url);
+        }
+
+        // ================================================================
+        // Start
+        // ================================================================
+
+        async function main() {
+            const detail = $('#loading-detail');
+            try {
+                if (location.protocol === 'file:') {
+                    throw new Error('Browsers block data loading from file:// pages. Serve the folder instead, e.g. python3 -m http.server, then open http://localhost:8000/brain/.');
+                }
+                const res = await fetch(DATA + 'atlases.json');
+                if (!res.ok) throw new Error(`Could not load atlases.json (${res.status})`);
+                META = await res.json();
+                GRID = META.grid;
+                STRIDE = [1, GRID.dims[0], GRID.dims[0] * GRID.dims[1]];
+                buildAtlasRecords();
+                S.cur = [-38, 4, 4].map((v, a) => v - GRID.origin[a]);
+                readHash();
+
+                setupViews();
+                setupAtlasPanel();
+                setupOverlayPanel();
+                setupDisplayPanel();
+                setupCoords();
+                setupSearch();
+                setupKeys();
+                setupHelp();
+                buildSearchIndex();
+
+                $('#atlas-opacity').value = S.atlasOpacity;
+                $('#atlas-opacity-out').textContent = Math.round(S.atlasOpacity * 100) + '%';
+                setStyle(S.atlasStyle);
+                setAtlas(S.atlasId);
+
+                const bg = META.backgrounds[0];
+                $('#bg-select').value = bg.id;
+                const [vol, mask] = await Promise.all([
+                    loadMosaic(bg.file, bg.cols),
+                    loadNifti(DATA + META.mask).then((v) => v.data),
+                    loadAtlas(activeAtlas()),
+                ]);
+                BG[bg.id] = vol;
+                MASK = mask;
+                $('#loading').hidden = true;
+                requestRender(true);
+                for (const a of ATLASES) loadAtlas(a);
+                // A pasted link with a new #x=..&y=.. lands here without a reload.
+                window.addEventListener('hashchange', () => {
+                    const before = S.atlasId;
+                    readHash();
+                    if (S.atlasId !== before) setAtlas(S.atlasId);
+                    centerOnCursor();
+                    requestRender(true);
+                });
+            } catch (err) {
+                console.error(err);
+                $('#loading').querySelector('strong').textContent = 'Something went wrong';
+                detail.textContent = err.message;
+            }
+        }
+
+        main();
+    </script>
+</body>
+
+</html>
