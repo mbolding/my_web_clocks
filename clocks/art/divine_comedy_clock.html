@@ -1,672 +1,915 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Divine Comedy Clock</title>
+    <meta name="description" content="Dante's universe in cross-section: the day is the poem's hundred cantos, and the traveller falls through Hell, climbs Purgatory and rises through the heavens along one straight line.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
-            --inferno-bg: linear-gradient(to bottom, #1a0a0a 0%, #3d0000 50%, #000000 100%);
-            --inferno-border: #8b0000;
-            --inferno-text: #ff6b6b;
-
-            --purgatorio-bg: linear-gradient(to bottom, #2a2a3a 0%, #4a4a6a 50%, #6a6a8a 100%);
-            --purgatorio-border: #8a8aaa;
-            --purgatorio-text: #c8c8e8;
-
-            --paradiso-bg: linear-gradient(to bottom, #0a1a3a 0%, #1a3a6a 50%, #ffffff 100%);
-            --paradiso-border: #6a9aff;
-            --paradiso-text: #ffd700;
+            --night: #0b0607;
+            --ink: #ece4d6;
+            --ink-soft: #b9ad9c;
+            --ink-faint: #8e8273;
+            --rule: rgba(236, 228, 214, 0.16);
+            --ember: #e0553a;
+            --ember-deep: #7a1a10;
+            --pearl: #a9c3dc;
+            --gold: #f0c75e;
+            --accent: var(--ember);
         }
+
+        body.purgatorio { --accent: var(--pearl); }
+        body.paradiso { --accent: var(--gold); }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--night); }
 
         body {
             min-height: 100vh;
-            background: var(--inferno-bg);
-            font-family: 'Crimson Text', serif;
+            min-height: 100dvh;
+            background-color: var(--night);
+            background-image: radial-gradient(ellipse at 30% 40%, rgba(122, 26, 16, 0.28), transparent 65%);
+            color: var(--ink);
+            font-family: 'Crimson Text', Georgia, serif;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 2rem;
-            color: #d8d4cc;
-            position: relative;
-            transition: background 2s ease;
+            justify-content: center;
+            padding: clamp(14px, 3vw, 36px) clamp(16px, 3vw, 36px);
+            overflow-x: hidden;
+            transition: background-image 2s ease;
         }
 
-        body.inferno {
-            background: var(--inferno-bg);
+        body.purgatorio { background-image: radial-gradient(ellipse at 30% 60%, rgba(70, 98, 130, 0.26), transparent 65%); }
+        body.paradiso { background-image: radial-gradient(ellipse at 30% 50%, rgba(150, 118, 40, 0.24), transparent 65%); }
+
+        .wrap {
+            width: min(100%, 1240px);
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            gap: clamp(18px, 3.5vw, 56px);
+            align-items: center;
         }
 
-        body.purgatorio {
-            background: var(--purgatorio-bg);
-        }
-
-        body.paradiso {
-            background: var(--paradiso-bg);
-        }
-
-        .illumination {
-            position: fixed;
-            top: 0;
-            left: 0;
+        /* ---------- The universe ---------- */
+        .cosmos {
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0.1;
-            z-index: 0;
+            max-width: min(100%, calc(100dvh - 40px));
+            justify-self: center;
+            aspect-ratio: 1;
         }
 
-        .flame {
-            position: absolute;
-            width: 2px;
-            height: 60px;
-            background: linear-gradient(to top, #ff4400, #ffaa00, transparent);
-            animation: flicker 2s ease-in-out infinite;
+        .cosmos svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+        .sphere { fill: none; stroke: rgba(240, 199, 94, 0.22); stroke-width: 1.4; }
+        .sphere.on { stroke: var(--gold); stroke-width: 4; }
+        .sphere.past { stroke: rgba(240, 199, 94, 0.42); }
+        .empyrean { fill: url(#empyreanGlow); }
+        .empyrean.on { fill: url(#empyreanGlowOn); }
+        .earth-land { fill: #2a1712; }
+        .earth-sea { fill: #0f2233; }
+        .earth-rim { fill: none; stroke: rgba(236, 228, 214, 0.35); stroke-width: 1.5; }
+        .hell { fill: #3b0b07; stroke: rgba(224, 85, 58, 0.45); stroke-width: 1.2; }
+        .ledge { fill: none; stroke: rgba(224, 85, 58, 0.5); stroke-width: 1.4; }
+        .ledge.on { stroke: #ff8a5c; stroke-width: 4.5; }
+        .mount { fill: #3c4654; stroke: rgba(169, 195, 220, 0.5); stroke-width: 1.2; }
+        .terrace { stroke: rgba(169, 195, 220, 0.5); stroke-width: 1.4; }
+        .terrace.on { stroke: #dbeaf7; stroke-width: 4.5; }
+        .eden { fill: #4f7a45; }
+        .eden.on { fill: #8fd27a; }
+        .path-ahead { stroke: rgba(236, 228, 214, 0.2); stroke-width: 1.5; stroke-dasharray: 4 7; }
+        .path-done { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke 2s ease; }
+        .hour-tick { stroke: rgba(236, 228, 214, 0.3); stroke-width: 1.5; }
+        .hour-tick.major { stroke: rgba(236, 228, 214, 0.6); stroke-width: 2.5; }
+        .hour-label { fill: var(--ink-faint); font: 600 22px 'Cinzel', serif; text-anchor: middle; dominant-baseline: central; }
+        .lbl { fill: var(--ink-soft); font: 400 24px 'Cinzel', serif; text-anchor: middle; letter-spacing: 0.06em; }
+        .lbl.small { font-size: 20px; }
+        .lbl.start { text-anchor: start; }
+        .star-dot { fill: #fff6dc; }
+        .traveller-halo { fill: var(--accent); opacity: 0.28; transform-box: fill-box; transform-origin: center; animation: halo 3.2s ease-in-out infinite; transition: fill 2s ease; }
+        .traveller { fill: #fffaf0; stroke: var(--accent); stroke-width: 4; transition: stroke 2s ease; }
+
+        @keyframes halo {
+            0%, 100% { transform: scale(1); opacity: 0.32; }
+            50% { transform: scale(1.5); opacity: 0.12; }
         }
 
-        @keyframes flicker {
-            0%, 100% { opacity: 0.3; transform: scaleY(1); }
-            50% { opacity: 0.8; transform: scaleY(1.2); }
+        @media (prefers-reduced-motion: reduce) {
+            .traveller-halo { animation: none; }
+            body, .path-done, .traveller, .traveller-halo { transition: none; }
         }
 
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s ease-in-out infinite;
-        }
+        /* ---------- Reading panel ---------- */
+        .panel { min-width: 0; }
 
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid var(--inferno-border);
-            box-shadow: 0 0 60px rgba(139, 0, 0, 0.5);
-            padding: 3rem 2.5rem;
-            position: relative;
-            z-index: 1;
-            transition: border-color 2s ease, box-shadow 2s ease;
-        }
-
-        body.purgatorio .container {
-            border-color: var(--purgatorio-border);
-            box-shadow: 0 0 60px rgba(138, 138, 170, 0.5);
-        }
-
-        body.paradiso .container {
-            border-color: var(--paradiso-border);
-            box-shadow: 0 0 60px rgba(106, 154, 255, 0.7);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .title {
+        h1 {
             font-family: 'Cinzel', serif;
-            font-size: clamp(2.5rem, 5vw, 4.5rem);
             font-weight: 700;
-            color: #f8f6f2;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.05em;
-            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+            font-size: clamp(1.5rem, 3.2vw, 2.4rem);
+            letter-spacing: 0.06em;
+            line-height: 1.1;
         }
 
-        .original-title {
-            font-size: clamp(1rem, 2.5vw, 1.4rem);
-            color: #c8c4bc;
+        .byline {
             font-style: italic;
-            margin-bottom: 0.5rem;
+            color: var(--ink-soft);
+            font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+            margin-top: 0.15em;
         }
 
-        .author {
-            font-size: 1rem;
-            color: #a8a4ac;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
+        .readout {
+            margin-top: clamp(14px, 2.4vw, 26px);
+            padding-top: clamp(12px, 2vw, 20px);
+            border-top: 1px solid var(--rule);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 0.7em;
+            row-gap: 0.2em;
         }
 
-        .time-display {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .current-time {
+        .time {
             font-family: 'Cinzel', serif;
-            font-size: clamp(2.5rem, 6vw, 5rem);
             font-weight: 600;
-            color: var(--inferno-text);
-            margin-bottom: 0.5rem;
+            font-size: clamp(2.2rem, 5.4vw, 3.6rem);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink);
+        }
+
+        .canto {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: clamp(1.05rem, 2.2vw, 1.4rem);
+            letter-spacing: 0.08em;
+            color: var(--accent);
             transition: color 2s ease;
         }
 
-        body.purgatorio .current-time {
-            color: var(--purgatorio-text);
-        }
-
-        body.paradiso .current-time {
-            color: var(--paradiso-text);
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
-        }
-
-        .realm-indicator {
-            font-family: 'Cinzel', serif;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: #8a8480;
-        }
-
-        .journey-section {
-            margin-bottom: 2rem;
-        }
-
-        .circle-title {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.3rem, 3vw, 2rem);
+        .where {
+            margin-top: 0.5em;
+            font-size: clamp(1.1rem, 2.2vw, 1.35rem);
             font-weight: 600;
-            color: var(--inferno-text);
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            transition: color 2s ease;
+            line-height: 1.3;
         }
 
-        body.purgatorio .circle-title {
-            color: var(--purgatorio-text);
+        .meta {
+            color: var(--ink-soft);
+            font-size: clamp(0.92rem, 1.7vw, 1.02rem);
+            margin-top: 0.2em;
         }
 
-        body.paradiso .circle-title {
-            color: var(--paradiso-text);
+        .tercet {
+            margin-top: clamp(14px, 2.2vw, 22px);
+            padding-left: clamp(12px, 1.6vw, 18px);
+            border-left: 2px solid var(--accent);
+            transition: border-color 2s ease;
         }
 
-        .location {
-            font-size: 0.95rem;
-            color: #9a9490;
+        .tercet p { line-height: 1.45; }
+
+        .tercet .it {
             font-style: italic;
-            margin-bottom: 1.5rem;
+            font-size: clamp(1.1rem, 2.2vw, 1.32rem);
+            color: var(--ink);
         }
 
-        .verse-container {
-            position: relative;
-            min-height: 160px;
-            margin-bottom: 1.5rem;
+        .tercet .en {
+            margin-top: 0.55em;
+            font-size: clamp(0.98rem, 1.9vw, 1.1rem);
+            color: var(--ink-soft);
         }
 
-        .verse {
-            font-size: clamp(1rem, 2.2vw, 1.2rem);
-            line-height: 1.9;
-            color: #d8d4cc;
-            font-style: italic;
-            opacity: 0;
+        .tercet .src {
+            margin-top: 0.45em;
+            font-size: 0.86rem;
+            color: var(--ink-faint);
+            letter-spacing: 0.04em;
+        }
+
+        .coda {
+            margin-top: 0.8em;
+            font-size: clamp(0.98rem, 1.9vw, 1.1rem);
+            color: var(--ink-soft);
+        }
+
+        .coda[hidden] { display: none; }
+        .coda i { color: var(--ink); }
+
+        .poem-time {
+            margin-top: clamp(12px, 2vw, 18px);
+            font-size: clamp(0.95rem, 1.8vw, 1.06rem);
+            color: var(--ink-soft);
+        }
+
+        .poem-time b {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: 0.78em;
+            letter-spacing: 0.12em;
+            color: var(--ink-faint);
+            margin-right: 0.4em;
+        }
+
+        .strip { margin-top: clamp(14px, 2.2vw, 22px); }
+        .strip svg { width: 100%; height: clamp(26px, 4vw, 34px); display: block; }
+        .tick { fill: rgba(236, 228, 214, 0.16); }
+        .tick.done.inf { fill: rgba(224, 85, 58, 0.62); }
+        .tick.done.pur { fill: rgba(169, 195, 220, 0.62); }
+        .tick.done.par { fill: rgba(240, 199, 94, 0.62); }
+        .tick.now { fill: #fffaf0; }
+
+        .strip-labels {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.7rem, 1.4vw, 0.8rem);
+            letter-spacing: 0.08em;
+            color: var(--ink-faint);
+            margin-top: 0.35em;
+        }
+
+        .strip-labels span:nth-child(1) { width: 34%; }
+        .strip-labels span:nth-child(2) { width: 33%; text-align: center; }
+        .strip-labels span:nth-child(3) { width: 33%; text-align: right; }
+
+        .note {
+            margin-top: clamp(14px, 2.2vw, 22px);
+            font-size: clamp(0.86rem, 1.6vw, 0.95rem);
+            line-height: 1.5;
+            color: var(--ink-faint);
+        }
+
+        .sr-only {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            animation: verseFade 12s ease-in-out infinite;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
         }
 
-        .verse:nth-child(1) { animation-delay: 0s; }
-        .verse:nth-child(2) { animation-delay: 4s; }
-        .verse:nth-child(3) { animation-delay: 8s; }
-
-        @keyframes verseFade {
-            0% { opacity: 0; transform: translateY(10px); }
-            3%, 30% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(10px); }
-        }
-
-        .inscription {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(0.85rem, 2vw, 1.1rem);
-            line-height: 1.7;
-            color: #ff6b6b;
-            padding: 1.5rem;
-            background: rgba(139, 0, 0, 0.2);
-            border-left: 3px solid #8b0000;
-            margin-top: 1rem;
-            text-align: center;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
+        @media (max-width: 860px) {
+            body { align-items: flex-start; }
+            .wrap { grid-template-columns: minmax(0, 1fr); }
+            .cosmos { max-width: min(100%, 560px); order: 1; }
+            .panel { order: 2; }
+            .head { order: 0; }
         }
     </style>
 </head>
-
 <body class="inferno">
-    <div class="illumination" id="illumination"></div>
-
-    <div class="container">
-        <div class="header">
-            <h1 class="title">The Divine Comedy</h1>
-            <div class="original-title">La Divina Commedia</div>
-            <div class="author">Dante Alighieri</div>
+    <main class="wrap">
+        <div class="cosmos">
+            <svg id="cosmos" viewBox="-548 -548 1096 1096" role="img" aria-labelledby="cosmos-title">
+                <title id="cosmos-title">Cross-section of Dante's universe: Hell under Jerusalem, Mount Purgatory at the antipode, the nine heavens around them, with the traveller's place marked.</title>
+                <defs>
+                    <radialGradient id="empyreanGlow" cx="0" cy="0" r="500" gradientUnits="userSpaceOnUse">
+                        <stop offset="0.93" stop-color="#f0c75e" stop-opacity="0"/>
+                        <stop offset="0.97" stop-color="#f0c75e" stop-opacity="0.16"/>
+                        <stop offset="1" stop-color="#fff3c8" stop-opacity="0.3"/>
+                    </radialGradient>
+                    <radialGradient id="empyreanGlowOn" cx="0" cy="0" r="500" gradientUnits="userSpaceOnUse">
+                        <stop offset="0.92" stop-color="#f0c75e" stop-opacity="0"/>
+                        <stop offset="0.96" stop-color="#f0c75e" stop-opacity="0.4"/>
+                        <stop offset="1" stop-color="#fff3c8" stop-opacity="0.75"/>
+                    </radialGradient>
+                    <clipPath id="earthClip"><circle r="230"/></clipPath>
+                </defs>
+                <g id="layer-heavens"></g>
+                <g id="layer-earth"></g>
+                <g id="layer-path"></g>
+                <g id="layer-labels"></g>
+                <g id="layer-traveller">
+                    <circle class="traveller-halo" id="halo" r="20"/>
+                    <circle class="traveller" id="traveller" r="9"/>
+                </g>
+            </svg>
         </div>
 
-        <div class="time-display">
-            <div class="current-time" id="time">00:00</div>
-            <div class="realm-indicator" id="realm">Inferno</div>
-        </div>
+        <section class="panel">
+            <h1>The Divine Comedy</h1>
+            <p class="byline">Dante Alighieri, <span lang="it">La Divina Commedia</span></p>
 
-        <div class="journey-section">
-            <h2 class="circle-title" id="circle-title">The Dark Wood</h2>
-            <div class="location" id="location">The entrance to Hell</div>
-            <div class="verse-container">
-                <div id="verses">
-                    <!-- Verses injected here -->
-                </div>
+            <div class="readout">
+                <div class="time" id="time" role="timer" aria-label="Current time">--:--:--</div>
+                <div class="canto" id="canto">Inferno I</div>
             </div>
-            <div class="inscription">
-                "Abandon all hope, ye who enter here"
+            <p class="where" id="where"></p>
+            <p class="meta" id="meta"></p>
+
+            <div class="tercet">
+                <p class="it" lang="it" id="it"></p>
+                <p class="en" id="en"></p>
+                <p class="src" id="src"></p>
             </div>
-        </div>
-    </div>
+            <p class="coda" id="coda" hidden></p>
+
+            <p class="poem-time"><b>In the poem</b><span id="poemtime"></span></p>
+
+            <div class="strip" aria-hidden="true">
+                <svg id="strip" viewBox="0 0 1000 30" preserveAspectRatio="none"></svg>
+                <div class="strip-labels"><span>Inferno</span><span>Purgatorio</span><span>Paradiso</span></div>
+            </div>
+
+            <p class="note">The day is the poem: one hundred cantos of 14 minutes 24 seconds each. Inferno begins at midnight, Purgatorio at 08:09:36, Paradiso at 16:04:48. Dante's road is a single straight line, down from Jerusalem to the centre of the Earth, out at the far side, up the mountain and on through the nine heavens. The sun marks the hour on its sphere, noon over Jerusalem at the top and noon over Purgatory at the foot. Translation by Longfellow, 1867.</p>
+
+            <p class="sr-only" aria-live="polite" id="live"></p>
+        </section>
+    </main>
 
     <script>
-        const circles = [
-            // INFERNO (Midnight to 8 AM)
-            {
-                hour: 0,
-                realm: "Inferno",
-                title: "The Dark Wood",
-                romanNumeral: "Canto I",
-                location: "Lost in the selva oscura",
-                verses: [
-                    "Nel mezzo del cammin di nostra vita / mi ritrovai per una selva oscura, / ché la diritta via era smarrita.",
-                    "In the middle of the journey of our life / I found myself in a dark wood, / for the straight way was lost.",
-                    "Dante wanders lost in the darkness, unable to find his way. The path to righteousness has vanished."
-                ]
-            },
-            {
-                hour: 1,
-                realm: "Inferno",
-                title: "Circle I — Limbo",
-                romanNumeral: "Canto IV",
-                location: "The virtuous pagans",
-                verses: [
-                    "Here dwell the souls of the unbaptized and virtuous pagans—Homer, Virgil, Ovid, and the great philosophers.",
-                    "No torment afflicts them except the absence of hope. They sigh without suffering, living in desire without hope.",
-                    "A noble castle with seven walls stands here, where the great spirits of antiquity reside in eternal melancholy."
-                ]
-            },
-            {
-                hour: 2,
-                realm: "Inferno",
-                title: "Circle II — Lust",
-                romanNumeral: "Canto V",
-                location: "The lustful whirled by winds",
-                verses: [
-                    "Here the carnal sinners are punished, blown about ceaselessly by fierce winds, as in life they were swept by passion.",
-                    "Paolo and Francesca, tragic lovers, tell their tale: 'That day we read no more.' Forever bound in the storm.",
-                    "Amor condusse noi ad una morte. Love brought us to one death. They swirl eternally together."
-                ]
-            },
-            {
-                hour: 3,
-                realm: "Inferno",
-                title: "Circle III — Gluttony",
-                romanNumeral: "Canto VI",
-                location: "Guarded by Cerberus",
-                verses: [
-                    "The gluttons lie in freezing rain and hail, trampled by Cerberus, the three-headed beast who tears at them.",
-                    "They wallow in mud, their eyes blind to all but their degradation, howling like dogs.",
-                    "Here Ciacco prophesies Florence's doom, speaking of political strife before sinking back into the mire."
-                ]
-            },
-            {
-                hour: 4,
-                realm: "Inferno",
-                title: "Circle IV — Greed",
-                romanNumeral: "Canto VII",
-                location: "Hoarders and wasters",
-                verses: [
-                    "Two groups push great weights against each other—the hoarders and the wasters, forever in futile combat.",
-                    "'Why do you hoard?' 'Why do you waste?' they shout, circling eternally, clashing and turning back.",
-                    "Here misers and spendthrifts learn that Fortune's wheel turns for all, and wealth means nothing."
-                ]
-            },
-            {
-                hour: 5,
-                realm: "Inferno",
-                title: "Circle V — Wrath",
-                romanNumeral: "Canto VIII",
-                location: "The river Styx",
-                verses: [
-                    "The wrathful fight each other on the surface of the muddy Styx, while the sullen gurgle beneath.",
-                    "Filippo Argenti rises from the marsh, and Dante shows him no pity. 'May you weep and wail for all eternity!'",
-                    "The boatman Phlegyas ferries them across the marsh of boiling souls toward the City of Dis."
-                ]
-            },
-            {
-                hour: 6,
-                realm: "Inferno",
-                title: "Circle VI — Heresy",
-                romanNumeral: "Canto X",
-                location: "Burning tombs",
-                verses: [
-                    "The heretics lie in open burning tombs, their bodies aflame for denying the soul's immortality.",
-                    "Farinata degli Uberti rises from his sepulcher, proud and unrepentant, speaking of Florentine politics.",
-                    "The tombs will be sealed forever on Judgment Day, when all knowledge of the future ends."
-                ]
-            },
-            {
-                hour: 7,
-                realm: "Inferno",
-                title: "Circle VII — Violence",
-                romanNumeral: "Cantos XII-XVII",
-                location: "The river of blood and the burning sands",
-                verses: [
-                    "The violent against neighbors boil in Phlegethon's blood. The violent against themselves become gnarled trees.",
-                    "In the burning sands, the violent against God lie supine beneath flakes of fire, forever blasphemous.",
-                    "Here too are the usurers, their purses hanging from their necks, marks of their sin against nature and art."
-                ]
-            },
+        // Opening tercet of every canto: Italian from Project Gutenberg #1000,
+        // English from Longfellow's translation (Project Gutenberg #1004), verbatim.
+        const TERCETS = {
+            it: [
+                ["Nel mezzo del cammin di nostra vita", "mi ritrovai per una selva oscura,", "ché la diritta via era smarrita."],
+                ["Lo giorno se n’andava, e l’aere bruno", "toglieva li animai che sono in terra", "da le fatiche loro; e io sol uno"],
+                ["‘Per me si va ne la città dolente,", "per me si va ne l’etterno dolore,", "per me si va tra la perduta gente."],
+                ["Ruppemi l’alto sonno ne la testa", "un greve truono, sì ch’io mi riscossi", "come persona ch’è per forza desta;"],
+                ["Così discesi del cerchio primaio", "giù nel secondo, che men loco cinghia", "e tanto più dolor, che punge a guaio."],
+                ["Al tornar de la mente, che si chiuse", "dinanzi a la pietà d’i due cognati,", "che di trestizia tutto mi confuse,"],
+                ["«Pape Satàn, pape Satàn aleppe!»,", "cominciò Pluto con la voce chioccia;", "e quel savio gentil, che tutto seppe,"],
+                ["Io dico, seguitando, ch’assai prima", "che noi fossimo al piè de l’alta torre,", "li occhi nostri n’andar suso a la cima"],
+                ["Quel color che viltà di fuor mi pinse", "veggendo il duca mio tornare in volta,", "più tosto dentro il suo novo ristrinse."],
+                ["Ora sen va per un secreto calle,", "tra ’l muro de la terra e li martìri,", "lo mio maestro, e io dopo le spalle."],
+                ["In su l’estremità d’un’alta ripa", "che facevan gran pietre rotte in cerchio,", "venimmo sopra più crudele stipa;"],
+                ["Era lo loco ov’ a scender la riva", "venimmo, alpestro e, per quel che v’er’ anco,", "tal, ch’ogne vista ne sarebbe schiva."],
+                ["Non era ancor di là Nesso arrivato,", "quando noi ci mettemmo per un bosco", "che da neun sentiero era segnato."],
+                ["Poi che la carità del natio loco", "mi strinse, raunai le fronde sparte", "e rende’le a colui, ch’era già fioco."],
+                ["Ora cen porta l’un de’ duri margini;", "e ’l fummo del ruscel di sopra aduggia,", "sì che dal foco salva l’acqua e li argini."],
+                ["Già era in loco onde s’udia ’l rimbombo", "de l’acqua che cadea ne l’altro giro,", "simile a quel che l’arnie fanno rombo,"],
+                ["«Ecco la fiera con la coda aguzza,", "che passa i monti e rompe i muri e l’armi!", "Ecco colei che tutto ’l mondo appuzza!»."],
+                ["Luogo è in inferno detto Malebolge,", "tutto di pietra di color ferrigno,", "come la cerchia che dintorno il volge."],
+                ["O Simon mago, o miseri seguaci", "che le cose di Dio, che di bontate", "deon essere spose, e voi rapaci"],
+                ["Di nova pena mi conven far versi", "e dar matera al ventesimo canto", "de la prima canzon, ch’è d’i sommersi."],
+                ["Così di ponte in ponte, altro parlando", "che la mia comedìa cantar non cura,", "venimmo; e tenavamo ’l colmo, quando"],
+                ["Io vidi già cavalier muover campo,", "e cominciare stormo e far lor mostra,", "e talvolta partir per loro scampo;"],
+                ["Taciti, soli, sanza compagnia", "n’andavam l’un dinanzi e l’altro dopo,", "come frati minor vanno per via."],
+                ["In quella parte del giovanetto anno", "che ’l sole i crin sotto l’Aquario tempra", "e già le notti al mezzo dì sen vanno,"],
+                ["Al fine de le sue parole il ladro", "le mani alzò con amendue le fiche,", "gridando: «Togli, Dio, ch’a te le squadro!»."],
+                ["Godi, Fiorenza, poi che se’ sì grande", "che per mare e per terra batti l’ali,", "e per lo ’nferno tuo nome si spande!"],
+                ["Già era dritta in sù la fiamma e queta", "per non dir più, e già da noi sen gia", "con la licenza del dolce poeta,"],
+                ["Chi poria mai pur con parole sciolte", "dicer del sangue e de le piaghe a pieno", "ch’i’ ora vidi, per narrar più volte?"],
+                ["La molta gente e le diverse piaghe", "avean le luci mie sì inebrïate,", "che de lo stare a piangere eran vaghe."],
+                ["Nel tempo che Iunone era crucciata", "per Semelè contra ’l sangue tebano,", "come mostrò una e altra fïata,"],
+                ["Una medesma lingua pria mi morse,", "sì che mi tinse l’una e l’altra guancia,", "e poi la medicina mi riporse;"],
+                ["S’ïo avessi le rime aspre e chiocce,", "come si converrebbe al tristo buco", "sovra ’l qual pontan tutte l’altre rocce,"],
+                ["La bocca sollevò dal fiero pasto", "quel peccator, forbendola a’ capelli", "del capo ch’elli avea di retro guasto."],
+                ["«Vexilla regis prodeunt inferni", "verso di noi; però dinanzi mira»,", "disse ’l maestro mio, «se tu ’l discerni»."],
+                ["Per correr miglior acque alza le vele", "omai la navicella del mio ingegno,", "che lascia dietro a sé mar sì crudele;"],
+                ["Già era ’l sole a l’orizzonte giunto", "lo cui meridïan cerchio coverchia", "Ierusalèm col suo più alto punto;"],
+                ["Avvegna che la subitana fuga", "dispergesse color per la campagna,", "rivolti al monte ove ragion ne fruga,"],
+                ["Quando per dilettanze o ver per doglie,", "che alcuna virtù nostra comprenda,", "l’anima bene ad essa si raccoglie,"],
+                ["Io era già da quell’ ombre partito,", "e seguitava l’orme del mio duca,", "quando di retro a me, drizzando ’l dito,"],
+                ["Quando si parte il gioco de la zara,", "colui che perde si riman dolente,", "repetendo le volte, e tristo impara;"],
+                ["Poscia che l’accoglienze oneste e liete", "furo iterate tre e quattro volte,", "Sordel si trasse, e disse: «Voi, chi siete?»."],
+                ["Era già l’ora che volge il disio", "ai navicanti e ’ntenerisce il core", "lo dì c’han detto ai dolci amici addio;"],
+                ["La concubina di Titone antico", "già s’imbiancava al balco d’orïente,", "fuor de le braccia del suo dolce amico;"],
+                ["Poi fummo dentro al soglio de la porta", "che ’l mal amor de l’anime disusa,", "perché fa parer dritta la via torta,"],
+                ["«O Padre nostro, che ne’ cieli stai,", "non circunscritto, ma per più amore", "ch’ai primi effetti di là sù tu hai,"],
+                ["Di pari, come buoi che vanno a giogo,", "m’andava io con quell’ anima carca,", "fin che ’l sofferse il dolce pedagogo."],
+                ["Noi eravamo al sommo de la scala,", "dove secondamente si risega", "lo monte che salendo altrui dismala."],
+                ["«Chi è costui che ’l nostro monte cerchia", "prima che morte li abbia dato il volo,", "e apre li occhi a sua voglia e coverchia?»."],
+                ["Quanto tra l’ultimar de l’ora terza", "e ’l principio del dì par de la spera", "che sempre a guisa di fanciullo scherza,"],
+                ["Buio d’inferno e di notte privata", "d’ogne pianeto, sotto pover cielo,", "quant’ esser può di nuvol tenebrata,"],
+                ["Ricorditi, lettor, se mai ne l’alpe", "ti colse nebbia per la qual vedessi", "non altrimenti che per pelle talpe,"],
+                ["Posto avea fine al suo ragionamento", "l’alto dottore, e attento guardava", "ne la mia vista s’io parea contento;"],
+                ["Ne l’ora che non può ’l calor dïurno", "intepidar più ’l freddo de la luna,", "vinto da terra, e talor da Saturno"],
+                ["Contra miglior voler voler mal pugna;", "onde contra ’l piacer mio, per piacerli,", "trassi de l’acqua non sazia la spugna."],
+                ["La sete natural che mai non sazia", "se non con l’acqua onde la femminetta", "samaritana domandò la grazia,"],
+                ["Già era l’angel dietro a noi rimaso,", "l’angel che n’avea vòlti al sesto giro,", "avendomi dal viso un colpo raso;"],
+                ["Mentre che li occhi per la fronda verde", "ficcava ïo sì come far suole", "chi dietro a li uccellin sua vita perde,"],
+                ["Né ’l dir l’andar, né l’andar lui più lento", "facea, ma ragionando andavam forte,", "sì come nave pinta da buon vento;"],
+                ["Ora era onde ’l salir non volea storpio;", "ché ’l sole avëa il cerchio di merigge", "lasciato al Tauro e la notte a lo Scorpio:"],
+                ["Mentre che sì per l’orlo, uno innanzi altro,", "ce n’andavamo, e spesso il buon maestro", "diceami: «Guarda: giovi ch’io ti scaltro»;"],
+                ["Sì come quando i primi raggi vibra", "là dove il suo fattor lo sangue sparse,", "cadendo Ibero sotto l’alta Libra,"],
+                ["Vago già di cercar dentro e dintorno", "la divina foresta spessa e viva,", "ch’a li occhi temperava il novo giorno,"],
+                ["Cantando come donna innamorata,", "continüò col fin di sue parole:", "‘Beati quorum tecta sunt peccata!’."],
+                ["Quando il settentrïon del primo cielo,", "che né occaso mai seppe né orto", "né d’altra nebbia che di colpa velo,"],
+                ["«O tu che se’ di là dal fiume sacro»,", "volgendo suo parlare a me per punta,", "che pur per taglio m’era paruto acro,"],
+                ["Tant’ eran li occhi miei fissi e attenti", "a disbramarsi la decenne sete,", "che li altri sensi m’eran tutti spenti."],
+                ["‘Deus, venerunt gentes’, alternando", "or tre or quattro dolce salmodia,", "le donne incominciaro, e lagrimando;"],
+                ["La gloria di colui che tutto move", "per l’universo penetra, e risplende", "in una parte più e meno altrove."],
+                ["O voi che siete in piccioletta barca,", "desiderosi d’ascoltar, seguiti", "dietro al mio legno che cantando varca,"],
+                ["Quel sol che pria d’amor mi scaldò ’l petto,", "di bella verità m’avea scoverto,", "provando e riprovando, il dolce aspetto;"],
+                ["Intra due cibi, distanti e moventi", "d’un modo, prima si morria di fame,", "che liber’ omo l’un recasse ai denti;"],
+                ["«S’io ti fiammeggio nel caldo d’amore", "di là dal modo che ’n terra si vede,", "sì che del viso tuo vinco il valore,"],
+                ["«Poscia che Costantin l’aquila volse", "contr’ al corso del ciel, ch’ella seguio", "dietro a l’antico che Lavina tolse,"],
+                ["«Osanna, sanctus Deus sabaòth,", "superillustrans claritate tua", "felices ignes horum malacòth!»."],
+                ["Solea creder lo mondo in suo periclo", "che la bella Ciprigna il folle amore", "raggiasse, volta nel terzo epiciclo;"],
+                ["Da poi che Carlo tuo, bella Clemenza,", "m’ebbe chiarito, mi narrò li ’nganni", "che ricever dovea la sua semenza;"],
+                ["Guardando nel suo Figlio con l’Amore", "che l’uno e l’altro etternalmente spira,", "lo primo e ineffabile Valore"],
+                ["O insensata cura de’ mortali,", "quanto son difettivi silogismi", "quei che ti fanno in basso batter l’ali!"],
+                ["Sì tosto come l’ultima parola", "la benedetta fiamma per dir tolse,", "a rotar cominciò la santa mola;"],
+                ["Imagini, chi bene intender cupe", "quel ch’i’ or vidi—e ritegna l’image,", "mentre ch’io dico, come ferma rupe—,"],
+                ["Dal centro al cerchio, e sì dal cerchio al centro", "movesi l’acqua in un ritondo vaso,", "secondo ch’è percosso fuori o dentro:"],
+                ["Benigna volontade in che si liqua", "sempre l’amor che drittamente spira,", "come cupidità fa ne la iniqua,"],
+                ["O poca nostra nobiltà di sangue,", "se glorïar di te la gente fai", "qua giù dove l’affetto nostro langue,"],
+                ["Qual venne a Climenè, per accertarsi", "di ciò ch’avëa incontro a sé udito,", "quei ch’ancor fa li padri ai figli scarsi;"],
+                ["Già si godeva solo del suo verbo", "quello specchio beato, e io gustava", "lo mio, temprando col dolce l’acerbo;"],
+                ["Parea dinanzi a me con l’ali aperte", "la bella image che nel dolce frui", "liete facevan l’anime conserte;"],
+                ["Quando colui che tutto ’l mondo alluma", "de l’emisperio nostro sì discende,", "che ’l giorno d’ogne parte si consuma,"],
+                ["Già eran li occhi miei rifissi al volto", "de la mia donna, e l’animo con essi,", "e da ogne altro intento s’era tolto."],
+                ["Oppresso di stupore, a la mia guida", "mi volsi, come parvol che ricorre", "sempre colà dove più si confida;"],
+                ["Come l’augello, intra l’amate fronde,", "posato al nido de’ suoi dolci nati", "la notte che le cose ci nasconde,"],
+                ["«O sodalizio eletto a la gran cena", "del benedetto Agnello, il qual vi ciba", "sì, che la vostra voglia è sempre piena,"],
+                ["Se mai continga che ’l poema sacro", "al quale ha posto mano e cielo e terra,", "sì che m’ha fatto per molti anni macro,"],
+                ["Mentr’ io dubbiava per lo viso spento,", "de la fulgida fiamma che lo spense", "uscì un spiro che mi fece attento,"],
+                ["‘Al Padre, al Figlio, a lo Spirito Santo’,", "cominciò, ‘gloria!’, tutto ’l paradiso,", "sì che m’inebrïava il dolce canto."],
+                ["Poscia che ’ncontro a la vita presente", "d’i miseri mortali aperse ’l vero", "quella che ’mparadisa la mia mente,"],
+                ["Quando ambedue li figli di Latona,", "coperti del Montone e de la Libra,", "fanno de l’orizzonte insieme zona,"],
+                ["Forse semilia miglia di lontano", "ci ferve l’ora sesta, e questo mondo", "china già l’ombra quasi al letto piano,"],
+                ["In forma dunque di candida rosa", "mi si mostrava la milizia santa", "che nel suo sangue Cristo fece sposa;"],
+                ["Affetto al suo piacer, quel contemplante", "libero officio di dottore assunse,", "e cominciò queste parole sante:"],
+                ["«Vergine Madre, figlia del tuo figlio,", "umile e alta più che creatura,", "termine fisso d’etterno consiglio,"]
+            ],
+            en: [
+                ["Midway upon the journey of our life", "I found myself within a forest dark,", "For the straightforward pathway had been lost."],
+                ["Day was departing, and the embrowned air", "Released the animals that are on earth", "From their fatigues; and I the only one"],
+                ["\"Through me the way is to the city dolent;", "Through me the way is to eternal dole;", "Through me the way among the people lost."],
+                ["Broke the deep lethargy within my head", "A heavy thunder, so that I upstarted,", "Like to a person who by force is wakened;"],
+                ["Thus I descended out of the first circle", "Down to the second, that less space begirds,", "And so much greater dole, that goads to wailing."],
+                ["At the return of consciousness, that closed", "Before the pity of those two relations,", "Which utterly with sadness had confused me,"],
+                ["\"Pape Satan, Pape Satan, Aleppe!\"", "Thus Plutus with his clucking voice began;", "And that benignant Sage, who all things knew,"],
+                ["I say, continuing, that long before", "We to the foot of that high tower had come,", "Our eyes went upward to the summit of it,"],
+                ["That hue which cowardice brought out on me,", "Beholding my Conductor backward turn,", "Sooner repressed within him his new colour."],
+                ["Now onward goes, along a narrow path", "Between the torments and the city wall,", "My Master, and I follow at his back."],
+                ["Upon the margin of a lofty bank", "Which great rocks broken in a circle made,", "We came upon a still more cruel throng;"],
+                ["The place where to descend the bank we came", "Was alpine, and from what was there, moreover,", "Of such a kind that every eye would shun it."],
+                ["Not yet had Nessus reached the other side,", "When we had put ourselves within a wood,", "That was not marked by any path whatever."],
+                ["Because the charity of my native place", "Constrained me, gathered I the scattered leaves,", "And gave them back to him, who now was hoarse."],
+                ["Now bears us onward one of the hard margins,", "And so the brooklet's mist o'ershadows it,", "From fire it saves the water and the dikes."],
+                ["Now was I where was heard the reverberation", "Of water falling into the next round,", "Like to that humming which the beehives make,"],
+                ["\"Behold the monster with the pointed tail,", "Who cleaves the hills, and breaketh walls and weapons,", "Behold him who infecteth all the world.\""],
+                ["There is a place in Hell called Malebolge,", "Wholly of stone and of an iron colour,", "As is the circle that around it turns."],
+                ["O Simon Magus, O forlorn disciples,", "Ye who the things of God, which ought to be", "The brides of holiness, rapaciously"],
+                ["Of a new pain behoves me to make verses", "And give material to the twentieth canto", "Of the first song, which is of the submerged."],
+                ["From bridge to bridge thus, speaking other things", "Of which my Comedy cares not to sing,", "We came along, and held the summit, when"],
+                ["I have erewhile seen horsemen moving camp,", "Begin the storming, and their muster make,", "And sometimes starting off for their escape;"],
+                ["Silent, alone, and without company", "We went, the one in front, the other after,", "As go the Minor Friars along their way."],
+                ["In that part of the youthful year wherein", "The Sun his locks beneath Aquarius tempers,", "And now the nights draw near to half the day,"],
+                ["At the conclusion of his words, the thief", "Lifted his hands aloft with both the figs,", "Crying: \"Take that, God, for at thee I aim them.\""],
+                ["Rejoice, O Florence, since thou art so great,", "That over sea and land thou beatest thy wings,", "And throughout Hell thy name is spread abroad!"],
+                ["Already was the flame erect and quiet,", "To speak no more, and now departed from us", "With the permission of the gentle Poet;"],
+                ["Who ever could, e'en with untrammelled words,", "Tell of the blood and of the wounds in full", "Which now I saw, by many times narrating?"],
+                ["The many people and the divers wounds", "These eyes of mine had so inebriated,", "That they were wishful to stand still and weep;"],
+                ["'Twas at the time when Juno was enraged,", "For Semele, against the Theban blood,", "As she already more than once had shown,"],
+                ["One and the selfsame tongue first wounded me,", "So that it tinged the one cheek and the other,", "And then held out to me the medicine;"],
+                ["If I had rhymes both rough and stridulous,", "As were appropriate to the dismal hole", "Down upon which thrust all the other rocks,"],
+                ["His mouth uplifted from his grim repast,", "That sinner, wiping it upon the hair", "Of the same head that he behind had wasted."],
+                ["\"'Vexilla Regis prodeunt Inferni'", "Towards us; therefore look in front of thee,\"", "My Master said, \"if thou discernest him.\""],
+                ["To run o'er better waters hoists its sail", "The little vessel of my genius now,", "That leaves behind itself a sea so cruel;"],
+                ["Already had the sun the horizon reached", "Whose circle of meridian covers o'er", "Jerusalem with its most lofty point,"],
+                ["Inasmuch as the instantaneous flight", "Had scattered them asunder o'er the plain,", "Turned to the mountain whither reason spurs us,"],
+                ["Whenever by delight or else by pain,", "That seizes any faculty of ours,", "Wholly to that the soul collects itself,"],
+                ["I had already from those shades departed,", "And followed in the footsteps of my Guide,", "When from behind, pointing his finger at me,"],
+                ["Whene'er is broken up the game of Zara,", "He who has lost remains behind despondent,", "The throws repeating, and in sadness learns;"],
+                ["After the gracious and glad salutations", "Had three and four times been reiterated,", "Sordello backward drew and said, \"Who are you?\""],
+                ["'Twas now the hour that turneth back desire", "In those who sail the sea, and melts the heart,", "The day they've said to their sweet friends farewell,"],
+                ["The concubine of old Tithonus now", "Gleamed white upon the eastern balcony,", "Forth from the arms of her sweet paramour;"],
+                ["When we had crossed the threshold of the door", "Which the perverted love of souls disuses,", "Because it makes the crooked way seem straight,"],
+                ["\"Our Father, thou who dwellest in the heavens,", "Not circumscribed, but from the greater love", "Thou bearest to the first effects on high,"],
+                ["Abreast, like oxen going in a yoke,", "I with that heavy-laden soul went on,", "As long as the sweet pedagogue permitted;"],
+                ["We were upon the summit of the stairs,", "Where for the second time is cut away", "The mountain, which ascending shriveth all."],
+                ["\"Who is this one that goes about our mountain,", "Or ever Death has given him power of flight,", "And opes his eyes and shuts them at his will?\""],
+                ["As much as 'twixt the close of the third hour", "And dawn of day appeareth of that sphere", "Which aye in fashion of a child is playing,"],
+                ["Darkness of hell, and of a night deprived", "Of every planet under a poor sky,", "As much as may be tenebrous with cloud,"],
+                ["Remember, Reader, if e'er in the Alps", "A mist o'ertook thee, through which thou couldst see", "Not otherwise than through its membrane mole,"],
+                ["An end had put unto his reasoning", "The lofty Teacher, and attent was looking", "Into my face, if I appeared content;"],
+                ["It was the hour when the diurnal heat", "No more can warm the coldness of the moon,", "Vanquished by earth, or peradventure Saturn,"],
+                ["Ill strives the will against a better will;", "Therefore, to pleasure him, against my pleasure", "I drew the sponge not saturate from the water."],
+                ["The natural thirst, that ne'er is satisfied", "Excepting with the water for whose grace", "The woman of Samaria besought,"],
+                ["Already was the Angel left behind us,", "The Angel who to the sixth round had turned us,", "Having erased one mark from off my face;"],
+                ["The while among the verdant leaves mine eyes", "I riveted, as he is wont to do", "Who wastes his life pursuing little birds,"],
+                ["Nor speech the going, nor the going that", "Slackened; but talking we went bravely on,", "Even as a vessel urged by a good wind."],
+                ["Now was it the ascent no hindrance brooked,", "Because the sun had his meridian circle", "To Taurus left, and night to Scorpio;"],
+                ["While on the brink thus one before the other", "We went upon our way, oft the good Master", "Said: \"Take thou heed! suffice it that I warn thee.\""],
+                ["As when he vibrates forth his earliest rays,", "In regions where his Maker shed his blood,", "(The Ebro falling under lofty Libra,"],
+                ["Eager already to search in and round", "The heavenly forest, dense and living-green,", "Which tempered to the eyes the new-born day,"],
+                ["Singing like unto an enamoured lady", "She, with the ending of her words, continued:", "\"Beati quorum tecta sunt peccata.\""],
+                ["When the Septentrion of the highest heaven", "(Which never either setting knew or rising,", "Nor veil of other cloud than that of sin,"],
+                ["\"O thou who art beyond the sacred river,\"", "Turning to me the point of her discourse,", "That edgewise even had seemed to me so keen,"],
+                ["So steadfast and attentive were mine eyes", "In satisfying their decennial thirst,", "That all my other senses were extinct,"],
+                ["\"Deus venerunt gentes,\" alternating", "Now three, now four, melodious psalmody", "The maidens in the midst of tears began;"],
+                ["The glory of Him who moveth everything", "Doth penetrate the universe, and shine", "In one part more and in another less."],
+                ["O Ye, who in some pretty little boat,", "Eager to listen, have been following", "Behind my ship, that singing sails along,"],
+                ["That Sun, which erst with love my bosom warmed,", "Of beauteous truth had unto me discovered,", "By proving and reproving, the sweet aspect."],
+                ["Between two viands, equally removed", "And tempting, a free man would die of hunger", "Ere either he could bring unto his teeth."],
+                ["\"If in the heat of love I flame upon thee", "Beyond the measure that on earth is seen,", "So that the valour of thine eyes I vanquish,"],
+                ["\"After that Constantine the eagle turned", "Against the course of heaven, which it had followed", "Behind the ancient who Lavinia took,"],
+                ["\"Osanna sanctus Deus Sabaoth,", "Superillustrans claritate tua", "Felices ignes horum malahoth!\""],
+                ["The world used in its peril to believe", "That the fair Cypria delirious love", "Rayed out, in the third epicycle turning;"],
+                ["Beautiful Clemence, after that thy Charles", "Had me enlightened, he narrated to me", "The treacheries his seed should undergo;"],
+                ["Looking into his Son with all the Love", "Which each of them eternally breathes forth,", "The Primal and unutterable Power"],
+                ["O Thou insensate care of mortal men,", "How inconclusive are the syllogisms", "That make thee beat thy wings in downward flight!"],
+                ["Soon as the blessed flame had taken up", "The final word to give it utterance,", "Began the holy millstone to revolve,"],
+                ["Let him imagine, who would well conceive", "What now I saw, and let him while I speak", "Retain the image as a steadfast rock,"],
+                ["From centre unto rim, from rim to centre,", "In a round vase the water moves itself,", "As from without 'tis struck or from within."],
+                ["A will benign, in which reveals itself", "Ever the love that righteously inspires,", "As in the iniquitous, cupidity,"],
+                ["O thou our poor nobility of blood,", "If thou dost make the people glory in thee", "Down here where our affection languishes,"],
+                ["As came to Clymene, to be made certain", "Of that which he had heard against himself,", "He who makes fathers chary still to children,"],
+                ["Now was alone rejoicing in its word", "That soul beatified, and I was tasting", "My own, the bitter tempering with the sweet,"],
+                ["Appeared before me with its wings outspread", "The beautiful image that in sweet fruition", "Made jubilant the interwoven souls;"],
+                ["When he who all the world illuminates", "Out of our hemisphere so far descends", "That on all sides the daylight is consumed,"],
+                ["Already on my Lady's face mine eyes", "Again were fastened, and with these my mind,", "And from all other purpose was withdrawn;"],
+                ["Oppressed with stupor, I unto my guide", "Turned like a little child who always runs", "For refuge there where he confideth most;"],
+                ["Even as a bird, 'mid the beloved leaves,", "Quiet upon the nest of her sweet brood", "Throughout the night, that hideth all things from us,"],
+                ["\"O company elect to the great supper", "Of the Lamb benedight, who feedeth you", "So that for ever full is your desire,"],
+                ["If e'er it happen that the Poem Sacred,", "To which both heaven and earth have set their hand,", "So that it many a year hath made me lean,"],
+                ["While I was doubting for my vision quenched,", "Out of the flame refulgent that had quenched it", "Issued a breathing, that attentive made me,"],
+                ["\"Glory be to the Father, to the Son,", "And Holy Ghost!\" all Paradise began,", "So that the melody inebriate made me."],
+                ["After the truth against the present life", "Of miserable mortals was unfolded", "By her who doth imparadise my mind,"],
+                ["At what time both the children of Latona,", "Surmounted by the Ram and by the Scales,", "Together make a zone of the horizon,"],
+                ["Perchance six thousand miles remote from us", "Is glowing the sixth hour, and now this world", "Inclines its shadow almost to a level,"],
+                ["In fashion then as of a snow-white rose", "Displayed itself to me the saintly host,", "Whom Christ in his own blood had made his bride,"],
+                ["Absorbed in his delight, that contemplator", "Assumed the willing office of a teacher,", "And gave beginning to these holy words:"],
+                ["\"Thou Virgin Mother, daughter of thy Son,", "Humble and high beyond all other creature,", "The limit fixed of the eternal counsel,"]
+            ]
+        };
 
-            // PURGATORIO (8 AM to 4 PM)
-            {
-                hour: 8,
-                realm: "Purgatorio",
-                title: "The Shores of Purgatory",
-                romanNumeral: "Canto I",
-                location: "The beach at the mountain's base",
-                verses: [
-                    "To course over better waters the little bark of my wit now lifts her sails, leaving behind so cruel a sea.",
-                    "Cato guards the shores, his face illuminated by four stars representing the cardinal virtues unseen since Eden.",
-                    "The souls arrive singing In exitu Israel de Aegypto, delivered from bondage, beginning their ascent."
-                ]
-            },
-            {
-                hour: 9,
-                realm: "Purgatorio",
-                title: "Ante-Purgatory",
-                romanNumeral: "Cantos II-IV",
-                location: "The excommunicated and the late-repentant",
-                verses: [
-                    "Here wait those who delayed repentance until the last moment, or died excommunicate from the Church.",
-                    "Casella sings one of Dante's own canzoni: 'Amor che ne la mente mi ragiona.' But Cato chides their delay.",
-                    "They must wait thirty times as long as they defied God before beginning their climb."
-                ]
-            },
-            {
-                hour: 10,
-                realm: "Purgatorio",
-                title: "Terrace I — Pride",
-                romanNumeral: "Cantos X-XII",
-                location: "Bearing great stones",
-                verses: [
-                    "The proud are bent low under massive stones, their backs crushed, unable to lift their heads in arrogance.",
-                    "They recite the Paternoster together, and Dante sees marble reliefs showing examples of humility.",
-                    "The angel of humility brushes Dante's forehead, erasing the first P, the mark of pride's sin."
-                ]
-            },
-            {
-                hour: 11,
-                realm: "Purgatorio",
-                title: "Terrace II — Envy",
-                romanNumeral: "Cantos XIII-XIV",
-                location: "Eyes sewn shut",
-                verses: [
-                    "The envious sit with their eyes sewn shut with iron wire, unable to see what others possess.",
-                    "They wear cloaks of coarse haircloth and lean against each other, singing the Litany of Saints.",
-                    "Voices cry out examples of charity, while the whip of envy lashes them with tales of its punishment."
-                ]
-            },
-            {
-                hour: 12,
-                realm: "Purgatorio",
-                title: "Terrace III — Wrath",
-                romanNumeral: "Cantos XV-XVII",
-                location: "The blinding smoke",
-                verses: [
-                    "Acrid smoke, blacker than night, blinds the wrathful as they stumble through the darkness.",
-                    "They chant the Agnus Dei: 'Lamb of God, who takest away the sins of the world, grant us peace.'",
-                    "Dante sees visions of wrath's consequences—Procne, Haman, and the destruction they brought."
-                ]
-            },
-            {
-                hour: 13,
-                realm: "Purgatorio",
-                title: "Terrace IV — Sloth",
-                romanNumeral: "Cantos XVII-XVIII",
-                location: "Running without rest",
-                verses: [
-                    "The slothful run ceaselessly, never resting, calling out examples of zeal and swift action.",
-                    "'Mary ran with haste to the mountains!' 'Caesar struck at Lerida!' They must never slow.",
-                    "Dante learns of love—how all virtue and vice stem from love misdirected or insufficiently pursued."
-                ]
-            },
-            {
-                hour: 14,
-                realm: "Purgatorio",
-                title: "Terrace V — Avarice",
-                romanNumeral: "Cantos XIX-XX",
-                location: "Bound face-down",
-                verses: [
-                    "The avaricious and prodigal lie face-down, bound hand and foot, weeping into the dust.",
-                    "They recite 'Adhaesit pavimento anima mea'—My soul cleaveth to the dust. They loved earthly things too much.",
-                    "Pope Adrian V lies here, confessing that only in death did he see how vain were all earthly dignities."
-                ]
-            },
-            {
-                hour: 15,
-                realm: "Purgatorio",
-                title: "Terrace VI — Gluttony",
-                romanNumeral: "Cantos XXII-XXIV",
-                location: "Starving beneath fruit trees",
-                verses: [
-                    "The gluttonous are emaciated, wasted to shadows, starving beneath trees heavy with fruit they cannot reach.",
-                    "Water cascades down, and fragrant apples hang just out of reach—eternal hunger, eternal thirst.",
-                    "Forese Donati recognizes Dante: 'How can you be here before your death?' They speak of poetry and Florence."
-                ]
-            },
+        const ROMAN = n => {
+            const t = [[50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+            let s = '';
+            for (const [v, r] of t) while (n >= v) { s += r; n -= v; }
+            return s;
+        };
 
-            // PARADISO (4 PM to Midnight)
-            {
-                hour: 16,
-                realm: "Paradiso",
-                title: "Sphere I — The Moon",
-                romanNumeral: "Cantos II-V",
-                location: "The inconstant",
-                verses: [
-                    "Beatrice leads Dante into the pearl-like substance of the Moon, where dwell those who broke their vows.",
-                    "Piccarda Donati appears, serene despite being in the lowest sphere: 'In His will is our peace.'",
-                    "Here Dante learns that all souls in Paradise are content, for each sphere perfectly fulfills God's love."
-                ]
-            },
-            {
-                hour: 17,
-                realm: "Paradiso",
-                title: "Sphere II — Mercury",
-                romanNumeral: "Cantos V-VII",
-                location: "The ambitious",
-                verses: [
-                    "In Mercury dwell those who did good for fame and glory rather than pure love of God.",
-                    "The Emperor Justinian tells of Rome's history and the triumph of the eagle standard.",
-                    "These souls shine like sparks in a flame, dancing in the radiance of the second heaven."
-                ]
-            },
-            {
-                hour: 18,
-                realm: "Paradiso",
-                title: "Sphere III — Venus",
-                romanNumeral: "Cantos VIII-IX",
-                location: "The lovers",
-                verses: [
-                    "Venus holds those whose love was earthly but redeemed—Charles Martel, Cunizza, and Folquet.",
-                    "They sing 'Hosanna' and dance in circles of light, their earthly passion now transformed to holy love.",
-                    "Here love becomes the ladder to divine love, the earthly transformed into the celestial."
-                ]
-            },
-            {
-                hour: 19,
-                realm: "Paradiso",
-                title: "Sphere IV — The Sun",
-                romanNumeral: "Cantos X-XIV",
-                location: "The wise",
-                verses: [
-                    "In the Sun, the great theologians and wise souls form two circling crowns of light.",
-                    "Thomas Aquinas and Bonaventure lead the dance, rivals on Earth now united in eternal wisdom.",
-                    "They blaze like suns, their intellects perfected, singing of the Trinity in harmonies beyond human understanding."
-                ]
-            },
-            {
-                hour: 20,
-                realm: "Paradiso",
-                title: "Sphere V — Mars",
-                romanNumeral: "Cantos XIV-XVIII",
-                location: "Warriors of faith",
-                verses: [
-                    "The warriors who fought for faith form a great cross of light, Christ's image blazing in Mars.",
-                    "Cacciaguida, Dante's ancestor, prophesies his exile: 'You shall leave everything beloved most dearly.'",
-                    "The crusaders sing and flash along the arms of the cross, their sacrifice now eternal glory."
-                ]
-            },
-            {
-                hour: 21,
-                realm: "Paradiso",
-                title: "Sphere VI — Jupiter",
-                romanNumeral: "Cantos XVIII-XX",
-                location: "The just rulers",
-                verses: [
-                    "Just rulers form letters in the sky: DILIGITE IUSTITIAM—Love righteousness, ye that be judges.",
-                    "The souls arrange themselves into the shape of an eagle, the emblem of divine justice.",
-                    "The eagle speaks with one voice of the mystery of divine election and the limits of human understanding."
-                ]
-            },
-            {
-                hour: 22,
-                realm: "Paradiso",
-                title: "Sphere VII — Saturn",
-                romanNumeral: "Cantos XXI-XXII",
-                location: "The contemplatives",
-                verses: [
-                    "A golden ladder rises infinitely upward, with contemplative souls ascending and descending like Jacob's angels.",
-                    "Peter Damian and Benedict appear, speaking of monasticism and the corruption of the modern Church.",
-                    "Silence reigns here—the music would be too overwhelming for mortal ears."
-                ]
-            },
-            {
-                hour: 23,
-                realm: "Paradiso",
-                title: "The Empyrean — The Beatific Vision",
-                romanNumeral: "Cantos XXX-XXXIII",
-                location: "Beyond the spheres, the dwelling of God",
-                verses: [
-                    "Dante sees the Mystic Rose, where all the blessed sit in tiers of light, gazing upon God.",
-                    "Bernard of Clairvaux guides him now, and Mary intercedes. Dante gazes into the eternal light.",
-                    "L'amor che move il sole e l'altre stelle—The love that moves the sun and the other stars."
-                ]
-            }
+        /* ---------- Geometry of the universe (SVG units, centre of the Earth at 0,0; +y toward Purgatory) ---------- */
+        const EARTH_R = 230;
+        const HELL_HALF = 34 * Math.PI / 180;     // half-angle of the funnel under Jerusalem
+        const HELL_LEVELS = {                      // radius of each ledge, measured from the centre
+            vest: 220, c1: 206, c2: 188, c3: 170, c4: 152, c5: 134, dis: 121, c6: 110, c7: 92, c8: 62, well: 30, c9: 20
+        };
+        const MOUNT = { base: 226, peak: 338, baseHalf: 112, peakHalf: 18 };
+        const TERRACES = { ante: 252, gate: 270, t1: 278, t2: 286, t3: 294, t4: 302, t5: 310, t6: 318, t7: 326 };
+        const SPHERES = [
+            ['moon', 'Moon', 360], ['mercury', 'Mercury', 373], ['venus', 'Venus', 386], ['sun', 'Sun', 399],
+            ['mars', 'Mars', 412], ['jupiter', 'Jupiter', 425], ['saturn', 'Saturn', 438],
+            ['stars', 'Fixed Stars', 451], ['pm', 'Primum Mobile', 464]
+        ];
+        const EMPYREAN_R = 498;
+
+        /* ---------- The hundred cantos: where the travellers are, and the y of the dot at the canto's start ---------- */
+        // [region id, y at start of canto, place]
+        const CANTOS = [
+            // Inferno
+            ['wood', -262, 'The dark wood and the sunlit hill'],
+            ['wood', -256, 'Below the hill, Virgil explains why he came'],
+            ['vest', -234, 'The gate of Hell, the Vestibule, the Acheron'],
+            ['c1', -206, 'Circle I, Limbo, the virtuous unbaptised'],
+            ['c2', -188, 'Circle II, the lustful in the whirlwind'],
+            ['c3', -170, 'Circle III, the gluttonous in the rain'],
+            ['c4', -152, 'Circle IV, the hoarders and the wasters'],
+            ['c5', -137, 'Circle V, the wrathful in the Styx'],
+            ['dis', -124, 'Before the walls of Dis'],
+            ['c6', -110, 'Circle VI, the heretics in burning tombs'],
+            ['c6', -104, 'Circle VI, Virgil maps the lower Hell'],
+            ['c7', -92, 'Circle VII, the river of boiling blood'],
+            ['c7', -89, 'Circle VII, the wood of the suicides'],
+            ['c7', -86, 'Circle VII, the burning sand'],
+            ['c7', -83, 'Circle VII, the burning sand'],
+            ['c7', -80, 'Circle VII, the burning sand'],
+            ['c7', -76, 'Circle VII, the usurers, and down on Geryon'],
+            ['c8', -62, 'Circle VIII, Malebolge, the first and second ditches'],
+            ['c8', -59, 'Malebolge, the third ditch, the simonists'],
+            ['c8', -56, 'Malebolge, the fourth ditch, the soothsayers'],
+            ['c8', -53, 'Malebolge, the fifth ditch, the barrators'],
+            ['c8', -50, 'Malebolge, the fifth ditch, the barrators'],
+            ['c8', -47, 'Malebolge, the sixth ditch, the hypocrites'],
+            ['c8', -44, 'Malebolge, the seventh ditch, the thieves'],
+            ['c8', -41, 'Malebolge, the seventh ditch, the thieves'],
+            ['c8', -38, 'Malebolge, the eighth ditch, the false counsellors'],
+            ['c8', -36, 'Malebolge, the eighth ditch, the false counsellors'],
+            ['c8', -34, 'Malebolge, the ninth ditch, the sowers of discord'],
+            ['c8', -33, 'Malebolge, the tenth ditch, the falsifiers'],
+            ['c8', -32, 'Malebolge, the tenth ditch, the falsifiers'],
+            ['well', -30, 'The well of the giants'],
+            ['c9', -20, 'Circle IX, Cocytus, Caina and Antenora'],
+            ['c9', -13, 'Cocytus, Antenora and Ptolomea'],
+            ['c9', -7, 'Judecca, Lucifer, and the climb to the far hemisphere'],
+            // Purgatorio
+            ['shore', 232, 'The shore of the island, Cato'],
+            ['shore', 236, 'The shore, the angel boatman, Casella'],
+            ['ante', 240, 'Ante-Purgatory, the excommunicate'],
+            ['ante', 245, 'Ante-Purgatory, the indolent'],
+            ['ante', 250, 'Ante-Purgatory, those who died by violence'],
+            ['ante', 254, 'Ante-Purgatory, Sordello'],
+            ['ante', 258, 'The Valley of the Princes'],
+            ['ante', 262, 'The Valley of the Princes, nightfall'],
+            ['gate', 268, 'The gate of Purgatory'],
+            ['t1', 276, 'Terrace I, the proud'],
+            ['t1', 278, 'Terrace I, the proud'],
+            ['t1', 280, 'Terrace I, the proud'],
+            ['t2', 284, 'Terrace II, the envious'],
+            ['t2', 286, 'Terrace II, the envious'],
+            ['t3', 291, 'Terrace III, the wrathful'],
+            ['t3', 294, 'Terrace III, the wrathful, in the smoke'],
+            ['t4', 299, 'Terrace IV, the slothful'],
+            ['t4', 302, 'Terrace IV, the slothful'],
+            ['t5', 307, 'Terrace V, the avaricious and prodigal'],
+            ['t5', 309, 'Terrace V, the avaricious and prodigal'],
+            ['t5', 311, 'Terrace V, Statius'],
+            ['t6', 315, 'Terrace VI, the gluttonous'],
+            ['t6', 317, 'Terrace VI, the gluttonous'],
+            ['t6', 319, 'Terrace VI, the gluttonous'],
+            ['t7', 323, 'Terrace VII, the lustful in the fire'],
+            ['t7', 325, 'Terrace VII, the lustful in the fire'],
+            ['t7', 327, 'Through the wall of fire'],
+            ['eden', 334, 'The Earthly Paradise, Matelda'],
+            ['eden', 335, 'The Earthly Paradise, the procession'],
+            ['eden', 336, 'The Earthly Paradise, Beatrice'],
+            ['eden', 337, 'The Earthly Paradise, Lethe'],
+            ['eden', 338, 'The Earthly Paradise, the chariot and the tree'],
+            ['eden', 339, 'The Earthly Paradise, Eunoe'],
+            // Paradiso
+            ['fire', 342, 'Rising through the sphere of fire'],
+            ['moon', 360, 'Heaven I, the Moon'],
+            ['moon', 361, 'Heaven I, the Moon, Piccarda'],
+            ['moon', 362, 'Heaven I, the Moon, the broken vows'],
+            ['moon', 363, 'Heaven I, the Moon, rising to Mercury'],
+            ['mercury', 373, 'Heaven II, Mercury, Justinian'],
+            ['mercury', 375, 'Heaven II, Mercury'],
+            ['venus', 386, 'Heaven III, Venus, Charles Martel'],
+            ['venus', 388, 'Heaven III, Venus, Cunizza and Folco'],
+            ['sun', 399, 'Heaven IV, the Sun, Aquinas'],
+            ['sun', 400, 'Heaven IV, the Sun, Saint Francis'],
+            ['sun', 401, 'Heaven IV, the Sun, Bonaventure'],
+            ['sun', 402, 'Heaven IV, the Sun, Solomon'],
+            ['sun', 403, 'Heaven IV, the Sun, rising to Mars'],
+            ['mars', 412, 'Heaven V, Mars, Cacciaguida'],
+            ['mars', 413, 'Heaven V, Mars, old Florence'],
+            ['mars', 414, 'Heaven V, Mars, the exile foretold'],
+            ['jupiter', 425, 'Heaven VI, Jupiter, the eagle'],
+            ['jupiter', 426, 'Heaven VI, Jupiter, the eagle speaks'],
+            ['jupiter', 427, 'Heaven VI, Jupiter, the eagle’s eye'],
+            ['saturn', 438, 'Heaven VII, Saturn, the golden ladder'],
+            ['saturn', 440, 'Heaven VII, Saturn, Saint Benedict'],
+            ['stars', 451, 'Heaven VIII, the Fixed Stars, the triumph of Christ'],
+            ['stars', 452, 'Heaven VIII, the Fixed Stars, Saint Peter on faith'],
+            ['stars', 453, 'Heaven VIII, the Fixed Stars, Saint James on hope'],
+            ['stars', 454, 'Heaven VIII, the Fixed Stars, Saint John, Adam'],
+            ['stars', 455, 'Heaven VIII, the Fixed Stars, rising to the Primum Mobile'],
+            ['pm', 464, 'Heaven IX, the Primum Mobile, the angels'],
+            ['pm', 466, 'Heaven IX, the Primum Mobile, the angelic orders'],
+            ['empyrean', 478, 'The Empyrean, the river of light'],
+            ['empyrean', 482, 'The Empyrean, the white rose'],
+            ['empyrean', 486, 'The Empyrean, Saint Bernard'],
+            ['empyrean', 490, 'The Empyrean, the vision of God']
+        ];
+        const END_Y = 494;
+
+        // The poem's own calendar, by the traditional reckoning of Easter week 1300.
+        // [first canto (1 to 100), label]; each label holds until the next.
+        const POEM_TIME = [
+            [1, 'Dawn of Good Friday, 1300, after a night lost in the wood'],
+            [2, 'Good Friday, nightfall'],
+            [3, 'Good Friday night'],
+            [8, 'After midnight, Holy Saturday'],
+            [12, 'Holy Saturday, before dawn'],
+            [21, 'Holy Saturday, morning'],
+            [29, 'Holy Saturday, afternoon'],
+            [34, 'Saturday nightfall, then morning again beyond the centre, and a day’s climb'],
+            [35, 'Easter Sunday, before dawn'],
+            [36, 'Easter Sunday, sunrise'],
+            [37, 'Easter Sunday, morning to noon'],
+            [39, 'Easter Sunday, afternoon'],
+            [42, 'Easter Sunday, sunset in the valley'],
+            [43, 'Night, then Easter Monday morning'],
+            [49, 'Easter Monday, afternoon to sunset'],
+            [52, 'Easter Monday, midnight'],
+            [53, 'Easter Tuesday, morning'],
+            [57, 'Easter Tuesday, afternoon'],
+            [61, 'Tuesday sunset, a night on the stair'],
+            [62, 'Wednesday after Easter, morning'],
+            [68, 'Wednesday, noon, and then out of time'],
+            [69, 'Out of time, among the heavens']
         ];
 
-        const timeEl = document.getElementById('time');
-        const realmEl = document.getElementById('realm');
-        const circleTitleEl = document.getElementById('circle-title');
-        const locationEl = document.getElementById('location');
-        const versesEl = document.getElementById('verses');
-        const illuminationEl = document.getElementById('illumination');
-        const bodyEl = document.body;
+        // Each cantica ends on the word "stelle".
+        const CODAS = {
+            34: ['E quindi uscimmo a riveder le stelle.', 'Thence we came forth to rebehold the stars.'],
+            67: ['puro e disposto a salire a le stelle.', 'Pure and disposed to mount unto the stars.'],
+            100: ['l’amor che move il sole e l’altre stelle.', 'The Love which moves the sun and the other stars.']
+        };
 
-        let currentCircleIndex = -1;
+        const SECONDS_PER_CANTO = 864;   // 86400 / 100
 
-        function createIllumination(realm) {
-            illuminationEl.innerHTML = '';
+        /* ---------- Build the drawing ---------- */
+        const NS = 'http://www.w3.org/2000/svg';
+        function el(tag, attrs, parent) {
+            const e = document.createElementNS(NS, tag);
+            for (const k in attrs) e.setAttribute(k, attrs[k]);
+            if (parent) parent.appendChild(e);
+            return e;
+        }
 
-            if (realm === 'Inferno') {
-                // Create flames
-                for (let i = 0; i < 30; i++) {
-                    const flame = document.createElement('div');
-                    flame.className = 'flame';
-                    flame.style.left = `${Math.random() * 100}%`;
-                    flame.style.bottom = `${Math.random() * 30}%`;
-                    flame.style.animationDelay = `${Math.random() * 2}s`;
-                    illuminationEl.appendChild(flame);
-                }
-            } else if (realm === 'Paradiso') {
-                // Create stars
-                for (let i = 0; i < 100; i++) {
-                    const star = document.createElement('div');
-                    star.className = 'star';
-                    star.style.left = `${Math.random() * 100}%`;
-                    star.style.top = `${Math.random() * 100}%`;
-                    star.style.animationDelay = `${Math.random() * 3}s`;
-                    illuminationEl.appendChild(star);
+        const regionEls = {};   // region id -> [elements]
+        function reg(id, e) { (regionEls[id] = regionEls[id] || []).push(e); return e; }
+
+        function arcPath(r, half) {
+            // arc of radius r about the top direction (-y), from -half to +half
+            const x = r * Math.sin(half), y = -r * Math.cos(half);
+            return `M ${-x} ${y} A ${r} ${r} 0 0 1 ${x} ${y}`;
+        }
+
+        const heavens = document.getElementById('layer-heavens');
+        const earth = document.getElementById('layer-earth');
+        const pathLayer = document.getElementById('layer-path');
+        const labels = document.getElementById('layer-labels');
+
+        // Empyrean
+        reg('empyrean', el('circle', { r: EMPYREAN_R, class: 'empyrean' }, heavens));
+
+        // 24-hour ring outside the heavens: 00 at the foot (noon over Purgatory), 12 at the top (noon over Jerusalem)
+        function hourAngle(h) { return (h / 24) * 2 * Math.PI + Math.PI; }  // radians, 0 = top, clockwise
+        for (let h = 0; h < 24; h++) {
+            const a = hourAngle(h), major = h % 6 === 0;
+            const r1 = 502, r2 = major ? 516 : 510;
+            el('line', {
+                x1: r1 * Math.sin(a), y1: -r1 * Math.cos(a), x2: r2 * Math.sin(a), y2: -r2 * Math.cos(a),
+                class: 'hour-tick' + (major ? ' major' : '')
+            }, heavens);
+        }
+
+        // Nine heavens
+        for (const [id, , r] of SPHERES) reg(id, el('circle', { r, class: 'sphere' }, heavens));
+
+        // Fixed stars, turning with the day
+        const starGroup = el('g', {}, heavens);
+        {
+            let seed = 7;
+            const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+            for (let i = 0; i < 64; i++) {
+                const a = rnd() * Math.PI * 2, r = 447 + rnd() * 8;
+                el('circle', { cx: r * Math.sin(a), cy: -r * Math.cos(a), r: 0.9 + rnd() * 1.6, class: 'star-dot', opacity: 0.4 + rnd() * 0.6 }, starGroup);
+            }
+        }
+
+        // The sun on its sphere
+        const sunGroup = el('g', {}, heavens);
+        el('circle', { r: 17, fill: '#f0c75e', opacity: 0.25 }, sunGroup);
+        el('circle', { r: 10, fill: '#ffd968' }, sunGroup);
+
+        // Earth: inhabited land under Jerusalem above, the ocean of the southern hemisphere below
+        const earthG = el('g', { 'clip-path': 'url(#earthClip)' }, earth);
+        el('rect', { x: -230, y: -230, width: 460, height: 230, class: 'earth-land' }, earthG);
+        el('rect', { x: -230, y: 0, width: 460, height: 230, class: 'earth-sea' }, earthG);
+        el('circle', { r: EARTH_R, class: 'earth-rim' }, earth);
+
+        // Hell: a cone whose tip is the centre of the Earth
+        {
+            const R = 222, x = R * Math.sin(HELL_HALF), y = -R * Math.cos(HELL_HALF);
+            el('path', { d: `M 0 0 L ${-x} ${y} A ${R} ${R} 0 0 1 ${x} ${y} Z`, class: 'hell' }, earth);
+            for (const id in HELL_LEVELS) {
+                const r = HELL_LEVELS[id];
+                if (id === 'c8') {
+                    // ten ditches of Malebolge
+                    for (let k = 0; k < 10; k++) reg('c8', el('path', { d: arcPath(r - k * 2.8, HELL_HALF), class: 'ledge' }, earth));
+                } else {
+                    reg(id, el('path', { d: arcPath(r, HELL_HALF), class: 'ledge' }, earth));
                 }
             }
         }
 
-        function getCircleForHour(hour) {
-            return circles.find(c => c.hour === hour) || circles[0];
+        // Mount Purgatory at the antipode
+        {
+            const m = MOUNT;
+            el('path', {
+                d: `M ${-m.baseHalf} ${m.base} L ${-m.peakHalf} ${m.peak} L ${m.peakHalf} ${m.peak} L ${m.baseHalf} ${m.base} Z`,
+                class: 'mount'
+            }, earth);
+            const halfAt = y => m.baseHalf + (m.peakHalf - m.baseHalf) * (y - m.base) / (m.peak - m.base);
+            for (const id in TERRACES) {
+                const y = TERRACES[id], w = halfAt(y);
+                reg(id, el('line', { x1: -w, y1: y, x2: w, y2: y, class: 'terrace' }, earth));
+            }
+            reg('shore', el('line', { x1: -m.baseHalf - 14, y1: m.base + 4, x2: m.baseHalf + 14, y2: m.base + 4, class: 'terrace' }, earth));
+            reg('eden', el('path', { d: `M ${-m.peakHalf - 4} ${m.peak} q ${m.peakHalf + 4} 16 ${2 * m.peakHalf + 8} 0 Z`, class: 'eden' }, earth));
         }
 
-        function renderVerses(verses) {
-            versesEl.innerHTML = verses.map(verse => `
-                <div class="verse">${verse}</div>
-            `).join('');
+        // The road: one straight line from the wood above Jerusalem to the Empyrean
+        const yStart = CANTOS[0][1];
+        el('line', { x1: 0, y1: yStart, x2: 0, y2: END_Y, class: 'path-ahead' }, pathLayer);
+        const pathDone = el('line', { x1: 0, y1: yStart, x2: 0, y2: yStart, class: 'path-done' }, pathLayer);
+
+        // Labels
+        function label(text, x, y, cls) { const t = el('text', { x, y, class: 'lbl' + (cls ? ' ' + cls : '') }, labels); t.textContent = text; return t; }
+        label('Jerusalem', 0, -300);
+        label('Hell', -168, -110, 'small');
+        label('Lucifer', 16, 8, 'small start');
+        label('Purgatory', 128, 290, 'small start');
+        for (const [h, txt] of [[0, '0'], [6, '6'], [12, '12'], [18, '18']]) {
+            const a = hourAngle(h), r = 534;
+            const t = el('text', { x: r * Math.sin(a), y: -r * Math.cos(a), class: 'hour-label' }, labels);
+            t.textContent = txt;
         }
 
-        function updateClock() {
+        const traveller = document.getElementById('traveller');
+        const halo = document.getElementById('halo');
+
+        /* ---------- Hundred-canto strip ---------- */
+        const strip = document.getElementById('strip');
+        const ticks = [];
+        {
+            // 100 ticks with a gap after the prologue-heavy Inferno (34) and after Purgatorio (33)
+            const gap = 10, unit = (1000 - 2 * gap) / 100;
+            for (let i = 0; i < 100; i++) {
+                const x = i * unit + (i >= 34 ? gap : 0) + (i >= 67 ? gap : 0);
+                const cls = i < 34 ? 'inf' : i < 67 ? 'pur' : 'par';
+                ticks.push(el('rect', { x: x + 1, y: i % 10 === 0 ? 0 : 6, width: Math.max(unit - 2.6, 2), height: i % 10 === 0 ? 30 : 24, class: 'tick ' + cls }, strip));
+            }
+        }
+
+        /* ---------- Clock ---------- */
+        const $ = id => document.getElementById(id);
+        const pad = n => String(n).padStart(2, '0');
+        const fmt = s => `${pad(Math.floor(s / 3600) % 24)}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+
+        function cantica(i) { return i < 34 ? 'Inferno' : i < 67 ? 'Purgatorio' : 'Paradiso'; }
+        function cantoInCantica(i) { return i < 34 ? i + 1 : i < 67 ? i - 33 : i - 66; }
+        function poemTime(n) {
+            let label = POEM_TIME[0][1];
+            for (const [from, txt] of POEM_TIME) if (n >= from) label = txt;
+            return label;
+        }
+
+        function setLines(node, lines) {
+            node.textContent = '';
+            lines.forEach((line, k) => {
+                if (k) node.appendChild(document.createElement('br'));
+                node.appendChild(document.createTextNode(line));
+            });
+        }
+
+        let shownCanto = -1;
+
+        function renderCanto(i) {
+            const n = i + 1;
+            const name = cantica(i), num = cantoInCantica(i);
+            document.body.className = name.toLowerCase();
+            $('canto').textContent = `${name} ${ROMAN(num)}`;
+            $('where').textContent = CANTOS[i][2];
+            setLines($('it'), TERCETS.it[i]);
+            setLines($('en'), TERCETS.en[i]);
+            $('src').textContent = `${name} ${ROMAN(num)}, 1–3`;
+            const coda = CODAS[n];
+            if (coda) {
+                $('coda').hidden = false;
+                $('coda').innerHTML = `The canto ends: <i lang="it">${coda[0]}</i> ${coda[1]}`;
+            } else {
+                $('coda').hidden = true;
+            }
+            $('poemtime').textContent = poemTime(n);
+
+            for (const id in regionEls) for (const e of regionEls[id]) e.classList.remove('on');
+            const region = CANTOS[i][0];
+            (regionEls[region] || []).forEach(e => e.classList.add('on'));
+            // heavens already passed stay faintly lit
+            const sphereIdx = SPHERES.findIndex(s => s[0] === region);
+            SPHERES.forEach(([id], k) => regionEls[id].forEach(e => e.classList.toggle('past', i >= 67 && (sphereIdx === -1 ? region === 'empyrean' : k < sphereIdx))));
+
+            ticks.forEach((t, k) => {
+                t.classList.toggle('done', k < i);
+                t.classList.toggle('now', k === i);
+            });
+
+            $('live').textContent = `${name}, canto ${num}: ${CANTOS[i][2]}.`;
+        }
+
+        function update() {
             const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
+            const s = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const i = Math.min(99, Math.floor(s / SECONDS_PER_CANTO));
+            const frac = (s - i * SECONDS_PER_CANTO) / SECONDS_PER_CANTO;
 
-            // Update time display
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            $('time').textContent = fmt(s);
+            if (i !== shownCanto) { renderCanto(i); shownCanto = i; }
 
-            // Get current circle
-            const circle = getCircleForHour(hour);
-            const circleIndex = circles.indexOf(circle);
+            const next = (i + 1) * SECONDS_PER_CANTO;
+            $('meta').textContent = i === 99
+                ? `Canto 100 of 100, the poem begins again at midnight`
+                : `Canto ${i + 1} of 100, the next begins at ${fmt(next)}`;
 
-            // Update content if circle changed
-            if (circleIndex !== currentCircleIndex) {
-                realmEl.textContent = `${circle.realm} — ${circle.romanNumeral}`;
-                circleTitleEl.textContent = circle.title;
-                locationEl.textContent = circle.location;
-                renderVerses(circle.verses);
+            // the traveller's place on the line
+            const y0 = CANTOS[i][1], y1 = i < 99 ? CANTOS[i + 1][1] : END_Y;
+            const y = y0 + (y1 - y0) * frac;
+            traveller.setAttribute('cy', y);
+            halo.setAttribute('cy', y);
+            pathDone.setAttribute('y2', y);
 
-                // Update realm class
-                bodyEl.className = circle.realm.toLowerCase();
-
-                // Recreate illumination if realm changed
-                if (currentCircleIndex === -1 || circles[currentCircleIndex].realm !== circle.realm) {
-                    createIllumination(circle.realm);
-                }
-
-                currentCircleIndex = circleIndex;
-            }
+            // the heavens turn once a day; the sun sits on its sphere at the hour
+            const a = hourAngle(s / 3600);
+            const sunR = SPHERES[3][2];
+            sunGroup.setAttribute('transform', `translate(${sunR * Math.sin(a)} ${-sunR * Math.cos(a)})`);
+            starGroup.setAttribute('transform', `rotate(${(s / 86400) * 360})`);
         }
 
-        // Initialize
-        createIllumination('Inferno');
-        updateClock();
-        setInterval(updateClock, 1000);
+        update();
+        setInterval(update, 1000);
     </script>
 </body>
-
 </html>
