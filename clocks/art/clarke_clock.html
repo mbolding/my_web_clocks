@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arthur C. Clarke Clock</title>
-    <!-- Jost font closely resembles Futura / the 1968 geometric aesthetic -->
+    <meta name="description" content="2001: A Space Odyssey as one day: midnight is three million years ago among the man-apes, and the novel's six parts compress toward the Star-Child at the stroke of the next midnight.">
+    <!-- Jost is close to Futura, the geometric face the period loved -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
     <style>
+        /* Locked to one deep-space palette; the scene itself carries the colour. */
         :root {
-            --bg-deep: #000;
-            --nasa-white: #f4f4f4;
-            --hal-red: #ff2a2a;
-            --hal-glow: #ff7373;
-            --metal-light: #d1d1d1;
-            --metal-dark: #2a2a2a;
+            --void: #000;
+            --panel: #07080c;
+            --rule: #23252e;
+            --ink: #eef0f4;
+            --muted: #b4b8c4;
+            --faint: #8a8f9c;
+            --accent: #e3c77a;
+            --part: #b98a4e;
         }
 
         * {
@@ -24,271 +28,885 @@
             padding: 0;
         }
 
+        html, body {
+            background: var(--void);
+            color: var(--ink);
+        }
+
         body {
-            background-color: var(--bg-deep);
-            color: var(--nasa-white);
-            font-family: 'Jost', sans-serif;
+            font-family: 'Jost', 'Futura', 'Century Gothic', sans-serif;
             min-height: 100vh;
+            min-height: 100svh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        }
+
+        /* ---------- the scene ---------- */
+        .stage {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: clamp(240px, 52vh, 900px);
             overflow: hidden;
-            position: relative;
         }
 
-        /* ----------------------------------
-           HAL 9000
-           ---------------------------------- */
-        .hal-container {
-            position: relative;
-            width: clamp(250px, 40vmin, 400px);
-            height: clamp(250px, 40vmin, 400px);
-            margin-bottom: 50px;
-            /* The iconic rectangular mounting block */
-            background: linear-gradient(135deg, #222 0%, #000 100%);
-            border: 2px solid #333;
-            border-radius: 5px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 2px 2px rgba(255,255,255,0.1);
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .hal-outer-ring {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, var(--metal-light) 0%, var(--metal-dark) 80%);
-            box-shadow: inset 0 0 20px #000, 0 10px 20px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .hal-inner-ring {
-            width: 80%;
-            height: 80%;
-            border-radius: 50%;
-            background: #000;
-            box-shadow: inset 0 -10px 20px rgba(255,0,0,0.2), 0 0 10px #000;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* The glowing red aperture */
-        .hal-lens {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, #ff0000 0%, #660000 40%, #000 80%);
+        canvas#scene {
             position: absolute;
-            transition: opacity 0.5s ease;
-        }
-
-        /* The bright yellow/white core that pulses */
-        .hal-pupil-container {
+            inset: 0;
             width: 100%;
             height: 100%;
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
+            display: block;
         }
 
-        .hal-pupil {
-            width: 30%;
-            height: 30%;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, #fff 0%, #ffffaa 20%, #ff5500 60%, transparent 100%);
-            box-shadow: 0 0 40px #ff0000, inset 0 0 10px #fff;
-            transition: transform 0.1s ease-out; /* Smooth tracking */
-        }
-
-        /* Heartbeat flare */
-        .hal-flare {
+        .masthead {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, rgba(255,100,100,0.5) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s ease-out;
+            top: clamp(12px, 2.4vh, 26px);
+            left: clamp(16px, 3vw, 36px);
+            right: clamp(16px, 3vw, 36px);
             pointer-events: none;
-            z-index: 10;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
         }
 
-        .pulsing .hal-flare {
-            opacity: 1;
-        }
-
-        /* Glass reflection overlay */
-        .hal-glass {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 100%);
-            z-index: 20;
-            pointer-events: none;
-        }
-
-        /* ----------------------------------
-           THE CLOCK DISPLAY
-           ---------------------------------- */
-        .clock-display {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 300;
-            letter-spacing: 5px;
-            color: var(--nasa-white);
-            text-align: center;
-            z-index: 30;
-        }
-
-        .clock-label {
-            font-size: 0.8rem;
-            letter-spacing: 15px;
+        .masthead h1 {
+            font-weight: 400;
+            font-size: clamp(0.95rem, 2vw, 1.35rem);
+            letter-spacing: 0.32em;
             text-transform: uppercase;
-            color: #777;
-            margin-bottom: 5px;
-            text-align: center;
         }
 
-        .quote-overlay {
-            position: absolute;
-            bottom: 40px;
-            font-size: 1.2rem;
+        .masthead p {
+            margin-top: 0.3rem;
+            font-size: clamp(0.78rem, 1.3vw, 0.92rem);
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        /* ---------- the reading panel ---------- */
+        .panel {
+            flex: 0 0 auto;
+            background: var(--panel);
+            border-top: 1px solid var(--rule);
+            padding: clamp(14px, 2.4vh, 26px) clamp(16px, 3vw, 36px) clamp(14px, 2.6vh, 28px);
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            column-gap: clamp(1.5rem, 4vw, 3.5rem);
+            row-gap: clamp(0.8rem, 1.8vh, 1.2rem);
+            align-items: end;
+        }
+
+        .part {
+            font-size: clamp(0.78rem, 1.3vw, 0.92rem);
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .part b {
             font-weight: 500;
-            color: var(--hal-red);
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 1s ease;
-            letter-spacing: 2px;
+            color: var(--part);
         }
 
-        .quote-overlay.visible {
-            opacity: 1;
-            transform: translateY(0);
+        .time {
+            font-weight: 300;
+            font-size: clamp(2.6rem, 7vw, 4.4rem);
+            line-height: 1;
+            letter-spacing: 0.06em;
+            font-variant-numeric: tabular-nums;
+            margin-top: 0.25rem;
         }
 
+        .story {
+            min-width: 0;
+            padding-bottom: 0.2rem;
+        }
+
+        .deep {
+            font-weight: 300;
+            font-size: clamp(1.25rem, 3vw, 2rem);
+            line-height: 1.15;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .deep small {
+            font-size: 0.55em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-left: 0.35em;
+        }
+
+        .event {
+            margin-top: 0.4rem;
+            font-size: clamp(0.98rem, 1.7vw, 1.15rem);
+            line-height: 1.4;
+            color: var(--ink);
+            max-width: 52ch;
+        }
+
+        .event q {
+            font-style: italic;
+            font-size: 1.12em;
+            quotes: "\201C" "\201D";
+        }
+
+        .note {
+            margin-top: 0.3rem;
+            font-size: clamp(0.8rem, 1.2vw, 0.88rem);
+            color: var(--faint);
+        }
+
+        /* the day as a six-part bar, widths in clock hours */
+        .track {
+            grid-column: 1 / -1;
+        }
+
+        .bar {
+            position: relative;
+            display: flex;
+            height: 18px;
+            margin-top: 14px;
+        }
+
+        .seg {
+            position: relative;
+            height: 100%;
+            border-right: 1px solid var(--panel);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            color: #0a0a0e;
+            overflow: hidden;
+            opacity: 0.55;
+        }
+
+        .seg.cur { opacity: 1; }
+        .seg:last-child { border-right: 0; }
+
+        /* the playhead is a monolith, 1 : 4 : 9 */
+        .head {
+            position: absolute;
+            top: -10px;
+            width: 12px;
+            height: 27px;
+            margin-left: -6px;
+            background: #000;
+            border: 1px solid #d8dae2;
+            box-shadow: 3px -2px 0 -1px #2a2c34, 0 0 10px rgba(255, 255, 255, 0.25);
+            pointer-events: none;
+        }
+
+        .ends {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: clamp(0.72rem, 1.1vw, 0.82rem);
+            letter-spacing: 0.06em;
+            color: var(--faint);
+        }
+
+        .ends span:last-child { text-align: right; }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 640px) {
+            .panel {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .part { white-space: normal; }
+            .stage { min-height: clamp(260px, 50vh, 520px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+        }
     </style>
 </head>
 <body>
+    <main class="stage" id="stage">
+        <canvas id="scene" aria-hidden="true"></canvas>
+        <header class="masthead">
+            <h1>2001: A Space Odyssey</h1>
+            <p>Arthur C. Clarke, the novel, 1968</p>
+        </header>
+    </main>
 
-    <div class="hal-container">
-        <div class="hal-outer-ring">
-            <div class="hal-inner-ring" id="halEye">
-                <div class="hal-lens"></div>
-                <div class="hal-pupil-container">
-                    <div class="hal-pupil" id="halPupil"></div>
-                </div>
-                <div class="hal-flare" id="halFlare"></div>
-                <div class="hal-glass"></div>
+    <section class="panel" aria-label="Clock">
+        <div class="readout">
+            <div class="part" id="part">Part <b>I</b> &middot; Primeval Night</div>
+            <div class="time" id="time" role="timer" aria-label="Current time">00:00:00</div>
+        </div>
+        <div class="story">
+            <div class="deep" id="deep">3,000,000<small>years ago</small></div>
+            <p class="event" id="event"></p>
+            <p class="note" id="note"></p>
+        </div>
+        <div class="track">
+            <div class="bar" id="bar" aria-hidden="true"></div>
+            <div class="ends">
+                <span>Midnight, three million years ago</span>
+                <span>Midnight, the Star-Child</span>
             </div>
         </div>
-    </div>
-
-    <div>
-        <div class="clock-label">SYSTEM TIME</div>
-        <div class="clock-display" id="timeDisplay">00:00:00</div>
-    </div>
-
-    <div class="quote-overlay" id="quoteBox">
-        "I'm sorry, Dave. I'm afraid I can't do that."
-    </div>
+    </section>
+    <div class="sr-only" aria-live="polite" id="live"></div>
 
     <script>
-        // --- Clock Core ---
-        const timeDisplay = document.getElementById('timeDisplay');
-        const halFlare = document.getElementById('halFlare');
-        const quoteBox = document.getElementById('quoteBox');
-        let lastSecond = -1;
+        /* The day is the novel's span. Part I, the man-apes and everything after
+           them, takes fourteen hours at a steady sixty-odd years a second, so the
+           whole of recorded history slips by in the last few minutes before 14:00.
+           Parts II to VI, a year or two of story, share the evening and shrink
+           toward the end. Midnight returns to the beginning. */
+        const PARTS = [
+            { n: 'I',   name: 'Primeval Night',        s: 0,    e: 14,   color: '#c99a5a' },
+            { n: 'II',  name: 'T.M.A.-1',              s: 14,   e: 17,   color: '#b9c0c8', where: 'The Moon' },
+            { n: 'III', name: 'Between Planets',       s: 17,   e: 19,   color: '#7fb0ea', where: 'Earth to Jupiter' },
+            { n: 'IV',  name: 'Abyss',                 s: 19,   e: 21,   color: '#ef5a4c', where: 'Discovery, past Jupiter' },
+            { n: 'V',   name: 'The Moons of Saturn',   s: 21,   e: 22.5, color: '#e3c77a', where: 'Saturn and Japetus' },
+            { n: 'VI',  name: 'Through the Star Gate', s: 22.5, e: 24,   color: '#bf9cf4', where: 'Elsewhere' }
+        ];
 
-        function updateClock() {
-            const now = new Date();
-            const s = now.getSeconds();
-            
-            let hStr = now.getHours().toString().padStart(2, '0');
-            let mStr = now.getMinutes().toString().padStart(2, '0');
-            let sStr = s.toString().padStart(2, '0');
-            
-            timeDisplay.textContent = `${hStr}:${mStr}:${sStr}`;
+        const SPAN = 3000000;                    // years covered by Part I
+        const PART1_SEC = 14 * 3600;
 
-            if(lastSecond !== s) {
-                lastSecond = s;
-                // Pulse the eye every second
-                halFlare.parentElement.classList.add('pulsing');
-                setTimeout(() => halFlare.parentElement.classList.remove('pulsing'), 300);
+        // Part I by years remaining before the Moon. Our own summaries, not Clarke's words.
+        const DEEP = [
+            { min: 2850000, text: 'Drought on the veldt. Moon-Watcher’s tribe is starving, and a slab of clear crystal has appeared by the stream.' },
+            { min: 2000000, text: 'The crystal slab is gone, but its lesson stays. With bone and stone the man-apes have become hunters.' },
+            { min: 500000,  text: 'The tools are reshaping their makers: steadier hands, bigger brains.' },
+            { min: 100000,  text: 'Ice sheets come and go. Fire is tamed, and speech begins.' },
+            { min: 10000,   text: 'People walk out across every continent, following the herds.' },
+            { min: 5000,    text: 'The ice retreats. Animals are kept and fields are sown.' },
+            { min: 300,     text: 'Cities, writing, ships and empires, all in a couple of minutes.' },
+            { min: 70,      text: 'Engines, electricity, the telegraph. The machines are waking up.' },
+            { min: 0,       text: 'The atom is split, and the first rockets leave the Earth.' }
+        ];
 
-                // Randomly show the HAL quote
-                if (Math.random() < 0.02 && !quoteBox.classList.contains('visible')) {
-                    quoteBox.classList.add('visible');
-                    // Hide after 6 seconds
-                    setTimeout(() => quoteBox.classList.remove('visible'), 6000);
-                }
-            }
+        const EVENTS = {
+            II: [
+                [0,    'Dr Heywood Floyd flies to the Moon, under a cover story of an epidemic.'],
+                [0.3,  'At Clavius Base, the secret: something buried in the crater Tycho.'],
+                [0.5,  'T.M.A.-1, a black slab, its sides in the ratio 1 : 4 : 9.'],
+                [0.8,  'Lunar dawn. Sunlight touches the slab for the first time in three million years.'],
+                [0.88, 'It answers with one piercing radio shriek, aimed out at Saturn.']
+            ],
+            III: [
+                [0,    'Discovery is outbound. Poole and Bowman stand watch while three crewmates hibernate.'],
+                [0.35, 'Through the asteroid belt, toward Jupiter.'],
+                [0.6,  'Jupiter’s gravity swings Discovery onward, faster, toward Saturn.']
+            ],
+            IV: [
+                [0,    'HAL predicts that the AE-35 antenna unit will fail.'],
+                [0.3,  'Poole goes out in a pod to replace it, and does not come back.'],
+                [0.5,  'HAL opens the airlocks to space. Only Bowman survives.'],
+                [0.72, 'Bowman disconnects HAL, block by block, until the voice falls silent.']
+            ],
+            V: [
+                [0,    'Alone now, Bowman rides the long fall out to Saturn.'],
+                [0.3,  'Saturn and its rings fill the sky. The target is its moon Japetus.'],
+                [0.55, 'On Japetus, a white oval like an eye, and at its centre a black slab.'],
+                [0.8,  'Bowman takes a pod down to the great slab, and falls into it.']
+            ],
+            VI: [
+                [0,    'Through the Star Gate, past strange suns, along the galaxy’s busy junctions.'],
+                [0.45, 'A quiet hotel room, built for him out of old television pictures.'],
+                [0.7,  'He sleeps, and his life runs backward. Something new is born.'],
+                [0.82, 'The Star-Child turns toward the small blue world below.']
+            ]
+        };
 
-            // Everything here is gated on the second changing, so a 10Hz poll
-            // keeps the eye pulse punctual at a sixth of the work.
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const $ = id => document.getElementById(id);
+        const els = {
+            part: $('part'), time: $('time'), deep: $('deep'), event: $('event'),
+            note: $('note'), bar: $('bar'), live: $('live')
+        };
+        const pad = n => String(n).padStart(2, '0');
+        const fmt = n => Math.round(n).toLocaleString('en-US');
+
+        // ---------- timeline bar ----------
+        const segs = PARTS.map(p => {
+            const d = document.createElement('div');
+            d.className = 'seg';
+            d.style.width = ((p.e - p.s) / 24 * 100) + '%';
+            d.style.background = p.color;
+            d.textContent = p.n;
+            els.bar.appendChild(d);
+            return d;
+        });
+        const head = document.createElement('div');
+        head.className = 'head';
+        els.bar.appendChild(head);
+
+        // ---------- mapping ----------
+        function locate(date) {
+            const sec = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds() + date.getMilliseconds() / 1000;
+            const hours = sec / 3600;
+            let i = PARTS.findIndex(p => hours >= p.s && hours < p.e);
+            if (i < 0) i = PARTS.length - 1;
+            const p = PARTS[i];
+            const f = Math.min(0.99999, (hours - p.s) / (p.e - p.s));
+            const years = i === 0 ? SPAN * (1 - sec / PART1_SEC) : 0;
+            return { sec, i, p, f, years };
         }
 
-        updateClock();
-        setInterval(updateClock, 100);
+        function eventFor(st) {
+            if (st.i === 0) return DEEP.find(d => st.years > d.min || d.min === 0).text;
+            const list = EVENTS[st.p.n];
+            let t = list[0][1];
+            for (const [at, txt] of list) if (st.f >= at) t = txt;
+            return t;
+        }
 
-        // --- Mouse Tracking Logic for HAL 9000 Pupil ---
-        const halEye = document.getElementById('halEye');
-        const halPupil = document.getElementById('halPupil');
+        // The one line quoted from the novel (Part V, as Bowman enters the slab).
+        const QUOTE = '\u2026oh my God\u2014it\u2019s full of stars!';
+        const quoteOn = st => st.p.n === 'V' && st.f >= 0.86;
 
-        document.addEventListener('mousemove', (e) => {
-            // Get center position of the HAL eye
-            const rect = halEye.getBoundingClientRect();
-            const eyeCenterX = rect.left + rect.width / 2;
-            const eyeCenterY = rect.top + rect.height / 2;
+        // ---------- text, once a second ----------
+        let lastLive = '';
+        function tick() {
+            const now = new Date();
+            const st = locate(now);
+            els.time.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            els.part.innerHTML = `Part <b>${st.p.n}</b> &middot; ${st.p.name}`;
+            document.documentElement.style.setProperty('--part', st.p.color);
 
-            // Calculate distance from center to mouse
-            const deltaX = e.clientX - eyeCenterX;
-            const deltaY = e.clientY - eyeCenterY;
-
-            // We want to constrain the pupil so it doesn't move completely out of the bounds
-            // The constraint radius is proportional to the eye size
-            const constraintRadius = rect.width * 0.15; 
-
-            // Calculate angle and distance
-            const angle = Math.atan2(deltaY, deltaX);
-            let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
-            // Normalize distance based on screen size so movement feels responsive across whole screen
-            const maxScreenDist = Math.max(window.innerWidth, window.innerHeight);
-            let normalizedDist = (distance / maxScreenDist) * constraintRadius * 3;
-
-            // Constrain
-            if (normalizedDist > constraintRadius) {
-                normalizedDist = constraintRadius;
+            if (st.i === 0) {
+                const y = Math.max(1, st.years);
+                els.deep.innerHTML = `${fmt(y)}<small>${y < 1.5 ? 'year' : 'years'} ago</small>`;
+                els.note.textContent = 'Each second of this clock is about sixty years.';
+            } else {
+                els.deep.innerHTML = `${st.p.where}`;
+                els.note.textContent = `Part ${st.p.n} runs ${fmtH(st.p.s)} to ${fmtH(st.p.e)}.`;
             }
-
-            // Calculate final pupil translation
-            const moveX = Math.cos(angle) * normalizedDist;
-            const moveY = Math.sin(angle) * normalizedDist;
-
-            halPupil.style.transform = `translate(${moveX}px, ${moveY}px)`;
-        });
-
-        // Touch support for mobile tracking
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 0) {
-                // mock the clientX and Y for the first touch point and trigger same logic
-                const touch = e.touches[0];
-                const mockEvent = { clientX: touch.clientX, clientY: touch.clientY };
-                // Using internal dispatch or just direct call is easier here:
-                document.dispatchEvent(new MouseEvent('mousemove', mockEvent));
+            const q = quoteOn(st);
+            const ev = q ? QUOTE : eventFor(st);
+            if (els.event.dataset.k !== ev) {
+                els.event.dataset.k = ev;
+                if (q) els.event.innerHTML = '<q>' + QUOTE + '</q>';
+                else els.event.textContent = ev;
             }
-        });
+            if (q) els.note.textContent = 'Bowman, entering the slab on Japetus';
 
+            segs.forEach((s, k) => s.classList.toggle('cur', k === st.i));
+            head.style.left = (st.sec / 864) + '%';
+
+            const live = `Part ${st.p.n}, ${st.p.name}. ${ev}`;
+            if (live !== lastLive) { els.live.textContent = live; lastLive = live; }
+
+            if (reduceMotion.matches) draw(now);
+        }
+
+        function fmtH(h) {
+            const hh = Math.floor(h) % 24, mm = Math.round((h % 1) * 60);
+            return `${pad(h === 24 ? 0 : hh)}:${pad(mm)}`;
+        }
+
+        // ---------- canvas ----------
+        const stage = $('stage');
+        const canvas = $('scene');
+        const ctx = canvas.getContext('2d');
+        let W = 0, H = 0, TOP = 0;
+        const masthead = document.querySelector('.masthead');
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const r = stage.getBoundingClientRect();
+            W = Math.max(1, r.width);
+            H = Math.max(1, r.height);
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            TOP = masthead.getBoundingClientRect().bottom - r.top + 16;
+            draw(new Date());
+        }
+
+        // small seeded generator so the sky and the cities stay put across frames
+        function rng(seed) {
+            return () => {
+                seed = (seed * 1664525 + 1013904223) >>> 0;
+                return seed / 4294967296;
+            };
+        }
+        const R = rng(2001);
+        const STARS = Array.from({ length: 320 }, () => ({
+            x: R(), y: R(), z: 0.3 + R() * 0.7, s: R() < 0.08 ? 1.6 : (R() < 0.4 ? 1.1 : 0.7), tw: R() * 6.28
+        }));
+        const CITY = Array.from({ length: 140 }, () => ({ x: R(), y: R(), at: R() }));
+
+        function stars(t, opts = {}) {
+            const { drift = 0, alpha = 1, maxY = 1 } = opts;
+            for (const s of STARS) {
+                if (s.y > maxY) continue;
+                let x = (s.x * W - drift * s.z * t) % W;
+                if (x < 0) x += W;
+                const a = alpha * (0.45 + 0.55 * s.z) * (reduceMotion.matches ? 1 : 0.85 + 0.15 * Math.sin(t * 0.002 + s.tw));
+                ctx.fillStyle = `rgba(235,238,255,${a})`;
+                ctx.fillRect(x, s.y * H, s.s, s.s);
+            }
+        }
+
+        // The monolith: front face 4 by 9, depth 1, drawn with a sliver of side and top.
+        function slab(cx, baseY, h, style = 'black', a = 1) {
+            const w = h * 4 / 9, d = h / 9, dx = d * 0.6, dy = d * 0.35;
+            const x = cx - w / 2, y = baseY - h;
+            ctx.save();
+            ctx.globalAlpha = a;
+            const face = new Path2D(); face.rect(x, y, w, h);
+            const side = new Path2D();
+            side.moveTo(x + w, y); side.lineTo(x + w + dx, y - dy); side.lineTo(x + w + dx, baseY - dy); side.lineTo(x + w, baseY); side.closePath();
+            const top = new Path2D();
+            top.moveTo(x, y); top.lineTo(x + w, y); top.lineTo(x + w + dx, y - dy); top.lineTo(x + dx, y - dy); top.closePath();
+            if (style === 'crystal') {
+                const g = ctx.createLinearGradient(x, y, x + w, baseY);
+                g.addColorStop(0, 'rgba(200,230,255,0.30)');
+                g.addColorStop(0.5, 'rgba(150,200,240,0.10)');
+                g.addColorStop(1, 'rgba(200,230,255,0.24)');
+                ctx.fillStyle = g; ctx.fill(face);
+                ctx.fillStyle = 'rgba(190,225,255,0.16)'; ctx.fill(side); ctx.fill(top);
+                ctx.strokeStyle = 'rgba(220,240,255,0.85)'; ctx.lineWidth = 1.2;
+                ctx.stroke(face); ctx.stroke(side); ctx.stroke(top);
+                ctx.save(); ctx.clip(face);
+                ctx.strokeStyle = 'rgba(235,248,255,0.35)'; ctx.lineWidth = Math.max(1, w * 0.05);
+                ctx.beginPath(); ctx.moveTo(x - w * 0.2, y + h * 0.35); ctx.lineTo(x + w * 1.2, y + h * 0.05); ctx.stroke();
+                ctx.lineWidth = Math.max(1, w * 0.02);
+                ctx.beginPath(); ctx.moveTo(x - w * 0.2, y + h * 0.5); ctx.lineTo(x + w * 1.2, y + h * 0.2); ctx.stroke();
+                ctx.restore();
+            } else {
+                ctx.fillStyle = '#030304'; ctx.fill(face);
+                ctx.fillStyle = '#16171b'; ctx.fill(side);
+                ctx.fillStyle = '#22242a'; ctx.fill(top);
+                ctx.strokeStyle = 'rgba(205,208,220,0.45)'; ctx.lineWidth = 1;
+                ctx.stroke(face); ctx.stroke(side); ctx.stroke(top);
+            }
+            ctx.restore();
+            return { x, y, w, h };
+        }
+
+        function disc(x, y, r, fill) {
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
+        }
+
+        function glow(x, y, r, color, a) {
+            const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+            g.addColorStop(0, color.replace('A', a));
+            g.addColorStop(1, color.replace('A', 0));
+            ctx.fillStyle = g;
+            ctx.fillRect(x - r, y - r, r * 2, r * 2);
+        }
+
+        // Earth as a lit disc with a terminator; lit side toward +lx
+        function earth(x, y, r, lx) {
+            const g = ctx.createRadialGradient(x + lx * r * 0.4, y - r * 0.3, r * 0.1, x, y, r);
+            g.addColorStop(0, '#9fd0ff'); g.addColorStop(0.55, '#2f6fb8'); g.addColorStop(1, '#0e2747');
+            disc(x, y, r, g);
+            ctx.fillStyle = 'rgba(230,240,255,0.55)';
+            ctx.beginPath(); ctx.ellipse(x + lx * r * 0.2, y - r * 0.35, r * 0.45, r * 0.12, -0.3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(x - lx * r * 0.1, y + r * 0.25, r * 0.35, r * 0.09, 0.4, 0, Math.PI * 2); ctx.fill();
+            ctx.save();
+            ctx.beginPath(); ctx.arc(x, y, r + 0.5, 0, Math.PI * 2); ctx.clip();
+            ctx.fillStyle = 'rgba(0,0,6,0.86)';
+            ctx.beginPath(); ctx.ellipse(x - lx * r * 0.55, y, r * 1.05, r * 1.15, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+            glow(x, y, r * 1.35, 'rgba(120,180,255,A)', 0.18);
+        }
+
+        // ---------- scenes ----------
+        function sceneI(st, t) {
+            const horizon = H * 0.8;
+            const sky = ctx.createLinearGradient(0, 0, 0, horizon);
+            sky.addColorStop(0, '#04050b'); sky.addColorStop(0.55, '#10132a');
+            sky.addColorStop(0.85, '#2e2333'); sky.addColorStop(1, '#5e3a2a');
+            ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+            stars(t, { drift: 0.004, maxY: 0.7, alpha: 0.9 });
+
+            // the Moon that Moon-Watcher watches
+            const mr = Math.min(W, H) * 0.045;
+            glow(W * 0.8, H * 0.24, mr * 4, 'rgba(240,235,215,A)', 0.16);
+            disc(W * 0.8, H * 0.24, mr, '#ebe6d6');
+            disc(W * 0.8 + mr * 0.3, H * 0.24 - mr * 0.2, mr * 0.18, 'rgba(160,155,140,0.5)');
+            disc(W * 0.8 - mr * 0.35, H * 0.24 + mr * 0.3, mr * 0.13, 'rgba(160,155,140,0.45)');
+
+            // the veldt
+            ctx.fillStyle = '#0b0907';
+            ctx.beginPath(); ctx.moveTo(0, H);
+            for (let i = 0; i <= 40; i++) {
+                const x = W * i / 40;
+                const y = horizon - H * 0.02 * (Math.sin(i * 0.7) * 0.6 + Math.sin(i * 0.23 + 1) * 0.9 + 0.4);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+            // the crystal slab: bright while it teaches, then only a memory
+            const y = st.years;
+            const a = y > 2850000 ? 1 : y > 2000000 ? 0.25 + 0.75 * (y - 2000000) / 850000 : 0.22;
+            const h = Math.min(H * 0.42, W * 0.55);
+            if (y > 2850000 && !reduceMotion.matches) glow(W * 0.5, horizon - h * 0.5, h * 0.8, 'rgba(170,215,255,A)', 0.12 + 0.05 * Math.sin(t * 0.0015));
+            slab(W * 0.5, horizon + 2, h, 'crystal', a);
+
+            // the last few thousand years: lights along the horizon, then a rocket
+            if (y < 6000) {
+                const k = 1 - y / 6000;
+                for (const c of CITY) {
+                    if (c.at > k) continue;
+                    const cx = c.x * W;
+                    if (Math.abs(cx - W * 0.5) < h * 0.3) continue;
+                    ctx.fillStyle = `rgba(255,${190 + c.y * 50 | 0},120,${0.5 + 0.5 * c.y})`;
+                    ctx.fillRect(cx, horizon - H * 0.012 + c.y * H * 0.035, 1.6, 1.6);
+                }
+            }
+            if (y < 70) {
+                const k = 1 - y / 70;
+                ctx.strokeStyle = 'rgba(255,220,170,0.75)'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(W * 0.18, horizon - H * 0.02);
+                ctx.quadraticCurveTo(W * 0.2, horizon - H * 0.35 * k, W * (0.2 + 0.12 * k), horizon - H * 0.6 * k);
+                ctx.stroke();
+            }
+        }
+
+        function sceneII(st, t) {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+            stars(t, { drift: 0.002, maxY: 0.72 });
+            const u = Math.min(W, H);
+            earth(W * 0.2, H * 0.24, u * 0.07, 1);
+
+            const horizon = H * 0.7;
+            const dawn = st.f < 0.8 ? 0 : Math.min(1, (st.f - 0.8) / 0.08);
+            if (dawn > 0) {
+                // the Sun about to clear the rim, off to the left
+                glow(0, horizon, Math.max(W, H) * 0.5, 'rgba(255,236,200,A)', 0.4 * dawn);
+            }
+            const g = ctx.createLinearGradient(0, horizon, 0, H);
+            g.addColorStop(0, `rgb(${60 + dawn * 70},${60 + dawn * 62},${66 + dawn * 50})`);
+            g.addColorStop(1, '#141417');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.moveTo(0, H);
+            for (let i = 0; i <= 30; i++) {
+                const x = W * i / 30;
+                ctx.lineTo(x, horizon - H * 0.03 * Math.abs(Math.sin(i * 1.3) * Math.cos(i * 0.4)));
+            }
+            ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+            // the excavation in Tycho
+            const h = Math.min(H * 0.38, W * 0.5);
+            const base = horizon + H * 0.14;
+            const pw = Math.min(h * 1.2, W * 0.42);
+            ctx.fillStyle = '#0a0a0c';
+            ctx.beginPath();
+            ctx.moveTo(W * 0.5 - pw, horizon + H * 0.05); ctx.lineTo(W * 0.5 + pw, horizon + H * 0.05);
+            ctx.lineTo(W * 0.5 + pw * 0.75, base + H * 0.02); ctx.lineTo(W * 0.5 - pw * 0.75, base + H * 0.02);
+            ctx.closePath(); ctx.fill();
+            const r = slab(W * 0.5, base, h, 'black');
+            if (dawn > 0) {
+                ctx.strokeStyle = `rgba(255,225,170,${0.9 * dawn})`; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x, r.y + r.h); ctx.stroke();
+            }
+            // the signal toward Saturn
+            if (st.f >= 0.88) {
+                const ox = r.x + r.w / 2, oy = r.y;
+                const phase = reduceMotion.matches ? 0 : (t / 1400) % 1;
+                for (let k = 0; k < 5; k++) {
+                    const p = (k + phase) / 5;
+                    const rad = h * (0.2 + p * 1.6);
+                    ctx.strokeStyle = `rgba(255,120,110,${0.75 * (1 - p)})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(ox, oy, rad, -Math.PI * 0.5, -Math.PI * 0.12); ctx.stroke();
+                }
+            }
+        }
+
+        function discovery(cx, cy, L) {
+            // sphere forward (right), long spine, drive section aft
+            const s = L * 0.075;
+            ctx.save();
+            ctx.strokeStyle = '#c9ccd4'; ctx.fillStyle = '#c9ccd4'; ctx.lineWidth = Math.max(1, L * 0.012);
+            const x0 = cx - L / 2, x1 = cx + L / 2 - s * 2;
+            ctx.beginPath(); ctx.moveTo(x0 + s * 1.6, cy); ctx.lineTo(x1, cy); ctx.stroke();
+            for (let i = 1; i < 9; i++) {
+                const x = x0 + s * 1.6 + (x1 - x0 - s * 1.6) * i / 9;
+                ctx.fillRect(x - 1, cy - s * 0.25, 2, s * 0.5);
+            }
+            ctx.fillStyle = '#9a9ea8';
+            ctx.fillRect(x0, cy - s * 0.9, s * 1.8, s * 1.8);
+            ctx.fillStyle = 'rgba(160,200,255,0.5)';
+            ctx.fillRect(x0 - s * 0.35, cy - s * 0.5, s * 0.35, s);
+            const g = ctx.createRadialGradient(x1 + s * 0.6, cy - s * 0.4, s * 0.2, x1 + s, cy, s * 1.1);
+            g.addColorStop(0, '#f2f3f6'); g.addColorStop(1, '#7c808a');
+            disc(x1 + s, cy, s, g);
+            ctx.restore();
+        }
+
+        function saturn(x, y, r, tilt = -0.35) {
+            ctx.save();
+            ctx.translate(x, y); ctx.rotate(tilt);
+            ctx.strokeStyle = 'rgba(230,210,160,0.55)'; ctx.lineWidth = Math.max(1, r * 0.18);
+            ctx.beginPath(); ctx.ellipse(0, 0, r * 2.1, r * 0.55, 0, Math.PI, Math.PI * 2); ctx.stroke();
+            const g = ctx.createRadialGradient(-r * 0.3, -r * 0.4, r * 0.1, 0, 0, r);
+            g.addColorStop(0, '#f3e2b4'); g.addColorStop(0.7, '#c9a868'); g.addColorStop(1, '#6e5530');
+            disc(0, 0, r, g);
+            ctx.strokeStyle = 'rgba(240,222,175,0.8)';
+            ctx.beginPath(); ctx.ellipse(0, 0, r * 2.1, r * 0.55, 0, 0, Math.PI); ctx.stroke();
+            ctx.lineWidth = Math.max(1, r * 0.06); ctx.strokeStyle = 'rgba(255,240,200,0.45)';
+            ctx.beginPath(); ctx.ellipse(0, 0, r * 1.6, r * 0.42, 0, 0, Math.PI); ctx.stroke();
+            ctx.restore();
+        }
+
+        function sceneIII(st, t) {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+            stars(t, { drift: 0.012 });
+            const u = Math.min(W, H);
+            saturn(W * 0.86, H * 0.22, u * 0.018);
+            // the asteroid belt, early on
+            if (st.f < 0.5) {
+                const a = st.f < 0.2 ? st.f / 0.2 : 1 - (st.f - 0.2) / 0.3;
+                for (let i = 0; i < 24; i++) {
+                    const s = STARS[i * 7];
+                    let x = (s.x * W * 1.3 - t * 0.03 * s.z) % (W * 1.3);
+                    if (x < 0) x += W * 1.3;
+                    disc(x - W * 0.15, H * (0.55 + s.y * 0.4), 1.5 + s.z * 3, `rgba(150,140,125,${a * 0.9})`);
+                }
+            }
+            // Jupiter slides past below
+            if (st.f > 0.2) {
+                const jx = W * (1.6 - 2.0 * (st.f - 0.2));
+                const jr = Math.max(H, W * 0.5) * 0.42;
+                const jy = H * 0.98 + jr * 0.35;
+                ctx.save();
+                ctx.beginPath(); ctx.arc(jx, jy, jr, 0, Math.PI * 2); ctx.clip();
+                const g = ctx.createRadialGradient(jx - jr * 0.4, jy - jr * 0.6, jr * 0.1, jx, jy, jr);
+                g.addColorStop(0, '#f1dcc0'); g.addColorStop(0.7, '#b98a5e'); g.addColorStop(1, '#3a2716');
+                ctx.fillStyle = g; ctx.fillRect(jx - jr, jy - jr, jr * 2, jr * 2);
+                for (let b = 0; b < 9; b++) {
+                    ctx.fillStyle = b % 2 ? 'rgba(120,70,40,0.28)' : 'rgba(250,235,210,0.18)';
+                    ctx.fillRect(jx - jr, jy - jr + jr * (0.12 + b * 0.09), jr * 2, jr * 0.04);
+                }
+                ctx.fillStyle = 'rgba(190,80,50,0.55)';
+                ctx.beginPath(); ctx.ellipse(jx + jr * 0.25, jy - jr * 0.55, jr * 0.08, jr * 0.04, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+            const L = Math.min(W * 0.62, u * 0.9);
+            discovery(W * 0.46, H * 0.42, L);
+        }
+
+        function sceneIV(st, t) {
+            const bg = ctx.createLinearGradient(0, 0, 0, H);
+            bg.addColorStop(0, '#0d0e12'); bg.addColorStop(1, '#040405');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+            for (let i = 1; i < 12; i++) {
+                ctx.beginPath(); ctx.moveTo(W * i / 12, 0); ctx.lineTo(W * i / 12, H); ctx.stroke();
+            }
+            // HAL's eye set in a 4 by 9 panel
+            const h = Math.min(H * 0.8, W * 0.9 * 9 / 4, H - TOP - 24);
+            const base = TOP + (H - TOP) / 2 + h / 2;
+            const r = slab(W * 0.5, base, h, 'black');
+            const life = st.f < 0.72 ? 1 : st.f > 0.95 ? 0.05 : 1 - 0.95 * (st.f - 0.72) / 0.23;
+            const ex = r.x + r.w / 2, ey = r.y + r.h * 0.38, er = r.w * 0.34;
+            disc(ex, ey, er * 1.12, '#8b8e96');
+            disc(ex, ey, er, '#050505');
+            const beat = reduceMotion.matches ? 0 : 0.08 * Math.max(0, Math.cos((t % 1000) / 1000 * Math.PI * 2));
+            const lv = life * (0.92 + beat);
+            const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, er);
+            g.addColorStop(0, `rgba(255,250,200,${lv})`);
+            g.addColorStop(0.12, `rgba(255,120,40,${lv})`);
+            g.addColorStop(0.45, `rgba(200,0,0,${0.85 * lv})`);
+            g.addColorStop(1, 'rgba(30,0,0,0)');
+            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ex, ey, er, 0, Math.PI * 2); ctx.fill();
+            glow(ex, ey, er * 3, 'rgba(255,40,30,A)', 0.22 * life);
+            ctx.fillStyle = 'rgba(255,255,255,0.25)';
+            ctx.beginPath(); ctx.ellipse(ex - er * 0.35, ey - er * 0.45, er * 0.35, er * 0.15, -0.6, 0, Math.PI * 2); ctx.fill();
+            // speaker grille
+            ctx.strokeStyle = 'rgba(160,165,175,0.35)'; ctx.lineWidth = 1;
+            for (let i = 0; i < 6; i++) {
+                const yy = r.y + r.h * (0.72 + i * 0.03);
+                ctx.beginPath(); ctx.moveTo(r.x + r.w * 0.22, yy); ctx.lineTo(r.x + r.w * 0.78, yy); ctx.stroke();
+            }
+            // logic memory blocks, going dark as Bowman pulls them
+            const room = (W - r.w) / 2;
+            if (room > 60) {
+                const sec = Math.floor(t / 1000);
+                for (let side = 0; side < 2; side++) {
+                    const x0 = side === 0 ? r.x - room * 0.75 : r.x + r.w + room * 0.3;
+                    const cw = room * 0.42;
+                    for (let row = 0; row < 8; row++) {
+                        const y0 = H * 0.18 + row * H * 0.08;
+                        const k = (row + side * 8) / 16;
+                        const on = st.f < 0.72 || k > (st.f - 0.72) / 0.23;
+                        ctx.fillStyle = on ? '#1b1d23' : '#0c0d10';
+                        ctx.fillRect(x0, y0, cw, H * 0.05);
+                        if (on) {
+                            const blink = (row * 3 + side + sec) % 5 === 0 && !reduceMotion.matches;
+                            ctx.fillStyle = blink ? '#ff6a5a' : 'rgba(255,90,70,0.55)';
+                            ctx.fillRect(x0 + cw * 0.08, y0 + H * 0.02, 3, 3);
+                            ctx.fillStyle = 'rgba(140,190,255,0.5)';
+                            ctx.fillRect(x0 + cw * 0.2, y0 + H * 0.02, cw * 0.5, 2);
+                        }
+                    }
+                }
+            }
+        }
+
+        function japetus(x, y, r) {
+            const g = ctx.createRadialGradient(x - r * 0.4, y - r * 0.4, r * 0.1, x, y, r);
+            g.addColorStop(0, '#9a978f'); g.addColorStop(1, '#2a2926');
+            disc(x, y, r, g);
+            ctx.fillStyle = 'rgba(245,245,240,0.92)';
+            ctx.beginPath(); ctx.ellipse(x, y, r * 0.55, r * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+            disc(x, y, Math.max(1, r * 0.07), '#000');
+        }
+
+        function sceneV(st, t) {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+            stars(t, { drift: 0.003 });
+            const u = Math.min(W, H);
+            if (st.f < 0.55) {
+                const k = st.f / 0.55;
+                saturn(W * 0.34, H * 0.52, u * (0.1 + 0.06 * k));
+                japetus(W * 0.78, H * 0.38, u * (0.015 + 0.05 * k));
+                return;
+            }
+            saturn(W * 0.16, H * 0.24, u * 0.05);
+            // close over Japetus: the white oval and the great slab at its centre
+            const R2 = Math.max(W, H) * 1.6;
+            const cy = H * 0.66 + R2;
+            const g = ctx.createRadialGradient(W * 0.5, cy - R2, 0, W * 0.5, cy - R2, W * 0.8);
+            g.addColorStop(0, '#5a5852'); g.addColorStop(1, '#1d1c1a');
+            disc(W * 0.5, cy, R2, g);
+            ctx.fillStyle = 'rgba(240,240,234,0.92)';
+            ctx.beginPath(); ctx.ellipse(W * 0.5, H * 0.8, W * 0.46, H * 0.11, 0, 0, Math.PI * 2); ctx.fill();
+            const base = H * 0.82;
+            const h = Math.min(H * 0.6, W * 0.62, base - TOP - 12);
+            const r = slab(W * 0.5, base, h, 'black');
+            if (st.f >= 0.86) {
+                // the face opens on stars
+                ctx.save(); ctx.beginPath(); ctx.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); ctx.clip();
+                const z = reduceMotion.matches ? 0.5 : (t / 2600) % 1;
+                for (let i = 0; i < 90; i++) {
+                    const s = STARS[i];
+                    const p = (s.z + z) % 1;
+                    const ang = s.x * Math.PI * 2;
+                    const d = p * p * r.h * 0.8;
+                    ctx.fillStyle = `rgba(240,240,255,${0.3 + 0.7 * p})`;
+                    ctx.fillRect(r.x + r.w / 2 + Math.cos(ang) * d * 0.6, r.y + r.h * 0.45 + Math.sin(ang) * d, 1 + p * 1.6, 1 + p * 1.6);
+                }
+                ctx.restore();
+            }
+            if (st.f >= 0.8) {
+                const k = Math.min(1, (st.f - 0.8) / 0.08);
+                const py = H * 0.04 + (r.y + r.h * 0.2 - H * 0.04) * k;
+                const pr = Math.max(3, h * 0.03);
+                disc(W * 0.5 + r.w * 0.05, py, pr, '#f0f1f4');
+                glow(W * 0.5 + r.w * 0.05, py, pr * 4, 'rgba(255,255,255,A)', 0.25);
+            }
+        }
+
+        function sceneVI(st, t) {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+            const cx = W * 0.5, cy = H * 0.5;
+            const u = Math.min(W, H);
+            if (st.f < 0.7) {
+                // the Star Gate: nested 4 by 9 frames falling away, and stars streaming past
+                const z = reduceMotion.matches ? 0.3 : (t / 1800) % 1;
+                for (let i = 0; i < 9; i++) {
+                    const p = (i + z) / 9;
+                    const s = p * p;
+                    const hh = Math.max(W, H) * 1.6 * s, ww = hh * 4 / 9;
+                    const hue = 200 + i * 25;
+                    ctx.strokeStyle = `hsla(${hue},80%,70%,${0.12 + 0.5 * (1 - p)})`;
+                    ctx.lineWidth = 1 + p * 2;
+                    ctx.strokeRect(cx - ww / 2, cy - hh / 2, ww, hh);
+                }
+                for (let i = 0; i < 200; i++) {
+                    const s = STARS[i];
+                    const p = (s.z + z * 1.7 + s.y) % 1;
+                    const ang = s.x * Math.PI * 2;
+                    const d0 = p * p * Math.max(W, H) * 0.75;
+                    const d1 = d0 * 0.86;
+                    ctx.strokeStyle = `hsla(${(s.tw * 60) | 0},70%,80%,${0.15 + 0.75 * p})`;
+                    ctx.lineWidth = 0.6 + p * 1.6;
+                    ctx.beginPath();
+                    ctx.moveTo(cx + Math.cos(ang) * d1, cy + Math.sin(ang) * d1);
+                    ctx.lineTo(cx + Math.cos(ang) * d0, cy + Math.sin(ang) * d0);
+                    ctx.stroke();
+                }
+                if (st.f >= 0.45) {
+                    // the hotel room, a warm lit box at the end of the shaft
+                    const k = Math.min(1, (st.f - 0.45) / 0.1);
+                    const rw = u * 0.42 * (0.4 + 0.6 * k), rh = rw * 0.62;
+                    ctx.fillStyle = `rgba(255,236,200,${k})`;
+                    ctx.fillRect(cx - rw / 2, cy - rh / 2, rw, rh);
+                    ctx.strokeStyle = `rgba(150,120,90,${k})`; ctx.lineWidth = 1;
+                    ctx.strokeRect(cx - rw * 0.3, cy - rh * 0.3, rw * 0.6, rh * 0.6);
+                    for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+                        ctx.beginPath(); ctx.moveTo(cx + a * rw * 0.3, cy + b * rh * 0.3); ctx.lineTo(cx + a * rw / 2, cy + b * rh / 2); ctx.stroke();
+                    }
+                    // a doorway in the slab's proportions
+                    const dh = rh * 0.42;
+                    ctx.fillStyle = `rgba(90,70,55,${k})`;
+                    ctx.fillRect(cx + rw * 0.06, cy + rh * 0.3 - dh, dh * 4 / 9, dh);
+                }
+                return;
+            }
+            // the Star-Child over Earth
+            stars(t, { drift: 0.002 });
+            const er = Math.max(W, H) * 0.9;
+            const ey = H * 0.92 + er;
+            const g = ctx.createRadialGradient(W * 0.5, ey - er, 0, W * 0.5, ey - er * 0.6, er);
+            g.addColorStop(0, '#6fb4ff'); g.addColorStop(0.25, '#1f5aa6'); g.addColorStop(1, '#03122a');
+            disc(W * 0.5, ey, er, g);
+            ctx.strokeStyle = 'rgba(150,210,255,0.6)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(W * 0.5, ey, er, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+            const k = Math.min(1, (st.f - 0.7) / 0.1);
+            const oy = H * 0.44;
+            const orr = u * 0.1 * (0.6 + 0.4 * k);
+            // the crystal slab returns, faintly, behind it
+            slab(W * 0.5, oy + u * 0.32, u * 0.6, 'crystal', 0.25 * k);
+            const pulse = reduceMotion.matches ? 1 : 1 + 0.04 * Math.sin(t * 0.0012);
+            glow(W * 0.5, oy, orr * 3.2 * pulse, 'rgba(255,245,225,A)', 0.35 * k);
+            const og = ctx.createRadialGradient(W * 0.5 - orr * 0.3, oy - orr * 0.3, orr * 0.1, W * 0.5, oy, orr);
+            og.addColorStop(0, `rgba(255,255,250,${k})`); og.addColorStop(0.6, `rgba(255,225,190,${0.75 * k})`); og.addColorStop(1, 'rgba(255,200,170,0.05)');
+            ctx.fillStyle = og; ctx.beginPath(); ctx.arc(W * 0.5, oy, orr, 0, Math.PI * 2); ctx.fill();
+            // curled figure within, a simple crescent
+            ctx.strokeStyle = `rgba(200,140,110,${0.55 * k})`; ctx.lineWidth = Math.max(1, orr * 0.12);
+            ctx.beginPath(); ctx.arc(W * 0.5 + orr * 0.05, oy + orr * 0.05, orr * 0.45, Math.PI * 0.6, Math.PI * 1.9); ctx.stroke();
+            disc(W * 0.5 + orr * 0.28, oy - orr * 0.3, orr * 0.2, `rgba(220,160,130,${0.6 * k})`);
+        }
+
+        const SCENES = [sceneI, sceneII, sceneIII, sceneIV, sceneV, sceneVI];
+
+        function draw(now) {
+            if (!W) return;
+            const st = locate(now);
+            ctx.clearRect(0, 0, W, H);
+            SCENES[st.i](st, performance.now());
+            // a soft scrim so the masthead always reads over the scene
+            const sc = ctx.createLinearGradient(0, 0, 0, TOP + 20);
+            sc.addColorStop(0, 'rgba(0,0,0,0.65)'); sc.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = sc; ctx.fillRect(0, 0, W, TOP + 20);
+        }
+
+        function loop() {
+            draw(new Date());
+            if (!reduceMotion.matches) requestAnimationFrame(loop);
+        }
+
+        new ResizeObserver(resizeCanvas).observe(stage);
+        resizeCanvas();
+        tick();
+        setTimeout(() => { tick(); setInterval(tick, 1000); }, 1000 - (Date.now() % 1000));
+        if (!reduceMotion.matches) requestAnimationFrame(loop);
+        reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(loop); });
     </script>
 </body>
 </html>
