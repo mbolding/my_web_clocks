@@ -23,10 +23,10 @@ A collection of literary, creative, and technical concepts for future web clock 
 #### Other Literary & Thematic Works
 - ✅ **The Metamorphosis** - Franz Kafka (the time read from Gregor's alarm clock, from his back, the floor and the ceiling)
 - ✅ **Slaughterhouse-Five** - Kurt Vonnegut
-- ✅ **The Divine Comedy** - Dante Alighieri
-- ✅ **The Canterbury Tales** - Geoffrey Chaucer
-- ✅ **The Odyssey** - Homer
-- ✅ **Hamlet** - William Shakespeare
+- ✅ **The Divine Comedy** - Dante Alighieri (a cross-section of Dante's universe; the day is the poem's 100 cantos)
+- ✅ **The Canterbury Tales** - Geoffrey Chaucer (24 tales, 24 hours, on the 60-mile road; the Host reads the hour from a shadow)
+- ✅ **The Odyssey** - Homer (24 books as 24 hours on a sea chart, the wanderings replayed in flashback from Scheria)
+- ✅ **Hamlet** - William Shakespeare (the play once a day from a midnight curtain; the Ghost knocks the dial out of joint until Hamlet sets it right)
 - ✅ **The Old Man and the Sea** - Ernest Hemingway
 - ✅ **The Stranger** - Albert Camus (the sun as the clock, peaking at the beach at two, then a cell until the stars)
 - ✅ **The Sisyphus Clock** - Albert Camus' "The Myth of Sisyphus," in flat cutout collage: the boulder up each minute, then the walk back down, the hour he is aware, and a Giant Foot on the hour
@@ -34,7 +34,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **On the Road** - Jack Kerouac
 - ✅ **Catch-22** - Joseph Heller (a mission log where Cathcart keeps raising the number required to go home)
 - ✅ **Dune** - Frank Herbert
-- ✅ **Don Quixote** - Miguel de Cervantes
+- ✅ **Don Quixote** - Miguel de Cervantes (a windmill whose sails and the Don's lance tell the time, Part One by morning, Part Two by night)
 - ✅ **Ghost in the Shell** - Masamune Shirow
 - ✅ **The Lord of the Rings** - J.R.R. Tolkien
 - ✅ **The Great Gatsby** - F. Scott Fitzgerald
@@ -45,7 +45,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Finnegans Wake** - James Joyce (riverrun ring turning once a day through Vico's four ages)
 - ✅ **Snow Country** - Yasunari Kawabata (the time as a reflection in the night train's window)
 - ✅ **The Magic Mountain** - Thomas Mann (seven chapters on a dial where story time accelerates, plus the Berghof's seven-minute thermometer)
-- ✅ **Macbeth** - William Shakespeare
+- ✅ **Macbeth** - William Shakespeare (blood drips into a basin that turns red between midnights; the hour struck in Lady Macbeth's sleepwalking count)
 - ✅ **2001: A Space Odyssey** - Arthur C. Clarke
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
 - ✅ **Bach Clock** - J. S. Bach. Three concentric staves engraved with the subject of Contrapunctus I from *Die Kunst der Fuge*, read by three playheads at one note per second, minute and hour. Because the voices share one subject and differ only in speed, the clock's 1:60:720 hand ratio is literally a canon by augmentation. Optional Web Audio plays the three voices an octave apart; the hour is marked with B♭–A–C–B♮.
@@ -53,7 +53,7 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
 - ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
-- ✅ **The Tempest** - William Shakespeare (unity of time made literal: real 2-6pm storm window, five acts, Prospero's "sixth hour" deadline)
+- ✅ **The Tempest** - William Shakespeare (unity of time made literal: real 2-6pm storm window, five acts, Prospero's "sixth hour" deadline; the rest of the day tells the twelve years of exile before and the voyage home after)
 
 ### To Build
 

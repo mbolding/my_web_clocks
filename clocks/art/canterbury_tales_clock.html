@@ -5,586 +5,1133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Canterbury Tales Clock</title>
+    <meta name="description" content="Twenty-four tales, twenty-four hours: the pilgrims ride the sixty miles from the Tabard in Southwark to Canterbury, and the Host reads the hour from a shadow.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --vellum: #f3ead6;
+            --vellum-2: #e9dcc0;
+            --vellum-3: #dccaa5;
+            --ink: #2a1f16;
+            --ink-2: #4a3a2a;
+            --muted: #6b5844;
+            --rule: #b9a27c;
+            --vermilion: #a8321f;
+            --lapis: #24427a;
+            --gold: #b5862a;
+            --gold-hi: #e2bd5c;
+            --road: #c9b28a;
+            --green: #5f6f3a;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            background: var(--vellum-2);
+            color: var(--ink);
+        }
+
         body {
             min-height: 100vh;
-            background: linear-gradient(to bottom, #f4e8d8 0%, #e8dcc8 50%, #d8c8b0 100%);
-            font-family: 'Crimson Text', serif;
+            font-family: 'Crimson Text', Georgia, serif;
+            background:
+                radial-gradient(ellipse at 50% 30%, var(--vellum) 0%, var(--vellum-2) 70%, var(--vellum-3) 100%);
+            padding: clamp(12px, 3vw, 36px) clamp(16px, 3vw, 40px);
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: #3a2a1a;
-            position: relative;
         }
 
-        .manuscript-decoration {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .page {
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0.08;
-            background-image:
-                repeating-linear-gradient(90deg, #8a6a4a 0px, transparent 1px, transparent 50px),
-                repeating-linear-gradient(0deg, #8a6a4a 0px, transparent 1px, transparent 50px);
-            z-index: 0;
+            max-width: 1180px;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(14px, 2.2vw, 26px);
         }
 
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: #faf8f4;
-            border: 3px solid #8a6a4a;
-            box-shadow:
-                0 0 0 8px #faf8f4,
-                0 0 0 11px #8a6a4a,
-                0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 3rem 2.5rem;
+        /* ---------- header ---------- */
+        header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px 32px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--rule);
+            padding-bottom: clamp(8px, 1.4vw, 14px);
             position: relative;
-            z-index: 1;
         }
 
-        .illuminated-initial {
+        header::after {
+            content: '';
             position: absolute;
-            top: 2rem;
-            left: 1rem;
-            font-family: 'UnifrakturMaguntia', cursive;
-            font-size: 6rem;
-            color: #c41e3a;
-            opacity: 0.15;
-            line-height: 1;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid #b8a090;
-        }
-
-        .title {
-            font-family: 'UnifrakturMaguntia', cursive;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 400;
-            color: #3a2a1a;
-            margin-bottom: 0.75rem;
-            letter-spacing: 0.05em;
-        }
-
-        .subtitle {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(0.9rem, 2vw, 1.1rem);
-            color: #6a5a4a;
-            margin-bottom: 0.5rem;
-            font-style: italic;
-        }
-
-        .author {
-            font-size: 0.95rem;
-            color: #7a6a5a;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-        }
-
-        .time-display {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(184, 160, 144, 0.15);
-            border: 2px solid #b8a090;
-            position: relative;
-        }
-
-        .current-time {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(2.5rem, 6vw, 5rem);
-            font-weight: 600;
-            color: #5a3a2a;
-            margin-bottom: 0.5rem;
-        }
-
-        .journey-progress {
-            font-size: 0.85rem;
-            color: #7a6a5a;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-        }
-
-        .pilgrim-section {
-            margin-bottom: 2rem;
-        }
-
-        .pilgrim-name {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.3rem, 3vw, 2rem);
-            font-weight: 600;
-            color: #c41e3a;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .pilgrim-title {
-            font-size: 1rem;
-            color: #6a5a4a;
-            font-style: italic;
-            margin-bottom: 1.5rem;
-        }
-
-        .tale-container {
-            position: relative;
-            min-height: 180px;
-            margin-bottom: 1.5rem;
-        }
-
-        .tale-passage {
-            font-size: clamp(0.95rem, 2vw, 1.1rem);
-            line-height: 1.9;
-            color: #4a3a2a;
-            opacity: 0;
-            position: absolute;
-            top: 0;
             left: 0;
             right: 0;
-            animation: passageFade 15s ease-in-out infinite;
+            bottom: -6px;
+            border-bottom: 1px solid var(--rule);
         }
 
-        .tale-passage:nth-child(1) { animation-delay: 0s; }
-        .tale-passage:nth-child(2) { animation-delay: 5s; }
-        .tale-passage:nth-child(3) { animation-delay: 10s; }
-
-        @keyframes passageFade {
-            0% { opacity: 0; transform: translateY(8px); }
-            3%, 30% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(8px); }
-        }
-
-        .middle-english {
-            font-size: clamp(0.85rem, 1.8vw, 1rem);
-            line-height: 1.7;
-            color: #8a6a4a;
-            font-style: italic;
-            padding: 1.5rem;
-            background: rgba(138, 106, 74, 0.1);
-            border-left: 4px solid #c41e3a;
-            margin-top: 1rem;
-        }
-
-        .road-marker {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            font-family: 'Cinzel', serif;
-            font-size: 0.8rem;
-            color: #7a6a5a;
-            text-align: right;
-            padding: 1rem;
-            background: rgba(250, 248, 244, 0.9);
-            border: 2px solid #b8a090;
-        }
-
-        .road-marker .miles {
-            font-size: 2.5rem;
-            font-weight: 600;
-            color: #5a3a2a;
-            display: block;
+        .title-block h1 {
+            font-family: 'UnifrakturMaguntia', serif;
+            font-weight: 400;
+            font-size: clamp(1.9rem, 4.6vw, 3.2rem);
             line-height: 1;
-            margin-bottom: 0.25rem;
+            color: var(--ink);
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem 1.5rem;
+        .title-block h1 .red {
+            color: var(--vermilion);
+        }
+
+        .incipit {
+            margin-top: 6px;
+            font-style: italic;
+            font-size: clamp(0.98rem, 1.6vw, 1.15rem);
+            color: var(--ink-2);
+        }
+
+        .incipit .who {
+            font-style: normal;
+            font-family: 'Cinzel', serif;
+            font-size: 0.72em;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            margin-left: 0.4em;
+            white-space: nowrap;
+        }
+
+        .readout {
+            text-align: right;
+        }
+
+        .time {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: clamp(2.2rem, 5.4vw, 3.6rem);
+            line-height: 1;
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .time .sec {
+            font-size: 0.42em;
+            color: var(--muted);
+            margin-left: 0.15em;
+        }
+
+        .reckon {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.72rem, 1.2vw, 0.85rem);
+            letter-spacing: 0.12em;
+            color: var(--vermilion);
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+
+        /* ---------- the road ---------- */
+        .road-card {
+            background: var(--vellum);
+            border: 1px solid var(--rule);
+            box-shadow: 0 0 0 4px var(--vellum), 0 0 0 5px var(--rule), 0 10px 30px rgba(60, 40, 15, 0.12);
+            padding: clamp(12px, 2vw, 22px) clamp(12px, 2.4vw, 30px) clamp(10px, 1.6vw, 16px);
+        }
+
+        .road-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 4px 16px;
+            flex-wrap: wrap;
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.7rem, 1.15vw, 0.82rem);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .road-head strong {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .strip {
+            position: relative;
+            height: 150px;
+            margin: 0 clamp(14px, 2.2vw, 26px);
+        }
+
+        .hours {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 30px;
+        }
+
+        .hour-tick {
+            position: absolute;
+            top: 18px;
+            width: 1px;
+            height: 8px;
+            background: var(--rule);
+        }
+
+        .hour-tick.major {
+            height: 12px;
+            top: 14px;
+            background: var(--muted);
+        }
+
+        .hour-label {
+            position: absolute;
+            top: 0;
+            transform: translateX(-50%);
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.62rem, 1vw, 0.74rem);
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .road {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 58px;
+            height: 12px;
+            background: var(--road);
+            border-top: 1px solid #a88f66;
+            border-bottom: 1px solid #a88f66;
+            border-radius: 6px;
+        }
+
+        .road-done {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            border-radius: 6px 0 0 6px;
+            background: repeating-linear-gradient(90deg, var(--vermilion) 0 10px, transparent 10px 14px);
+            opacity: 0.85;
+        }
+
+        .tale-seg {
+            position: absolute;
+            top: 50%;
+            width: 5px;
+            height: 5px;
+            margin: -2.5px 0 0 -2.5px;
+            border-radius: 50%;
+            background: var(--vellum);
+            border: 1px solid #8a7350;
+        }
+
+        .tale-seg.told {
+            background: var(--vermilion);
+            border-color: var(--vermilion);
+        }
+
+        .tale-seg.now {
+            background: var(--gold-hi);
+            border-color: var(--gold);
+            width: 9px;
+            height: 9px;
+            margin: -4.5px 0 0 -4.5px;
+        }
+
+        .end-icon {
+            position: absolute;
+            top: 30px;
+            width: 30px;
+            height: 34px;
+        }
+
+        .end-icon.left {
+            left: -16px;
+        }
+
+        .end-icon.right {
+            right: -18px;
+        }
+
+        .company {
+            position: absolute;
+            top: 31px;
+            width: 46px;
+            height: 30px;
+            margin-left: -23px;
+            transition: left 0.9s linear;
+        }
+
+        .company svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            animation: amble 1.4s ease-in-out infinite;
+            transform-origin: 50% 100%;
+        }
+
+        @keyframes amble {
+
+            0%,
+            100% {
+                transform: translateY(0);
             }
 
-            .illuminated-initial {
-                font-size: 4rem;
-                top: 1.5rem;
+            50% {
+                transform: translateY(-1.5px);
+            }
+        }
+
+        .town {
+            position: absolute;
+            font-family: 'Crimson Text', serif;
+            font-size: clamp(0.8rem, 1.25vw, 0.95rem);
+            line-height: 1.1;
+            color: var(--ink-2);
+            white-space: nowrap;
+        }
+
+        .town::before {
+            content: '';
+            position: absolute;
+            width: 1px;
+            background: var(--muted);
+            opacity: 0.6;
+        }
+
+        .town .mi {
+            font-family: 'Cinzel', serif;
+            font-size: 0.68em;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            margin-left: 0.3em;
+        }
+
+        .town.near {
+            color: var(--vermilion);
+            font-weight: 600;
+        }
+
+        .town.r1 {
+            top: 78px;
+        }
+
+        .town.r1::before {
+            top: -8px;
+            height: 8px;
+        }
+
+        .town.r2 {
+            top: 102px;
+        }
+
+        .town.r2::before {
+            top: -32px;
+            height: 32px;
+        }
+
+        .town.r3 {
+            top: 126px;
+        }
+
+        .town.r3::before {
+            top: -56px;
+            height: 56px;
+        }
+
+        .town.c {
+            transform: translateX(-50%);
+        }
+
+        .town.c::before {
+            left: 50%;
+        }
+
+        .town.l::before {
+            left: 0;
+        }
+
+        .town.rt {
+            transform: translateX(-100%);
+        }
+
+        .town.rt::before {
+            right: 0;
+        }
+
+        .waymark {
+            min-height: 1.5em;
+            margin-top: 4px;
+            text-align: center;
+            font-size: clamp(0.95rem, 1.5vw, 1.08rem);
+            color: var(--ink-2);
+        }
+
+        .waymark q {
+            font-style: italic;
+            quotes: none;
+        }
+
+        .waymark .src {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7em;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-left: 0.5em;
+            white-space: nowrap;
+        }
+
+        /* ---------- lower panels ---------- */
+        .panels {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+            gap: clamp(14px, 2.2vw, 26px);
+        }
+
+        .panel {
+            background: var(--vellum);
+            border: 1px solid var(--rule);
+            box-shadow: 0 0 0 4px var(--vellum), 0 0 0 5px var(--rule), 0 10px 30px rgba(60, 40, 15, 0.12);
+            padding: clamp(14px, 2.2vw, 26px);
+            min-width: 0;
+        }
+
+        .rubric {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.7rem, 1.1vw, 0.8rem);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--vermilion);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .rubric .count {
+            color: var(--muted);
+        }
+
+        .teller-name {
+            font-family: 'UnifrakturMaguntia', serif;
+            font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+            line-height: 1.05;
+            color: var(--ink);
+        }
+
+        .teller-modern {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.72rem, 1.1vw, 0.82rem);
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            margin: 4px 0 14px;
+            text-transform: uppercase;
+        }
+
+        .opening {
+            display: flex;
+            gap: clamp(12px, 1.8vw, 18px);
+            align-items: flex-start;
+        }
+
+        .initial {
+            flex: none;
+            width: clamp(72px, 9vw, 104px);
+            aspect-ratio: 1;
+            position: relative;
+        }
+
+        .initial svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .opening-text {
+            min-width: 0;
+        }
+
+        .incipit-line {
+            font-size: clamp(1.2rem, 2.3vw, 1.6rem);
+            line-height: 1.3;
+            color: var(--ink);
+        }
+
+        .incipit-line .cap {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .incipit-src {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.68rem, 1vw, 0.78rem);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .gloss {
+            margin-top: 14px;
+            font-size: clamp(1rem, 1.6vw, 1.12rem);
+            line-height: 1.5;
+            color: var(--ink-2);
+        }
+
+        .sentence {
+            margin-top: 14px;
+            padding: 10px 0 10px 14px;
+            border-left: 3px solid var(--vermilion);
+            font-style: italic;
+            font-size: clamp(1.02rem, 1.7vw, 1.18rem);
+            line-height: 1.45;
+            color: var(--ink);
+        }
+
+        .sentence cite {
+            display: block;
+            font-style: normal;
+            font-family: 'Cinzel', serif;
+            font-size: 0.62em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .telling {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.7rem, 1.05vw, 0.78rem);
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            flex-wrap: wrap;
+        }
+
+        .bar {
+            flex: 1 1 140px;
+            height: 6px;
+            background: var(--vellum-3);
+            border: 1px solid var(--rule);
+            position: relative;
+        }
+
+        .bar span {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: var(--gold);
+            width: 0;
+        }
+
+        /* shadow panel */
+        .dial {
+            width: 100%;
+            aspect-ratio: 2 / 1;
+            display: block;
+            margin: 2px 0 8px;
+        }
+
+        .shadow-read {
+            font-size: clamp(1.02rem, 1.6vw, 1.14rem);
+            line-height: 1.45;
+            color: var(--ink);
+        }
+
+        .shadow-read b {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .shadow-quote {
+            margin-top: 10px;
+            font-style: italic;
+            color: var(--ink-2);
+            font-size: clamp(0.98rem, 1.5vw, 1.08rem);
+            line-height: 1.45;
+            min-height: 1.45em;
+        }
+
+        .shadow-quote:empty {
+            display: none;
+        }
+
+        .shadow-quote .lead {
+            display: block;
+            font-style: normal;
+            font-size: 0.92em;
+            color: var(--muted);
+        }
+
+        .shadow-quote q {
+            display: block;
+            quotes: none;
+            border-left: 3px solid var(--gold);
+            padding: 4px 0 4px 12px;
+            margin-top: 6px;
+            color: var(--ink);
+        }
+
+        .shadow-quote cite {
+            display: block;
+            font-style: normal;
+            font-family: 'Cinzel', serif;
+            font-size: 0.66em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding-left: 15px;
+            margin-top: 2px;
+        }
+
+        .note {
+            margin-top: 10px;
+            font-size: clamp(0.85rem, 1.25vw, 0.93rem);
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        footer {
+            text-align: center;
+            font-size: clamp(0.92rem, 1.4vw, 1.02rem);
+            color: var(--ink-2);
+            line-height: 1.5;
+            padding-bottom: 8px;
+        }
+
+        footer q {
+            font-style: italic;
+            quotes: none;
+        }
+
+        footer .src {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7em;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 820px) {
+            .panels {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
+            header {
+                align-items: flex-start;
             }
 
-            .road-marker {
-                bottom: 1rem;
-                right: 1rem;
-                padding: 0.75rem;
+            .readout {
+                text-align: left;
+            }
+
+            .hour-label.minor {
+                display: none;
+            }
+
+            .town .mi,
+            .town .long {
+                display: none;
+            }
+
+            .strip {
+                height: 172px;
+            }
+
+            .town.p1 { top: 78px; }
+            .town.p1::before { top: -8px; height: 8px; }
+            .town.p2 { top: 100px; }
+            .town.p2::before { top: -30px; height: 30px; }
+            .town.p3 { top: 122px; }
+            .town.p3::before { top: -52px; height: 52px; }
+            .town.p4 { top: 144px; }
+            .town.p4::before { top: -74px; height: 74px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .company svg {
+                animation: none;
+            }
+
+            .company {
+                transition: none;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="manuscript-decoration"></div>
-    <div class="illuminated-initial">W</div>
+    <div class="page">
+        <header>
+            <div class="title-block">
+                <h1><span class="red">T</span>he Canterbury Tales</h1>
+                <p class="incipit">Whan that Aprill with his shoures soote <span class="who">Geffrey Chaucer</span></p>
+            </div>
+            <div class="readout">
+                <div class="time" id="time" role="timer" aria-live="off">--:--</div>
+                <div class="reckon" id="reckon">&nbsp;</div>
+            </div>
+        </header>
 
-    <div class="container">
-        <div class="header">
-            <h1 class="title">The Canterbury Tales</h1>
-            <div class="subtitle">A journey through the houres to Canterbury</div>
-            <div class="author">Geoffrey Chaucer</div>
-        </div>
-
-        <div class="time-display">
-            <div class="current-time" id="time">00:00</div>
-            <div class="journey-progress" id="progress">Upon the Road to Canterbury</div>
-        </div>
-
-        <div class="pilgrim-section">
-            <h2 class="pilgrim-name" id="pilgrim-name">The Knight</h2>
-            <div class="pilgrim-title" id="pilgrim-title">A worthy man from the first beginning</div>
-            <div class="tale-container">
-                <div id="passages">
-                    <!-- Passages injected here -->
+        <section class="road-card" aria-label="The road from Southwark to Canterbury">
+            <div class="road-head">
+                <span>Southwerk to Caunterbury, sixty myle, one tale an houre</span>
+                <span><strong id="mile">0</strong> of 60 myle ridden</span>
+            </div>
+            <div class="strip" id="strip">
+                <div class="hours" id="hours"></div>
+                <svg class="end-icon left" viewBox="0 0 30 34" aria-hidden="true">
+                    <!-- the Tabard: an inn with a hanging sign -->
+                    <path d="M3 33 V16 L13 8 L23 16 V33 Z" fill="#d9c49c" stroke="#5a4630" stroke-width="1.2" />
+                    <path d="M1 17 L13 7 L25 17" fill="none" stroke="#7a3a22" stroke-width="2.4" />
+                    <rect x="10" y="24" width="6" height="9" fill="#5a4630" />
+                    <path d="M23 20 H29 M27 20 V22" stroke="#5a4630" stroke-width="1.2" />
+                    <rect x="24.5" y="22" width="5" height="6" fill="#24427a" stroke="#b5862a" stroke-width="0.8" />
+                </svg>
+                <div class="road" id="road">
+                    <div class="road-done" id="road-done"></div>
                 </div>
+                <svg class="end-icon right" viewBox="0 0 30 34" aria-hidden="true">
+                    <!-- Canterbury: a cathedral with central tower -->
+                    <rect x="2" y="20" width="26" height="13" fill="#d9c49c" stroke="#5a4630" stroke-width="1.2" />
+                    <rect x="11" y="7" width="8" height="26" fill="#e3d1aa" stroke="#5a4630" stroke-width="1.2" />
+                    <path d="M11 7 L12 4 M19 7 L18 4 M15 7 V2" stroke="#5a4630" stroke-width="1.2" />
+                    <path d="M14 13 h2 v5 h-2 Z M5 24 h2 v5 h-2 Z M23 24 h2 v5 h-2 Z" fill="#24427a" />
+                    <path d="M15 0.5 V3.5 M13.6 1.6 H16.4" stroke="#b5862a" stroke-width="1" />
+                </svg>
+                <div class="company" id="company" aria-hidden="true">
+                    <svg viewBox="0 0 46 30">
+                        <!-- three riders, the middle one with a pilgrim's staff -->
+                        <g fill="#3a2a1a">
+                            <path d="M3 26 l2-7 h10 l2 7 h-1.4 l-1.6-5 h-7 l-2 5 Z" />
+                            <path d="M14 19 l3-4 1 1 -2.5 3.5 Z" />
+                            <circle cx="9" cy="11" r="2" />
+                            <path d="M7.5 13 h3 l1 6 h-5 Z" fill="#24427a" />
+                        </g>
+                        <g fill="#3a2a1a">
+                            <path d="M15 27 l2-7 h10 l2 7 h-1.4 l-1.6-5 h-7 l-2 5 Z" />
+                            <path d="M26 20 l3-4 1 1 -2.5 3.5 Z" />
+                            <circle cx="21" cy="11" r="2" />
+                            <path d="M19.5 13 h3 l1 7 h-5 Z" fill="#a8321f" />
+                            <path d="M24 4 V20" stroke="#5a4630" stroke-width="1" />
+                        </g>
+                        <g fill="#3a2a1a">
+                            <path d="M27 26 l2-7 h10 l2 7 h-1.4 l-1.6-5 h-7 l-2 5 Z" />
+                            <path d="M38 19 l3-4 1 1 -2.5 3.5 Z" />
+                            <circle cx="33" cy="11" r="2" />
+                            <path d="M31.5 13 h3 l1 6 h-5 Z" fill="#5f6f3a" />
+                        </g>
+                    </svg>
+                </div>
+                <div id="towns"></div>
             </div>
-            <div class="middle-english" id="middle-english">
-                "Whan that Aprill with his shoures soote..."
-            </div>
-        </div>
-    </div>
+            <p class="waymark" id="waymark">&nbsp;</p>
+        </section>
 
-    <div class="road-marker">
-        <span class="miles" id="miles">0</span>
-        <span>miles to Canterbury</span>
+        <div class="panels">
+            <section class="panel" aria-labelledby="teller-name">
+                <div class="rubric"><span>Heere bigynneth</span><span class="count" id="count">Tale 1 of 24</span></div>
+                <h2 class="teller-name" id="teller-name">The Knyght</h2>
+                <div class="teller-modern" id="teller-modern">The Knight's Tale</div>
+                <div class="opening">
+                    <div class="initial" id="initial" aria-hidden="true"></div>
+                    <div class="opening-text">
+                        <p class="incipit-line" id="incipit"></p>
+                        <p class="incipit-src">The first line of the tale</p>
+                    </div>
+                </div>
+                <p class="gloss" id="gloss"></p>
+                <blockquote class="sentence" id="sentence"></blockquote>
+                <div class="telling">
+                    <span id="told">0 of 60 minutes told</span>
+                    <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+                    <span id="next">Next, the Millere</span>
+                </div>
+                <p class="sr-only" aria-live="polite" id="announce"></p>
+            </section>
+
+            <section class="panel" aria-labelledby="dial-title">
+                <div class="rubric"><span id="dial-title">The Hoostes reckenynge</span></div>
+                <svg class="dial" id="dial" viewBox="0 0 320 160" role="img" aria-label="A pilgrim and his shadow"></svg>
+                <p class="shadow-read" id="shadow-read"></p>
+                <p class="shadow-quote" id="shadow-quote"></p>
+                <p class="note">Harry Bailly reads the hour from a shadow. The sun here stands as over Kent on 18 April, the day he reckons, with your clock's hour taken as the sun's.</p>
+            </section>
+        </div>
+
+        <footer>
+            <q>That ech of yow, to shorte with oure weye, / In this viage shal telle tales tweye</q>
+            <span class="src">The Host, General Prologue</span>
+        </footer>
     </div>
 
     <script>
-        const pilgrims = [
-            {
-                hour: 0,
-                name: "The Host",
-                title: "Harry Bailly, keeper of the Tabard Inn",
-                passages: [
-                    "At the Tabard Inn in Southwark, Harry Bailly gathers the pilgrims and proposes a game: each shall tell tales on the way to Canterbury.",
-                    "The one who tells the best tale shall win a supper paid for by all the others upon their return.",
-                    "And thus begins the great pilgrimage, twenty-nine souls bound for the shrine of Thomas Becket."
-                ],
-                middleEnglish: "Ye goon to Caunterbury—God yow speede!"
-            },
-            {
-                hour: 1,
-                name: "The Knight",
-                title: "A worthy man, distinguished in chivalry",
-                passages: [
-                    "The Knight tells of Palamon and Arcite, two cousins imprisoned in Athens who both fall in love with Emily.",
-                    "They compete in a tournament for her hand, but fate intervenes: Arcite wins but dies, and Palamon weds Emily.",
-                    "A noble tale of chivalry, honor, and the cruel twists of fortune's wheel."
-                ],
-                middleEnglish: "And shortly for to speken of this thyng, / Fallen in love with faire Emelye."
-            },
-            {
-                hour: 2,
-                name: "The Miller",
-                title: "A stout carl, full strong and big of bone",
-                passages: [
-                    "Drunk and bawdy, the Miller insists on telling his tale next, mocking the Knight's nobility.",
-                    "He tells of a carpenter cuckolded by a young student, Nicholas, who tricks him with a flood prophecy.",
-                    "Bawdy humor abounds: kisses misdirected, hot pokers applied, and a fool exposed."
-                ],
-                middleEnglish: "An housbonde shal nat been inquisityf / Of Goddes pryvetee, nor of his wyf."
-            },
-            {
-                hour: 3,
-                name: "The Reeve",
-                title: "A slendre colerik man, lean and thin",
-                passages: [
-                    "Offended because he was a carpenter, the Reeve retaliates against the Miller with his own tale.",
-                    "Two students trick a dishonest miller and seduce his wife and daughter in the night.",
-                    "Revenge is sweet, and the proud are humbled. The pilgrims laugh at the rivalry."
-                ],
-                middleEnglish: "Him that hath yvel, yvel shal be quit."
-            },
-            {
-                hour: 4,
-                name: "The Cook",
-                title: "Roger of Ware, skilled in roasting and boiling",
-                passages: [
-                    "The Cook, laughing at the previous tales, begins his own story of Perkyn, an apprentice who loves dice and women.",
-                    "But the tale breaks off unfinished, interrupted—perhaps the Cook was too drunk to continue.",
-                    "The morning road stretches ahead, and the pilgrims ride on."
-                ],
-                middleEnglish: "But everemoore he loved the tavernalways best."
-            },
-            {
-                hour: 5,
-                name: "The Man of Law",
-                title: "A sergeant of the lawe, war and wys",
-                passages: [
-                    "The lawyer tells the pious tale of Constance, a Christian princess cast adrift on the sea.",
-                    "Through trials and tribulations, falsely accused and exiled, she remains faithful to God.",
-                    "In the end, she is reunited with her husband the Sultan, virtue triumphant."
-                ],
-                middleEnglish: "O queenes, lyvynge in prosperitee, / Duchesses, and ye ladyes everichone!"
-            },
-            {
-                hour: 6,
-                name: "The Wife of Bath",
-                title: "A worthy womman al hir lyve",
-                passages: [
-                    "The Wife proclaims her authority in matters of marriage—she has had five husbands, after all!",
-                    "She tells of a knight who must discover what women most desire: sovereignty over their husbands.",
-                    "The old hag who answers him transforms into a beautiful maiden when he grants her choice."
-                ],
-                middleEnglish: "Wommen desiren to have sovereynetee / As wel over hir housbond as hir love."
-            },
-            {
-                hour: 7,
-                name: "The Friar",
-                title: "A wantowne and a merye friar",
-                passages: [
-                    "The Friar tells a mocking tale of a corrupt summoner who partners with a devil.",
-                    "When an old woman curses the summoner to hell, the devil gleefully carries him away.",
-                    "The moral: beware the corruption of church officials who prey upon the poor."
-                ],
-                middleEnglish: "The feend him hente, body and soul and all!"
-            },
-            {
-                hour: 8,
-                name: "The Summoner",
-                title: "A gentil hostelere, with fire-red face",
-                passages: [
-                    "Enraged, the Summoner retaliates with a disgusting tale of a corrupt friar.",
-                    "The friar in his story is humiliated by a dying man who bequeaths him a fart to divide among his brothers.",
-                    "Crude and vengeful, the tale earns both laughter and groans."
-                ],
-                middleEnglish: "An impossible thing, to divide equally a fart among twelve!"
-            },
-            {
-                hour: 9,
-                name: "The Clerk",
-                title: "A clerk from Oxenford, devoted to study",
-                passages: [
-                    "The scholarly Clerk tells of patient Griselda, tested to extremes by her husband Walter.",
-                    "He pretends to kill their children and divorce her, yet she endures all without complaint.",
-                    "Finally relenting, he reveals the truth. A tale of patience—though the Clerk warns no wife should imitate it!"
-                ],
-                middleEnglish: "This storie is seyd nat for that wyves sholde / Folwen Grisilde in humylitee."
-            },
-            {
-                hour: 10,
-                name: "The Merchant",
-                title: "A merchant with a forking beard",
-                passages: [
-                    "Bitter from marriage, the Merchant tells of old January who weds young May.",
-                    "She deceives him with his squire Damian in a pear tree while January is struck blind.",
-                    "Though his sight is restored by Pluto, Proserpina gives May cunning words to deceive him still."
-                ],
-                middleEnglish: "Ther nys no werkman that kan bothe werk and ryde—take time and do it well."
-            },
-            {
-                hour: 11,
-                name: "The Squire",
-                title: "A youthful lover and a lusty bachelor",
-                passages: [
-                    "The young Squire begins an exotic tale of Cambyuskan and his magical gifts from the King of Arabia.",
-                    "A brass horse that flies, a mirror that reveals truth, a ring that allows understanding of birds...",
-                    "But the tale breaks off incomplete, a romance left unfinished, dreams half-told."
-                ],
-                middleEnglish: "And al was bras, of which they wonder faste."
-            },
-            {
-                hour: 12,
-                name: "The Franklin",
-                title: "White was his berd as is the dayesye",
-                passages: [
-                    "The Franklin tells of Dorigen, who rashly promises to love Aurelius if he can remove the rocks from the coast.",
-                    "Through magic, the rocks disappear, but her husband Arveragus tells her to keep her word.",
-                    "Moved by such nobility, Aurelius releases her from the promise. Honor begets honor."
-                ],
-                middleEnglish: "Trouthe is the hyeste thyng that man may kepe."
-            },
-            {
-                hour: 13,
-                name: "The Physician",
-                title: "A doctour of phisik, grounded in astronomy",
-                passages: [
-                    "The Physician tells the tragic tale of Virginia, whose beauty causes the corrupt judge Appius to desire her.",
-                    "Her father, to save her honor, kills her with her consent rather than let her be defiled.",
-                    "Justice comes swiftly: Appius is imprisoned and dies. Sin brings its own punishment."
-                ],
-                middleEnglish: "Forsake synne, er synne yow forsake."
-            },
-            {
-                hour: 14,
-                name: "The Pardoner",
-                title: "With yellow hair hanging like flax",
-                passages: [
-                    "The Pardoner, hypocritical seller of false relics, tells a tale against his own vice: greed.",
-                    "Three rioters seek Death and find gold instead. They murder each other for it.",
-                    "Radix malorum est cupiditas—the root of evil is greed. Yet the Pardoner tries to sell pardons immediately after!"
-                ],
-                middleEnglish: "Radix malorum est cupiditas."
-            },
-            {
-                hour: 15,
-                name: "The Shipman",
-                title: "A good felawe from Dartmouth",
-                passages: [
-                    "The Shipman tells of a merchant's wife who borrows money from a monk to buy fine clothes.",
-                    "The monk borrows the money from her husband, sleeps with the wife, then tells the husband he has repaid the debt to her.",
-                    "All are fooled in this merry triangle of deception."
-                ],
-                middleEnglish: "Thus endeth my tale, and God us sende / Taillynge ynogh unto oure lyves ende!"
-            },
-            {
-                hour: 16,
-                name: "The Prioress",
-                title: "Madame Eglantine, with brooch of gold",
-                passages: [
-                    "The Prioress tells a pious tale of a young Christian boy murdered by Jews for singing O Alma Redemptoris.",
-                    "Though his throat is cut, he continues singing until a grain is removed from his tongue.",
-                    "A miracle of faith, though dark with the prejudices of the age."
-                ],
-                middleEnglish: "O Alma Redemptoris Mater—O nurturing Mother of the Redeemer."
-            },
-            {
-                hour: 17,
-                name: "Chaucer Himself",
-                title: "The poet among pilgrims",
-                passages: [
-                    "Chaucer tells the Tale of Sir Thopas, a ridiculous romance full of doggerel verse and absurd adventures.",
-                    "The Host interrupts: 'No more of this, for Goddes dignitee! Thy drasty rymyng is nat worth a toord!'",
-                    "Chaucer then tells the Tale of Melibee instead, a long moral allegory."
-                ],
-                middleEnglish: "Namoore of this, for Goddes dignitee!"
-            },
-            {
-                hour: 18,
-                name: "The Monk",
-                title: "A manly man, a hunter of great estate",
-                passages: [
-                    "The Monk begins recounting tragedies: Lucifer, Adam, Sampson, Hercules—all fell from high to low.",
-                    "On and on he drones with examples of Fortune's cruelty, until the Knight begs him to stop.",
-                    "'Enough!' cries the Host. 'Such talking is not worth a butterfly!'"
-                ],
-                middleEnglish: "Tragedie is to seyn a certeyn storie / Of hym that stood in greet prosperitee."
-            },
-            {
-                hour: 19,
-                name: "The Nun's Priest",
-                title: "The priest accompanying the Prioress",
-                passages: [
-                    "The Nun's Priest tells the beast fable of Chauntecleer the rooster and the fox Daun Russell.",
-                    "Chauntecleer dreams of danger but his hen-wife Pertelote dismisses it. The fox flatters and seizes him!",
-                    "But Chauntecleer tricks the fox into speaking, escapes, and learns: beware of flattery."
-                ],
-                middleEnglish: "Mordre wol out—murder will out, that we see day by day."
-            },
-            {
-                hour: 20,
-                name: "The Second Nun",
-                title: "Companion to the Prioress",
-                passages: [
-                    "The Second Nun tells the life of Saint Cecilia, virgin martyr who converted her husband Valerian.",
-                    "She preached fearlessly and was martyred by being locked in a bath of flames.",
-                    "Though the fires could not kill her, she was beheaded, and sang praises to God with her last breaths."
-                ],
-                middleEnglish: "The sweete smelthe odour of the rose and lily—the scent of sanctity."
-            },
-            {
-                hour: 21,
-                name: "The Canon's Yeoman",
-                title: "A servant who joins the pilgrimage late",
-                passages: [
-                    "The Yeoman exposes his master the Canon as a fraudulent alchemist who tricks people with fake gold.",
-                    "He describes the elaborate deceptions: switching in real gold to make fools believe in transmutation.",
-                    "Alchemy is a futile pursuit that ruins men, draining their wealth and sanity."
-                ],
-                middleEnglish: "The slidynge science of alchemistry—a slippery science indeed."
-            },
-            {
-                hour: 22,
-                name: "The Manciple",
-                title: "A steward of a temple, purchasing provisions",
-                passages: [
-                    "The Manciple tells of Phoebus Apollo and his white crow, who could speak and sing beautifully.",
-                    "When the crow reveals that Phoebus's wife is unfaithful, Phoebus kills her in rage.",
-                    "Regretting his haste, he plucks the crow's white feathers, making it black, and silences its song forever."
-                ],
-                middleEnglish: "Keep well thy tonge and think upon the crowe!"
-            },
-            {
-                hour: 23,
-                name: "The Parson",
-                title: "A holy man of good intent",
-                passages: [
-                    "As evening falls and they near Canterbury, the Parson delivers not a tale but a sermon on penitence.",
-                    "He speaks of the seven deadly sins and the path to salvation through confession and contrition.",
-                    "The pilgrimage ends not with laughter but with solemn reflection on the soul's true journey."
-                ],
-                middleEnglish: "The tales are done. Now comes the reckoning of the soul."
-            }
+        // The 24 tales in the Ellesmere order, one for each hour. Hour 0 is
+        // the Knight, who draws the short straw at the Watering of St Thomas;
+        // hour 23 is the Parson, as the company comes into Canterbury.
+        // Chaucer the pilgrim tells two (Sir Thopas, then Melibee), which is
+        // how 23 tellers fill 24 hours.
+        const tales = [
+            { name: 'The Knyght', modern: "The Knight's Tale", letter: 'W',
+              incipit: 'Whilom, as olde stories tellen us,',
+              gloss: 'Two captive cousins, Palamon and Arcite, fall in love with Emelye from a prison window, and a tournament at Athens settles it.',
+              line: 'This world nys but a thurghfare ful of wo, / And we been pilgrymes, passynge to and fro.', src: "The Knight's Tale" },
+            { name: 'The Millere', modern: "The Miller's Tale", letter: 'W',
+              incipit: 'Whilom ther was dwellynge at Oxenford',
+              gloss: 'Drunk on Southwark ale, he answers the Knight with a carpenter, a clever lodger, and a flood that never comes.',
+              line: 'An housbonde shal nat been inquisityf / Of Goddes pryvetee, nor of his wyf.', src: "The Miller's Prologue" },
+            { name: 'The Reve', modern: "The Reeve's Tale", letter: 'A',
+              incipit: 'At Trumpyngtoun, nat fer fro Cantebrigge,',
+              gloss: 'A carpenter by trade, he pays the Miller back with a cheating miller outwitted by two Cambridge students.',
+              line: 'Lo Depeford, and it is half-wey pryme! / Lo Grenewych, ther many a shrewe is inne!', src: "The Host, the Reeve's Prologue" },
+            { name: 'The Cook', modern: "The Cook's Tale", letter: 'A',
+              incipit: 'A prentys whilom dwelled in oure citee,',
+              gloss: 'Roger of Ware starts a London tale of the apprentice Perkyn Revelour. It breaks off after a few dozen lines, unfinished.',
+              line: 'For in thy shoppe is many a flye loos.', src: "The Host, the Cook's Prologue" },
+            { name: 'The Man of Lawe', modern: "The Man of Law's Tale", letter: 'I',
+              incipit: 'In Surrye whilom dwelte a compaignye',
+              gloss: 'The Host reads the hour from a shadow and urges haste. The lawyer tells of Custance, twice set adrift and always steadfast.',
+              line: 'It was ten of the clokke, he gan conclude.', src: "The Man of Law's Introduction" },
+            { name: 'The Wyf of Bathe', modern: "The Wife of Bath's Tale", letter: 'I',
+              incipit: "In th'olde dayes of the Kyng Arthour,",
+              gloss: 'Five husbands at the church door, and then a knight who must learn what women most desire, or lose his head.',
+              line: 'Experience, though noon auctoritee / Were in this world, is right ynogh for me', src: "The Wife of Bath's Prologue" },
+            { name: 'The Frere', modern: "The Friar's Tale", letter: 'W',
+              incipit: 'Whilom ther was dwellynge in my contree',
+              gloss: 'A summoner rides out with a friendly yeoman who turns out to be a devil, and is carried off body and soul.',
+              line: 'Somwhat he lipsed, for his wantownesse,', src: 'The General Prologue' },
+            { name: 'The Somonour', modern: "The Summoner's Tale", letter: 'L',
+              incipit: 'Lordynges, ther is in Yorkshire, as I gesse,',
+              gloss: 'Stung by the Friar, he tells of a greedy friar left a gift that has to be divided twelve ways.',
+              line: 'My tale is doon; we been almoost at towne.', src: "The Summoner's Tale" },
+            { name: 'The Clerk of Oxenford', modern: "The Clerk's Tale", letter: 'T',
+              incipit: 'Ther is, right at the west syde of Ytaille,',
+              gloss: 'Walter tests patient Griselda past all reason. The Clerk warns that no wife should try to copy her.',
+              line: 'Grisilde is deed, and eek hire pacience,', src: "The Clerk's Envoy" },
+            { name: 'The Marchant', modern: "The Merchant's Tale", letter: 'W',
+              incipit: 'Whilom ther was dwellynge in Lumbardye',
+              gloss: 'Old January weds young May. A garden, a pear tree, a squire, and a blindness cured at the worst moment.',
+              line: 'Wepyng and waylyng, care and oother sorwe / I knowe ynogh, on even and a-morwe,', src: "The Merchant's Prologue" },
+            { name: 'The Squier', modern: "The Squire's Tale", letter: 'A',
+              incipit: 'At Sarray, in the land of Tartarye,',
+              gloss: 'A horse of brass, a mirror, a ring that lets a princess speak with birds: a romance the young Squire leaves half told.',
+              line: 'Of twenty yeer of age he was, I gesse.', src: 'The General Prologue' },
+            { name: 'The Frankeleyn', modern: "The Franklin's Tale", letter: 'I',
+              incipit: 'In Armorik, that called is Britayne,',
+              gloss: 'Dorigen promises herself to Aurelius if the black rocks of Brittany vanish. They do, and each man outdoes the last in generosity.',
+              line: 'Trouthe is the hyeste thyng that man may kepe.', src: "The Franklin's Tale" },
+            { name: 'The Phisicien', modern: "The Physician's Tale", letter: 'T',
+              incipit: 'Ther was, as telleth Titus Livius,',
+              gloss: 'Virginius chooses his daughter\'s death over her surrender to the false judge Apius.',
+              line: 'Forsaketh synne, er synne yow forsake.', src: "The Physician's Tale" },
+            { name: 'The Pardoner', modern: "The Pardoner's Tale", letter: 'I',
+              incipit: 'In Flaundres whilom was a compaignye',
+              gloss: 'Three rioters set out to kill Death and find a heap of gold under an oak tree, which kills all three.',
+              line: 'Radix malorum est Cupiditas.', src: "The Pardoner's Prologue" },
+            { name: 'The Shipman', modern: "The Shipman's Tale", letter: 'A',
+              incipit: 'A marchant whilom dwelled at Seint-Denys,',
+              gloss: 'A monk borrows a hundred franks from a merchant and spends them on the merchant\'s wife.',
+              line: 'Taillynge ynough unto oure lyves ende.', src: "The Shipman's Tale" },
+            { name: 'The Prioresse', modern: "The Prioress's Tale", letter: 'T',
+              incipit: 'Ther was in Asye, in a greet citee,',
+              gloss: 'A little schoolboy sings a hymn to the Virgin. A miracle tale that carries the cruel antisemitism of its age.',
+              line: 'He Alma redemptoris herde synge,', src: "The Prioress's Tale" },
+            { name: 'Chaucer the Pilgrim', modern: 'The Tale of Sir Thopas', letter: 'L',
+              incipit: 'Listeth, lordes, in good entent,',
+              gloss: 'The poet\'s own turn: a jog-trot romance in tail-rhyme, which the Host stops after a few dozen stanzas.',
+              line: 'Namoore of this, for Goddes dignitee,', src: 'The Host, interrupting' },
+            { name: 'Chaucer the Pilgrim', modern: 'The Tale of Melibee', letter: 'A',
+              incipit: 'A yong man called Melibeus, myghty and riche,',
+              gloss: 'Made to start again, he tells in prose how Dame Prudence talks her husband out of revenge.',
+              line: 'Thy drasty rymyng is nat worth a toord!', src: 'The Host, on Sir Thopas' },
+            { name: 'The Monk', modern: "The Monk's Tale", letter: 'I',
+              incipit: 'I wol biwaille in manere of tragedie',
+              gloss: 'Fall after fall, from Lucifer to Croesus, until the Knight begs him to stop.',
+              line: 'Loo, Rouchestre stant heer faste by!', src: "The Host, the Monk's Prologue" },
+            { name: 'The Nonnes Preest', modern: "The Nun's Priest's Tale", letter: 'A',
+              incipit: 'A povre wydwe, somdeel stape in age,',
+              gloss: 'Chauntecleer the cock, a surer timekeeper than any abbey clock, dreams of a fox and is flattered into its jaws.',
+              line: 'Wel sikerer was his crowyng in his logge / Than is a clokke or an abbey orlogge.', src: "The Nun's Priest's Tale" },
+            { name: 'The Seconde Nonne', modern: "The Second Nun's Tale", letter: 'T',
+              incipit: 'This mayden bright Cecilie, as hir lif seith,',
+              gloss: 'The life of Saint Cecilia, told as work against idleness.',
+              line: 'The ministre and the norice unto vices, / Which that men clepe in Englissh Ydelnesse,', src: "The Second Nun's Prologue" },
+            { name: "The Chanouns Yeman", modern: "The Canon's Yeoman's Tale", letter: 'W',
+              incipit: 'With this Chanoun I dwelt have seven yeer,',
+              gloss: 'Two riders overtake the company at Boughton under Blean, and the servant spills his master\'s alchemical frauds.',
+              line: 'At Boghtoun under Blee us gan atake / A man', src: "The Canon's Yeoman's Prologue" },
+            { name: 'The Maunciple', modern: "The Manciple's Tale", letter: 'W',
+              incipit: 'Whan Phebus dwelled heere in this erthe adoun,',
+              gloss: 'Phebus\'s white crow tells him the truth about his wife, and is turned black and voiceless for it.',
+              line: 'Kepe wel thy tonge, and thenk upon the crowe.', src: "The Manciple's Tale" },
+            { name: 'The Persoun', modern: "The Parson's Tale", letter: 'O',
+              incipit: 'Oure sweete Lord God of hevene, that no man wole perisse,',
+              gloss: 'The sun is low and the town is near. Instead of a fable the Parson gives a long prose meditation on penitence.',
+              line: 'Foure of the clokke it was tho, as I gesse,', src: "The Parson's Prologue" }
         ];
 
-        const timeEl = document.getElementById('time');
-        const progressEl = document.getElementById('progress');
-        const pilgrimNameEl = document.getElementById('pilgrim-name');
-        const pilgrimTitleEl = document.getElementById('pilgrim-title');
-        const passagesEl = document.getElementById('passages');
-        const middleEnglishEl = document.getElementById('middle-english');
-        const milesEl = document.getElementById('miles');
+        // Places on the road, at roughly their distance from Southwark along
+        // Watling Street. Each is named in the pilgrims' own talk.
+        const towns = [
+            { mi: 0, name: 'Southwerk', row: 'r1', prow: 'p1', anchor: 'l', near: { q: 'In Southwerk at the Tabard as I lay', src: 'General Prologue' } },
+            { mi: 2, name: null, near: { q: 'Unto the Wateryng of Seint Thomas;', src: 'General Prologue' } },
+            { mi: 5, name: 'Depeford, Grenewych', row: 'r2', prow: 'p2', anchor: 'l', near: { q: 'Lo Depeford, and it is half-wey pryme!', src: "Reeve's Prologue" } },
+            { mi: 30, name: 'Rouchestre', row: 'r1', prow: 'p3', anchor: 'c', near: { q: 'Loo, Rouchestre stant heer faste by!', src: "Monk's Prologue" } },
+            { mi: 40, name: 'Sidyngborne', row: 'r2', prow: 'p1', anchor: 'c', near: { q: 'My tale is doon; we been almoost at towne.', src: "Summoner's Tale" } },
+            { mi: 53, name: 'Boghtoun<span class="long"> under Blee</span>', row: 'r1', prow: 'p2', anchor: 'rt', near: { q: 'At Boghtoun under Blee us gan atake', src: "Canon's Yeoman's Prologue" } },
+            { mi: 57, name: 'Bobbe-up-and-doun', row: 'r3', prow: 'p4', anchor: 'rt', near: { q: 'Which that ycleped is Bobbe-up-and-doun,', src: "Manciple's Prologue" } },
+            { mi: 60, name: 'Caunterbury', row: 'r2', prow: 'p3', anchor: 'rt', near: { q: 'The hooly blisful martir for to seke,', src: 'General Prologue' } }
+        ];
 
-        let currentPilgrimIndex = -1;
+        const hourWords = ['twelve', 'oon', 'two', 'thre', 'foure', 'fyve', 'sixe',
+            'sevene', 'eighte', 'nyne', 'ten', 'elevene'];
 
-        function getPilgrimForHour(hour) {
-            return pilgrims.find(p => p.hour === hour) || pilgrims[0];
+        const $ = id => document.getElementById(id);
+        const hoursEl = $('hours');
+        const townsEl = $('towns');
+        const road = $('road');
+        const segs = [];
+
+        // ----- build the strip -----
+        for (let h = 0; h <= 24; h++) {
+            const pct = (h / 24) * 100;
+            const tick = document.createElement('div');
+            tick.className = 'hour-tick' + (h % 6 === 0 ? ' major' : '');
+            tick.style.left = pct + '%';
+            hoursEl.appendChild(tick);
+            if (h % 3 === 0) {
+                const lab = document.createElement('div');
+                lab.className = 'hour-label' + (h % 6 === 0 ? '' : ' minor');
+                lab.style.left = pct + '%';
+                lab.textContent = String(h).padStart(2, '0');
+                hoursEl.appendChild(lab);
+            }
+        }
+        for (let h = 0; h < 24; h++) {
+            const d = document.createElement('div');
+            d.className = 'tale-seg';
+            d.style.left = ((h + 0.5) / 24 * 100) + '%';
+            road.appendChild(d);
+            segs.push(d);
+        }
+        const townEls = towns.map(t => {
+            if (!t.name) return null;
+            const el = document.createElement('div');
+            el.className = `town ${t.row} ${t.prow} ${t.anchor}`;
+            el.style.left = (t.mi / 60 * 100) + '%';
+            el.innerHTML = `${t.name}<span class="mi">${t.mi}</span>`;
+            townsEl.appendChild(el);
+            return el;
+        });
+
+        // ----- the illuminated initial -----
+        function initialSVG(letter) {
+            // A quartered lapis-and-vermilion ground in a gold frame, with the
+            // letter in gold and a little white penwork, as in the Ellesmere
+            // manuscript's openings.
+            return `<svg viewBox="0 0 100 100">
+                <rect x="1" y="1" width="98" height="98" fill="#b5862a"/>
+                <rect x="5" y="5" width="90" height="90" fill="#24427a"/>
+                <path d="M5 5 H50 V50 H5 Z M50 50 H95 V95 H50 Z" fill="#a8321f"/>
+                <g fill="none" stroke="#f3ead6" stroke-width="0.9" opacity="0.55">
+                    <path d="M12 14 q6 -5 12 0 t12 0 M64 86 q6 -5 12 0 t12 0"/>
+                    <path d="M14 84 q-4 -6 0 -12 t0 -12 M86 16 q4 6 0 12 t0 12"/>
+                </g>
+                <g fill="#f3ead6" opacity="0.7">
+                    <circle cx="12" cy="88" r="1.3"/><circle cx="88" cy="12" r="1.3"/>
+                    <circle cx="44" cy="10" r="1.1"/><circle cx="56" cy="90" r="1.1"/>
+                </g>
+                <text x="50" y="74" text-anchor="middle" font-family="Cinzel, serif" font-weight="700"
+                    font-size="68" fill="#e2bd5c" stroke="#6b4a12" stroke-width="0.6">${letter}</text>
+            </svg>`;
         }
 
-        function renderPassages(passages) {
-            passagesEl.innerHTML = passages.map(passage => `
-                <div class="tale-passage">${passage}</div>
-            `).join('');
+        // ----- the sun and the shadow -----
+        // Canterbury's latitude, and the sun's declination on 18 April
+        // (about +11 degrees). The clock's hour is treated as solar time.
+        const LAT = 51.28 * Math.PI / 180;
+        const DEC = 10.9 * Math.PI / 180;
+
+        function sunAltitude(hours) {
+            const H = (hours - 12) * 15 * Math.PI / 180;
+            return Math.asin(Math.sin(LAT) * Math.sin(DEC) + Math.cos(LAT) * Math.cos(DEC) * Math.cos(H));
         }
 
-        function updateClock() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
-
-            // Update time display
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
-
-            // Get current pilgrim
-            const pilgrim = getPilgrimForHour(hour);
-            const pilgrimIndex = pilgrims.indexOf(pilgrim);
-
-            // Update miles to Canterbury (decreases as day progresses)
-            const totalMiles = 60; // Approximate distance London to Canterbury
-            const milesRemaining = Math.max(0, totalMiles - Math.floor((hour / 24) * totalMiles));
-            milesEl.textContent = milesRemaining;
-
-            // Update progress
-            if (hour < 8) {
-                progressEl.textContent = "Departing from the Tabard Inn";
-            } else if (hour < 20) {
-                progressEl.textContent = "Upon the Road to Canterbury";
+        function drawDial(hours) {
+            const alt = sunAltitude(hours);
+            const altDeg = alt * 180 / Math.PI;
+            const am = hours < 12;
+            const groundY = 136, px = 160, man = 66; // man is six foot tall
+            let s = '';
+            const up = alt > 0;
+            // sky band
+            s += `<rect x="0" y="0" width="320" height="${groundY}" fill="${up ? '#efe2c4' : '#d8cdb6'}"/>`;
+            s += `<rect x="0" y="${groundY}" width="320" height="24" fill="#d7c39b"/>`;
+            s += `<line x1="0" y1="${groundY}" x2="320" y2="${groundY}" stroke="#7a6446" stroke-width="1.2"/>`;
+            if (up) {
+                // sun in the east (right) before noon, west (left) after
+                const dir = am ? 1 : -1;
+                // set the sun on the beam that grazes the pilgrim's head
+                const R = Math.min(115, (groundY - man - 18) / Math.sin(alt));
+                const sx = px + dir * R * Math.cos(alt);
+                const sy = groundY - man - R * Math.sin(alt);
+                const rays = Array.from({ length: 8 }, (_, i) => {
+                    const a = i * Math.PI / 4;
+                    return `<line x1="${sx + 12 * Math.cos(a)}" y1="${sy + 12 * Math.sin(a)}" x2="${sx + 17 * Math.cos(a)}" y2="${sy + 17 * Math.sin(a)}" stroke="#b5862a" stroke-width="1.6"/>`;
+                }).join('');
+                s += rays + `<circle cx="${sx}" cy="${sy}" r="9" fill="#e2bd5c" stroke="#b5862a" stroke-width="1.4"/>`;
+                // the shadow, cast away from the sun
+                const len = man / Math.tan(alt);
+                const maxLen = 150;
+                const drawLen = Math.min(len, maxLen);
+                const ex = px - dir * drawLen;
+                s += `<path d="M ${px} ${groundY} L ${ex} ${groundY - 1} L ${ex} ${groundY + 3} L ${px} ${groundY + 4} Z" fill="#3a2a1a" opacity="0.55"/>`;
+                if (len > maxLen) {
+                    s += `<text x="${ex - dir * 4}" y="${groundY + 18}" text-anchor="${dir > 0 ? 'end' : 'start'}" font-family="Cinzel, serif" font-size="11" fill="#6b5844">and on, ${Math.round(len / man * 6)} ft</text>`;
+                }
+                // the sunbeam that grazes the top of his head ends the shadow
+                if (len <= maxLen) {
+                    s += `<line x1="${sx - dir * 14 * Math.cos(alt)}" y1="${sy + 14 * Math.sin(alt)}" x2="${ex}" y2="${groundY}" stroke="#b5862a" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.8"/>`;
+                }
+                // altitude label
+                s += `<text x="${px + dir * 30}" y="${groundY - 8}" text-anchor="middle" font-family="Cinzel, serif" font-size="11" fill="#6b5844">${Math.round(altDeg)}°</text>`;
             } else {
-                progressEl.textContent = "Approaching the Holy Shrine";
+                for (const [x, y] of [[40, 30], [90, 55], [250, 40], [280, 80], [200, 22], [130, 28]]) {
+                    s += `<circle cx="${x}" cy="${y}" r="1.4" fill="#6b5844"/>`;
+                }
+                s += `<path d="M 262 70 a 14 14 0 1 0 10 -24 a 11 11 0 1 1 -10 24 Z" fill="#a89a80"/>`;
             }
+            // the pilgrim: hat, gown and staff, six foot tall
+            s += `<g stroke="#2a1f16" stroke-width="1.4" fill="none">
+                    <line x1="${px + 10}" y1="${groundY - man - 6}" x2="${px + 10}" y2="${groundY}"/>
+                </g>
+                <path d="M ${px - 8} ${groundY} L ${px - 5} ${groundY - 44} L ${px + 5} ${groundY - 44} L ${px + 8} ${groundY} Z" fill="#24427a"/>
+                <path d="M ${px - 5} ${groundY - 44} L ${px} ${groundY - 56} L ${px + 5} ${groundY - 44} Z" fill="#24427a"/>
+                <circle cx="${px}" cy="${groundY - 59}" r="4.5" fill="#e9cfa8" stroke="#2a1f16" stroke-width="0.8"/>
+                <path d="M ${px - 8} ${groundY - 62} Q ${px} ${groundY - 70} ${px + 8} ${groundY - 62} Z" fill="#a8321f"/>
+                <line x1="${px - 22}" y1="${groundY - man}" x2="${px - 22}" y2="${groundY}" stroke="#6b5844" stroke-width="0.8"/>
+                <text x="${px - 26}" y="${groundY - man / 2 + 4}" text-anchor="end" font-family="Cinzel, serif" font-size="11" fill="#6b5844">6 ft</text>`;
+            $('dial').innerHTML = s;
 
-            // Update content if pilgrim changed
-            if (pilgrimIndex !== currentPilgrimIndex) {
-                pilgrimNameEl.textContent = pilgrim.name;
-                pilgrimTitleEl.textContent = pilgrim.title;
-                renderPassages(pilgrim.passages);
-                middleEnglishEl.textContent = pilgrim.middleEnglish;
-                currentPilgrimIndex = pilgrimIndex;
+            const read = $('shadow-read');
+            const quote = $('shadow-quote');
+            if (!up) {
+                read.textContent = 'The sun is under the earth. There is no shadow to read until dawn, and the Host must wait for daylight.';
+                quote.innerHTML = '';
+                $('dial').setAttribute('aria-label', 'Night: the sun is below the horizon and there is no shadow.');
+                return;
+            }
+            const feet = 6 / Math.tan(alt);
+            const ft = feet >= 100 ? Math.round(feet) : feet.toFixed(1);
+            read.innerHTML = `The sun stands <b>${Math.round(altDeg)}°</b> high, so a six-foot pilgrim casts <b>${ft} ft</b> of shadow.`;
+            $('dial').setAttribute('aria-label', `The sun ${Math.round(altDeg)} degrees high; a six-foot pilgrim casts ${ft} feet of shadow.`);
+            // The two hours Chaucer actually reckons this way.
+            if (am && altDeg > 40 && altDeg < 50) {
+                quote.innerHTML = '<span class="lead">Shadow and body of one length, as the Host found it:</span><q>It was ten of the clokke, he gan conclude.</q><cite>Man of Law\'s Introduction</cite>';
+            } else if (!am && feet >= 10.4 && feet <= 13) {
+                quote.innerHTML = '<span class="lead">Eleven foot of shadow to six of man, as on the road into Canterbury:</span><q>Foure of the clokke it was tho, as I gesse,</q><cite>Parson\'s Prologue</cite>';
+            } else {
+                quote.innerHTML = '';
             }
         }
 
-        // Initialize
-        updateClock();
-        setInterval(updateClock, 1000);
+        // ----- the clock -----
+        let lastHour = -1;
+        let lastMinute = -1;
+
+        function update() {
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes(), sec = now.getSeconds();
+            const dayFrac = (h * 3600 + m * 60 + sec) / 86400;
+            const miles = dayFrac * 60;
+
+            $('time').innerHTML = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}<span class="sec">${String(sec).padStart(2, '0')}</span>`;
+            $('company').style.left = (dayFrac * 100) + '%';
+            $('road-done').style.width = (dayFrac * 100) + '%';
+            $('mile').textContent = miles < 10 ? miles.toFixed(1) : Math.floor(miles);
+
+            if (m !== lastMinute) {
+                lastMinute = m;
+                const h12 = h % 12;
+                const word = hourWords[h12];
+                let phrase;
+                if (m < 8) phrase = `${word} of the clokke`;
+                else if (m >= 23 && m < 38) phrase = `half after ${word}`;
+                else if (m >= 53) phrase = `almoost ${hourWords[(h12 + 1) % 12]} of the clokke`;
+                else phrase = `${word} of the clokke and somwhat moore`;
+                $('reckon').textContent = phrase;
+
+                $('told').textContent = `${m} of 60 minutes told`;
+                $('bar').style.width = (m / 60 * 100) + '%';
+                drawDial(h + m / 60);
+
+                // the town we're at or nearest to, within a mile and a half
+                let near = null;
+                towns.forEach((t, i) => {
+                    const close = Math.abs(t.mi - miles) <= 1.5;
+                    if (townEls[i]) townEls[i].classList.toggle('near', close);
+                    if (close && !near) near = t;
+                });
+                const wm = $('waymark');
+                if (near) {
+                    wm.innerHTML = `<q>${near.near.q}</q><span class="src">${near.near.src}</span>`;
+                } else {
+                    const ahead = towns.find(t => t.name && t.mi > miles);
+                    const dist = ahead.mi - miles;
+                    wm.textContent = `${ahead.name.replace(/<[^>]+>/g, '')} lies ${dist < 1 ? 'less than a myle' : Math.round(dist) + ' myle'} ahead.`;
+                }
+            }
+
+            if (h !== lastHour) {
+                lastHour = h;
+                const t = tales[h];
+                $('teller-name').textContent = t.name;
+                $('teller-modern').textContent = t.modern;
+                $('count').textContent = `Tale ${h + 1} of 24`;
+                $('initial').innerHTML = initialSVG(t.letter);
+                const rest = t.incipit.slice(1);
+                $('incipit').innerHTML = `<span class="cap">${t.incipit[0]}</span>${rest}`;
+                $('gloss').textContent = t.gloss;
+                $('sentence').innerHTML = t.line.replace(/ \/ /g, '<br>') + `<cite>${t.src}</cite>`;
+                const n = tales[(h + 1) % 24];
+                $('next').textContent = h === 23 ? 'Then Southwerk again' : `Next, ${n.name.replace(/^The /, 'the ')}`;
+                segs.forEach((d, i) => {
+                    d.classList.toggle('told', i < h);
+                    d.classList.toggle('now', i === h);
+                });
+                $('announce').textContent = `${t.modern}, told by ${t.name}.`;
+            }
+        }
+
+        update();
+        setInterval(update, 1000);
     </script>
 </body>
 

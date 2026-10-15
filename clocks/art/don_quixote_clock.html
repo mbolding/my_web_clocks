@@ -4,363 +4,801 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Don Quixote Clock</title>
+    <meta name="description" content="A La Mancha windmill whose sails are the minute hand and whose broken lance is the hour hand, reading Part One of Don Quixote by morning and Part Two by afternoon.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Reality (Sancho) Colors */
-            --bg-color-normal: #ebd2a9;
-            --ink-normal: #3e2723;
-            --accent-normal: #6d4c41;
+            /* The page: Sancho's plain parchment */
+            --paper: #ecd9b2;
+            --ink: #3e2723;
+            --muted: #6d4c41;
+            --accent: #8c2f1b;
+            --rule: rgba(62, 39, 35, 0.35);
+            --tick-off: rgba(62, 39, 35, 0.18);
 
-            /* Madness (Quixote) Colors */
-            --bg-color-mad: #4a2311;
-            --ink-mad: #ffcc80;
-            --accent-mad: #d84315;
-
-            /* Current Theme Variables */
-            --bg-color: var(--bg-color-normal);
-            --ink: var(--ink-normal);
-            --accent: var(--accent-normal);
-            
-            transition: all 1.5s ease-in-out;
+            /* The scene: set per time of day below */
+            --sky-top: #f6ead0;
+            --sky-low: #efd9ad;
+            --ridge: #b98f55;
+            --plain-top: #c9a66b;
+            --plain-low: #b08850;
+            --furrow: rgba(62, 39, 35, 0.16);
+            --tower: #f7f0e1;
+            --tower-shade: #e2d5bb;
+            --cap: #5d4037;
+            --sail: #3e2723;
+            --cloth: rgba(255, 250, 238, 0.55);
+            --dial-ink: #3e2723;
+            --dial-halo: #f6ead0;
+            --figure: #2b1b17;
+            --sun: #e9a23b;
+            --arm: #8c2f1b;
+            --arm-line: #2a0f05;
+            --eye: #ffb74d;
         }
 
+        body[data-phase="dawn"] {
+            --sky-top: #f3dcc0;
+            --sky-low: #f2b98a;
+            --dial-halo: #f3dcc0;
+        }
+        body[data-phase="dusk"] {
+            --sky-top: #d9a77e;
+            --sky-low: #ef9f62;
+            --ridge: #8f6a43;
+            --plain-top: #ad8655;
+            --plain-low: #8e6a40;
+            --dial-halo: #e3b58c;
+            --tower-shade: #d4bf9e;
+        }
+        body[data-phase="night"] {
+            --sky-top: #1f1a24;
+            --sky-low: #3a2d2c;
+            --ridge: #2c2320;
+            --plain-top: #5e4a35;
+            --plain-low: #4a3a2a;
+            --furrow: rgba(0, 0, 0, 0.25);
+            --tower: #c9bea8;
+            --tower-shade: #a99d87;
+            --cap: #3b2a24;
+            --sail: #1a1210;
+            --cloth: rgba(230, 218, 196, 0.35);
+            --dial-ink: #f3e3c0;
+            --dial-halo: #1f1a24;
+            --figure: #120c0a;
+            --sun: #efe6cf;
+        }
+
+        /* Visor lowered: the same plain, seen by the knight */
         body.madness {
-            --bg-color: var(--bg-color-mad);
-            --ink: var(--ink-mad);
-            --accent: var(--accent-mad);
+            --paper: #4a2311;
+            --ink: #ffcc80;
+            --muted: #e8b27a;
+            --accent: #ff8a5c;
+            --rule: rgba(255, 204, 128, 0.35);
+            --tick-off: rgba(255, 204, 128, 0.2);
+            --sky-top: #2e0d06;
+            --sky-low: #a8371a;
+            --ridge: #3d150a;
+            --plain-top: #5a2410;
+            --plain-low: #3a1408;
+            --furrow: rgba(0, 0, 0, 0.3);
+            --tower: #d9b48a;
+            --tower-shade: #b98d63;
+            --cap: #2a0f05;
+            --sail: #2a0f05;
+            --dial-ink: #ffcc80;
+            --dial-halo: #2e0d06;
+            --figure: #1a0904;
+            --sun: #ff7043;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--paper); }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--paper);
             color: var(--ink);
-            font-family: 'IM Fell English', serif;
+            font-family: 'IM Fell English', Georgia, serif;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            position: relative;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+            padding: clamp(12px, 3vmin, 28px) clamp(16px, 3vmin, 28px);
+            overflow-x: hidden;
+            transition: background-color 1.2s ease, color 1.2s ease;
+            background-image: url("data:image/svg+xml,%3Csvg width='160' height='160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
         }
 
-        /* Top Control */
-        .controls {
-            position: absolute;
-            top: 40px;
-            z-index: 100;
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, auto) minmax(0, 440px);
+            gap: clamp(16px, 3vw, 44px);
+            align-items: center;
+            width: 100%;
+            max-width: 1320px;
+            justify-content: center;
+        }
+
+        .scene-wrap {
+            width: min(calc(100vh - 56px), calc(100dvh - 56px), 58vw, 860px);
+            aspect-ratio: 1 / 1;
+        }
+
+        .scene {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--ink);
+            outline: 1px solid var(--ink);
+            outline-offset: 4px;
+            box-shadow: 6px 8px 22px rgba(0, 0, 0, 0.22);
+            transition: border-color 1.2s ease;
+        }
+
+        /* ---------- Text column ---------- */
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 1.8vh, 18px);
+            min-width: 0;
+        }
+
+        .title {
+            font-family: 'IM Fell English SC', Georgia, serif;
+            font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+            letter-spacing: 0.06em;
+            line-height: 1.1;
+        }
+        .title small {
+            display: block;
+            font-family: 'IM Fell English', Georgia, serif;
+            font-style: italic;
+            font-size: 0.68em;
+            letter-spacing: 0;
+            color: var(--muted);
+            margin-top: 0.25em;
+        }
+
+        .time {
+            font-family: 'IM Fell English SC', Georgia, serif;
+            font-size: clamp(3rem, 7vw, 5.2rem);
+            line-height: 0.95;
+            font-variant-numeric: lining-nums;
+            border-top: 1px solid var(--rule);
+            padding-top: clamp(8px, 1.4vh, 14px);
+        }
+        .time .when {
+            display: block;
+            font-family: 'IM Fell English', Georgia, serif;
+            font-style: italic;
+            font-size: clamp(1rem, 1.8vw, 1.25rem);
+            color: var(--muted);
+            margin-top: 0.3em;
+        }
+
+        .chapter-label {
+            font-family: 'IM Fell English SC', Georgia, serif;
+            font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+            color: var(--accent);
+            letter-spacing: 0.04em;
+        }
+
+        .heading {
+            font-family: 'IM Fell English SC', Georgia, serif;
+            text-transform: lowercase;
+            font-size: clamp(1rem, 1.55vw, 1.12rem);
+            line-height: 1.35;
+            min-height: 2.7em;
+        }
+        .heading::first-letter { text-transform: uppercase; }
+
+        .strip { display: flex; flex-direction: column; gap: 6px; }
+        .strip-row { display: flex; align-items: center; gap: 8px; }
+        .strip-row span.lbl {
+            flex: 0 0 4.6em;
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-style: italic;
+            white-space: nowrap;
+        }
+        .ticks { flex: 1; display: flex; gap: 1px; height: 12px; align-items: flex-end; }
+        .ticks i {
+            flex: 1;
+            height: 7px;
+            background: var(--tick-off);
+            transition: background-color 0.6s ease;
+        }
+        .ticks i.read { background: var(--muted); }
+        .ticks i.now { background: var(--accent); height: 12px; }
+
+        .quote {
+            border-left: 3px solid var(--accent);
+            padding: 2px 0 2px 14px;
+            font-style: italic;
+            font-size: clamp(1rem, 1.6vw, 1.15rem);
+            line-height: 1.4;
+            transition: opacity 0.5s ease;
+            min-height: 3.2em;
+        }
+        .quote cite {
+            display: block;
+            font-style: normal;
+            font-family: 'IM Fell English SC', Georgia, serif;
+            font-size: 0.82em;
+            color: var(--muted);
+            margin-top: 0.4em;
         }
 
         .visor-btn {
+            align-self: flex-start;
             background: transparent;
             border: 2px solid var(--ink);
             color: var(--ink);
-            font-family: 'IM Fell English SC', serif;
-            font-size: 1.2rem;
-            padding: 10px 20px;
+            font-family: 'IM Fell English SC', Georgia, serif;
+            font-size: clamp(1rem, 1.6vw, 1.15rem);
+            letter-spacing: 0.08em;
+            padding: 9px 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+            box-shadow: 3px 3px 0 var(--rule);
+            transition: background-color 0.25s ease, color 0.25s ease, border-color 1.2s ease;
+        }
+        .visor-btn:hover { background: var(--ink); color: var(--paper); }
+        .visor-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+        .note {
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: var(--muted);
+            border-top: 1px solid var(--rule);
+            padding-top: 10px;
         }
 
-        .visor-btn:hover {
-            background: var(--ink);
-            color: var(--bg-color);
+        /* ---------- Scene pieces ---------- */
+        .sky-top { stop-color: var(--sky-top); }
+        .sky-low { stop-color: var(--sky-low); }
+        .plain-top { stop-color: var(--plain-top); }
+        .plain-low { stop-color: var(--plain-low); }
+        .ridge { fill: var(--ridge); }
+        .furrow { stroke: var(--furrow); stroke-width: 2; fill: none; }
+        .tower { fill: var(--tower); stroke: var(--sail); stroke-width: 3; }
+        .tower-shade { fill: var(--tower-shade); }
+        .cap { fill: var(--cap); stroke: var(--sail); stroke-width: 3; stroke-linejoin: round; }
+        .opening { fill: var(--sail); }
+        .mini { fill: var(--tower); stroke: var(--sail); stroke-width: 1.5; }
+        .mini-cap { fill: var(--cap); }
+        .mini-sail { stroke: var(--sail); stroke-width: 2; }
+        .whip { fill: var(--sail); }
+        .frame { fill: var(--cloth); stroke: var(--sail); stroke-width: 2.5; }
+        .bar { stroke: var(--sail); stroke-width: 1.6; }
+        .pennant { fill: var(--accent); stroke: var(--sail); stroke-width: 1.5; stroke-linejoin: round; }
+        .arm { fill: var(--arm); stroke: var(--arm-line); stroke-width: 3; stroke-linejoin: round; }
+        .arm-line { stroke: var(--arm-line); stroke-width: 2; fill: none; opacity: 0.7; }
+        .tick { stroke: var(--dial-ink); stroke-linecap: round; paint-order: stroke; }
+        .num {
+            fill: var(--dial-ink);
+            stroke: var(--dial-halo);
+            stroke-width: 6px;
+            stroke-linejoin: round;
+            paint-order: stroke;
+            font-family: 'IM Fell English SC', Georgia, serif;
+            font-size: 34px;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .lance-halo { stroke: var(--dial-halo); stroke-width: 14; stroke-linecap: round; }
+        .lance-shaft { stroke: #7a5230; stroke-width: 8; stroke-linecap: round; }
+        .steel { fill: #9aa0a6; stroke: var(--sail); stroke-width: 2; stroke-linejoin: round; }
+        .hub { fill: var(--sail); stroke: var(--tower); stroke-width: 2; }
+        .figure { fill: var(--figure); stroke: var(--figure); }
+        .sun { fill: var(--sun); }
+        .eye { fill: var(--eye); }
+
+        .real, .mad, .stars, .moon { transition: opacity 1.2s ease; }
+        .mad { opacity: 0; }
+        body.madness .real { opacity: 0; }
+        body.madness .mad { opacity: 1; }
+        .stars, .moon { opacity: 0; }
+        body[data-phase="night"]:not(.madness) .stars,
+        body[data-phase="night"]:not(.madness) .moon { opacity: 1; }
+        body[data-phase="night"]:not(.madness) .sun-disc { opacity: 0; }
+        .sun-disc { transition: opacity 1.2s ease; }
+
+        .lance-rest { transition: transform 1.2s ease; transform-box: fill-box; transform-origin: 0% 100%; }
+        body.madness .lance-rest { transform: rotate(68deg); }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
 
-        /* The Clock/Scene Container */
-        .scene {
-            position: relative;
-            width: clamp(300px, 60vw, 500px);
-            height: clamp(300px, 60vw, 500px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 40px;
+        /* ---------- Narrow screens: scene on top ---------- */
+        @media (max-width: 860px), (max-aspect-ratio: 1/1) {
+            body { align-items: flex-start; }
+            .layout { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+            .scene-wrap { width: min(100%, 620px); }
+            .panel { width: min(100%, 620px); }
+            .time { font-size: clamp(2.8rem, 14vw, 4.4rem); }
+            .heading { font-size: clamp(0.98rem, 4vw, 1.1rem); }
+            .quote { font-size: clamp(0.98rem, 4vw, 1.1rem); }
         }
 
-        /* Windmill / Giant Body */
-        .structure {
-            position: absolute;
-            bottom: 10%;
-            width: 120px;
-            height: 200px;
-            transition: all 1.5s ease-in-out;
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { transition-duration: 0.01ms !important; }
         }
-
-        /* SVG Bodies */
-        .body-normal {
-            fill: var(--bg-color);
-            stroke: var(--ink);
-            stroke-width: 4;
-            transition: opacity 1.5s ease;
-        }
-
-        .body-mad {
-            fill: var(--bg-color);
-            stroke: var(--ink);
-            stroke-width: 4;
-            opacity: 0;
-            transition: opacity 1.5s ease;
-        }
-
-        body.madness .body-normal { opacity: 0; }
-        body.madness .body-mad { opacity: 1; }
-
-        /* The Sweeping Blades / Arms */
-        .blades-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 100%;
-            margin-top: -60px; /* offset to align with top of structure */
-            transform-origin: center center;
-            /* Rotation is handled by JS */
-        }
-
-        .blade {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 10px;
-            height: 200px;
-            background: transparent;
-            transform-origin: top center;
-        }
-
-        /* Normal Blades */
-        .blade-normal {
-            border: 2px solid var(--ink);
-            background: rgba(0,0,0,0.05); /* Canvas cloth */
-            transition: opacity 1.5s ease;
-        }
-
-        /* Giant Arms */
-        .blade-mad {
-            border: 2px solid var(--accent);
-            background: var(--bg-color);
-            border-radius: 5px;
-            opacity: 0;
-            transition: opacity 1.5s ease;
-        }
-
-        body.madness .blade-normal { opacity: 0; }
-        body.madness .blade-mad { opacity: 1; }
-
-        /* Clock Time Display */
-        .time-display {
-            position: absolute;
-            z-index: 50;
-            bottom: -50px;
-            font-size: clamp(3rem, 8vw, 4.5rem);
-            font-family: 'IM Fell English SC', serif;
-            text-shadow: 2px 2px 0px var(--bg-color), -2px -2px 0px var(--bg-color), 0px 4px 10px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-
-        /* Quote Box */
-        .quote-box {
-            position: absolute;
-            bottom: 40px;
-            max-width: 800px;
-            width: 90%;
-            text-align: center;
-            font-size: 1.4rem;
-            font-style: italic;
-            transition: opacity 0.5s ease;
-            padding: 20px;
-            border-top: 1px solid var(--ink);
-            border-bottom: 1px solid var(--ink);
-        }
-
-        .character-name {
-            display: block;
-            font-family: 'IM Fell English SC', serif;
-            font-size: 1rem;
-            margin-top: 10px;
-            font-style: normal;
-            color: var(--accent);
-        }
-
     </style>
 </head>
-<body>
+<body data-phase="day">
+<main class="layout">
+    <div class="scene-wrap">
+        <svg class="scene" id="scene" viewBox="0 0 800 800" role="img" aria-labelledby="sceneTitle">
+            <title id="sceneTitle">A white windmill on the plain of La Mancha. Its four sails are the minute hand, the sail with the red pennant pointing to the minute; Don Quixote's broken lance, lodged at the hub, is the hour hand.</title>
+            <defs>
+                <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" class="sky-top"/>
+                    <stop offset="1" class="sky-low"/>
+                </linearGradient>
+                <linearGradient id="plainGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" class="plain-top"/>
+                    <stop offset="1" class="plain-low"/>
+                </linearGradient>
+            </defs>
 
-    <div class="controls">
-        <button class="visor-btn" id="visorBtn">LOWER VISOR</button>
+            <rect x="0" y="0" width="800" height="560" fill="url(#skyGrad)"/>
+
+            <!-- stars and moon (night) / sun (day) -->
+            <g class="stars" id="stars" fill="#f3e3c0"></g>
+            <g class="sun-disc"><circle class="sun" cx="738" cy="66" r="26"/></g>
+            <g class="moon">
+                <circle cx="738" cy="66" r="24" fill="#efe6cf"/>
+                <circle cx="749" cy="58" r="21" fill="var(--sky-top)"/>
+            </g>
+
+            <!-- distant ridge with the other mills of Campo de Criptana -->
+            <path class="ridge" d="M0,560 L0,522 Q110,486 230,512 Q330,532 420,520 Q560,494 680,500 Q750,504 800,514 L800,560 Z"/>
+            <g id="minis"></g>
+
+            <!-- the plain -->
+            <rect x="0" y="556" width="800" height="244" fill="url(#plainGrad)"/>
+            <g id="furrows"></g>
+
+            <!-- the mill itself -->
+            <path class="tower" d="M327,382 L473,382 L496,646 L304,646 Z"/>
+            <path class="tower-shade" d="M440,384 L472,384 L494,644 L452,644 Z"/>
+            <path class="cap" d="M308,390 L400,272 L492,390 Z"/>
+            <g class="real">
+                <rect class="opening" x="389" y="438" width="22" height="30" rx="2"/>
+                <path class="opening" d="M326,646 L326,598 Q346,574 366,598 L366,646 Z"/>
+            </g>
+            <g class="mad">
+                <ellipse class="eye" cx="368" cy="432" rx="15" ry="8"/>
+                <ellipse class="eye" cx="432" cy="432" rx="15" ry="8"/>
+                <circle class="opening" cx="368" cy="432" r="4"/>
+                <circle class="opening" cx="432" cy="432" r="4"/>
+                <path class="opening" d="M346,410 L388,422 L386,428 L344,418 Z M454,410 L412,422 L414,428 L456,418 Z"/>
+                <path class="opening" d="M344,502 Q400,540 456,502 L448,524 Q400,556 352,524 Z"/>
+                <path fill="var(--tower)" d="M362,512 L370,526 L378,516 L386,530 L394,518 L402,532 L410,518 L418,530 L426,516 L434,526 L442,512 Z"/>
+            </g>
+
+            <!-- the knight and his squire, crossing the plain as the Part goes on -->
+            <g id="riders" transform="translate(400 772)"><g transform="scale(1.35)">
+                <!-- Sancho on Dapple -->
+                <g transform="translate(-86 0)" class="figure">
+                    <ellipse cx="0" cy="-27" rx="19" ry="10"/>
+                    <path d="M14,-31 L26,-42 L36,-39 L34,-33 L24,-30 Z"/>
+                    <path d="M27,-42 L23,-58 L27,-58 L30,-43 Z M31,-42 L32,-58 L36,-57 L34,-41 Z"/>
+                    <path d="M-19,-29 Q-26,-22 -24,-12" fill="none" stroke-width="2"/>
+                    <path d="M-13,-20 L-15,0 M-7,-20 L-6,0 M9,-20 L8,0 M14,-20 L17,0" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                    <circle cx="-1" cy="-46" r="11"/>
+                    <circle cx="1" cy="-62" r="6"/>
+                    <path d="M-9,-65 L11,-65 L8,-70 Q1,-75 -6,-70 Z"/>
+                    <path d="M2,-40 L8,-24" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                </g>
+                <!-- Don Quixote on Rocinante -->
+                <g class="figure">
+                    <ellipse cx="0" cy="-38" rx="25" ry="8"/>
+                    <path d="M17,-42 L30,-66 L37,-64 L25,-36 Z"/>
+                    <path d="M30,-67 L48,-56 L45,-51 L31,-58 Z"/>
+                    <path d="M-25,-40 Q-34,-30 -31,-15" fill="none" stroke-width="2.5"/>
+                    <path d="M-18,-32 L-21,0 M-12,-32 L-10,0 M14,-32 L12,0 M20,-32 L25,0" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path d="M-3,-46 L1,-84" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+                    <path d="M0,-46 L7,-30" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                    <circle cx="2" cy="-91" r="5.5"/>
+                    <path d="M-5,-94 Q2,-104 9,-94 Z"/>
+                    <circle cx="-7" cy="-64" r="8" fill="var(--figure)" stroke="var(--plain-top)" stroke-width="1.5"/>
+                    <g class="lance-rest">
+                        <path d="M6,-74 L10,-140" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    </g>
+                </g>
+            </g></g>
+
+            <!-- the dial painted round the sails -->
+            <g id="dial"></g>
+
+            <!-- sails = minute hand -->
+            <g id="sails" transform="translate(400 330)"></g>
+
+            <!-- the lance = hour hand -->
+            <g id="lance" transform="translate(400 330)">
+                <line class="lance-halo" x1="0" y1="26" x2="0" y2="-168"/>
+                <line class="lance-shaft" x1="0" y1="26" x2="0" y2="-168"/>
+                <path class="steel" d="M-13,-22 L0,-58 L13,-22 Q0,-16 -13,-22 Z"/>
+                <path class="steel" d="M-8,-160 L0,-200 L8,-160 Z"/>
+            </g>
+            <circle class="hub" cx="400" cy="330" r="13"/>
+
+        </svg>
     </div>
 
-    <div class="scene">
-        
-        <!-- SVG Structure -->
-        <svg class="structure" viewBox="0 0 100 200">
-            <!-- Normal Windmill -->
-            <path class="body-normal" d="M30,200 L45,30 L50,15 L55,30 L70,200 Z" />
-            <rect class="body-normal" x="43" y="150" width="14" height="20" rx="7" />
-            <line class="body-normal" x1="45" y1="80" x2="55" y2="80" />
-            <line class="body-normal" x1="40" y1="130" x2="60" y2="130" />
+    <section class="panel" aria-label="Don Quixote clock">
+        <h1 class="title">Don Quixote of La Mancha <small>Miguel de Cervantes, in John Ormsby's translation (1885)</small></h1>
 
-            <!-- Giant -->
-            <!-- Head & Torso -->
-            <circle class="body-mad" cx="50" cy="25" r="15" />
-            <path class="body-mad" d="M30,200 L40,100 L25,40 L75,40 L60,100 L70,200 Z" />
-            <!-- Glowing Eyes -->
-            <circle class="body-mad" cx="43" cy="22" r="3" fill="var(--accent)" stroke="none" />
-            <circle class="body-mad" cx="57" cy="22" r="3" fill="var(--accent)" stroke="none" />
-            <!-- Mouth -->
-            <path class="body-mad" d="M45,32 Q50,38 55,32" fill="none" />
-        </svg>
-
-        <!-- Sweeping Blades (Seconds Hand) -->
-        <div class="blades-container" id="bladesContainer">
-            <!-- 4 arms forming the cross -->
-            <div class="blade" style="transform: rotate(0deg);">
-                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
-                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
-                </div>
-                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
-                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
-                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
-                    </svg>
-                </div>
-            </div>
-            
-            <div class="blade" style="transform: rotate(90deg);">
-                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
-                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
-                </div>
-                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
-                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
-                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
-                    </svg>
-                </div>
-            </div>
-
-            <div class="blade" style="transform: rotate(180deg);">
-                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
-                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
-                </div>
-                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
-                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
-                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
-                    </svg>
-                </div>
-            </div>
-
-            <div class="blade" style="transform: rotate(270deg);">
-                <div class="blade-normal" style="width: 20px; height: 160px; margin-left:-5px;">
-                    <div style="width:100%; height:100%; background:repeating-linear-gradient(0deg, transparent, transparent 10px, var(--ink) 10px, var(--ink) 12px);"></div>
-                </div>
-                <div class="blade-mad" style="width: 8px; height: 120px; margin-left: 1px;">
-                    <svg viewBox="0 0 10 100" style="width:100%; height:100%;">
-                        <path d="M5,0 L10,15 L7,100 L3,100 L0,15 Z" fill="var(--accent)" />
-                    </svg>
-                </div>
-            </div>
+        <div class="time" id="time" role="timer" aria-live="polite" aria-atomic="true">
+            <span id="clock">12:00</span>
+            <span class="when" id="when">at night</span>
         </div>
 
-        <div class="time-display" id="timeDisplay">00:00</div>
-    </div>
+        <div>
+            <div class="chapter-label" id="chapterLabel">Part One, Chapter I</div>
+            <p class="heading" id="heading"></p>
+        </div>
 
-    <div class="quote-box" id="quoteBox">
-        "Those are not giants, but windmills."
-        <span class="character-name">— Sancho Panza</span>
-    </div>
+        <div class="strip" aria-hidden="true">
+            <div class="strip-row"><span class="lbl">I, 1605</span><div class="ticks" id="ticks1"></div></div>
+            <div class="strip-row"><span class="lbl">II, 1615</span><div class="ticks" id="ticks2"></div></div>
+        </div>
 
-    <script>
-        const realityQuotes = [
-            "Those are not giants, but windmills.",
-            "A bird in the hand is worth two in the bush.",
-            "Whether the pitcher strikes the stone, or the stone the pitcher, it is bad for the pitcher.",
-            "There's no stomach that is a hand's breadth bigger than another.",
-            "Let every man mind his own business.",
-            "I drink when I have occasion, and sometimes when I have no occasion."
-        ];
+        <blockquote class="quote" id="quote"></blockquote>
 
-        const madnessQuotes = [
-            "Destiny guides our fortunes more favorably than we could have expected.",
-            "Look there, friend Sancho Panza, where thirty or more monstrous giants present themselves.",
-            "I intend to engage in battle with them and slay them all.",
-            "To surrender dreams — this may be madness.",
-            "Too much sanity may be madness — and maddest of all: to see life as it is, and not as it should be!",
-            "Thou art a cowardly creature... For they are giants!"
-        ];
+        <button class="visor-btn" id="visorBtn" type="button" aria-pressed="false">Lower Visor</button>
 
-        const body = document.body;
-        const visorBtn = document.getElementById('visorBtn');
-        const bladesContainer = document.getElementById('bladesContainer');
-        const timeDisplay = document.getElementById('timeDisplay');
-        const quoteBox = document.getElementById('quoteBox');
+        <p class="note">Midnight to noon reads Part One (1605), 52 chapters; noon to midnight reads Part Two (1615), 74 chapters, ending with the will and death of Alonso Quixano. The pennanted sail gives the minute, the lance the hour.</p>
+    </section>
+</main>
 
-        let isMadness = false;
-        let lastMinute = -1;
+<script>
+const PART_ONE = [
+"WHICH TREATS OF THE CHARACTER AND PURSUITS OF THE FAMOUS GENTLEMAN DON QUIXOTE OF LA MANCHA",
+"WHICH TREATS OF THE FIRST SALLY THE INGENIOUS DON QUIXOTE MADE FROM HOME",
+"WHEREIN IS RELATED THE DROLL WAY IN WHICH DON QUIXOTE HAD HIMSELF DUBBED A KNIGHT",
+"OF WHAT HAPPENED TO OUR KNIGHT WHEN HE LEFT THE INN",
+"IN WHICH THE NARRATIVE OF OUR KNIGHT'S MISHAP IS CONTINUED",
+"OF THE DIVERTING AND IMPORTANT SCRUTINY WHICH THE CURATE AND THE BARBER MADE IN THE LIBRARY OF OUR INGENIOUS GENTLEMAN",
+"OF THE SECOND SALLY OF OUR WORTHY KNIGHT DON QUIXOTE OF LA MANCHA",
+"OF THE GOOD FORTUNE WHICH THE VALIANT DON QUIXOTE HAD IN THE TERRIBLE AND UNDREAMT-OF ADVENTURE OF THE WINDMILLS, WITH OTHER OCCURRENCES WORTHY TO BE FITLY RECORDED",
+"IN WHICH IS CONCLUDED AND FINISHED THE TERRIFIC BATTLE BETWEEN THE GALLANT BISCAYAN AND THE VALIANT MANCHEGAN",
+"OF THE PLEASANT DISCOURSE THAT PASSED BETWEEN DON QUIXOTE AND HIS SQUIRE SANCHO PANZA",
+"WHAT BEFELL DON QUIXOTE WITH CERTAIN GOATHERDS",
+"OF WHAT A GOATHERD RELATED TO THOSE WITH DON QUIXOTE",
+"IN WHICH IS ENDED THE STORY OF THE SHEPHERDESS MARCELA, WITH OTHER INCIDENTS",
+"WHEREIN ARE INSERTED THE DESPAIRING VERSES OF THE DEAD SHEPHERD, TOGETHER WITH OTHER INCIDENTS NOT LOOKED FOR",
+"IN WHICH IS RELATED THE UNFORTUNATE ADVENTURE THAT DON QUIXOTE FELL IN WITH WHEN HE FELL OUT WITH CERTAIN HEARTLESS YANGUESANS",
+"OF WHAT HAPPENED TO THE INGENIOUS GENTLEMAN IN THE INN WHICH HE TOOK TO BE A CASTLE",
+"IN WHICH ARE CONTAINED THE INNUMERABLE TROUBLES WHICH THE BRAVE DON QUIXOTE AND HIS GOOD SQUIRE SANCHO PANZA ENDURED IN THE INN, WHICH TO HIS MISFORTUNE HE TOOK TO BE A CASTLE",
+"IN WHICH IS RELATED THE DISCOURSE SANCHO PANZA HELD WITH HIS MASTER, DON QUIXOTE, AND OTHER ADVENTURES WORTH RELATING",
+"OF THE SHREWD DISCOURSE WHICH SANCHO HELD WITH HIS MASTER, AND OF THE ADVENTURE THAT BEFELL HIM WITH A DEAD BODY, TOGETHER WITH OTHER NOTABLE OCCURRENCES",
+"OF THE UNEXAMPLED AND UNHEARD-OF ADVENTURE WHICH WAS ACHIEVED BY THE VALIANT DON QUIXOTE OF LA MANCHA WITH LESS PERIL THAN ANY EVER ACHIEVED BY ANY FAMOUS KNIGHT IN THE WORLD",
+"WHICH TREATS OF THE EXALTED ADVENTURE AND RICH PRIZE OF MAMBRINO'S HELMET, TOGETHER WITH OTHER THINGS THAT HAPPENED TO OUR INVINCIBLE KNIGHT",
+"OF THE FREEDOM DON QUIXOTE CONFERRED ON SEVERAL UNFORTUNATES WHO AGAINST THEIR WILL WERE BEING CARRIED WHERE THEY HAD NO WISH TO GO",
+"OF WHAT BEFELL DON QUIXOTE IN THE SIERRA MORENA, WHICH WAS ONE OF THE RAREST ADVENTURES RELATED IN THIS VERACIOUS HISTORY",
+"IN WHICH IS CONTINUED THE ADVENTURE OF THE SIERRA MORENA",
+"WHICH TREATS OF THE STRANGE THINGS THAT HAPPENED TO THE STOUT KNIGHT OF LA MANCHA IN THE SIERRA MORENA, AND OF HIS IMITATION OF THE PENANCE OF BELTENEBROS",
+"IN WHICH ARE CONTINUED THE REFINEMENTS WHEREWITH DON QUIXOTE PLAYED THE PART OF A LOVER IN THE SIERRA MORENA",
+"OF HOW THE CURATE AND THE BARBER PROCEEDED WITH THEIR SCHEME; TOGETHER WITH OTHER MATTERS WORTHY OF RECORD IN THIS GREAT HISTORY",
+"WHICH TREATS OF THE STRANGE AND DELIGHTFUL ADVENTURE THAT BEFELL THE CURATE AND THE BARBER IN THE SAME SIERRA",
+"WHICH TREATS OF THE DROLL DEVICE AND METHOD ADOPTED TO EXTRICATE OUR LOVE-STRICKEN KNIGHT FROM THE SEVERE PENANCE HE HAD IMPOSED UPON HIMSELF",
+"WHICH TREATS OF ADDRESS DISPLAYED BY THE FAIR DOROTHEA, WITH OTHER MATTERS PLEASANT AND AMUSING",
+"OF THE DELECTABLE DISCUSSION BETWEEN DON QUIXOTE AND SANCHO PANZA, HIS SQUIRE, TOGETHER WITH OTHER INCIDENTS",
+"WHICH TREATS OF WHAT BEFELL DON QUIXOTE'S PARTY AT THE INN",
+"IN WHICH IS RELATED THE NOVEL OF \"THE ILL-ADVISED CURIOSITY\"",
+"IN WHICH IS CONTINUED THE NOVEL OF \"THE ILL-ADVISED CURIOSITY\"",
+"WHICH TREATS OF THE HEROIC AND PRODIGIOUS BATTLE DON QUIXOTE HAD WITH CERTAIN SKINS OF RED WINE, AND BRINGS THE NOVEL OF \"THE ILL-ADVISED CURIOSITY\" TO A CLOSE",
+"WHICH TREATS OF MORE CURIOUS INCIDENTS THAT OCCURRED AT THE INN",
+"IN WHICH IS CONTINUED THE STORY OF THE FAMOUS PRINCESS MICOMICONA, WITH OTHER DROLL ADVENTURES",
+"WHICH TREATS OF THE CURIOUS DISCOURSE DON QUIXOTE DELIVERED ON ARMS AND LETTERS",
+"WHEREIN THE CAPTIVE RELATES HIS LIFE AND ADVENTURES",
+"IN WHICH THE STORY OF THE CAPTIVE IS CONTINUED.",
+"IN WHICH THE CAPTIVE STILL CONTINUES HIS ADVENTURES",
+"WHICH TREATS OF WHAT FURTHER TOOK PLACE IN THE INN, AND OF SEVERAL OTHER THINGS WORTH KNOWING",
+"WHEREIN IS RELATED THE PLEASANT STORY OF THE MULETEER, TOGETHER WITH OTHER STRANGE THINGS THAT CAME TO PASS IN THE INN",
+"IN WHICH ARE CONTINUED THE UNHEARD-OF ADVENTURES OF THE INN",
+"IN WHICH THE DOUBTFUL QUESTION OF MAMBRINO'S HELMET AND THE PACK-SADDLE IS FINALLY SETTLED, WITH OTHER ADVENTURES THAT OCCURRED IN TRUTH AND EARNEST",
+"OF THE END OF THE NOTABLE ADVENTURE OF THE OFFICERS OF THE HOLY BROTHERHOOD; AND OF THE GREAT FEROCITY OF OUR WORTHY KNIGHT, DON QUIXOTE",
+"OF THE STRANGE MANNER IN WHICH DON QUIXOTE OF LA MANCHA WAS CARRIED AWAY ENCHANTED, TOGETHER WITH OTHER REMARKABLE INCIDENTS",
+"IN WHICH THE CANON PURSUES THE SUBJECT OF THE BOOKS OF CHIVALRY, WITH OTHER MATTERS WORTHY OF HIS WIT",
+"WHICH TREATS OF THE SHREWD CONVERSATION WHICH SANCHO PANZA HELD WITH HIS MASTER DON QUIXOTE",
+"OF THE SHREWD CONTROVERSY WHICH DON QUIXOTE AND THE CANON HELD, TOGETHER WITH OTHER INCIDENTS",
+"WHICH DEALS WITH WHAT THE GOATHERD TOLD THOSE WHO WERE CARRYING OFF DON QUIXOTE",
+"OF THE QUARREL THAT DON QUIXOTE HAD WITH THE GOATHERD, TOGETHER WITH THE RARE ADVENTURE OF THE PENITENTS, WHICH WITH AN EXPENDITURE OF SWEAT HE BROUGHT TO A HAPPY CONCLUSION"
+];
+const PART_TWO = [
+"OF THE INTERVIEW THE CURATE AND THE BARBER HAD WITH DON QUIXOTE ABOUT HIS MALADY",
+"WHICH TREATS OF THE NOTABLE ALTERCATION WHICH SANCHO PANZA HAD WITH DON QUIXOTE'S NIECE, AND HOUSEKEEPER, TOGETHER WITH OTHER DROLL MATTERS",
+"OF THE LAUGHABLE CONVERSATION THAT PASSED BETWEEN DON QUIXOTE, SANCHO PANZA, AND THE BACHELOR SAMSON CARRASCO",
+"IN WHICH SANCHO PANZA GIVES A SATISFACTORY REPLY TO THE DOUBTS AND QUESTIONS OF THE BACHELOR SAMSON CARRASCO, TOGETHER WITH OTHER MATTERS WORTH KNOWING AND TELLING",
+"OF THE SHREWD AND DROLL CONVERSATION THAT PASSED BETWEEN SANCHO PANZA AND HIS WIFE TERESA PANZA, AND OTHER MATTERS WORTHY OF BEING DULY RECORDED",
+"OF WHAT TOOK PLACE BETWEEN DON QUIXOTE AND HIS NIECE AND HOUSEKEEPER; ONE OF THE MOST IMPORTANT CHAPTERS IN THE WHOLE HISTORY",
+"OF WHAT PASSED BETWEEN DON QUIXOTE AND HIS SQUIRE, TOGETHER WITH OTHER VERY NOTABLE INCIDENTS",
+"WHEREIN IS RELATED WHAT BEFELL DON QUIXOTE ON HIS WAY TO SEE HIS LADY DULCINEA DEL TOBOSO",
+"WHEREIN IS RELATED WHAT WILL BE SEEN THERE",
+"WHEREIN IS RELATED THE CRAFTY DEVICE SANCHO ADOPTED TO ENCHANT THE LADY DULCINEA, AND OTHER INCIDENTS AS LUDICROUS AS THEY ARE TRUE",
+"OF THE STRANGE ADVENTURE WHICH THE VALIANT DON QUIXOTE HAD WITH THE CAR OR CART OF \"THE CORTES OF DEATH\"",
+"OF THE STRANGE ADVENTURE WHICH BEFELL THE VALIANT DON QUIXOTE WITH THE BOLD KNIGHT OF THE MIRRORS",
+"IN WHICH IS CONTINUED THE ADVENTURE OF THE KNIGHT OF THE GROVE, TOGETHER WITH THE SENSIBLE, ORIGINAL, AND TRANQUIL COLLOQUY THAT PASSED BETWEEN THE TWO SQUIRES",
+"WHEREIN IS CONTINUED THE ADVENTURE OF THE KNIGHT OF THE GROVE",
+"WHEREIN IT IS TOLD AND KNOWN WHO THE KNIGHT OF THE MIRRORS AND HIS SQUIRE WERE",
+"OF WHAT BEFELL DON QUIXOTE WITH A DISCREET GENTLEMAN OF LA MANCHA",
+"WHEREIN IS SHOWN THE FURTHEST AND HIGHEST POINT WHICH THE UNEXAMPLED COURAGE OF DON QUIXOTE REACHED OR COULD REACH; TOGETHER WITH THE HAPPILY ACHIEVED ADVENTURE OF THE LIONS",
+"OF WHAT HAPPENED DON QUIXOTE IN THE CASTLE OR HOUSE OF THE KNIGHT OF THE GREEN GABAN, TOGETHER WITH OTHER MATTERS OUT OF THE COMMON",
+"IN WHICH IS RELATED THE ADVENTURE OF THE ENAMOURED SHEPHERD, TOGETHER WITH OTHER TRULY DROLL INCIDENTS",
+"WHEREIN AN ACCOUNT IS GIVEN OF THE WEDDING OF CAMACHO THE RICH, TOGETHER WITH THE INCIDENT OF BASILIO THE POOR",
+"IN WHICH CAMACHO'S WEDDING IS CONTINUED, WITH OTHER DELIGHTFUL INCIDENTS",
+"WHEREIN IS RELATED THE GRAND ADVENTURE OF THE CAVE OF MONTESINOS IN THE HEART OF LA MANCHA, WHICH THE VALIANT DON QUIXOTE BROUGHT TO A HAPPY TERMINATION",
+"OF THE WONDERFUL THINGS THE INCOMPARABLE DON QUIXOTE SAID HE SAW IN THE PROFOUND CAVE OF MONTESINOS, THE IMPOSSIBILITY AND MAGNITUDE OF WHICH CAUSE THIS ADVENTURE TO BE DEEMED APOCRYPHAL",
+"WHEREIN ARE RELATED A THOUSAND TRIFLING MATTERS, AS TRIVIAL AS THEY ARE NECESSARY TO THE RIGHT UNDERSTANDING OF THIS GREAT HISTORY",
+"WHEREIN IS SET DOWN THE BRAYING ADVENTURE, AND THE DROLL ONE OF THE PUPPET-SHOWMAN, TOGETHER WITH THE MEMORABLE DIVINATIONS OF THE DIVINING APE",
+"WHEREIN IS CONTINUED THE DROLL ADVENTURE OF THE PUPPET-SHOWMAN, TOGETHER WITH OTHER THINGS IN TRUTH RIGHT GOOD",
+"WHEREIN IT IS SHOWN WHO MASTER PEDRO AND HIS APE WERE, TOGETHER WITH THE MISHAP DON QUIXOTE HAD IN THE BRAYING ADVENTURE, WHICH HE DID NOT CONCLUDE AS HE WOULD HAVE LIKED OR AS HE HAD EXPECTED",
+"OF MATTERS THAT BENENGELI SAYS HE WHO READS THEM WILL KNOW, IF HE READS THEM WITH ATTENTION",
+"OF THE FAMOUS ADVENTURE OF THE ENCHANTED BARK",
+"OF DON QUIXOTE'S ADVENTURE WITH A FAIR HUNTRESS",
+"WHICH TREATS OF MANY AND GREAT MATTERS",
+"OF THE REPLY DON QUIXOTE GAVE HIS CENSURER, WITH OTHER INCIDENTS, GRAVE AND DROLL",
+"OF THE DELECTABLE DISCOURSE WHICH THE DUCHESS AND HER DAMSELS HELD WITH SANCHO PANZA, WELL WORTH READING AND NOTING",
+"WHICH RELATES HOW THEY LEARNED THE WAY IN WHICH THEY WERE TO DISENCHANT THE PEERLESS DULCINEA DEL TOBOSO, WHICH IS ONE OF THE RAREST ADVENTURES IN THIS BOOK",
+"WHEREIN IS CONTINUED THE INSTRUCTION GIVEN TO DON QUIXOTE TOUCHING THE DISENCHANTMENT OF DULCINEA, TOGETHER WITH OTHER MARVELLOUS INCIDENTS",
+"WHEREIN IS RELATED THE STRANGE AND UNDREAMT-OF ADVENTURE OF THE DISTRESSED DUENNA, ALIAS THE COUNTESS TRIFALDI, TOGETHER WITH A LETTER WHICH SANCHO PANZA WROTE TO HIS WIFE, TERESA PANZA",
+"WHEREIN IS CONTINUED THE NOTABLE ADVENTURE OF THE DISTRESSED DUENNA",
+"WHEREIN IS TOLD THE DISTRESSED DUENNA'S TALE OF HER MISFORTUNES",
+"IN WHICH THE TRIFALDI CONTINUES HER MARVELLOUS AND MEMORABLE STORY",
+"OF MATTERS RELATING AND BELONGING TO THIS ADVENTURE AND TO THIS MEMORABLE HISTORY",
+"OF THE ARRIVAL OF CLAVILEÑO AND THE END OF THIS PROTRACTED ADVENTURE",
+"OF THE COUNSELS WHICH DON QUIXOTE GAVE SANCHO PANZA BEFORE HE SET OUT TO GOVERN THE ISLAND, TOGETHER WITH OTHER WELL-CONSIDERED MATTERS",
+"OF THE SECOND SET OF COUNSELS DON QUIXOTE GAVE SANCHO PANZA",
+"HOW SANCHO PANZA WAS CONDUCTED TO HIS GOVERNMENT, AND OF THE STRANGE ADVENTURE THAT BEFELL DON QUIXOTE IN THE CASTLE",
+"OF HOW THE GREAT SANCHO PANZA TOOK POSSESSION OF HIS ISLAND, AND OF HOW HE MADE A BEGINNING IN GOVERNING",
+"OF THE TERRIBLE BELL AND CAT FRIGHT THAT DON QUIXOTE GOT IN THE COURSE OF THE ENAMOURED ALTISIDORA'S WOOING",
+"WHEREIN IS CONTINUED THE ACCOUNT OF HOW SANCHO PANZA CONDUCTED HIMSELF IN HIS GOVERNMENT",
+"OF WHAT BEFELL DON QUIXOTE WITH DOÑA RODRIGUEZ, THE DUCHESS'S DUENNA, TOGETHER WITH OTHER OCCURRENCES WORTHY OF RECORD AND ETERNAL REMEMBRANCE",
+"OF WHAT HAPPENED SANCHO IN MAKING THE ROUND OF HIS ISLAND",
+"WHEREIN IS SET FORTH WHO THE ENCHANTERS AND EXECUTIONERS WERE WHO FLOGGED THE DUENNA AND PINCHED DON QUIXOTE, AND ALSO WHAT BEFELL THE PAGE WHO CARRIED THE LETTER TO TERESA PANZA, SANCHO PANZA'S WIFE",
+"OF THE PROGRESS OF SANCHO'S GOVERNMENT, AND OTHER SUCH ENTERTAINING MATTERS",
+"WHEREIN IS RELATED THE ADVENTURE OF THE SECOND DISTRESSED OR AFFLICTED DUENNA, OTHERWISE CALLED DOÑA RODRIGUEZ",
+"OF THE TROUBLOUS END AND TERMINATION SANCHO PANZA'S GOVERNMENT CAME TO",
+"WHICH DEALS WITH MATTERS RELATING TO THIS HISTORY AND NO OTHER",
+"OF WHAT BEFELL SANCHO ON THE ROAD, AND OTHER THINGS THAT CANNOT BE SURPASSED",
+"OF THE PRODIGIOUS AND UNPARALLELED BATTLE THAT TOOK PLACE BETWEEN DON QUIXOTE OF LA MANCHA AND THE LACQUEY TOSILOS IN DEFENCE OF THE DAUGHTER OF DOÑA RODRIGUEZ",
+"WHICH TREATS OF HOW DON QUIXOTE TOOK LEAVE OF THE DUKE, AND OF WHAT FOLLOWED WITH THE WITTY AND IMPUDENT ALTISIDORA, ONE OF THE DUCHESS'S DAMSELS",
+"WHICH TELLS HOW ADVENTURES CAME CROWDING ON DON QUIXOTE IN SUCH NUMBERS THAT THEY GAVE ONE ANOTHER NO BREATHING-TIME",
+"WHEREIN IS RELATED THE STRANGE THING, WHICH MAY BE REGARDED AS AN ADVENTURE, THAT HAPPENED DON QUIXOTE",
+"OF WHAT HAPPENED DON QUIXOTE ON HIS WAY TO BARCELONA",
+"OF WHAT HAPPENED DON QUIXOTE ON ENTERING BARCELONA, TOGETHER WITH OTHER MATTERS THAT PARTAKE OF THE TRUE RATHER THAN OF THE INGENIOUS",
+"WHICH DEALS WITH THE ADVENTURE OF THE ENCHANTED HEAD, TOGETHER WITH OTHER TRIVIAL MATTERS WHICH CANNOT BE LEFT UNTOLD",
+"OF THE MISHAP THAT BEFELL SANCHO PANZA THROUGH THE VISIT TO THE GALLEYS, AND THE STRANGE ADVENTURE OF THE FAIR MORISCO",
+"TREATING OF THE ADVENTURE WHICH GAVE DON QUIXOTE MORE UNHAPPINESS THAN ALL THAT HAD HITHERTO BEFALLEN HIM",
+"WHEREIN IS MADE KNOWN WHO THE KNIGHT OF THE WHITE MOON WAS; LIKEWISE DON GREGORIO'S RELEASE, AND OTHER EVENTS",
+"WHICH TREATS OF WHAT HE WHO READS WILL SEE, OR WHAT HE WHO HAS IT READ TO HIM WILL HEAR",
+"OF THE RESOLUTION DON QUIXOTE FORMED TO TURN SHEPHERD AND TAKE TO A LIFE IN THE FIELDS WHILE THE YEAR FOR WHICH HE HAD GIVEN HIS WORD WAS RUNNING ITS COURSE; WITH OTHER EVENTS TRULY DELECTABLE AND HAPPY",
+"OF THE BRISTLY ADVENTURE THAT BEFELL DON QUIXOTE",
+"OF THE STRANGEST AND MOST EXTRAORDINARY ADVENTURE THAT BEFELL DON QUIXOTE IN THE WHOLE COURSE OF THIS GREAT HISTORY",
+"WHICH FOLLOWS SIXTY-NINE AND DEALS WITH MATTERS INDISPENSABLE FOR THE CLEAR COMPREHENSION OF THIS HISTORY",
+"OF WHAT PASSED BETWEEN DON QUIXOTE AND HIS SQUIRE SANCHO ON THE WAY TO THEIR VILLAGE",
+"OF HOW DON QUIXOTE AND SANCHO REACHED THEIR VILLAGE",
+"OF THE OMENS DON QUIXOTE HAD AS HE ENTERED HIS OWN VILLAGE, AND OTHER INCIDENTS THAT EMBELLISH AND GIVE A COLOUR TO THIS GREAT HISTORY",
+"OF HOW DON QUIXOTE FELL SICK, AND OF THE WILL HE MADE, AND HOW HE DIED"
+];
 
-        visorBtn.addEventListener('click', () => {
-            isMadness = !isMadness;
-            if(isMadness) {
-                body.classList.add('madness');
-                visorBtn.textContent = "RAISE VISOR";
-            } else {
-                body.classList.remove('madness');
-                visorBtn.textContent = "LOWER VISOR";
-            }
-            updateQuote(true);
-        });
 
-        function updateQuote(force = false) {
-            quoteBox.style.opacity = 0;
-            setTimeout(() => {
-                const arr = isMadness ? madnessQuotes : realityQuotes;
-                const char = isMadness ? "Don Quixote" : "Sancho Panza";
-                const q = arr[Math.floor(Math.random() * arr.length)];
-                quoteBox.innerHTML = `"${q}" <span class="character-name">— ${char}</span>`;
-                quoteBox.style.opacity = 1;
-            }, 500);
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    const el = (tag, attrs, parent) => {
+        const n = document.createElementNS(SVGNS, tag);
+        for (const k in attrs) n.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(n);
+        return n;
+    };
+
+    /* Dialogue from Part One, Chapter VIII (Ormsby). */
+    const SANCHO = [
+        '“What giants?”',
+        '“…what we see there are not giants but windmills, and what seem to be their arms are the sails that turned by the wind make the millstone go.”',
+        '“…did I not tell your worship to mind what you were about, for they were only windmills?”'
+    ];
+    const QUIXOTE = [
+        '“…look there, friend Sancho Panza, where thirty or more monstrous giants present themselves”',
+        '“Fly not, cowards and vile beings, for a single knight attacks you.”',
+        '“Though ye flourish more arms than the giant Briareus, ye have to reckon with me.”'
+    ];
+
+    const ROMAN = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+    function roman(n) {
+        const map = [[100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+        let out = '';
+        for (const [v, s] of map) while (n >= v) { out += s; n -= v; }
+        return out;
+    }
+
+    /* ---------- Build the scene ---------- */
+    const CX = 400, CY = 330;
+
+    // Dial: minute ticks and hour numerals
+    const dial = document.getElementById('dial');
+    for (let i = 0; i < 60; i++) {
+        const a = i * Math.PI / 30;
+        const major = i % 5 === 0;
+        const r1 = major ? 276 : 283, r2 = 292;
+        el('line', {
+            class: 'tick',
+            x1: CX + r1 * Math.sin(a), y1: CY - r1 * Math.cos(a),
+            x2: CX + r2 * Math.sin(a), y2: CY - r2 * Math.cos(a),
+            'stroke-width': major ? 4 : 2
+        }, dial);
+    }
+    ROMAN.forEach((txt, i) => {
+        const a = i * Math.PI / 6;
+        const r = 316;
+        const t = el('text', { class: 'num', x: CX + r * Math.sin(a), y: CY - r * Math.cos(a) }, dial);
+        t.textContent = txt;
+    });
+
+    // Sails: four lattice sails (reality) and four arms (madness)
+    const sails = document.getElementById('sails');
+    for (let k = 0; k < 4; k++) {
+        const g = el('g', { transform: `rotate(${k * 90})` }, sails);
+        const real = el('g', { class: 'real' }, g);
+        el('rect', { class: 'whip', x: -4, y: -272, width: 8, height: 262, rx: 2 }, real);
+        el('rect', { class: 'frame', x: 4, y: -262, width: 42, height: 196 }, real);
+        for (let y = -240; y < -66; y += 22) el('line', { class: 'bar', x1: 4, y1: y, x2: 46, y2: y }, real);
+        el('line', { class: 'bar', x1: 25, y1: -262, x2: 25, y2: -66 }, real);
+
+        const mad = el('g', { class: 'mad' }, g);
+        el('path', {
+            class: 'arm',
+            d: 'M-17,-6 C-19,-70 -12,-150 -9,-214 L-17,-232 L-23,-262 L-15,-264 L-9,-240 L-7,-274 L0,-275 L1,-244 L6,-271 L13,-269 L8,-240 L17,-254 L22,-249 L11,-220 L9,-214 C12,-150 19,-70 17,-6 Z'
+        }, mad);
+        el('path', { class: 'arm-line', d: 'M-10,-120 Q0,-128 10,-120 M-8,-170 Q0,-176 9,-170' }, mad);
+
+        if (k === 0) {
+            el('path', { class: 'pennant', d: 'M2,-276 L66,-268 L46,-258 L66,-248 L2,-242 Z' }, g);
         }
+    }
 
-        function updateClock() {
-            const now = new Date();
-            
-            let h = now.getHours();
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds();
-            let ms = now.getMilliseconds();
+    // Other mills along the ridge (static)
+    const minis = document.getElementById('minis');
+    [[48, 510, 20], [206, 510, 55], [262, 518, 10], [590, 500, 35], [736, 502, 70], [780, 510, 15]].forEach(([x, y, rot]) => {
+        const g = el('g', { transform: `translate(${x} ${y})` }, minis);
+        el('path', { class: 'mini', d: 'M-7,-4 L7,-4 L9,22 L-9,22 Z' }, g);
+        el('path', { class: 'mini-cap', d: 'M-9,-3 L0,-14 L9,-3 Z' }, g);
+        const s = el('g', { transform: `translate(0 -8) rotate(${rot})` }, g);
+        el('line', { class: 'mini-sail', x1: 0, y1: -20, x2: 0, y2: 20 }, s);
+        el('line', { class: 'mini-sail', x1: -20, y1: 0, x2: 20, y2: 0 }, s);
+    });
 
-            // AM/PM format for classic feel
-            let ampm = h >= 12 ? 'PM' : 'AM';
-            let displayH = h % 12;
-            displayH = displayH ? displayH : 12;
+    // Furrows running to the horizon
+    const furrows = document.getElementById('furrows');
+    for (let i = -6; i <= 6; i++) {
+        el('line', { class: 'furrow', x1: 400 + i * 30, y1: 560, x2: 400 + i * 150, y2: 800 }, furrows);
+    }
 
-            timeDisplay.textContent = `${displayH}:${m} ${ampm}`;
+    // Stars (fixed positions, kept clear of the dial numerals)
+    const stars = document.getElementById('stars');
+    [[40, 40], [92, 118], [30, 210], [178, 26], [640, 40], [700, 150], [770, 210], [760, 330], [36, 360], [606, 104]].forEach(([x, y], i) => {
+        el('circle', { cx: x, cy: y, r: i % 3 === 0 ? 2.2 : 1.5 }, stars);
+    });
 
-            // Continuous rotation for seconds. 
-            // The cross starts at 0, 90, 180, 270. 
-            // One full rotation takes 60 seconds.
-            const totalSeconds = s + (ms / 1000);
-            const degrees = (totalSeconds / 60) * 360;
-            
-            bladesContainer.style.transform = `rotate(${degrees}deg)`;
+    // Chapter strip
+    const ticks1 = document.getElementById('ticks1');
+    const ticks2 = document.getElementById('ticks2');
+    const tickEls = [[], []];
+    PART_ONE.forEach(() => tickEls[0].push(ticks1.appendChild(document.createElement('i'))));
+    PART_TWO.forEach(() => tickEls[1].push(ticks2.appendChild(document.createElement('i'))));
 
-            if (lastMinute !== now.getMinutes()) {
-                lastMinute = now.getMinutes();
-                // update quote slowly every minute
-                updateQuote();
-            }
+    /* ---------- Clock ---------- */
+    const body = document.body;
+    const sailsEl = document.getElementById('sails');
+    const lanceEl = document.getElementById('lance');
+    const riders = document.getElementById('riders');
+    const clockEl = document.getElementById('clock');
+    const whenEl = document.getElementById('when');
+    const chapterLabel = document.getElementById('chapterLabel');
+    const headingEl = document.getElementById('heading');
+    const quoteEl = document.getElementById('quote');
+    const visorBtn = document.getElementById('visorBtn');
 
-            requestAnimationFrame(updateClock);
+    let isMad = false;
+    let lastMinute = -1;
+    let lastQuoteKey = '';
+
+    function phaseFor(h) {
+        if (h >= 21 || h < 5) return 'night';
+        if (h < 7) return 'dawn';
+        if (h < 18) return 'day';
+        return 'dusk';
+    }
+
+    function whenFor(h, m) {
+        if (h === 0 && m === 0) return 'midnight';
+        if (h === 12 && m === 0) return 'noon';
+        if (h < 5) return 'at night';
+        if (h < 12) return 'in the morning';
+        if (h < 17) return 'in the afternoon';
+        if (h < 21) return 'in the evening';
+        return 'at night';
+    }
+
+    function renderQuote(minute) {
+        const list = isMad ? QUIXOTE : SANCHO;
+        const who = isMad ? 'Don Quixote' : 'Sancho Panza';
+        const key = (isMad ? 'q' : 's') + (minute % list.length);
+        if (key === lastQuoteKey) return;
+        lastQuoteKey = key;
+        quoteEl.style.opacity = 0;
+        setTimeout(() => {
+            quoteEl.innerHTML = '';
+            quoteEl.appendChild(document.createTextNode(list[minute % list.length]));
+            const c = document.createElement('cite');
+            c.textContent = who + ', Part One, Chapter VIII';
+            quoteEl.appendChild(c);
+            quoteEl.style.opacity = 1;
+        }, lastMinute === -1 ? 0 : 450);
+    }
+
+    function tick() {
+        const now = new Date();
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const s = now.getSeconds();
+
+        // Sails: one turn an hour; lance: one turn in twelve.
+        const sailDeg = (m * 60 + s) / 10;          // 360 deg / 3600 s
+        const lanceDeg = ((h % 12) * 60 + m + s / 60) / 2;
+        sailsEl.setAttribute('transform', `translate(${CX} ${CY}) rotate(${sailDeg})`);
+        lanceEl.setAttribute('transform', `translate(${CX} ${CY}) rotate(${lanceDeg})`);
+
+        // The day is the book: Part One until noon, Part Two after.
+        const part = h < 12 ? 0 : 1;
+        const chapters = part === 0 ? PART_ONE : PART_TWO;
+        const intoHalf = (h % 12) * 60 + m + s / 60;   // 0 .. <720 minutes
+        const progress = intoHalf / 720;
+        const idx = Math.min(chapters.length - 1, Math.floor(progress * chapters.length));
+
+        // Knight and squire ride left to right across the plain through each Part.
+        const x = 150 + progress * 560;
+        riders.setAttribute('transform', `translate(${x.toFixed(1)} 772)`);
+
+        if (m !== lastMinute) {
+            const dh = h % 12 || 12;
+            clockEl.textContent = `${dh}:${String(m).padStart(2, '0')}`;
+            whenEl.textContent = whenFor(h, m);
+            body.dataset.phase = phaseFor(h);
+
+            chapterLabel.textContent = `Part ${part === 0 ? 'One' : 'Two'}, Chapter ${roman(idx + 1)}`;
+            headingEl.textContent = chapters[idx];
+
+            tickEls.forEach((row, r) => row.forEach((t, i) => {
+                const read = r < part || (r === part && i < idx);
+                t.className = (r === part && i === idx) ? 'now' : (read ? 'read' : '');
+            }));
+
+            renderQuote(m);
+            lastMinute = m;
         }
+    }
 
-        updateClock();
-    </script>
+    visorBtn.addEventListener('click', () => {
+        isMad = !isMad;
+        body.classList.toggle('madness', isMad);
+        visorBtn.textContent = isMad ? 'Raise Visor' : 'Lower Visor';
+        visorBtn.setAttribute('aria-pressed', String(isMad));
+        lastQuoteKey = '';
+        renderQuote(new Date().getMinutes());
+    });
+
+    tick();
+    setInterval(tick, 1000);
+</script>
 </body>
 </html>
