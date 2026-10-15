@@ -24,8 +24,9 @@
             padding: 0;
         }
 
-        html, body {
-            height: 100%;
+        html {
+            min-height: 100%;
+            background: var(--calm-sky-2);
         }
 
         body {
@@ -140,6 +141,19 @@
             background: #d95c4a;
         }
 
+        .meridiem {
+            position: absolute;
+            top: 64%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(0.6rem, 1.6vw, 0.72rem);
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
         .center-dot {
             position: absolute;
             top: 50%;
@@ -175,14 +189,22 @@
             color: var(--gold);
             margin-top: 8px;
             letter-spacing: 1px;
-            min-height: 1em;
+            min-height: 1.2em;
         }
 
         .act-panel {
             margin-top: 30px;
-            max-width: 520px;
+            max-width: 540px;
+            width: 100%;
             text-align: center;
             z-index: 1;
+        }
+
+        .act-caption {
+            font-size: clamp(0.95rem, 2.4vw, 1.05rem);
+            color: var(--text-muted);
+            margin-top: 8px;
+            line-height: 1.5;
         }
 
         .act-name {
@@ -194,8 +216,8 @@
         .act-quote {
             font-style: italic;
             font-size: clamp(1rem, 2.6vw, 1.25rem);
-            margin-top: 10px;
-            line-height: 1.6;
+            margin-top: 14px;
+            line-height: 1.55;
         }
 
         .act-speaker {
@@ -209,11 +231,22 @@
 
         .frame-note {
             font-family: 'Space Mono', monospace;
-            font-size: 0.68rem;
+            font-size: clamp(0.72rem, 1.8vw, 0.78rem);
             color: var(--text-muted);
-            margin-top: 18px;
-            max-width: 440px;
+            margin-top: 22px;
+            max-width: 460px;
             line-height: 1.6;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 28px 16px 40px; }
+            header { margin-bottom: 26px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body { transition: none; }
+            .lightning { display: none; }
         }
     </style>
 </head>
@@ -223,13 +256,14 @@
 
     <header>
         <h1>The Tempest</h1>
-        <div class="subtitle">Prospero's isle, kept to a real clock &mdash; after William Shakespeare</div>
+        <div class="subtitle">Prospero's isle, kept to a real clock, after William Shakespeare</div>
     </header>
 
-    <div class="clock-wrap">
+    <div class="clock-wrap" aria-hidden="true">
         <div class="act-ring" id="actRing"></div>
         <div class="clock-face"></div>
         <div class="numerals" id="numerals"></div>
+        <div class="meridiem" id="meridiem"></div>
         <div class="hand hour" id="hourHand"></div>
         <div class="hand minute" id="minuteHand"></div>
         <div class="hand second" id="secondHand"></div>
@@ -237,19 +271,20 @@
     </div>
 
     <div class="digital-time">
-        <div class="digital-value" id="digitalValue">00:00:00</div>
+        <div class="digital-value" id="digitalValue" role="timer" aria-label="Current time">00:00:00</div>
         <div class="digital-date" id="digitalDate">&mdash;</div>
         <div class="glass-readout" id="glassReadout"></div>
     </div>
 
     <div class="act-panel">
-        <div class="act-name" id="actName">&mdash;</div>
-        <div class="act-quote" id="actQuote">&mdash;</div>
+        <div class="act-name" id="actName" aria-live="polite">&nbsp;</div>
+        <div class="act-caption" id="actCaption"></div>
+        <div class="act-quote" id="actQuote"></div>
         <div class="act-speaker" id="actSpeaker"></div>
     </div>
 
     <div class="frame-note">
-        The play's action keeps real time, from the storm at two o'clock to Prospero's deadline at &ldquo;the sixth hour.&rdquo; Watch the gold arc, two till six &mdash; the rest of the day, the isle simply waits.
+        The play keeps real time, from the storm at two o'clock to Prospero's deadline at &ldquo;the sixth hour.&rdquo; Watch the arc, two till six. Before it, the morning tells his twelve years of exile, one hour to a year; after it come the epilogue, Ariel's freedom and the voyage home.
     </div>
 
     <script>
@@ -259,41 +294,85 @@
         const hourHand = document.getElementById('hourHand');
         const minuteHand = document.getElementById('minuteHand');
         const secondHand = document.getElementById('secondHand');
+        const meridiemEl = document.getElementById('meridiem');
         const actRing = document.getElementById('actRing');
         const digitalValue = document.getElementById('digitalValue');
         const digitalDate = document.getElementById('digitalDate');
         const glassReadout = document.getElementById('glassReadout');
         const actNameEl = document.getElementById('actName');
+        const actCaptionEl = document.getElementById('actCaption');
         const actQuoteEl = document.getElementById('actQuote');
         const actSpeakerEl = document.getElementById('actSpeaker');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
         const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const NUMBER_WORDS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 
-        const STORM_START_MIN = 14 * 60; // 2:00pm — the wreck
-        const STORM_END_MIN = 18 * 60;   // 6:00pm — "the sixth hour," Prospero's deadline
+        const STORM_START_MIN = 14 * 60; // 2:00pm, the wreck ("At least two glasses" past noon, I.ii)
+        const STORM_END_MIN = 18 * 60;   // 6:00pm, "the sixth hour," Prospero's deadline (V.i)
 
+        // The play itself: four real hours split into five equal acts.
         const ACTS = [
-            { name: 'Act I &mdash; The Tempest', color: '#3b6fa0', quote: '&ldquo;Hell is empty, and all the devils are here.&rdquo;', speaker: 'Ariel' },
-            { name: 'Act II &mdash; Conspiracies', color: '#3b8f7c', quote: '&ldquo;What&rsquo;s past is prologue.&rdquo;', speaker: 'Antonio' },
-            { name: 'Act III &mdash; The Isle&rsquo;s Noises', color: '#4a9e5e', quote: '&ldquo;Be not afeard; the isle is full of noises.&rdquo;', speaker: 'Caliban' },
-            { name: 'Act IV &mdash; The Masque', color: '#c99a3e', quote: '&ldquo;We are such stuff as dreams are made on.&rdquo;', speaker: 'Prospero' },
-            { name: 'Act V &mdash; Brave New World', color: '#c9673e', quote: '&ldquo;O brave new world, that has such people in&rsquo;t!&rdquo;', speaker: 'Miranda' }
+            { name: 'Act I, The Tempest', color: '#3b6fa0',
+              caption: 'The King of Naples’ ship splits on the rocks, and every soul is brought ashore unharmed.',
+              quote: '“Hell is empty,<br>And all the devils are here.”', speaker: 'Ariel, reporting Ferdinand · I.ii' },
+            { name: 'Act II, Conspiracies', color: '#3b8f7c',
+              caption: 'Antonio talks Sebastian toward murdering his brother the King as he sleeps.',
+              quote: '“What’s past is prologue.”', speaker: 'Antonio · II.i' },
+            { name: 'Act III, The Isle’s Noises', color: '#4a9e5e',
+              caption: 'Ferdinand bears logs for Miranda; Caliban, Stephano and Trinculo plot, led astray by Ariel’s music.',
+              quote: '“Be not afeard; the isle is full of noises,<br>Sounds and sweet airs, that give delight and hurt not.”', speaker: 'Caliban · III.ii' },
+            { name: 'Act IV, The Masque', color: '#c99a3e',
+              caption: 'Spirits perform a betrothal masque for the lovers, until Prospero breaks it off.',
+              quote: '“We are such stuff<br>As dreams are made on.”', speaker: 'Prospero · IV.i' },
+            { name: 'Act V, Brave New World', color: '#c9673e',
+              caption: 'Prospero forgives his enemies, renounces his art, and the court is gathered in.',
+              quote: '“O brave new world,<br>That has such people in’t!”', speaker: 'Miranda · V.i' }
+        ];
+
+        // The rest of the day. Midnight to noon is the twelve years of exile
+        // Prospero recounts in I.ii, one hour to a year; noon to two is the
+        // King's fleet drawing near; six to midnight is everything after the play.
+        const PHASES = [
+            { from: 0, to: 3, name: 'The Exile',
+              caption: 'Set adrift from Milan in a bare boat, Prospero comes ashore with his books and a daughter not yet three.',
+              quote: '“Me, poor man, my library<br>Was dukedom large enough.”', speaker: 'Prospero · I.ii' },
+            { from: 3, to: 6, name: 'The Cloven Pine',
+              caption: 'Prospero’s art opens the pine where the witch Sycorax shut Ariel, and the spirit enters his service.',
+              quote: '“Imprison’d, thou didst painfully remain<br>A dozen years.”', speaker: 'Prospero to Ariel · I.ii' },
+            { from: 6, to: 9, name: 'Caliban’s Lessons',
+              caption: 'Caliban shows them the springs and brine-pits of the isle and is taught to speak, until kindness turns to bondage.',
+              quote: '“You taught me language, and my profit on’t<br>Is, I know how to curse.”', speaker: 'Caliban · I.ii' },
+            { from: 9, to: 12, name: 'The Schoolroom',
+              caption: 'Miranda grows up with her father for a tutor and no other face to compare.',
+              quote: '“Here in this island we arriv’d; and here<br>Have I, thy schoolmaster, made thee more profit…”', speaker: 'Prospero · I.ii' },
+            { from: 12, to: 14, name: 'The Fleet from Tunis',
+              caption: 'Homeward from Claribel’s wedding at Tunis, the King’s ship passes within reach of Prospero’s art.',
+              quote: '“Bountiful Fortune,<br>Now my dear lady, hath mine enemies<br>Brought to this shore.”', speaker: 'Prospero · I.ii' },
+            { from: 18, to: 19, name: 'Epilogue',
+              caption: 'The work ceased at the sixth hour. Staff broken, book drowned, Prospero asks the audience to set him free.',
+              quote: '“Now my charms are all o’erthrown,<br>And what strength I have’s mine own.”', speaker: 'Prospero · Epilogue' },
+            { from: 19, to: 21, name: 'Ariel Free',
+              caption: 'One last charge, a calm sea for the voyage, and the spirit is released into the air.',
+              quote: '“Then to the elements<br>Be free, and fare thou well!”', speaker: 'Prospero · V.i' },
+            { from: 21, to: 23, name: 'The Voyage Home',
+              caption: 'The ship, found tight and yare in harbour, sails for Naples to see the lovers married.',
+              quote: '“I’ll deliver all;<br>And promise you calm seas, auspicious gales.”', speaker: 'Prospero · V.i' },
+            { from: 23, to: 24, name: 'Milan',
+              caption: 'Duke again, Prospero looks past the wedding to his own last years.',
+              quote: '“And thence retire me to my Milan, where<br>Every third thought shall be my grave.”', speaker: 'Prospero · V.i' }
         ];
 
         // Build the 12 clock numerals, placed radially around the face.
         for (let i = 1; i <= 12; i++) {
-            const angle = i * 30;
-            const rad = (angle - 90) * Math.PI / 180;
+            const rad = (i * 30 - 90) * Math.PI / 180;
             const reach = 42; // percent of half-width
-            const x = 50 + reach * Math.cos(rad);
-            const y = 50 + reach * Math.sin(rad);
-
             const numeral = document.createElement('div');
             numeral.className = 'numeral';
             numeral.textContent = i;
-            numeral.style.left = x + '%';
-            numeral.style.top = y + '%';
+            numeral.style.left = (50 + reach * Math.cos(rad)) + '%';
+            numeral.style.top = (50 + reach * Math.sin(rad)) + '%';
             numeralsEl.appendChild(numeral);
         }
 
@@ -301,18 +380,40 @@
             return String(n).padStart(2, '0');
         }
 
-        function buildActRing(activeIndex) {
+        function span(mins) {
+            const hh = Math.floor(mins / 60);
+            const mm = mins % 60;
+            return hh ? `${hh}h ${pad(mm)}m` : `${mm}m`;
+        }
+
+        // The arc from 2 to 6 on the dial. Before noon the hour hand is
+        // twelve hours early, so the arc is drawn faint.
+        let lastRingKey = '';
+        function buildActRing(activeIndex, faint) {
+            const key = activeIndex + '|' + faint;
+            if (key === lastRingKey) return;
+            lastRingKey = key;
             const segAngle = 24; // 120deg storm arc / 5 acts
-            let stops = ['transparent 0deg 60deg'];
+            const stops = ['transparent 0deg 60deg'];
             for (let i = 0; i < 5; i++) {
                 const from = 60 + i * segAngle;
-                const to = from + segAngle;
-                const isActive = i === activeIndex;
-                const color = ACTS[i].color;
-                stops.push(`${isActive ? color : color + '44'} ${from}deg ${to}deg`);
+                const alpha = i === activeIndex ? '' : (faint ? '33' : '66');
+                // Hairline gap between acts.
+                stops.push(`${ACTS[i].color}${alpha} ${from + 0.6}deg ${from + segAngle - 0.6}deg`);
+                stops.push(`transparent ${from + segAngle - 0.6}deg ${from + segAngle + 0.6}deg`);
             }
             stops.push('transparent 180deg 360deg');
             actRing.style.background = `conic-gradient(from 0deg, ${stops.join(', ')})`;
+        }
+
+        let lastScene = '';
+        function setScene(key, name, caption, quote, speaker) {
+            if (key === lastScene) return;
+            lastScene = key;
+            actNameEl.textContent = name;
+            actCaptionEl.textContent = caption;
+            actQuoteEl.innerHTML = quote;
+            actSpeakerEl.textContent = speaker;
         }
 
         function updateClock() {
@@ -321,14 +422,12 @@
             const m = now.getMinutes();
             const s = now.getSeconds();
             const totalMin = h * 60 + m + s / 60;
+            const wholeMin = h * 60 + m;
 
-            // Analog hands.
-            const hourDeg = ((h % 12) + m / 60) * 30;
-            const minuteDeg = (m + s / 60) * 6;
-            const secondDeg = s * 6;
-            hourHand.style.transform = `rotate(${hourDeg}deg)`;
-            minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
-            secondHand.style.transform = `rotate(${secondDeg}deg)`;
+            hourHand.style.transform = `rotate(${((h % 12) + m / 60) * 30}deg)`;
+            minuteHand.style.transform = `rotate(${(m + s / 60) * 6}deg)`;
+            secondHand.style.transform = `rotate(${s * 6}deg)`;
+            meridiemEl.textContent = h < 12 ? 'a.m.' : 'p.m.';
 
             digitalValue.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
             digitalDate.textContent = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
@@ -342,34 +441,33 @@
                 const glass = Math.min(4, Math.floor(elapsed / 60) + 1);
                 const act = ACTS[actIndex];
 
-                buildActRing(actIndex);
-                actNameEl.innerHTML = act.name;
-                actQuoteEl.innerHTML = act.quote;
-                actSpeakerEl.textContent = act.speaker;
-                glassReadout.textContent = `${glass} of 4 glasses run since two o'clock`;
+                buildActRing(actIndex, false);
+                setScene('act' + actIndex, act.name, act.caption, act.quote, act.speaker);
+                glassReadout.textContent = `the ${['first', 'second', 'third', 'fourth'][glass - 1]} glass of four is running`;
 
                 // Occasional lightning, more likely early in the tempest.
+                // Decorative, so it stays dark for reduced motion.
                 const flashChance = actIndex === 0 ? 0.12 : 0.03;
-                if (Math.random() < flashChance) {
+                if (!reduceMotion.matches && Math.random() < flashChance) {
                     lightning.classList.add('flash');
                     setTimeout(() => lightning.classList.remove('flash'), 90);
                 }
+                return;
+            }
+
+            const phase = PHASES.find(p => h >= p.from && h < p.to);
+            buildActRing(-1, h < 12);
+            setScene('phase' + phase.from, phase.name, phase.caption, phase.quote, phase.speaker);
+
+            if (h < 12) {
+                glassReadout.textContent = `year ${NUMBER_WORDS[h]} of twelve on the isle`;
+            } else if (wholeMin < STORM_START_MIN) {
+                glassReadout.textContent = `the tempest rises in ${span(STORM_START_MIN - wholeMin)}`;
             } else {
-                buildActRing(-1);
-                glassReadout.textContent = '';
-                if (totalMin < STORM_START_MIN) {
-                    const minsToStorm = Math.ceil(STORM_START_MIN - totalMin);
-                    actNameEl.textContent = 'Before the Tempest';
-                    actQuoteEl.textContent = 'The book lies closed. The sea is calm. The hour has not yet come.';
-                    actSpeakerEl.textContent = `the tempest begins in ${Math.floor(minsToStorm / 60)}h ${minsToStorm % 60}m`;
-                } else {
-                    const minsSince = Math.floor(totalMin - STORM_END_MIN);
-                    actNameEl.textContent = 'Epilogue';
-                    actQuoteEl.innerHTML = '&ldquo;Now my charms are all o&rsquo;erthrown, and what strength I have&rsquo;s mine own.&rdquo;';
-                    actSpeakerEl.textContent = minsSince < 1
-                        ? 'Prospero, as the sixth hour tolls'
-                        : `the charms broke ${Math.floor(minsSince / 60)}h ${minsSince % 60}m ago — the isle rests`;
-                }
+                const since = wholeMin - STORM_END_MIN;
+                glassReadout.textContent = since < 1
+                    ? 'the sixth hour: our work should cease'
+                    : `the play ended ${span(since)} ago`;
             }
         }
 
