@@ -17,27 +17,27 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **The Waste Land** - T.S. Eliot (a torn collage keyed to the hours the poem names: the stroke of nine, the violet hour, closing time)
 - ✅ **Mrs Dalloway** - Virginia Woolf (Big Ben's leaden circles spread over a map of London, handing the story between characters)
 - ✅ **One Hundred Years of Solitude** - Gabriel García Márquez, implemented twice on purpose: `one_hundred_years_clock.html` takes the structural reading (Macondo's circular time as concentric rings, Buendía generations) and `solitude_clock.html` the atmospheric one (the time dissolving into memory among the yellow butterflies). Two readings, one novel; don't add a third without a distinct angle.
-- ✅ **Infinite Jest** - David Foster Wallace (subsidized years, footnotes, E.T.A./Ennet House)
+- ✅ **Infinite Jest** - David Foster Wallace (the nine sponsored years of Subsidized Time share the day while 388 endnotes pile up beside the time; E.T.A. vs Ennet House)
 - ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes laid across the day as a bookshelf, with involuntary memories of the same minute on earlier days)
 
 #### Other Literary & Thematic Works
 - ✅ **The Metamorphosis** - Franz Kafka (the time read from Gregor's alarm clock, from his back, the floor and the ceiling)
-- ✅ **Slaughterhouse-Five** - Kurt Vonnegut
+- ✅ **Slaughterhouse-Five** - Kurt Vonnegut (Billy's life fills the hours out of order, the day drawn as a Tralfamadorian mountain range)
 - ✅ **The Divine Comedy** - Dante Alighieri (a cross-section of Dante's universe; the day is the poem's 100 cantos)
 - ✅ **The Canterbury Tales** - Geoffrey Chaucer (24 tales, 24 hours, on the 60-mile road; the Host reads the hour from a shadow)
 - ✅ **The Odyssey** - Homer (24 books as 24 hours on a sea chart, the wanderings replayed in flashback from Scheria)
 - ✅ **Hamlet** - William Shakespeare (the play once a day from a midnight curtain; the Ghost knocks the dial out of joint until Hamlet sets it right)
-- ✅ **The Old Man and the Sea** - Ernest Hemingway
+- ✅ **The Old Man and the Sea** - Ernest Hemingway (Santiago's three days at sea in cross-section, once a day, line strain to sharks)
 - ✅ **The Stranger** - Albert Camus (the sun as the clock, peaking at the beach at two, then a cell until the stars)
 - ✅ **The Sisyphus Clock** - Albert Camus' "The Myth of Sisyphus," in flat cutout collage: the boulder up each minute, then the walk back down, the hour he is aware, and a Giant Foot on the hour
 - ✅ **Crime and Punishment** - Fyodor Dostoevsky (the 730 steps to the pawnbroker's as the minute hand, with a fever chart)
-- ✅ **On the Road** - Jack Kerouac
+- ✅ **On the Road** - Jack Kerouac (a car on the four crossings while a typewriter types each minute onto Kerouac's scroll)
 - ✅ **Catch-22** - Joseph Heller (a mission log where Cathcart keeps raising the number required to go home)
 - ✅ **Dune** - Frank Herbert
 - ✅ **Don Quixote** - Miguel de Cervantes (a windmill whose sails and the Don's lance tell the time, Part One by morning, Part Two by night)
 - ✅ **Ghost in the Shell** - Masamune Shirow
 - ✅ **The Lord of the Rings** - J.R.R. Tolkien
-- ✅ **The Great Gatsby** - F. Scott Fitzgerald
+- ✅ **The Great Gatsby** - F. Scott Fitzgerald (young Jimmy Gatz's schedule runs the day; the green light burns across the bay from dusk to dawn)
 - ✅ **The Trial** - Franz Kafka (a court form where the time arrives by numbered amendment, arrest at eight to the end at nine)
 - ✅ **House of Leaves** - Mark Z. Danielewski
 - ✅ **The Sound and the Fury** - William Faulkner (four narrators, four clocks: Quentin's handless watch, Dilsey's one-hand kitchen clock)
