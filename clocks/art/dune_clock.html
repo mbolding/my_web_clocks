@@ -4,314 +4,650 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dune Clock</title>
+    <meta name="description" content="An Arrakeen day: the Fremen troop shelters in the sietch while the sun burns the sand, then walks out at dusk under two moons and home before dawn.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Jura:wght@300;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Jura:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --desert-sand: #c1753c;
-            --desert-dark: #3a1505;
-            --spice-blue: #0077ff;
-            --spice-glow: rgba(0, 119, 255, 0.6);
-            --water-blue: #4fa4e8;
-            --text-light: #f4dcb5;
+            --ink: #f4dcb5;
+            --ink-soft: rgba(244, 220, 181, 0.82);
+            --ink-shadow: rgba(8, 4, 10, 0.75);
+            --accent: #e9964f;
+            --panel: rgba(28, 11, 4, 0.72);
+            --panel-ink: #f4dcb5;
+            --panel-soft: #d8b98f;
+            --rule: rgba(233, 150, 79, 0.35);
+            --sietch: #e9964f;
+            --sand: #3b5a8c;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        body.day {
+            --ink: #2a1206;
+            --ink-soft: rgba(42, 18, 6, 0.85);
+            --ink-shadow: rgba(255, 230, 190, 0.55);
+            --accent: #7a2f0b;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: #0b0a16; }
 
         body {
-            background: linear-gradient(180deg, var(--desert-dark) 0%, #762f0a 100%);
-            color: var(--text-light);
+            background: #0b0a16;
+            color: var(--ink);
             font-family: 'Jura', sans-serif;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            min-height: 100svh;
             overflow: hidden;
-            position: relative;
         }
 
-        canvas#spice-canvas {
+        canvas#scene {
+            position: fixed;
+            inset: 0;
+            display: block;
+            z-index: 0;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: clamp(16px, 3.5vh, 40px) 16px clamp(14px, 3vh, 32px);
+            pointer-events: none;
+        }
+
+        .readout {
+            text-align: center;
+            text-shadow: 0 0 14px var(--ink-shadow), 0 1px 2px var(--ink-shadow);
+            transition: color 3s ease;
+            max-width: 40rem;
+        }
+
+        .kicker {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.72rem, 1.6vw, 0.95rem);
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+            transition: color 3s ease;
+        }
+
+        #time {
+            display: block;
+            font-family: 'Jura', sans-serif;
+            font-weight: 600;
+            font-size: clamp(3rem, 11vw, 6.2rem);
+            line-height: 1.05;
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
+            margin: clamp(4px, 1vh, 10px) 0 clamp(6px, 1.4vh, 14px);
+            white-space: nowrap;
+        }
+
+        #time .sec { font-size: 0.5em; opacity: 0.75; margin-left: 0.15em; }
+
+        #phaseName {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: clamp(1.05rem, 2.6vw, 1.5rem);
+            letter-spacing: 0.06em;
+        }
+
+        #phaseText {
+            margin: 0.35rem auto 0;
+            font-size: clamp(0.92rem, 1.9vw, 1.08rem);
+            line-height: 1.45;
+            color: var(--ink-soft);
+            max-width: 32rem;
+            font-weight: 600;
+        }
+
+        .panel {
+            width: min(720px, 100%);
+            background: var(--panel);
+            border: 1px solid var(--rule);
+            border-radius: 10px;
+            padding: clamp(12px, 2vh, 18px) clamp(14px, 2.5vw, 24px);
+            color: var(--panel-ink);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .ribbon-wrap { position: relative; }
+
+        .ribbon {
+            position: relative;
+            height: 14px;
+            border-radius: 3px;
+            overflow: hidden;
+            background: var(--sand);
+        }
+
+        .ribbon .seg {
             position: absolute;
             top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 1;
-            mix-blend-mode: screen;
+            bottom: 0;
+            background: var(--sietch);
         }
 
-        .ui-container {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            backdrop-filter: blur(5px);
-            background: rgba(58, 21, 5, 0.4);
-            border: 1px solid rgba(193, 117, 60, 0.3);
-            border-radius: 50%;
-            width: clamp(300px, 80vw, 600px);
-            height: clamp(300px, 80vw, 600px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 100px rgba(193, 117, 60, 0.2);
-        }
-
-        .title {
-            font-family: 'Cinzel', serif;
-            font-size: 1.2rem;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            color: var(--desert-sand);
-            margin-bottom: 20px;
-        }
-
-        .time-wrapper {
-            position: relative;
-            margin: 30px 0;
-        }
-
-        .time-prescience {
+        .marker {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(1.05);
-            font-size: clamp(3rem, 10vw, 5rem);
-            font-weight: 700;
-            color: var(--spice-blue);
-            opacity: 0.3;
-            filter: blur(4px);
-            letter-spacing: 2px;
-            white-space: nowrap;
-        }
-
-        .time-current {
-            position: relative;
-            font-size: clamp(3rem, 10vw, 5rem);
-            font-weight: 700;
-            color: var(--text-light);
-            text-shadow: 0 0 20px var(--spice-glow);
-            letter-spacing: 2px;
-            white-space: nowrap;
-        }
-
-        .water-discipline {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .water-label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: rgba(244, 220, 181, 0.7);
-        }
-
-        .water-bar-container {
-            width: 200px;
-            height: 4px;
-            background: rgba(0,0,0,0.5);
+            top: -5px;
+            width: 3px;
+            height: 24px;
+            margin-left: -1.5px;
+            background: #fff4e0;
             border-radius: 2px;
-            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0 8px rgba(255, 240, 210, 0.7);
         }
 
-        .water-bar {
-            height: 100%;
-            background: var(--water-blue);
-            width: 100%;
-            box-shadow: 0 0 10px var(--water-blue);
-            transition: width 1s linear;
+        .ticks {
+            position: relative;
+            height: 1.1rem;
+            margin-top: 6px;
+            font-size: 0.72rem;
+            color: var(--panel-soft);
+            font-variant-numeric: tabular-nums;
         }
 
-        .quote-container {
-            margin-top: 40px;
-            height: 60px;
+        .ticks span { position: absolute; transform: translateX(-50%); }
+        .ticks span:first-child { transform: none; }
+        .ticks span:last-child { transform: translateX(-100%); }
+
+        .legend {
             display: flex;
-            align-items: center;
-            font-family: 'Cinzel', serif;
-            font-size: 0.9rem;
-            color: var(--desert-sand);
-            font-style: italic;
-            opacity: 0.8;
-            max-width: 80%;
-            text-align: center;
-            transition: opacity 1s ease;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 4px 14px;
+            margin-top: 6px;
+            font-size: clamp(0.78rem, 1.6vw, 0.9rem);
+            color: var(--panel-soft);
         }
+
+        .legend i {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 6px;
+            vertical-align: -1px;
+        }
+
+        #status {
+            color: var(--panel-ink);
+            font-weight: 600;
+        }
+
+        blockquote {
+            margin-top: clamp(8px, 1.5vh, 12px);
+            padding-top: clamp(8px, 1.5vh, 12px);
+            border-top: 1px solid var(--rule);
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.85rem, 1.9vw, 1rem);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        blockquote cite {
+            display: block;
+            margin-top: 2px;
+            font-family: 'Jura', sans-serif;
+            font-style: normal;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            color: var(--panel-soft);
+        }
+
+        @media (max-height: 560px) {
+            #phaseText { display: none; }
+            blockquote { display: none; }
+        }
+        body.preload * { transition: none !important; }
     </style>
 </head>
-<body>
+<body class="preload">
+    <canvas id="scene" aria-hidden="true"></canvas>
 
-    <canvas aria-hidden="true" id="spice-canvas"></canvas>
-
-    <div class="ui-container">
-        <div class="title">Arrakis Standard</div>
-        
-        <div class="time-wrapper">
-            <div class="time-prescience" id="timePrescience">00:00:00</div>
-            <div class="time-current" id="timeCurrent">00:00:00</div>
-        </div>
-
-        <div class="water-discipline">
-            <div class="water-label">Water Retention</div>
-            <div class="water-bar-container">
-                <div class="water-bar" id="waterBar"></div>
+    <div class="overlay">
+        <header class="readout">
+            <div class="kicker">Arrakis Standard</div>
+            <time id="time" role="timer" aria-label="Current time">00:00<span class="sec">:00</span></time>
+            <div aria-live="polite">
+                <h1 id="phaseName">The crossing</h1>
+                <p id="phaseText"></p>
             </div>
-            <div class="water-label" id="waterDetails" style="font-size:0.7rem;">Expended: 0 Liters</div>
-        </div>
+        </header>
 
-        <div class="quote-container" id="quoteText">
-            "I must not fear. Fear is the mind-killer."
-        </div>
+        <footer class="panel" id="panel">
+            <div class="ribbon-wrap">
+                <div class="ribbon" aria-hidden="true">
+                    <div class="seg" id="seg"></div>
+                </div>
+                <div class="marker" id="marker" aria-hidden="true"></div>
+            </div>
+            <div class="ticks" aria-hidden="true">
+                <span style="left:0">00</span>
+                <span style="left:25%">06</span>
+                <span style="left:50%">12</span>
+                <span style="left:75%">18</span>
+                <span style="left:100%">24</span>
+            </div>
+            <div class="legend">
+                <span><i style="background:var(--sietch)"></i>In the sietch, 05:30 to 18:30</span>
+                <span><i style="background:var(--sand)"></i>On the open sand</span>
+            </div>
+            <div class="legend"><span id="status"></span></div>
+            <blockquote>
+                &ldquo;I must not fear. Fear is the mind-killer.&rdquo;
+                <cite>The Litany against Fear, Frank Herbert, Dune</cite>
+            </blockquote>
+        </footer>
     </div>
 
     <script>
-        // Decorative motion only: with reduced motion requested the scene is drawn
-        // once and then left still; the clock itself keeps updating.
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        // The Fremen keep the desert's hours: sealed in the sietch while the sun
+        // owns the sand, out on the dunes from dusk to before dawn.
+        const SEAL_CLOSE = 5 * 60 + 30;   // 05:30, back inside
+        const SEAL_OPEN = 18 * 60 + 30;   // 18:30, troop goes out
+        const NIGHT_LEN = 1440 - SEAL_OPEN + SEAL_CLOSE; // 660 minutes
 
-        // Quotes array
-        const quotes = [
-            "I must not fear. Fear is the mind-killer.",
-            "He who controls the spice controls the universe.",
-            "The mystery of life isn't a problem to solve, but a reality to experience.",
-            "Deep in the human unconscious is a pervasive need for a logical universe that makes sense.",
-            "A process cannot be understood by stopping it.",
-            "Survival is the ability to swim in strange water.",
-            "Hope clouds observation.",
-            "To know the future is to be trapped by it."
+        const PHASES = [
+            [0, 5.5, 'The return', 'Turned for home past midnight, the troop walks back toward the rock by moonlight, breaking its stride so nothing under the sand hears a rhythm.'],
+            [5.5, 7, 'Dawn', 'The door seals close behind the last walker. Inside the sietch every breath of moisture is caught and kept.'],
+            [7, 11, 'Morning', 'The sun climbs and the open sand begins to burn. Out there, the wind is already filling in last night’s tracks.'],
+            [11, 15, 'The heat of the day', 'Noon on Arrakis. Nothing walks the dunes. The sietch rests deep in the cool rock and waits for evening.'],
+            [15, 18, 'Afternoon', 'The heat breaks slowly. Inside, stillsuits are checked and sealed, and the troop readies for the night.'],
+            [18, 19.5, 'Dusk', 'The cold comes down fast. At half past six the seal opens and the troop slips out onto the sand.'],
+            [19.5, 24, 'The crossing', 'Out across the open desert under two moons, walking without rhythm so the worm does not come.']
         ];
 
-        const timeCurrent = document.getElementById('timeCurrent');
-        const timePrescience = document.getElementById('timePrescience');
-        const waterBar = document.getElementById('waterBar');
-        const waterDetails = document.getElementById('waterDetails');
-        const quoteText = document.getElementById('quoteText');
-        
-        let lastMinute = -1;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const timeEl = document.getElementById('time');
+        const phaseNameEl = document.getElementById('phaseName');
+        const phaseTextEl = document.getElementById('phaseText');
+        const statusEl = document.getElementById('status');
+        const markerEl = document.getElementById('marker');
+        const segEl = document.getElementById('seg');
+        const panelEl = document.getElementById('panel');
+        const headerEl = document.querySelector('.readout');
 
-        // Spice Canvas Setup
-        const canvas = document.getElementById('spice-canvas');
+        segEl.style.left = (SEAL_CLOSE / 1440 * 100) + '%';
+        segEl.style.width = ((SEAL_OPEN - SEAL_CLOSE) / 1440 * 100) + '%';
+
+        const pad = n => String(n).padStart(2, '0');
+        function minutesOf(d) { return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; }
+
+        function fmtSpan(mins) {
+            const m = Math.max(0, Math.ceil(mins));
+            const h = Math.floor(m / 60), r = m % 60;
+            if (h === 0) return r + ' min';
+            return h + ' h ' + pad(r) + ' min';
+        }
+
+        let lastPhase = '';
+        function updateText() {
+            const now = new Date();
+            const h = now.getHours();
+            timeEl.innerHTML = pad(h) + ':' + pad(now.getMinutes()) + '<span class="sec">:' + pad(now.getSeconds()) + '</span>';
+            timeEl.setAttribute('datetime', pad(h) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()));
+
+            const hf = h + now.getMinutes() / 60;
+            const ph = PHASES.find(p => hf >= p[0] && hf < p[1]) || PHASES[PHASES.length - 1];
+            if (ph[2] !== lastPhase) {
+                lastPhase = ph[2];
+                phaseNameEl.textContent = ph[2];
+                phaseTextEl.textContent = ph[3];
+            }
+
+            const m = minutesOf(now);
+            markerEl.style.left = (m / 1440 * 100) + '%';
+            const inside = m >= SEAL_CLOSE && m < SEAL_OPEN;
+            if (inside) {
+                statusEl.textContent = 'Sealed in. The troop goes out in ' + fmtSpan(SEAL_OPEN - m) + '.';
+            } else {
+                const left = (SEAL_CLOSE - m + 1440) % 1440;
+                const t = nightProgress(m);
+                statusEl.textContent = (t < 0.5 ? 'Walking out. ' : 'Walking home. ') +
+                    'Back inside the rock in ' + fmtSpan(left) + '.';
+            }
+        }
+
+        // 0 at the door at 18:30, 0.5 at the far reach at midnight, 1 home at 05:30.
+        function nightProgress(m) {
+            const since = (m - SEAL_OPEN + 1440) % 1440;
+            return since <= NIGHT_LEN ? since / NIGHT_LEN : -1;
+        }
+
+        // ---------- scene ----------
+        const canvas = document.getElementById('scene');
         const ctx = canvas.getContext('2d');
-        let width, height;
-        let particles = [];
+        let W = 0, H = 0;
+        let geo = {};
+
+        function rng(seed) {
+            return function () {
+                seed = (seed * 1664525 + 1013904223) >>> 0;
+                return seed / 4294967296;
+            };
+        }
+
+        const stars = [];
+        (function () {
+            const r = rng(7);
+            for (let i = 0; i < 180; i++) stars.push({ x: r(), y: r(), s: r() * 1.2 + 0.4, a: r() * 0.6 + 0.4 });
+        })();
+
+        // Footsteps with uneven spacing: the Fremen sandwalk has no beat.
+        function makeSteps(seed) {
+            const r = rng(seed), out = [];
+            let f = 0, side = 1;
+            while (f < 1) {
+                f += 0.006 + r() * 0.014 + (r() < 0.15 ? 0.012 : 0);
+                side = -side;
+                out.push({ f, side, jit: (r() - 0.5) * 1.5 });
+            }
+            return out;
+        }
+        const stepsOut = makeSteps(11);
+        const stepsBack = makeSteps(23);
+
+        const motes = [];
+        (function () {
+            const r = rng(99);
+            for (let i = 0; i < 90; i++) {
+                motes.push({ x: r(), y: r(), vx: 0.00012 + r() * 0.00025, vy: (r() - 0.5) * 0.00008, s: r() * 1.6 + 0.5, blue: r() > 0.88, a: r() * 0.5 + 0.2 });
+            }
+        })();
 
         function resizeCanvas() {
-            width = window.innerWidth;
-            height = window.innerHeight;
             const dpr = window.devicePixelRatio || 1;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            canvas.width = Math.round(width * dpr);
-            canvas.height = Math.round(height * dpr);
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const headBottom = headerEl.getBoundingClientRect().bottom;
+            const panelTop = panelEl.getBoundingClientRect().top;
+            const walk = panelTop - Math.max(26, H * 0.045);
+            const horizon = walk - Math.max(40, H * 0.08);
+            const sunR = Math.max(20, Math.min(46, Math.min(W, H) * 0.05));
+            let peak = headBottom + sunR + 14;
+            if (peak > horizon - sunR * 2) peak = Math.max(sunR + 8, horizon - sunR * 2.5);
+            geo = {
+                walk, horizon, sunR, peak,
+                amp: Math.max(5, H * 0.014),
+                xs: W * (W < 600 ? 0.2 : 0.15),
+                xf: W * 0.88,
+                fig: Math.max(9, Math.min(17, H * 0.02))
+            };
+            draw(Date.now());
+        }
+
+        function duneY(x) {
+            const t = x / W * Math.PI * 2;
+            return geo.walk + geo.amp * Math.sin(t * 0.9 + 0.6) + geo.amp * 0.5 * Math.sin(t * 2.3 + 1.7);
+        }
+        function farY(x) {
+            const t = x / W * Math.PI * 2;
+            return geo.horizon + geo.amp * 1.4 * Math.sin(t * 1.3 + 2.1) + geo.amp * 0.6 * Math.sin(t * 3.1);
+        }
+
+        // Sky keyframes by hour: [hour, top, bottom]
+        const SKY = [
+            [0, '#05060f', '#151a35'],
+            [4.6, '#070913', '#1b1e3a'],
+            [5.5, '#2b2140', '#a0563c'],
+            [6.5, '#76506a', '#f0a565'],
+            [8.5, '#c98c56', '#f1cd97'],
+            [12, '#d79f62', '#f6dcac'],
+            [16, '#c98c56', '#f0c48a'],
+            [18, '#7d3f3c', '#e47c40'],
+            [19, '#2c2040', '#7a3b3a'],
+            [20.5, '#090b1b', '#1c2040'],
+            [24, '#05060f', '#151a35']
+        ];
+        const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+        const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+        const rgb = c => 'rgb(' + c.join(',') + ')';
+        function skyAt(hf) {
+            for (let i = 0; i < SKY.length - 1; i++) {
+                const a = SKY[i], b = SKY[i + 1];
+                if (hf >= a[0] && hf <= b[0]) {
+                    const t = (hf - a[0]) / (b[0] - a[0]);
+                    return [mix(hex(a[1]), hex(b[1]), t), mix(hex(a[2]), hex(b[2]), t)];
+                }
+            }
+            return [hex(SKY[0][1]), hex(SKY[0][2])];
+        }
+        const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+
+        // 0 at night, 1 in full day.
+        function daylight(hf) {
+            if (hf < 5 || hf > 20) return 0;
+            if (hf < 7.5) return (hf - 5) / 2.5;
+            if (hf > 17.5) return 1 - (hf - 17.5) / 2.5;
+            return 1;
+        }
+
+        function arcPos(t, x0, x1, top) {
+            return { x: x0 + (x1 - x0) * t, y: geo.horizon - (geo.horizon - top) * Math.sin(Math.PI * t) };
+        }
+
+        function drawBody(p, r, fill, glow) {
+            const g = ctx.createRadialGradient(p.x, p.y, r * 0.6, p.x, p.y, r * 3.2);
+            g.addColorStop(0, glow);
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(p.x, p.y, r * 3.2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = fill;
+            ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+        }
+
+        let isDay = null;
+        function draw(ms) {
+            if (!W) return;
+            const now = new Date(ms);
+            const m = minutesOf(now) + (now.getMilliseconds() / 60000);
+            const hf = m / 60;
+            const day = daylight(hf);
+            const [skyTop, skyBot] = skyAt(hf);
+
+            const wantDay = lum(mix(skyTop, skyBot, 0.35)) > 0.42;
+            if (wantDay !== isDay) { isDay = wantDay; document.body.classList.toggle('day', wantDay); }
+            if (document.body.classList.contains('preload')) requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove('preload')));
+
+            const g = ctx.createLinearGradient(0, 0, 0, geo.horizon + geo.amp * 2);
+            g.addColorStop(0, rgb(skyTop));
+            g.addColorStop(1, rgb(skyBot));
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+
+            // stars
+            const starA = 1 - Math.min(1, day * 2.2);
+            if (starA > 0.01) {
+                for (const s of stars) {
+                    const y = s.y * geo.horizon;
+                    ctx.fillStyle = 'rgba(240,230,255,' + (s.a * starA).toFixed(3) + ')';
+                    ctx.fillRect(s.x * W, y, s.s, s.s);
+                }
+            }
+
+            const arcTop = geo.peak;
+            // Two moons: the larger rises at dusk, the smaller later and lower.
+            const moon1 = ((m - 18.5 * 60 + 1440) % 1440) / (12 * 60);
+            if (moon1 >= 0 && moon1 <= 1) {
+                drawBody(arcPos(moon1, W * 0.94, W * 0.06, arcTop + geo.sunR * 0.4), geo.sunR * 0.62,
+                    'rgba(236,232,220,' + (0.95 - day * 0.6) + ')', 'rgba(220,225,255,' + (0.18 * (1 - day)) + ')');
+            }
+            const moon2 = ((m - 21 * 60 + 1440) % 1440) / (10 * 60);
+            if (moon2 >= 0 && moon2 <= 1) {
+                drawBody(arcPos(moon2, W * 0.8, W * 0.2, arcTop + (geo.horizon - arcTop) * 0.4), geo.sunR * 0.38,
+                    'rgba(214,206,190,' + (0.92 - day * 0.6) + ')', 'rgba(220,210,190,' + (0.12 * (1 - day)) + ')');
+            }
+
+            // the sun, rising 06:00, setting 18:00
+            const sunT = (m - 360) / 720;
+            if (sunT > -0.04 && sunT < 1.04) {
+                const p = arcPos(Math.min(1, Math.max(0, sunT)), W * 0.08, W * 0.92, arcTop);
+                if (sunT < 0) p.y += -sunT * geo.sunR * 25;
+                if (sunT > 1) p.y += (sunT - 1) * geo.sunR * 25;
+                drawBody(p, geo.sunR, '#f2893a', 'rgba(255,150,60,0.5)');
+                ctx.fillStyle = 'rgba(255,214,150,0.9)';
+                ctx.beginPath(); ctx.arc(p.x, p.y, geo.sunR * 0.62, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // far dunes
+            const farDay = [196, 128, 70], farNight = [52, 40, 58];
+            ctx.fillStyle = rgb(mix(farNight, farDay, day));
+            ctx.beginPath(); ctx.moveTo(0, H);
+            for (let x = 0; x <= W; x += 8) ctx.lineTo(x, farY(x));
+            ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+            // near dune
+            const nearTop = mix([84, 66, 72], [205, 130, 66], day);
+            const nearBot = mix([24, 16, 20], [120, 58, 22], day);
+            const ng = ctx.createLinearGradient(0, geo.walk - geo.amp * 2, 0, H);
+            ng.addColorStop(0, rgb(nearTop));
+            ng.addColorStop(1, rgb(nearBot));
+            ctx.fillStyle = ng;
+            ctx.beginPath(); ctx.moveTo(0, H);
+            for (let x = 0; x <= W; x += 6) ctx.lineTo(x, duneY(x));
+            ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+            // sietch rock
+            const rx = geo.xs, base = duneY(rx), rh = Math.max(44, H * 0.1);
+            ctx.fillStyle = rgb(mix([16, 10, 14], [92, 46, 22], day));
+            ctx.beginPath();
+            ctx.moveTo(-10, base + 30);
+            ctx.lineTo(-10, base - rh * 1.15);
+            ctx.lineTo(rx * 0.25, base - rh * 1.25);
+            ctx.lineTo(rx * 0.45, base - rh * 0.95);
+            ctx.lineTo(rx * 0.62, base - rh * 1.05);
+            ctx.lineTo(rx * 0.86, base - rh * 0.55);
+            ctx.lineTo(rx * 1.06, base - rh * 0.2);
+            ctx.lineTo(rx * 1.16, base + 8);
+            ctx.closePath(); ctx.fill();
+            // the door: lit only when open
+            const open = m >= SEAL_OPEN - 10 || m < SEAL_CLOSE + 10;
+            ctx.fillStyle = open ? 'rgba(255,190,110,0.85)' : 'rgba(0,0,0,0.55)';
+            const dw = Math.max(5, geo.fig * 0.5), dh = geo.fig * 1.1;
+            ctx.fillRect(rx * 0.86 - dw / 2, base - dh - 2, dw, dh);
+
+            // far rock where the troop turns at midnight
+            const fx = geo.xf, fb = duneY(fx), fs = Math.min(1, (W - fx) / 56);
+            ctx.fillStyle = rgb(mix([22, 14, 18], [110, 56, 26], day));
+            ctx.beginPath();
+            ctx.moveTo(fx + 6 * fs, fb + 6);
+            ctx.lineTo(fx + 14 * fs, fb - rh * 0.28);
+            ctx.lineTo(fx + 26 * fs, fb - rh * 0.38);
+            ctx.lineTo(fx + 40 * fs, fb - rh * 0.18);
+            ctx.lineTo(fx + 52 * fs, fb + 6);
+            ctx.closePath(); ctx.fill();
+
+            // tracks: laid during the night, erased by the wind through the day
+            const t = nightProgress(m);
+            let trackA = 1, outF = 0, backF = 0;
+            if (t >= 0) {
+                outF = Math.min(1, t * 2);
+                backF = Math.max(0, (t - 0.5) * 2);
+            } else {
+                outF = 1; backF = 1;
+                trackA = Math.max(0, 1 - (m - SEAL_CLOSE) / 360);
+            }
+            if (trackA > 0) {
+                ctx.fillStyle = 'rgba(10,4,4,' + (0.45 * trackA).toFixed(3) + ')';
+                const drawSteps = (steps, upto, from, to, dy) => {
+                    for (const s of steps) {
+                        if (s.f > upto) break;
+                        const x = from + (to - from) * s.f;
+                        const y = duneY(x) + dy + s.side * 1.6 + s.jit;
+                        ctx.beginPath(); ctx.ellipse(x, y, 1.7, 1.0, 0, 0, Math.PI * 2); ctx.fill();
+                    }
+                };
+                drawSteps(stepsOut, outF, geo.xs, geo.xf, 3);
+                drawSteps(stepsBack, backF, geo.xf, geo.xs, 8);
+            }
+
+            // the troop
+            if (t >= 0) {
+                const fh = geo.fig;
+                const span = geo.xf - geo.xs;
+                const walking = !reduceMotion.matches;
+                for (let i = 0; i < 5; i++) {
+                    // each walker follows the leader a few paces behind on the same round trip
+                    const sPos = t * 2 - i * fh * 1.25 / span;
+                    if (sPos < 0 || sPos > 2) continue;
+                    const out = sPos <= 1;
+                    const x = out ? geo.xs + span * sPos : geo.xf - span * (sPos - 1);
+                    const y = duneY(x) + (out ? 3 : 8);
+                    const ph = walking ? (ms / 380 + i * 1.7 + Math.sin(ms / 900 + i) * 0.8) : i;
+                    const sw = Math.sin(ph) * fh * 0.18;
+                    ctx.strokeStyle = '#120806';
+                    ctx.fillStyle = '#120806';
+                    ctx.lineWidth = Math.max(1.6, fh * 0.16);
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - fh * 0.42); ctx.lineTo(x + sw, y);
+                    ctx.moveTo(x, y - fh * 0.42); ctx.lineTo(x - sw, y);
+                    ctx.stroke();
+                    // robed body and hood
+                    ctx.beginPath();
+                    ctx.moveTo(x - fh * 0.2, y - fh * 0.38);
+                    ctx.lineTo(x - fh * 0.14, y - fh * 0.88);
+                    ctx.lineTo(x + fh * 0.14, y - fh * 0.88);
+                    ctx.lineTo(x + fh * 0.2, y - fh * 0.38);
+                    ctx.closePath(); ctx.fill();
+                    ctx.beginPath(); ctx.arc(x, y - fh * 0.98, fh * 0.15, 0, Math.PI * 2); ctx.fill();
+                    // moonlight rim
+                    ctx.strokeStyle = 'rgba(230,225,240,0.35)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.arc(x, y - fh * 0.98, fh * 0.15, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+                }
+            }
+
+            // drifting spice dust (decorative)
+            for (const p of motes) {
+                const x = p.x * W, y = p.y * geo.walk;
+                ctx.fillStyle = p.blue ? 'rgba(80,150,255,' + p.a + ')' : 'rgba(255,170,90,' + (p.a * (0.5 + 0.5 * (1 - day))) + ')';
+                ctx.beginPath(); ctx.arc(x, y, p.s, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        let lastFrame = 0;
+        function animate(ts) {
+            const dt = lastFrame ? Math.min(64, ts - lastFrame) : 16;
+            lastFrame = ts;
+            for (const p of motes) {
+                p.x += p.vx * dt / 16; p.y += p.vy * dt / 16;
+                if (p.x > 1.02) p.x = -0.02;
+                if (p.y < 0) p.y = 1; else if (p.y > 1) p.y = 0;
+            }
+            draw(Date.now());
+            if (!reduceMotion.matches) requestAnimationFrame(animate);
         }
 
         window.addEventListener('resize', resizeCanvas);
+        updateText();
         resizeCanvas();
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(resizeCanvas);
 
-        class SpiceMote {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 2 + 0.5;
-                this.vx = (Math.random() - 0.5) * 0.5 + 0.2; // slight drift to the right
-                this.vy = (Math.random() - 0.5) * 0.5 - 0.3; // slight drift upward
-                // Colors range from orange to spice blue
-                const isBlue = Math.random() > 0.85;
-                this.color = isBlue ? 'rgba(0, 119, 255, ' : 'rgba(255, 150, 50, ';
-                this.alpha = Math.random() * 0.5 + 0.2;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Wraparound
-                if (this.x > width + 10) this.x = -10;
-                if (this.x < -10) this.x = width + 10;
-                if (this.y > height + 10) this.y = -10;
-                if (this.y < -10) this.y = height + 10;
-
-                // Twinkle
-                this.alpha += (Math.random() - 0.5) * 0.05;
-                if (this.alpha < 0.1) this.alpha = 0.1;
-                if (this.alpha > 0.8) this.alpha = 0.8;
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color + this.alpha + ')';
-                ctx.fill();
-            }
-        }
-
-        for (let i = 0; i < 200; i++) {
-            particles.push(new SpiceMote());
-        }
-
-        function animateCanvas() {
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            if (!reduceMotion.matches) requestAnimationFrame(animateCanvas);
-        }
-        animateCanvas();
-
-        // Clock Logic
-        function updateClock() {
-            const now = new Date();
-            
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            // Current Time
-            timeCurrent.textContent = `${h}:${m}:${s}`;
-
-            // Prescience Time (Showing 1 minute and 15 seconds into the future)
-            const future = new Date(now.getTime() + 75000);
-            let fh = future.getHours().toString().padStart(2, '0');
-            let fm = future.getMinutes().toString().padStart(2, '0');
-            let fs = future.getSeconds().toString().padStart(2, '0');
-            timePrescience.textContent = `${fh}:${fm}:${fs}`;
-
-            // Water Discipline (Resetting every 60 seconds linearly)
-            const seconds = now.getSeconds();
-            const ms = now.getMilliseconds();
-            const progress = ((seconds + ms/1000) / 60) * 100; // 0 to 100 over a minute
-            
-            // It depletes, so we do 100 - progress
-            waterBar.style.width = `${100 - progress}%`;
-            const expended = (progress / 100 * 1.5).toFixed(3); // lose 1.5 liters per minute
-            waterDetails.textContent = `Expended: ${expended} Liters`;
-
-            // Change Quote every hour or minute for demo (we'll do minute)
-            if (lastMinute !== now.getMinutes()) {
-                lastMinute = now.getMinutes();
-                quoteText.style.opacity = 0;
-                setTimeout(() => {
-                    quoteText.textContent = `"${quotes[now.getMinutes() % quotes.length]}"`;
-                    quoteText.style.opacity = 0.8;
-                }, 1000);
-            }
-
-            requestAnimationFrame(updateClock);
-        }
-
-        updateClock();
+        setInterval(() => {
+            updateText();
+            // With reduced motion the scene is still redrawn once a second,
+            // because the sun, moons and troop carry the time.
+            if (reduceMotion.matches) draw(Date.now());
+        }, 1000);
+        if (!reduceMotion.matches) requestAnimationFrame(animate);
+        reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) { lastFrame = 0; requestAnimationFrame(animate); } });
     </script>
 </body>
 </html>
