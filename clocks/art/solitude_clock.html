@@ -1,159 +1,390 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>100 Years of Solitude Clock</title>
-    <!-- Elegant, warm serif font for magic realism -->
+    <meta name="description" content="The time is remembered rather than read, fading and coming back, while Macondo's weather follows the hour: insomnia, butterflies, the long rain, yellow flowers.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Caveat:wght@500&display=swap" rel="stylesheet">
     <style>
+        /* Palette tokens. JS sets data-phase on <html> from the hour:
+           insomnio 0-4, mariposas 5-10, remedios 11-14, lluvia 15-18,
+           flores 19-20, melquiades 21-23. */
         :root {
-            --sepia-dark: #2c1e16;
-            --sepia-mid: #5c4033;
-            --sepia-light: #e6daca;
-            --yellow-butterfly: #ffd700;
+            --bg-1: #efe4d0;
+            --bg-2: #d9c6a5;
+            --ink: #2c1e16;
+            --muted: #5a4334;
+            --faint: #7d6350;
+            --accent: #8a5a12;
+            --veil: rgba(239, 228, 208, 0.78);
+        }
+        :root[data-phase="insomnio"] {
+            --bg-1: #2a2119;
+            --bg-2: #140f0b;
+            --ink: #f1e6d2;
+            --muted: #cdbca2;
+            --faint: #a8957b;
+            --accent: #e8c56a;
+            --veil: rgba(30, 23, 17, 0.72);
+        }
+        :root[data-phase="mariposas"] {
+            --bg-1: #f3e9d6;
+            --bg-2: #dccaa6;
+            --accent: #8a5a12;
+            --veil: rgba(243, 233, 214, 0.8);
+        }
+        :root[data-phase="remedios"] {
+            --bg-1: #fbf6ea;
+            --bg-2: #eadcbf;
+            --ink: #2c1e16;
+            --muted: #574131;
+            --accent: #7c5418;
+            --veil: rgba(251, 246, 234, 0.82);
+        }
+        :root[data-phase="lluvia"] {
+            --bg-1: #c9c3b4;
+            --bg-2: #8f897c;
+            --ink: #1f1a16;
+            --muted: #3b332c;
+            --faint: #4f463d;
+            --accent: #3d4a50;
+            --veil: rgba(201, 195, 180, 0.8);
+        }
+        :root[data-phase="flores"] {
+            --bg-1: #e9c99a;
+            --bg-2: #a8714a;
+            --ink: #2a1a10;
+            --muted: #4c3020;
+            --faint: #5e3d28;
+            --accent: #6e3f0c;
+            --veil: rgba(233, 201, 154, 0.8);
+        }
+        :root[data-phase="melquiades"] {
+            --bg-1: #33271c;
+            --bg-2: #17110c;
+            --ink: #efe2c8;
+            --muted: #cbb894;
+            --faint: #a8946f;
+            --accent: #e2b866;
+            --veil: rgba(28, 21, 15, 0.72);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
 
         body {
-            background-color: var(--sepia-light);
-            color: var(--sepia-dark);
-            font-family: 'Crimson Text', serif;
+            background-color: var(--bg-1);
+            background-image: radial-gradient(ellipse at 50% 42%, var(--bg-1) 0%, var(--bg-1) 30%, var(--bg-2) 115%);
+            color: var(--ink);
+            font-family: 'Crimson Text', Georgia, serif;
             min-height: 100vh;
+            min-height: 100dvh;
+            overflow: hidden;
+            transition: background-color 3s ease, color 3s ease;
+        }
+
+        #sky {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        main {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            justify-items: center;
+            padding: clamp(18px, 4vh, 44px) 16px clamp(18px, 4vh, 40px);
+            text-align: center;
+        }
+
+        header {
+            padding: 0.25em 1.1em;
+            border-radius: 999px;
+            background: radial-gradient(ellipse closest-side, var(--veil) 45%, transparent 100%);
+        }
+        .place {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(0.78rem, 1.6vw, 0.95rem);
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .date {
+            margin-top: 0.2em;
+            font-style: italic;
+            font-size: clamp(0.95rem, 2vw, 1.15rem);
+            color: var(--muted);
+        }
+
+        .center {
+            align-self: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            gap: clamp(0.4rem, 1.4vh, 0.9rem);
+            padding: clamp(0.8rem, 3vh, 2rem) clamp(1rem, 4vw, 3rem);
+            border-radius: 50%;
+            background: radial-gradient(ellipse closest-side, var(--veil) 50%, transparent 100%);
+        }
+
+        .memory {
             position: relative;
-            
-            /* Old parchment/macondo texture overlay */
-            background-image: radial-gradient(circle at center, transparent 20%, rgba(92, 64, 51, 0.4) 150%),
-                              repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(92,64,51,0.02) 2px, rgba(92,64,51,0.02) 4px);
+            line-height: 1;
         }
 
-        /* ----------------------------------
-           THE CLOCK (Macondo Time)
-           ---------------------------------- */
-        .clock-container {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            padding: 50px;
+        .time {
+            font-family: 'Playfair Display', serif;
+            font-weight: 400;
+            font-size: clamp(4.2rem, 19vw, 11rem);
+            letter-spacing: 0.02em;
+            font-variant-numeric: lining-nums tabular-nums;
+            color: var(--ink);
+            text-shadow: 0 2px 18px rgba(44, 30, 22, 0.18);
+            transition: filter 2.6s ease, opacity 2.6s ease, letter-spacing 2.6s ease, transform 2.6s ease;
+            white-space: nowrap;
+        }
+        .time .secs {
+            font-size: 0.32em;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            vertical-align: 0.22em;
+            margin-left: 0.18em;
         }
 
-        /* The Magic Realism Distortion Effect */
-        .time-display {
-            font-size: clamp(5rem, 15vw, 10rem);
-            font-weight: 600;
-            letter-spacing: 5px;
-            color: var(--sepia-dark);
-            /* A subtle text shadow giving physical presence */
-            text-shadow: 2px 4px 10px rgba(44, 30, 22, 0.3);
-            position: relative;
-            transition: all 2s ease;
+        /* Remembering: the hour drifts out of focus and comes back. */
+        .memory.fading .time {
+            filter: blur(3px) sepia(0.6);
+            opacity: 0.62;
+            letter-spacing: 0.09em;
+            transform: scale(0.985);
+        }
+        :root[data-phase="insomnio"] .memory.fading .time {
+            filter: blur(4.5px);
+            opacity: 0.5;
         }
 
-        .time-blur {
-            /* Simulates the breakdown of linear time into circular memory */
-            filter: blur(4px) opacity(0.7);
-            transform: scale(0.98);
-            letter-spacing: 15px;
-        }
-
-        .quote-box {
+        /* The insomnia plague: everything gets a label so it is not forgotten. */
+        .tag {
             position: absolute;
-            bottom: 60px;
-            max-width: 800px;
-            text-align: center;
-            padding: 0 40px;
-            z-index: 20;
-            pointer-events: none;
+            right: -0.4em;
+            top: -1.6em;
+            transform: rotate(5deg);
+            font-family: 'Caveat', cursive;
+            font-size: clamp(1rem, 2.6vw, 1.45rem);
+            line-height: 1.1;
+            padding: 0.15em 0.6em 0.2em 0.9em;
+            background: #efe2c4;
+            color: #3a2a1c;
+            border-radius: 2px 6px 6px 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 2s ease;
         }
+        .tag::before {
+            content: "";
+            position: absolute;
+            left: 0.32em;
+            top: 50%;
+            width: 0.32em;
+            height: 0.32em;
+            margin-top: -0.16em;
+            border-radius: 50%;
+            background: #6b5340;
+        }
+        :root[data-phase="insomnio"] .tag { opacity: 1; }
 
-        .quote {
+        .phase {
             font-family: 'Playfair Display', serif;
             font-style: italic;
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            color: var(--sepia-mid);
-            line-height: 1.6;
+            font-size: clamp(1.15rem, 3.2vw, 1.7rem);
+            color: var(--accent);
+            margin-top: 0.2em;
+        }
+        .gloss {
+            text-wrap: balance;
+            max-width: 34rem;
+            font-size: clamp(1rem, 2.3vw, 1.2rem);
+            line-height: 1.45;
+            color: var(--muted);
         }
 
-        /* ----------------------------------
-           THE YELLOW BUTTERFLIES (Canvas)
-           ---------------------------------- */
-        #butterflyCanvas {
+        footer {
+            max-width: 46rem;
+            padding: 0.6em 1.2em;
+            border-radius: 1.5em;
+            background: radial-gradient(ellipse closest-side, var(--veil) 55%, transparent 100%);
+        }
+        blockquote {
+            text-wrap: balance;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: clamp(0.92rem, 2.1vw, 1.2rem);
+            line-height: 1.55;
+            color: var(--muted);
+        }
+        cite {
+            display: block;
+            margin-top: 0.4em;
+            font-style: normal;
+            font-size: clamp(0.78rem, 1.6vw, 0.9rem);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+
+        .sr-only {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 5;
-            pointer-events: none;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
+        @media (max-height: 560px) {
+            footer { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .time, body, .tag { transition: none; }
+        }
     </style>
 </head>
 <body>
+    <canvas id="sky" aria-hidden="true"></canvas>
 
-    <canvas aria-hidden="true" id="butterflyCanvas"></canvas>
+    <main>
+        <header>
+            <div class="place">Macondo</div>
+            <div class="date" id="date">&nbsp;</div>
+        </header>
 
-    <div class="clock-container" id="clockContainer">
-        <div class="time-display" id="timeDisplay">00:00:00</div>
-    </div>
+        <div class="center">
+            <div class="memory" id="memory">
+                <div class="time" id="time" role="timer" aria-live="off" aria-hidden="true">--:--</div>
+                <div class="tag" id="tag" aria-hidden="true">esto es la hora</div>
+            </div>
+            <div class="phase" id="phase">&nbsp;</div>
+            <p class="gloss" id="gloss">&nbsp;</p>
+            <p class="sr-only" id="spoken" aria-live="polite"></p>
+        </div>
 
-    <div class="quote-box">
-        <div class="quote">"Many years later, as he faced the firing squad, Colonel Aureliano Buendía was to remember that distant afternoon when his father took him to discover ice."</div>
-    </div>
+        <footer>
+            <blockquote lang="es">“Muchos años después, frente al pelotón de fusilamiento, el coronel Aureliano Buendía había de recordar aquella tarde remota en que su padre lo llevó a conocer el hielo.”</blockquote>
+            <cite>Gabriel García Márquez, <span lang="es">Cien años de soledad</span> (1967)</cite>
+        </footer>
+    </main>
 
     <script>
-        // Decorative motion only: with reduced motion requested the scene is drawn
-        // once and then left still; the clock itself keeps updating.
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-        // --- Clock & Distortion Logic ---
-        const timeDisplay = document.getElementById('timeDisplay');
-        
-        function updateClock() {
+        const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+                        'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+        // Macondo's weather follows the hour. Each phase is [startHour, endHour).
+        const PHASES = [
+            { id: 'insomnio',   from: 0,  to: 5,  title: 'La peste del insomnio',
+              gloss: 'Nobody in town can sleep, and memory is going. Every object wears a paper label, the hour included.' },
+            { id: 'mariposas',  from: 5,  to: 11, title: 'Las mariposas amarillas',
+              gloss: 'Mauricio Babilonia is somewhere near. Yellow butterflies arrive before him, and stay after.' },
+            { id: 'remedios',   from: 11, to: 15, title: 'Remedios, la bella',
+              gloss: 'A white glare over the garden. The sheets lift from the line and rise, and someone rises with them.' },
+            { id: 'lluvia',     from: 15, to: 19, title: 'El diluvio',
+              gloss: '' },
+            { id: 'flores',     from: 19, to: 21, title: 'Lluvia de flores amarillas',
+              gloss: 'José Arcadio Buendía has died. All night tiny yellow flowers fall on Macondo, until the doors will not open.' },
+            { id: 'melquiades', from: 21, to: 24, title: 'El cuarto de Melquíades',
+              gloss: 'In the gypsy’s room the parchments wait to be read. In here it is always March, and always Monday.' }
+        ];
+        function phaseFor(h) {
+            return PHASES.find(p => h >= p.from && h < p.to);
+        }
+
+        // The rain lasted four years, eleven months and two days. Over the
+        // 15:00 to 19:00 window it is counted out in full.
+        const RAIN_DAYS = 4 * 365 + 11 * 30 + 2;
+        function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+        function rainGloss(now) {
+            const mins = (now.getHours() - 15) * 60 + now.getMinutes() + now.getSeconds() / 60;
+            const d = Math.max(1, Math.round(mins / 240 * RAIN_DAYS));
+            const y = Math.floor(d / 365);
+            const m = Math.floor((d % 365) / 30);
+            const dd = (d % 365) % 30;
+            const parts = [];
+            if (y) parts.push(plural(y, 'year', 'years'));
+            if (m) parts.push(plural(m, 'month', 'months'));
+            if (dd || !parts.length) parts.push(plural(dd, 'day', 'days'));
+            const span = parts.length > 1
+                ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1]
+                : parts[0];
+            return 'It has been raining on Macondo for ' + span + '. It will stop at seven.';
+        }
+
+        const timeEl = document.getElementById('time');
+        const dateEl = document.getElementById('date');
+        const phaseEl = document.getElementById('phase');
+        const glossEl = document.getElementById('gloss');
+        const spokenEl = document.getElementById('spoken');
+        const memoryEl = document.getElementById('memory');
+        const pad = n => String(n).padStart(2, '0');
+
+        let currentPhase = null;
+        let lastSpoken = '';
+
+        function tick() {
             const now = new Date();
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            timeDisplay.textContent = `${h}:${m}:${s}`;
-            requestAnimationFrame(updateClock);
+            const h = now.getHours();
+            const p = phaseFor(h);
+
+            timeEl.innerHTML = pad(h) + ':' + pad(now.getMinutes()) +
+                '<span class="secs">' + pad(now.getSeconds()) + '</span>';
+
+            if (p.id === 'melquiades') {
+                dateEl.textContent = 'lunes, marzo, siempre';
+            } else {
+                dateEl.textContent = days[now.getDay()] + ', ' + now.getDate() + ' de ' + months[now.getMonth()];
+            }
+
+            if (!currentPhase || currentPhase.id !== p.id) {
+                currentPhase = p;
+                document.documentElement.dataset.phase = p.id;
+                phaseEl.textContent = p.title;
+                setScene(p.id);
+            }
+            glossEl.textContent = p.id === 'lluvia' ? rainGloss(now) : p.gloss;
+
+            const spoken = 'Son las ' + h + ':' + pad(now.getMinutes()) + ', ' + p.title;
+            if (spoken !== lastSpoken) {
+                spokenEl.textContent = spoken;
+                lastSpoken = spoken;
+            }
         }
 
-        updateClock();
-
-        // Magic Realism Circular Time Effect
-        // Time occasionally blurs out and distances itself into memory
-        function triggerCircularTime() {
-            timeDisplay.classList.add('time-blur');
-            
-            setTimeout(() => {
-                timeDisplay.classList.remove('time-blur');
-            }, 3000); // 3 seconds of memory fog
-
-            // Randomly trigger between 10 and 20 seconds
-            setTimeout(triggerCircularTime, Math.random() * 10000 + 10000);
+        // Memory: every so often the hour slips out of focus, then reasserts itself.
+        // Driven by the clock's own seconds so it is steady, not random.
+        function remember() {
+            if (reduceMotion.matches) { memoryEl.classList.remove('fading'); return; }
+            const s = new Date().getSeconds();
+            const window = currentPhase && currentPhase.id === 'insomnio' ? 9 : 6;
+            memoryEl.classList.toggle('fading', (s % 20) >= 20 - window - 3 && (s % 20) < 20 - 3);
         }
-        
-        setTimeout(triggerCircularTime, 5000);
 
-        // --- Butterfly Swarm Canvas ---
-        // Mauricio Babilonia's yellow butterflies
-        const canvas = document.getElementById('butterflyCanvas');
+        // ---------- The sky over Macondo (canvas) ----------
+        const canvas = document.getElementById('sky');
         const ctx = canvas.getContext('2d');
-        
-        let width, height;
+        let width = 0, height = 0;
+        let keepOut = [];   // text boxes in CSS pixels, where particles go faint
 
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
@@ -164,93 +395,328 @@
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            measureText();
         }
-        resizeCanvas();
+        function measureText() {
+            keepOut = ['.time', '.phase', '.gloss', 'header', 'blockquote', 'cite'].map(sel => {
+                const el = document.querySelector(sel);
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                if (!r.width) return null;
+                return { x0: r.left - 14, y0: r.top - 10, x1: r.right + 14, y1: r.bottom + 10 };
+            }).filter(Boolean);
+        }
+        function inText(x, y) {
+            for (const r of keepOut) if (x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1) return r;
+            return null;
+        }
+        const rand = (a, b) => a + Math.random() * (b - a);
+
+        let scene = null;
+        let particles = [];
+        let carpet = [];
+
+        // Butterflies: wander, and are pushed gently out of the text.
+        function makeButterfly() {
+            return { x: rand(0, width), y: rand(0, height), size: rand(7, 13),
+                     a: rand(0, Math.PI * 2), v: rand(0.4, 1.2), turn: rand(-0.04, 0.04),
+                     flap: rand(0, 6), fs: rand(0.18, 0.4), hue: rand(44, 54) };
+        }
+        function drawButterfly(b, dt) {
+            b.flap += b.fs * dt;
+            if (Math.random() < 0.03) b.turn = rand(-0.05, 0.05);
+            b.a += b.turn * dt;
+            const r = inText(b.x, b.y);
+            if (r) {
+                const cx = (r.x0 + r.x1) / 2, cy = (r.y0 + r.y1) / 2;
+                const away = Math.atan2(b.y - cy, b.x - cx);
+                let d = away - b.a;
+                d = Math.atan2(Math.sin(d), Math.cos(d));
+                b.a += d * 0.08 * dt;
+            }
+            b.x += Math.cos(b.a) * b.v * dt;
+            b.y += Math.sin(b.a) * b.v * dt;
+            if (b.x > width + 20) b.x = -20; else if (b.x < -20) b.x = width + 20;
+            if (b.y > height + 20) b.y = -20; else if (b.y < -20) b.y = height + 20;
+
+            const span = Math.abs(Math.sin(b.flap)) * b.size;
+            ctx.save();
+            ctx.translate(b.x, b.y);
+            ctx.rotate(b.a + Math.PI / 2);
+            ctx.globalAlpha = r ? 0.25 : 0.9;
+            ctx.fillStyle = `hsl(${b.hue}, 95%, 52%)`;
+            ctx.beginPath();
+            ctx.ellipse(-span / 2, -b.size * 0.2, span / 2, b.size * 0.8, 0, 0, Math.PI * 2);
+            ctx.ellipse(span / 2, -b.size * 0.2, span / 2, b.size * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha *= 0.8;
+            ctx.beginPath();
+            ctx.ellipse(-span / 2.4, b.size * 0.55, span / 2.6, b.size * 0.45, 0, 0, Math.PI * 2);
+            ctx.ellipse(span / 2.4, b.size * 0.55, span / 2.6, b.size * 0.45, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(60, 40, 20, 0.7)';
+            ctx.fillRect(-0.6, -b.size * 0.8, 1.2, b.size * 1.6);
+            ctx.restore();
+        }
+
+        // Insomnia labels: nouns on paper slips, drifting slowly.
+        const NOUNS = ['mesa', 'silla', 'reloj', 'puerta', 'pared', 'cama', 'cacerola',
+                       'vaca', 'chivo', 'cerdo', 'gallina', 'yuca', 'malanga', 'guineo',
+                       'ventana', 'lámpara', 'hamaca', 'baúl', 'espejo', 'taza'];
+        function makeLabel() {
+            const word = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+            return { x: rand(0, width), y: rand(0, height), word, rot: rand(-0.25, 0.25),
+                     vx: rand(-0.12, 0.12), vy: rand(-0.08, 0.05), life: rand(0, Math.PI * 2),
+                     ls: rand(0.004, 0.01), size: rand(14, 20) };
+        }
+        function drawLabel(l, dt) {
+            l.x += l.vx * dt; l.y += l.vy * dt; l.life += l.ls * dt;
+            if (l.x < -80) l.x = width + 60; else if (l.x > width + 80) l.x = -60;
+            if (l.y < -40) l.y = height + 30; else if (l.y > height + 40) l.y = -30;
+            // fade in and out: things are labelled, and still forgotten
+            let alpha = 0.3 + 0.5 * Math.max(0, Math.sin(l.life));
+            if (inText(l.x, l.y)) alpha *= 0.2;
+            ctx.save();
+            ctx.translate(l.x, l.y);
+            ctx.rotate(l.rot);
+            ctx.globalAlpha = alpha;
+            ctx.font = `500 ${l.size}px Caveat, cursive`;
+            const w = ctx.measureText(l.word).width + l.size * 1.1;
+            const hgt = l.size * 1.25;
+            ctx.fillStyle = '#e9dcc0';
+            ctx.fillRect(-w / 2, -hgt / 2, w, hgt);
+            ctx.fillStyle = '#5a4434';
+            ctx.beginPath();
+            ctx.arc(-w / 2 + l.size * 0.3, 0, l.size * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2f2218';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(l.word, -w / 2 + l.size * 0.55, 1);
+            ctx.restore();
+        }
+
+        // Remedios: white sheets rising through the glare, and dust in the light.
+        function makeSheet(anywhere) {
+            const s = rand(70, 130);
+            return { x: rand(0.05, 0.95) * width, y: anywhere ? rand(0, height) : height + s * 1.5,
+                     w: s, h: s * rand(0.6, 0.85), v: rand(0.25, 0.55), ph: rand(0, 6),
+                     sway: rand(10, 30) };
+        }
+        function drawSheet(s, dt) {
+            s.y -= s.v * dt;
+            s.ph += 0.02 * dt;
+            if (s.y < -s.h * 2) Object.assign(s, makeSheet(false));
+            const x = s.x + Math.sin(s.ph) * s.sway;
+            const ripple = Math.sin(s.ph * 2.3) * s.w * 0.12;
+            let alpha = 0.6;
+            if (inText(x, s.y) || inText(x, s.y + s.h / 2)) alpha = 0.18;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = 'rgba(160, 140, 110, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x - s.w / 2, s.y);
+            ctx.quadraticCurveTo(x, s.y - ripple, x + s.w / 2, s.y);
+            ctx.quadraticCurveTo(x + s.w / 2 + ripple, s.y + s.h / 2, x + s.w / 2 - ripple * 0.5, s.y + s.h);
+            ctx.quadraticCurveTo(x, s.y + s.h + ripple, x - s.w / 2 + ripple * 0.5, s.y + s.h);
+            ctx.quadraticCurveTo(x - s.w / 2 - ripple, s.y + s.h / 2, x - s.w / 2, s.y);
+            ctx.fill();
+            ctx.stroke();
+            // a crease where the sheet was folded
+            ctx.beginPath();
+            ctx.moveTo(x - s.w * 0.1 + ripple * 0.3, s.y + s.h * 0.08);
+            ctx.quadraticCurveTo(x + ripple, s.y + s.h * 0.5, x + s.w * 0.08, s.y + s.h * 0.92);
+            ctx.stroke();
+            ctx.restore();
+        }
+        function makeMote() {
+            return { x: rand(0, width), y: rand(0, height), r: rand(0.6, 1.8),
+                     vx: rand(-0.15, 0.15), vy: rand(-0.25, -0.05), ph: rand(0, 6) };
+        }
+        function drawMote(m, dt) {
+            m.x += m.vx * dt; m.y += m.vy * dt; m.ph += 0.03 * dt;
+            if (m.y < -5) { m.y = height + 5; m.x = rand(0, width); }
+            ctx.globalAlpha = 0.35 + 0.3 * Math.sin(m.ph);
+            ctx.fillStyle = '#b8935a';
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        // The long rain.
+        function makeDrop(anywhere) {
+            return { x: rand(-0.2, 1.1) * width, y: anywhere ? rand(0, height) : rand(-60, -10),
+                     len: rand(12, 26), v: rand(9, 15), a: rand(0.18, 0.4) };
+        }
+        function drawRain(dt) {
+            ctx.strokeStyle = 'rgba(40, 52, 60, 1)';
+            ctx.lineWidth = 1;
+            for (const d of particles) {
+                d.y += d.v * dt; d.x += d.v * 0.18 * dt;
+                if (d.y > height + 20) Object.assign(d, makeDrop(false));
+                ctx.globalAlpha = inText(d.x, d.y) ? d.a * 0.25 : d.a;
+                ctx.beginPath();
+                ctx.moveTo(d.x, d.y);
+                ctx.lineTo(d.x - d.len * 0.18, d.y - d.len);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Yellow flowers falling, and settling into a carpet along the ground.
+        function makeFlower(anywhere) {
+            return { x: rand(0, width), y: anywhere ? rand(-height, height) : rand(-40, -10),
+                     r: rand(2.5, 5), v: rand(0.4, 1.0), ph: rand(0, 6), spin: rand(-0.03, 0.03),
+                     rot: rand(0, 6), hue: rand(42, 52) };
+        }
+        function flowerShape(x, y, r, rot, hue, alpha) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rot);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = `hsl(${hue}, 92%, 55%)`;
+            for (let i = 0; i < 4; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.ellipse(r * 0.7, 0, r * 0.7, r * 0.45, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = 'rgba(150, 90, 20, 0.9)';
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        function drawFlowers(dt) {
+            for (const c of carpet) flowerShape(c.x, c.y, c.r, c.rot, c.hue, 0.85);
+            for (const f of particles) {
+                f.ph += 0.03 * dt; f.rot += f.spin * dt;
+                f.y += f.v * dt;
+                f.x += Math.sin(f.ph) * 0.5 * dt;
+                const ground = height - 4 - Math.random() * 14;
+                if (f.y > ground) {
+                    if (carpet.length < 900) carpet.push({ x: f.x, y: ground, r: f.r, rot: f.rot, hue: f.hue });
+                    else carpet[Math.floor(Math.random() * carpet.length)] = { x: f.x, y: ground, r: f.r, rot: f.rot, hue: f.hue };
+                    Object.assign(f, makeFlower(false));
+                }
+                flowerShape(f.x, f.y, f.r, f.rot, f.hue, inText(f.x, f.y) ? 0.22 : 0.9);
+            }
+        }
+
+        // Melquíades's room: a candle glow and lines of unread script drifting.
+        function makeScript() {
+            const n = 4 + Math.floor(Math.random() * 7);
+            const marks = [];
+            let x = 0;
+            for (let i = 0; i < n; i++) {
+                const w = rand(6, 14);
+                marks.push({ x, w, k: Math.floor(Math.random() * 4), h: rand(5, 9) });
+                x += w + rand(2, 5);
+            }
+            return { x: rand(0, width), y: rand(0, height), marks, len: x, vy: rand(-0.12, -0.04),
+                     ph: rand(0, 6), ps: rand(0.004, 0.01) };
+        }
+        function drawScript(s, dt) {
+            s.y += s.vy * dt; s.ph += s.ps * dt;
+            if (s.y < -20) { s.y = height + 20; s.x = rand(0, width); }
+            let alpha = 0.12 + 0.35 * Math.max(0, Math.sin(s.ph));
+            if (inText(s.x + s.len / 2, s.y)) alpha *= 0.2;
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = '#d9b979';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(s.len, 0);   // headline, as in the scripts of the parchments
+            for (const m of s.marks) {
+                const x = m.x;
+                if (m.k === 0) { ctx.moveTo(x, 0); ctx.lineTo(x, m.h); ctx.moveTo(x, m.h * 0.5); ctx.quadraticCurveTo(x + m.w, m.h * 0.2, x + m.w * 0.6, m.h); }
+                else if (m.k === 1) { ctx.moveTo(x + m.w, 0); ctx.lineTo(x + m.w, m.h); ctx.moveTo(x + m.w, m.h * 0.4); ctx.arc(x + m.w * 0.5, m.h * 0.55, m.w * 0.4, 0, Math.PI * 1.5); }
+                else if (m.k === 2) { ctx.moveTo(x, m.h * 0.3); ctx.bezierCurveTo(x + m.w, m.h * 0.1, x, m.h * 1.2, x + m.w, m.h); }
+                else { ctx.moveTo(x + m.w * 0.5, 0); ctx.lineTo(x + m.w * 0.5, m.h); ctx.moveTo(x, m.h * 0.6); ctx.lineTo(x + m.w, m.h * 0.6); }
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        let motes = [];
+        function setScene(id) {
+            scene = id;
+            carpet = [];
+            const area = Math.max(1, (width * height) / (1280 * 800));
+            const n = k => Math.max(12, Math.round(k * Math.min(area, 1.6)));
+            if (id === 'mariposas')  particles = Array.from({ length: n(60) }, makeButterfly);
+            if (id === 'insomnio')   particles = Array.from({ length: n(26) }, makeLabel);
+            if (id === 'remedios')   { particles = Array.from({ length: n(9) }, () => makeSheet(true)); motes = Array.from({ length: n(70) }, makeMote); }
+            if (id === 'lluvia')     particles = Array.from({ length: n(260) }, () => makeDrop(true));
+            if (id === 'flores')     {
+                particles = Array.from({ length: n(110) }, () => makeFlower(true));
+                // the flowers have been falling a while: start with a light carpet
+                for (let i = 0; i < n(160); i++) carpet.push({ x: rand(0, width), y: height - 4 - Math.random() * 14, r: rand(2.5, 5), rot: rand(0, 6), hue: rand(42, 52) });
+            }
+            if (id === 'melquiades') particles = Array.from({ length: n(34) }, makeScript);
+            if (reduceMotion.matches) requestAnimationFrame(() => frame(performance.now()));
+        }
+
+        function background() {
+            if (scene === 'remedios') {
+                const g = ctx.createRadialGradient(width * 0.5, -height * 0.1, 0, width * 0.5, -height * 0.1, height * 0.9);
+                g.addColorStop(0, 'rgba(255, 255, 250, 0.9)');
+                g.addColorStop(1, 'rgba(255, 255, 250, 0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, width, height);
+            } else if (scene === 'melquiades') {
+                const g = ctx.createRadialGradient(width * 0.5, height * 0.45, 0, width * 0.5, height * 0.45, Math.max(width, height) * 0.6);
+                g.addColorStop(0, 'rgba(226, 184, 102, 0.14)');
+                g.addColorStop(1, 'rgba(226, 184, 102, 0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, width, height);
+            } else if (scene === 'lluvia') {
+                ctx.fillStyle = 'rgba(70, 80, 84, 0.08)';
+                ctx.fillRect(0, 0, width, height);
+            }
+        }
+
+        let last = performance.now();
+        function frame(t) {
+            const dt = Math.min(3, Math.max(0.2, (t - last) / 16.67));
+            last = t;
+            ctx.clearRect(0, 0, width, height);
+            background();
+            if (scene === 'mariposas')  for (const b of particles) drawButterfly(b, dt);
+            if (scene === 'insomnio')   for (const l of particles) drawLabel(l, dt);
+            if (scene === 'remedios')   { for (const m of motes) drawMote(m, dt); for (const s of particles) drawSheet(s, dt); }
+            if (scene === 'lluvia')     drawRain(dt);
+            if (scene === 'flores')     drawFlowers(dt);
+            if (scene === 'melquiades') for (const s of particles) drawScript(s, dt);
+        }
+        function loop(t) {
+            frame(t);
+            if (!reduceMotion.matches) requestAnimationFrame(loop);
+        }
 
         window.addEventListener('resize', () => {
             resizeCanvas();
+            const id = scene; scene = null; setScene(id);
+            if (reduceMotion.matches) frame(performance.now());
+        });
+        reduceMotion.addEventListener('change', () => {
+            remember();
+            if (!reduceMotion.matches) { last = performance.now(); requestAnimationFrame(loop); }
         });
 
-        const butterflies = [];
-        const numButterflies = 80;
-
-        class Butterfly {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 6 + 4;
-                // Base movement direction
-                this.angle = Math.random() * Math.PI * 2;
-                this.speed = Math.random() * 1.5 + 0.5;
-                
-                // Wing flapping variables
-                this.flapSpeed = Math.random() * 0.4 + 0.2;
-                this.flapState = 0;
-                
-                // Wandering variables
-                this.turnSpeed = (Math.random() - 0.5) * 0.1;
-            }
-
-            update() {
-                // Flap wings using sine wave
-                this.flapState += this.flapSpeed;
-                
-                // Wander slowly
-                this.angle += this.turnSpeed;
-                // occasionally change turn direction randomly
-                if (Math.random() < 0.05) {
-                    this.turnSpeed = (Math.random() - 0.5) * 0.1;
-                }
-
-                this.x += Math.cos(this.angle) * this.speed;
-                this.y += Math.sin(this.angle) * this.speed;
-
-                // Screen wrapping
-                if (this.x > width + 20) this.x = -20;
-                if (this.x < -20) this.x = width + 20;
-                if (this.y > height + 20) this.y = -20;
-                if (this.y < -20) this.y = height + 20;
-            }
-
-            draw() {
-                // The sine wave scales the width of the wings simulating flapping in 3D space
-                let wingSpan = Math.abs(Math.sin(this.flapState)) * this.size;
-                
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                // Rotate butterfly towards its movement direction
-                ctx.rotate(this.angle + Math.PI/2);
-                
-                // Draw Yellow Butterfly
-                ctx.fillStyle = 'rgba(255, 215, 0, 0.8)'; // Golden yellow
-                ctx.beginPath();
-                // Left Wing
-                ctx.ellipse(-wingSpan/2, 0, wingSpan/2, this.size, 0, 0, Math.PI * 2);
-                // Right Wing
-                ctx.ellipse(wingSpan/2, 0, wingSpan/2, this.size, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.restore();
-            }
-        }
-
-        for (let i = 0; i < numButterflies; i++) {
-            butterflies.push(new Butterfly());
-        }
-
-        function animateButterflies() {
-            ctx.clearRect(0, 0, width, height);
-            
-            for (let b of butterflies) {
-                b.update();
-                b.draw();
-            }
-            
-            if (!reduceMotion.matches) requestAnimationFrame(animateButterflies);
-        }
-
-        animateButterflies();
-
+        resizeCanvas();
+        tick();
+        measureText();
+        setInterval(() => { tick(); remember(); measureText(); }, 1000);
+        requestAnimationFrame(loop);
+        // fonts change the text boxes; re-measure once they land
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {
+            measureText();
+            if (reduceMotion.matches) frame(performance.now());
+        });
     </script>
 </body>
 </html>
