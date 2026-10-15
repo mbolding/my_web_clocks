@@ -4,187 +4,720 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Library of Babel Clock</title>
-    <!-- Dark Academia aesthetic font -->
+    <meta name="description" content="Borges's Library of Babel as a clock: every second the time, spelled in the library's twenty-five symbols, is found on one page of one book on one shelf of one hexagon.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;600&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Courier+Prime:wght@400;700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #0c0a08;
-            --hex-rim: #2d2417;
-            --parchment: #e6dfc8;
-            --ink: #1a1612;
-            --glow: rgba(230, 223, 200, 0.05);
+            --bg: #0d0b08;
+            --bg-2: #17130d;
+            --rim: #3a2f1f;
+            --rim-hi: #6b5634;
+            --parchment: #ece3c8;
+            --parchment-2: #ddd1ad;
+            --ink: #2a2218;
+            --noise: #6e6047;
+            --text: #e9e0c6;
+            --muted: #b3a37f;
+            --gold: #d9a441;
+            --red: #8e2216;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--bg); }
 
         body {
-            background-color: var(--bg-deep);
-            color: var(--parchment);
-            font-family: 'Cormorant Garamond', serif;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 50% 18%, rgba(217, 164, 65, 0.10), transparent 60%),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='145.5' viewBox='0 0 84 145.5'%3E%3Cg fill='none' stroke='%233a2f1f' stroke-width='1.2' opacity='0.55'%3E%3Cpath d='M21 0 L63 0 L84 36.4 L63 72.75 L21 72.75 L0 36.4 Z'/%3E%3Cpath d='M63 72.75 L84 109.1 L63 145.5 M21 72.75 L0 109.1 L21 145.5 M21 145.5 L63 145.5'/%3E%3C/g%3E%3C/svg%3E");
+            color: var(--text);
+            font-family: 'Cormorant Garamond', Georgia, serif;
             min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            justify-content: center;
+            padding: clamp(16px, 3.4vw, 40px) 16px clamp(28px, 4vw, 48px);
+            overflow-x: hidden;
+        }
+
+        .wrap {
+            width: min(100%, 1120px);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
+            gap: clamp(16px, 2.6vw, 28px);
         }
 
-        /* The infinite Hexagonal Library Background using CSS gradients */
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            opacity: 0.3;
-            z-index: 1;
-            /* Hexagon pattern */
-            background: 
-                linear-gradient(30deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 0 0,
-                linear-gradient(150deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 0 0,
-                linear-gradient(30deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 40px 69px,
-                linear-gradient(150deg, transparent 40%, var(--hex-rim) 40%, var(--hex-rim) 60%, transparent 60%) 40px 69px;
-            background-size: 80px 138px;
-            pointer-events: none;
-        }
-        
-        /* Central lighting dropping down into the library shaft */
-        body::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, transparent 0%, var(--bg-deep) 80%);
-            z-index: 2;
-            pointer-events: none;
-        }
+        /* ---------- Header ---------- */
+        header { text-align: center; }
 
-        .hexagon-pedestal {
-            position: relative;
-            z-index: 10;
-            width: clamp(300px, 60vw, 600px);
-            /* Creating a classic hexagon shape */
-            background: rgba(26, 22, 18, 0.8);
-            border: 2px solid var(--hex-rim);
-            padding: 60px 40px;
-            text-align: center;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 30px var(--glow);
-            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .title {
+        .eyebrow {
             font-family: 'IM Fell English SC', serif;
-            font-size: 1.2rem;
-            letter-spacing: 5px;
-            color: #8c7355;
-            margin-bottom: 20px;
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+            letter-spacing: 0.22em;
+            color: var(--muted);
         }
 
-        /* The chaotic text display */
-        .time-display {
-            font-size: clamp(3rem, 8vw, 5rem);
-            font-weight: 600;
-            letter-spacing: 12px;
+        h1 {
+            font-family: 'IM Fell English SC', serif;
+            font-weight: 400;
+            font-size: clamp(1.7rem, 5.4vw, 2.9rem);
+            letter-spacing: 0.08em;
+            line-height: 1.1;
+            margin-top: 0.15em;
             color: var(--parchment);
-            text-shadow: 0 0 10px rgba(230,223,200,0.2);
-            /* Monospace enforces exact width so letters don't shift layout */
-            font-family: monospace; 
         }
 
-        .quote {
-            margin-top: 30px;
-            font-size: 1.1rem;
+        /* ---------- The found line ---------- */
+        .found {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(4px, 1vw, 10px);
+        }
+
+        .time {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 600;
+            font-size: clamp(3.4rem, 13vw, 6.4rem);
+            line-height: 0.95;
+            font-variant-numeric: lining-nums tabular-nums;
+            color: var(--parchment);
+            letter-spacing: 0.02em;
+            text-shadow: 0 0 28px rgba(217, 164, 65, 0.18);
+        }
+
+        .time .sec { color: var(--gold); }
+
+        .phrase-label {
+            font-size: clamp(0.9rem, 2.2vw, 1.05rem);
             font-style: italic;
-            color: #6a5843;
-            max-width: 80%;
-            line-height: 1.4;
+            color: var(--muted);
         }
 
+        .phrase {
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            font-size: clamp(0.95rem, 2.6vw, 1.3rem);
+            color: var(--gold);
+            letter-spacing: 0.02em;
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        /* ---------- Main grid ---------- */
+        main {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(250px, 330px);
+            gap: clamp(16px, 2.6vw, 32px);
+            align-items: start;
+        }
+
+        /* ---------- The page ---------- */
+        .book-page {
+            background:
+                radial-gradient(ellipse at 50% 40%, var(--parchment) 55%, var(--parchment-2) 100%);
+            color: var(--ink);
+            border-radius: 3px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(120, 90, 40, 0.18);
+            padding: clamp(12px, 2.2vw, 24px) clamp(10px, 2vw, 24px) clamp(12px, 2vw, 20px);
+            min-width: 0;
+        }
+
+        .page-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-family: 'IM Fell English SC', serif;
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+            color: #5a4a33;
+            border-bottom: 1px solid rgba(90, 74, 51, 0.4);
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+
+        .text-area {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            column-gap: 0.7em;
+            position: relative;
+        }
+
+        .gutter, .lines {
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            font-size: 14px;          /* set from JS to fit the column count */
+            line-height: 1.5;
+            white-space: pre;
+        }
+
+        .gutter {
+            color: #8a7756;
+            text-align: right;
+            font-size: 0.72em;        /* overridden by JS together with .lines */
+            user-select: none;
+        }
+
+        .gutter div.here { color: var(--red); font-weight: 700; }
+
+        .lines { overflow: hidden; color: var(--noise); position: relative; }
+        .lines div { height: 1.5em; }
+
+        .lines.cropped-left  { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1em); mask-image: linear-gradient(90deg, transparent 0, #000 1em); }
+        .lines.cropped-right { -webkit-mask-image: linear-gradient(270deg, transparent 0, #000 1em); mask-image: linear-gradient(270deg, transparent 0, #000 1em); }
+        .lines.cropped-left.cropped-right { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1em, #000 calc(100% - 1em), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 1em, #000 calc(100% - 1em), transparent 100%); }
+
+        mark {
+            background: rgba(217, 164, 65, 0.38);
+            color: #3a0f08;
+            font-weight: 700;
+            border-radius: 2px;
+            box-shadow: 0 0 0 1px rgba(142, 34, 22, 0.35);
+        }
+
+        .page-foot {
+            margin-top: 8px;
+            border-top: 1px solid rgba(90, 74, 51, 0.4);
+            padding-top: 6px;
+            font-size: clamp(0.85rem, 2vw, 0.98rem);
+            font-style: italic;
+            color: #4e3f2b;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ---------- Where: plan, wall, catalogue ---------- */
+        .where {
+            background: rgba(23, 19, 13, 0.92);
+            border: 1px solid var(--rim);
+            border-radius: 3px;
+            padding: clamp(12px, 2vw, 18px);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .where h2 {
+            font-family: 'IM Fell English SC', serif;
+            font-weight: 400;
+            font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+            letter-spacing: 0.1em;
+            color: var(--parchment);
+        }
+
+        .hex-name {
+            font-family: 'Courier Prime', monospace;
+            color: var(--gold);
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            letter-spacing: 0.08em;
+            overflow-wrap: anywhere;
+        }
+
+        .views {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        svg { display: block; width: 100%; height: auto; }
+        #plan { max-width: 230px; margin: 0 auto; }
+
+        .cap {
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            font-style: italic;
+            color: var(--muted);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        dl.catalogue {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 3px 12px;
+            font-size: clamp(0.98rem, 2.2vw, 1.08rem);
+            border-top: 1px solid var(--rim);
+            padding-top: 10px;
+        }
+        dl.catalogue dt { color: var(--muted); }
+        dl.catalogue dd { color: var(--parchment); text-align: right; font-variant-numeric: lining-nums tabular-nums; }
+        dl.catalogue dd small { color: var(--muted); font-size: 0.85em; }
+
+        /* ---------- Notes ---------- */
+        .notes {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+            gap: clamp(14px, 2.6vw, 32px);
+            border-top: 1px solid var(--rim);
+            padding-top: clamp(14px, 2vw, 20px);
+            font-size: clamp(1rem, 2.3vw, 1.12rem);
+            line-height: 1.55;
+            color: var(--text);
+        }
+
+        .notes p + p { margin-top: 0.6em; }
+        .notes em { color: var(--parchment); }
+        .notes code {
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.88em;
+            color: var(--gold);
+        }
+
+        blockquote {
+            border-left: 2px solid var(--gold);
+            padding-left: 14px;
+            align-self: start;
+        }
+        blockquote p {
+            font-size: clamp(1.25rem, 3vw, 1.5rem);
+            font-style: italic;
+            color: var(--parchment);
+            line-height: 1.3;
+        }
+        blockquote footer {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 0.95em;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
+        }
+
+        @media (max-width: 820px) {
+            main { grid-template-columns: minmax(0, 1fr); }
+            .views { grid-template-columns: 1fr 1fr; align-items: center; }
+            .notes { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 380px) {
+            .views { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
+<div class="wrap">
+    <header>
+        <div class="eyebrow">Jorge Luis Borges &middot; Ficciones &middot; 1944</div>
+        <h1>The Library of Babel</h1>
+    </header>
 
-    <div class="hexagon-pedestal">
-        <div class="title">The Library of Babel</div>
-        <!-- 8 characters to match '00:00:00' -->
-        <div class="time-display" id="timeDisplay">x,q .lmz</div>
-        <div class="quote">"The Library is total and its shelves register all the possible combinations of the twenty-odd orthographical symbols..."</div>
-    </div>
+    <section class="found">
+        <div class="time" id="time" role="timer" aria-label="Current time">--:--:--</div>
+        <div class="phrase-label">found this second, spelled in the library's symbols:</div>
+        <div class="phrase" id="phrase">&nbsp;</div>
+        <div class="sr-only" id="srTime" aria-live="polite"></div>
+    </section>
 
-    <script>
-        const timeDisplay = document.getElementById('timeDisplay');
-        
-        // Borges explicitly designated exactly 25 characters for his infinite library:
-        // 22 lowercase letters of the alphabet (excluding some based on spanish), the space, the comma, and the period.
-        // For simplicity we'll just use the standard 26 english letters + space + comma + period.
-        const borgesAlphabet = "abcdefghijklmnopqrstuvwxyz ,.";
+    <main>
+        <article class="book-page" aria-label="An excerpt of the page where the time was found">
+            <div class="page-head">
+                <span id="pageHead">volume &middot; page</span>
+                <span id="lineHead">line</span>
+            </div>
+            <div class="text-area">
+                <div class="gutter" id="gutter" aria-hidden="true"></div>
+                <div class="lines" id="lines" aria-hidden="true"></div>
+            </div>
+            <div class="page-foot">
+                <span id="cropNote">lines of eighty symbols</span>
+                <span>the rest of the page is noise</span>
+            </div>
+        </article>
 
-        // We cycle between meaningless chaos and brief moments of total clarity (the exact time)
-        let mode = 'chaos'; // 'chaos', 'resolving', 'clarity'
-        let currentChaosString = "        ";
-        let targetTimeString = "00:00:00";
-        
-        // Very fast interval for generating chaos
-        let chaosInterval;
-        
-        function getRandomString(length) {
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += borgesAlphabet.charAt(Math.floor(Math.random() * borgesAlphabet.length));
-            }
-            return result;
+        <aside class="where" aria-label="Where the page stands">
+            <div>
+                <h2>Hexagon</h2>
+                <div class="hex-name" id="hexName">&nbsp;</div>
+            </div>
+            <div class="views">
+                <div>
+                    <svg id="plan" viewBox="-110 -100 220 200" role="img" aria-label="Plan of the hexagonal gallery"></svg>
+                    <div class="cap">plan of the gallery</div>
+                </div>
+                <div>
+                    <svg id="wall" viewBox="0 0 220 120" role="img" aria-label="The lit wall: five shelves of thirty-two books"></svg>
+                    <div class="cap" id="wallCap">wall</div>
+                </div>
+            </div>
+            <dl class="catalogue">
+                <dt>wall</dt><dd id="cWall">&nbsp;</dd>
+                <dt>shelf</dt><dd id="cShelf">&nbsp;</dd>
+                <dt>volume</dt><dd id="cVol">&nbsp;</dd>
+                <dt>page</dt><dd id="cPage">&nbsp;</dd>
+                <dt>line</dt><dd id="cLine">&nbsp;</dd>
+            </dl>
+        </aside>
+    </main>
+
+    <section class="notes">
+        <div>
+            <p>Each gallery is a hexagon. Four of its six walls carry five shelves, each shelf holds thirty-two books, and every book has 410 pages of forty lines of about eighty symbols. The symbols are twenty-two letters, the space, the comma and the period, so every possible page exists somewhere, including the one that says what time it is.</p>
+            <p>The library has no digits, so the time has to be spelled out. This clock's twenty-two letters leave out <code>b</code>, <code>j</code>, <code>q</code> and <code>z</code>, which no hour needs (the hour after midnight is <em>nought</em>). Each second the sentence is looked up: its words alone fix the hexagon, wall, shelf, volume, page and line, so a given second always returns to the same shelf, and the rest of the page is the gibberish that fills almost every book.</p>
+        </div>
+        <blockquote lang="es">
+            <p>La Biblioteca es ilimitada y peri&oacute;dica.</p>
+            <footer>Borges, La biblioteca de Babel, near the end. The clock, too, repeats every day.</footer>
+        </blockquote>
+    </section>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // ---- The alphabet: 22 letters + space + comma + period = 25 symbols ----
+    const LETTERS = 'acdefghiklmnoprstuvwxy';          // b, j, q, z left out
+    const SYMBOLS = LETTERS + ' ,.';
+    const LINE_LEN = 80, PAGE_LINES = 40, PAGES = 410, BOOKS = 32, SHELVES = 5, WALLS = 4;
+
+    const ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+        'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty'];
+
+    function num(n) {                       // 1..59
+        if (n < 20) return ONES[n];
+        return TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '');
+    }
+
+    function phraseFor(h, m, s) {
+        const secPart = s === 0 ? 'precisely' : 'and ' + num(s) + (s === 1 ? ' second' : ' seconds');
+        if (h === 0 && m === 0) return 'midnight, ' + secPart + '.';
+        if (h === 12 && m === 0) return 'noon, ' + secPart + '.';
+        const hw = h === 0 ? 'nought' : num(h);
+        const mw = m === 0 ? 'on the hour' : (m < 10 ? 'oh ' + ONES[m] : num(m));
+        return hw + ' ' + mw + ', ' + secPart + '.';
+    }
+
+    // Longest sentence the day can produce, so the page window is always wide enough.
+    let MAX_LEN = 0;
+    for (let h = 0; h < 24; h++) for (let m = 0; m < 60; m++) {
+        const p = phraseFor(h, m, 37);
+        if (p.length > MAX_LEN) MAX_LEN = p.length;
+    }
+    MAX_LEN = Math.max(MAX_LEN, phraseFor(23, 37, 37).length);
+
+    // ---- Deterministic hashing ----
+    function hash32(str) {
+        let h = 1779033703 ^ str.length;
+        for (let i = 0; i < str.length; i++) {
+            h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+            h = (h << 13) | (h >>> 19);
         }
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        return (h ^= h >>> 16) >>> 0;
+    }
+    function mulberry32(a) {
+        return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
 
-        function runLibraryLogic() {
-            // Re-fetch the target time continuously
-            const now = new Date();
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            targetTimeString = `${h}:${m}:${s}`;
-            
-            const ms = now.getMilliseconds();
-            
-            // Logic mapping the second to the state of the clock
-            // 0 - 500ms: Random infinite noise
-            // 500 - 900ms: Absolute Exact Time (Meaning found in the library)
-            // 900 - 1000ms: Dissolving back to noise
-            
-            if (ms < 500 || ms > 900) {
-                if (mode !== 'chaos') {
-                    // Switch to chaos
-                    mode = 'chaos';
-                }
+    function locate(phrase) {
+        const r = mulberry32(hash32(phrase));
+        let hex = '';
+        for (let i = 0; i < 15; i++) {
+            if (i === 5 || i === 10) hex += ' ';
+            hex += LETTERS[Math.floor(r() * LETTERS.length)];
+        }
+        return {
+            hex: hex,
+            wall: Math.floor(r() * WALLS),
+            shelf: Math.floor(r() * SHELVES),
+            vol: Math.floor(r() * BOOKS),
+            page: Math.floor(r() * PAGES),
+            line: Math.floor(r() * PAGE_LINES),
+            col: Math.floor(r() * (LINE_LEN - phrase.length + 1)),
+            seed: hash32('page|' + phrase)
+        };
+    }
+
+    function pageLine(seed, i) {
+        const r = mulberry32((seed + Math.imul(i + 1, 0x9E3779B1)) | 0);
+        let s = '';
+        for (let k = 0; k < LINE_LEN; k++) s += SYMBOLS[Math.floor(r() * SYMBOLS.length)];
+        return s;
+    }
+
+    function randomLine(n) {
+        let s = '';
+        for (let k = 0; k < n; k++) s += SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        return s;
+    }
+
+    // ---- DOM ----
+    const $ = (id) => document.getElementById(id);
+    const timeEl = $('time'), phraseEl = $('phrase'), srTime = $('srTime');
+    const gutter = $('gutter'), linesEl = $('lines');
+    const pageHead = $('pageHead'), lineHead = $('lineHead'), cropNote = $('cropNote');
+    const hexName = $('hexName'), wallCap = $('wallCap');
+    const cWall = $('cWall'), cShelf = $('cShelf'), cVol = $('cVol'), cPage = $('cPage'), cLine = $('cLine');
+    const plan = $('plan'), wallSvg = $('wall');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const ROMAN = ['I', 'II', 'III', 'IV'];
+    const pad = (n) => String(n).padStart(2, '0');
+
+    // ---- Page window sizing ----
+    let charRatio = 0.6;      // advance width / font size for Courier Prime
+    let cols = LINE_LEN, rows = 15, fontPx = 14;
+
+    function measureChar() {
+        const c = document.createElement('canvas').getContext('2d');
+        c.font = '100px "Courier Prime", "Courier New", monospace';
+        const w = c.measureText('mmmmmmmmmm').width / 1000;
+        if (w > 0.3 && w < 1) charRatio = w;
+    }
+
+    function layout() {
+        const avail = linesEl.parentElement.clientWidth;
+        const gutterW = 3.2;                          // gutter + gap, in "chars"
+        const needCols = MAX_LEN + 4;
+        // as big as possible up to 15px, but never fewer than needCols columns
+        fontPx = Math.min(15, avail / ((needCols + gutterW) * charRatio));
+        fontPx = Math.max(8, Math.floor(fontPx * 4) / 4);
+        cols = Math.min(LINE_LEN, Math.floor(avail / (fontPx * charRatio) - gutterW));
+        linesEl.style.fontSize = fontPx + 'px';
+        gutter.style.fontSize = fontPx + 'px';
+        if (window.innerWidth > 820) {
+            // two columns: let the page run as deep as the catalogue beside it
+            const aside = document.querySelector('.where');
+            const bookPage = document.querySelector('.book-page');
+            const chrome = bookPage.offsetHeight - linesEl.offsetHeight;
+            const fit = Math.floor((aside.offsetHeight - chrome) / (fontPx * 1.5));
+            rows = Math.max(13, Math.min(PAGE_LINES, fit || 17));
+        } else {
+            rows = 11;
+        }
+    }
+
+    // ---- Drawing the plan and the wall ----
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs, parent) {
+        const e = document.createElementNS(SVGNS, tag);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(e);
+        return e;
+    }
+
+    // flat-topped hexagon; sides 0 (top) and 3 (bottom) are the open sides
+    const R = 72;
+    const V = [];
+    for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 180 * (240 + 60 * i);   // start at upper-left vertex
+        V.push([R * Math.cos(a), R * Math.sin(a)]);
+    }
+    // side i runs V[i] -> V[i+1]; side 0 is top, 3 is bottom
+    const SHELF_SIDES = [1, 2, 4, 5];
+    const planWalls = [];
+
+    function buildPlan() {
+        plan.innerHTML = '';
+        // neighbouring galleries through the open sides, faint
+        const g = el('g', { fill: 'none', stroke: '#3a2f1f', 'stroke-width': 1.2 }, plan);
+        [-1, 1].forEach((d) => {
+            const oy = d * (R * Math.sqrt(3) + 26);
+            const pts = V.map((p) => (p[0]) + ',' + (p[1] + oy)).join(' ');
+            el('polygon', { points: pts, opacity: 0.6 }, g);
+        });
+        // the vestibules between galleries
+        [-1, 1].forEach((d) => {
+            const y0 = d * (R * Math.sqrt(3) / 2), y1 = d * (R * Math.sqrt(3) / 2 + 26);
+            el('line', { x1: -20, y1: y0, x2: -20, y2: y1, stroke: '#6b5634', 'stroke-width': 1.2 }, plan);
+            el('line', { x1: 20, y1: y0, x2: 20, y2: y1, stroke: '#6b5634', 'stroke-width': 1.2 }, plan);
+            el('circle', { cx: 32, cy: (y0 + y1) / 2, r: 6, fill: 'none', stroke: '#6b5634', 'stroke-width': 1, 'stroke-dasharray': '2 2' }, plan);
+        });
+        // open sides drawn as broken lines
+        [0, 3].forEach((i) => {
+            const a = V[i], b = V[(i + 1) % 6];
+            el('line', { x1: a[0], y1: a[1], x2: -20, y2: a[1], stroke: '#6b5634', 'stroke-width': 2 }, plan);
+            el('line', { x1: 20, y1: b[1], x2: b[0], y2: b[1], stroke: '#6b5634', 'stroke-width': 2 }, plan);
+        });
+        // shelf walls
+        SHELF_SIDES.forEach((i, w) => {
+            const a = V[i], b = V[(i + 1) % 6];
+            // inward offset for the bookcase
+            const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+            const len = Math.hypot(mx, my), nx = -mx / len, ny = -my / len;
+            const off = 7;
+            const grp = el('g', {}, plan);
+            el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: '#6b5634', 'stroke-width': 2 }, grp);
+            const shelf = el('polygon', {
+                points: [a, b, [b[0] + nx * off * 1.6 - (b[0] - a[0]) * 0.07, b[1] + ny * off * 1.6 - (b[1] - a[1]) * 0.07],
+                         [a[0] + nx * off * 1.6 + (b[0] - a[0]) * 0.07, a[1] + ny * off * 1.6 + (b[1] - a[1]) * 0.07]]
+                         .map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' '),
+                fill: '#2b2216', stroke: '#6b5634', 'stroke-width': 0.8
+            }, grp);
+            const tx = mx + nx * 26, ty = my + ny * 26;
+            const label = el('text', {
+                x: tx.toFixed(1), y: (ty + 4).toFixed(1), 'text-anchor': 'middle',
+                'font-family': 'IM Fell English SC, serif', 'font-size': 13, fill: '#b3a37f'
+            }, grp);
+            label.textContent = ROMAN[w];
+            planWalls.push({ shelf: shelf, label: label });
+        });
+        // the air shaft with its railing
+        el('circle', { cx: 0, cy: 0, r: 17, fill: '#050403', stroke: '#6b5634', 'stroke-width': 1.4 }, plan);
+        el('circle', { cx: 0, cy: 0, r: 20, fill: 'none', stroke: '#6b5634', 'stroke-width': 0.8, 'stroke-dasharray': '1.5 2.5' }, plan);
+    }
+
+    function updatePlan(wall) {
+        planWalls.forEach((p, i) => {
+            const on = i === wall;
+            p.shelf.setAttribute('fill', on ? '#d9a441' : '#2b2216');
+            p.label.setAttribute('fill', on ? '#ece3c8' : '#8a7756');
+            p.label.setAttribute('font-weight', on ? '700' : '400');
+        });
+    }
+
+    let wallBooks = [];
+    function buildWall() {
+        wallSvg.innerHTML = '';
+        wallBooks = [];
+        el('rect', { x: 2, y: 2, width: 216, height: 116, fill: '#1d170f', stroke: '#6b5634', 'stroke-width': 1.5 }, wallSvg);
+        const bw = 6, x0 = 14, rowH = 22;
+        for (let s = 0; s < SHELVES; s++) {
+            const yb = 6 + rowH * (s + 1) - 2;
+            el('line', { x1: 4, y1: yb, x2: 216, y2: yb, stroke: '#6b5634', 'stroke-width': 1.6 }, wallSvg);
+            const row = [];
+            for (let b = 0; b < BOOKS; b++) {
+                const h = 15 + ((b * 7 + s * 3) % 4);
+                const r = el('rect', {
+                    x: x0 + b * bw, y: yb - h, width: bw - 1.2, height: h,
+                    fill: (b + s) % 3 ? '#4a3b26' : '#57452b'
+                }, wallSvg);
+                row.push(r);
+            }
+            wallBooks.push(row);
+        }
+    }
+
+    let litBook = null;
+    function updateWall(shelf, vol) {
+        if (litBook) litBook.setAttribute('fill', litBook.dataset.base);
+        const r = wallBooks[shelf][vol];
+        if (!r.dataset.base) r.dataset.base = r.getAttribute('fill');
+        r.setAttribute('fill', '#d9a441');
+        litBook = r;
+    }
+
+    // ---- Rendering a found page ----
+    let current = null;     // { phrase, loc, lines[] }
+    let laidOut = false;
+
+    function renderPage(state, scramble) {
+        const loc = state.loc, len = state.phrase.length;
+        const start = Math.max(0, Math.min(PAGE_LINES - rows, loc.line - Math.floor(rows / 2)));
+        let off = loc.col - Math.floor((cols - len) / 2);
+        off = Math.max(0, Math.min(LINE_LEN - cols, off));
+
+        let g = '', html = '';
+        for (let i = start; i < start + rows; i++) {
+            g += '<div' + (i === loc.line ? ' class="here"' : '') + '>' + (i + 1) + '</div>';
+            if (scramble) {
+                html += '<div>' + randomLine(cols) + '</div>';
+            } else if (i === loc.line) {
+                const line = state.lines[i];
+                html += '<div>' + line.slice(off, loc.col) + '<mark>' + state.phrase + '</mark>' +
+                    line.slice(loc.col + len, off + cols) + '</div>';
             } else {
-                if (mode !== 'clarity') {
-                    mode = 'clarity';
-                    // Meaning is found! Lock it in.
-                    timeDisplay.textContent = targetTimeString;
-                }
+                html += '<div>' + state.lines[i].slice(off, off + cols) + '</div>';
             }
-            
-            requestAnimationFrame(runLibraryLogic);
         }
-        
-        // Run a high-speed separate interval entirely dedicated to scrambling the DOM text 
-        // to make it look like pages of infinite books flying by, ONLY when in chaos mode.
-        setInterval(() => {
-            if (mode === 'chaos') {
-                timeDisplay.textContent = getRandomString(8);
-            }
-        }, 50); // Scrambles every 50ms!
+        gutter.innerHTML = g;
+        linesEl.innerHTML = html;
+        linesEl.classList.toggle('cropped-left', off > 0);
+        linesEl.classList.toggle('cropped-right', off + cols < LINE_LEN);
+        cropNote.textContent = cols < LINE_LEN
+            ? 'symbols ' + (off + 1) + ' to ' + (off + cols) + ' of each eighty'
+            : 'lines of eighty symbols';
+    }
 
-        // Start the master loop
-        requestAnimationFrame(runLibraryLogic);
+    function find(now) {
+        const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+        const phrase = phraseFor(h, m, s);
+        const loc = locate(phrase);
+        const lines = [];
+        for (let i = 0; i < PAGE_LINES; i++) lines.push(pageLine(loc.seed, i));
+        return { h: h, m: m, s: s, phrase: phrase, loc: loc, lines: lines };
+    }
 
-    </script>
+    let scrambleUntil = 0, rafId = 0;
+    function scrambleLoop(t) {
+        if (!current) return;
+        if (performance.now() < scrambleUntil) {
+            renderPage(current, true);
+            rafId = requestAnimationFrame(scrambleLoop);
+        } else {
+            rafId = 0;
+            renderPage(current, false);
+        }
+    }
+
+    let lastMinute = -1;
+    function tick() {
+        const now = new Date();
+        const st = find(now);
+        current = st;
+
+        timeEl.innerHTML = pad(st.h) + ':' + pad(st.m) + ':<span class="sec">' + pad(st.s) + '</span>';
+        timeEl.setAttribute('aria-label', 'Current time ' + pad(st.h) + ':' + pad(st.m) + ':' + pad(st.s));
+        phraseEl.textContent = st.phrase;
+        if (st.m !== lastMinute) {
+            lastMinute = st.m;
+            srTime.textContent = 'It is ' + pad(st.h) + ':' + pad(st.m) + '.';
+        }
+
+        const L = st.loc;
+        hexName.textContent = L.hex;
+        pageHead.textContent = 'volume ' + (L.vol + 1) + ' · page ' + (L.page + 1) + ' of 410';
+        lineHead.textContent = 'line ' + (L.line + 1) + ' of 40';
+        cWall.textContent = ROMAN[L.wall] + ' of IV';
+        cShelf.innerHTML = (L.shelf + 1) + ' <small>of 5, from the top</small>';
+        cVol.innerHTML = (L.vol + 1) + ' <small>of 32</small>';
+        cPage.innerHTML = (L.page + 1) + ' <small>of 410</small>';
+        cLine.innerHTML = (L.line + 1) + ' <small>of 40, symbol ' + (L.col + 1) + '</small>';
+        wallCap.textContent = 'wall ' + ROMAN[L.wall] + ', shelf ' + (L.shelf + 1) + ', volume ' + (L.vol + 1);
+        updatePlan(L.wall);
+        updateWall(L.shelf, L.vol);
+
+        if (!laidOut) { renderPage(st, false); layout(); laidOut = true; }
+        if (reduceMotion.matches) {
+            renderPage(st, false);
+        } else {
+            scrambleUntil = performance.now() + 260;
+            if (!rafId) rafId = requestAnimationFrame(scrambleLoop);
+        }
+    }
+
+    function scheduleTick() {
+        tick();
+        // align to the start of each second
+        setTimeout(scheduleTick, 1000 - (Date.now() % 1000) + 5);
+    }
+
+    buildPlan();
+    buildWall();
+    measureChar();
+    layout();
+    scheduleTick();
+
+    let resizeT = 0;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeT);
+        resizeT = setTimeout(() => { layout(); if (current) renderPage(current, false); }, 80);
+    });
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => { measureChar(); layout(); if (current) renderPage(current, false); });
+    }
+})();
+</script>
 </body>
 </html>
