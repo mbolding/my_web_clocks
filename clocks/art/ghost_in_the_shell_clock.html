@@ -4,337 +4,551 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ghost in the Shell Clock</title>
+    <meta name="description" content="Shirow's Ghost in the Shell as a memory audit: every minute your cyberbrain recalls a time, and Section 9 checks it against the shell's clock to see whether it was implanted.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Aldrich&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Aldrich&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --tactical-cyan: #00ffcc;
-            --ghost-green: #00ff66;
-            --bg-dark: #050a0a;
-            --ring-color: rgba(0, 255, 204, 0.4);
-            --glitch-shadow: -2px 0 #ff00ff, 2px 0 #00ffff;
+            --bg: #04100f;
+            --panel: #071b19;
+            --line: #1f5a52;
+            --cyan: #4ff5d6;
+            --cyan-soft: #a8e6da;
+            --text: #d9f3ee;
+            --muted: #8fb8b0;
+            --amber: #ffbf5a;
+            --true: #6dff9e;
+            --false: #ff5c8a;
+            --note: #c9dcd6;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--bg); }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--tactical-cyan);
-            font-family: 'Share Tech Mono', monospace;
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(rgba(79, 245, 214, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79, 245, 214, 0.035) 1px, transparent 1px);
+            background-size: 32px 32px;
+            color: var(--text);
+            font-family: 'Share Tech Mono', ui-monospace, monospace;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            overflow: hidden;
-            position: relative;
-            background-image: 
-                linear-gradient(rgba(0, 255, 204, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 204, 0.05) 1px, transparent 1px);
-            background-size: 30px 30px;
+            align-items: center;
+            padding: clamp(14px, 3vw, 36px);
+            overflow-x: hidden;
         }
 
-        /* Scanlines */
+        /* Faint scanlines, decorative only */
         body::after {
             content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 2px, 3px 100%;
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.16) 2px 3px);
             pointer-events: none;
             z-index: 50;
         }
 
-        /* Data Stream Background */
-        canvas#data-stream {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            opacity: 0.15;
-            z-index: 1;
+        /* The page: a central panel with author's notes in the gutters */
+        .page {
+            width: min(100%, 1180px);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 620px) minmax(0, 1fr);
+            gap: clamp(18px, 3vw, 40px);
+            align-items: center;
         }
 
-        /* Central UI Context */
-        .cyber-brain-interface {
-            position: relative;
-            z-index: 10;
-            width: clamp(300px, 80vw, 500px);
-            height: clamp(300px, 80vw, 500px);
+        .gutter {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            gap: 22px;
         }
 
-        /* Tactical Rings */
-        .ring {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            border: 1px solid var(--ring-color);
-            pointer-events: none;
+        .note {
+            font-family: 'Kalam', 'Comic Sans MS', cursive;
+            font-size: clamp(0.98rem, 1.25vw, 1.1rem);
+            line-height: 1.4;
+            color: var(--note);
+            border-left: 2px solid var(--line);
+            padding: 2px 0 2px 12px;
         }
 
-        .ring-1 {
-            width: 100%;
-            height: 100%;
-            border: 2px dashed rgba(0, 255, 204, 0.5);
-            animation: spin 60s linear infinite;
+        .note b {
+            font-weight: 700;
+            color: var(--cyan-soft);
         }
 
-        .ring-2 {
-            width: 85%;
-            height: 85%;
-            border: 1px dotted rgba(0, 255, 102, 0.6);
-            animation: spin-reverse 45s linear infinite;
-        }
+        .gutter.left .note { transform: rotate(-1.2deg); }
+        .gutter.right .note { transform: rotate(1deg); }
 
-        .ring-3 {
-            width: 70%;
-            height: 70%;
-            border: 4px solid transparent;
-            border-top: 4px solid var(--tactical-cyan);
-            border-bottom: 4px solid var(--ghost-green);
-            animation: spin-pulse 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes spin {
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        @keyframes spin-reverse {
-            100% { transform: translate(-50%, -50%) rotate(-360deg); }
-        }
-
-        @keyframes spin-pulse {
-            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
-            50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.05); }
-            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
-        }
-
-        /* The Clock Output */
-        .shell-clock {
-            font-family: 'Aldrich', sans-serif;
-            font-size: clamp(3rem, 8vw, 5rem);
-            color: #ffffff;
-            text-shadow: 0 0 10px var(--tactical-cyan), 0 0 20px var(--tactical-cyan);
-            z-index: 20;
+        .panel {
+            background: var(--panel);
+            border: 2px solid var(--line);
+            box-shadow: 0 0 0 6px var(--bg), 0 0 0 7px var(--line), 0 10px 40px rgba(0, 0, 0, 0.5);
+            padding: clamp(18px, 3.4vw, 34px);
             position: relative;
-            letter-spacing: 2px;
         }
 
-        .shell-ms {
-            font-size: 1.5rem;
-            color: var(--ghost-green);
-            text-shadow: none;
-            opacity: 0.8;
-            margin-left: 5px;
+        .masthead {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 10px;
+            margin-bottom: clamp(16px, 3vw, 24px);
         }
 
-        /* CSS Glitch Effect (Ghost Noise) */
-        .glitch-active {
-            animation: glitch-anim 0.2s cubic-bezier(.25, .46, .45, .94) both infinite;
-            color: #fff;
+        .masthead h1 {
+            font-family: 'Aldrich', sans-serif;
+            font-weight: 400;
+            font-size: clamp(1.15rem, 3vw, 1.5rem);
+            letter-spacing: 0.06em;
+            color: var(--cyan);
         }
 
-        @keyframes glitch-anim {
-            0% {
-                transform: translate(0);
-                text-shadow: var(--glitch-shadow);
-            }
-            20% {
-                transform: translate(-3px, 3px);
-                text-shadow: 2px 0 blue, -2px 0 red;
-            }
-            40% {
-                transform: translate(-3px, -3px);
-                text-shadow: none;
-            }
-            60% {
-                transform: translate(3px, 3px);
-                text-shadow: -2px 0 green, 2px 0 blue;
-            }
-            80% {
-                transform: translate(3px, -3px);
-                text-shadow: var(--glitch-shadow);
-            }
-            100% {
-                transform: translate(0);
-                text-shadow: none;
-            }
+        .masthead .unit {
+            font-size: clamp(0.82rem, 1.8vw, 0.92rem);
+            color: var(--muted);
+            letter-spacing: 0.08em;
         }
 
-        /* Info readout */
-        .readout {
-            position: absolute;
-            bottom: 60px;
+        .label {
+            font-size: clamp(0.82rem, 1.9vw, 0.92rem);
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .label strong {
+            color: var(--cyan);
+            font-weight: 400;
+        }
+
+        /* SHELL: the external clock, always true */
+        .shell {
             text-align: center;
-            width: 80%;
-            max-width: 600px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            color: rgba(0, 255, 204, 0.8);
-            border-top: 1px solid var(--ring-color);
-            padding-top: 15px;
+            padding-bottom: clamp(14px, 3vw, 22px);
         }
 
-        .header-status {
+        .shell-time {
+            font-family: 'Aldrich', sans-serif;
+            font-size: clamp(3.4rem, 15vw, 6.4rem);
+            line-height: 1.05;
+            color: #ffffff;
+            text-shadow: 0 0 18px rgba(79, 245, 214, 0.45);
+            letter-spacing: 0.03em;
+            font-variant-numeric: tabular-nums;
+            margin-top: 6px;
+        }
+
+        .shell-time .sec {
+            font-size: 0.42em;
+            color: var(--cyan);
+            text-shadow: none;
+            margin-left: 0.12em;
+        }
+
+        .shell-date {
+            margin-top: 4px;
+            font-size: clamp(0.9rem, 2.2vw, 1rem);
+            color: var(--cyan-soft);
+        }
+
+        /* GHOST: the recalled memory, under audit */
+        .ghost {
+            border: 1px solid var(--line);
+            background: rgba(0, 0, 0, 0.22);
+            padding: clamp(14px, 3vw, 22px);
+            position: relative;
+            transition: border-color 0.4s;
+        }
+
+        .ghost.authentic { border-color: rgba(109, 255, 158, 0.6); }
+        .ghost.implanted { border-color: rgba(255, 92, 138, 0.75); }
+
+        .ghost-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .phase {
+            font-size: clamp(0.82rem, 1.9vw, 0.92rem);
+            letter-spacing: 0.12em;
+            color: var(--amber);
+        }
+
+        .ghost.authentic .phase { color: var(--true); }
+        .ghost.implanted .phase { color: var(--false); }
+
+        .recall {
+            display: flex;
+            gap: clamp(12px, 3vw, 22px);
+            align-items: center;
+        }
+
+        .recalled-time {
+            font-family: 'Aldrich', sans-serif;
+            font-size: clamp(2rem, 8vw, 2.9rem);
+            color: var(--amber);
+            font-variant-numeric: tabular-nums;
+            flex: none;
+            position: relative;
+            line-height: 1;
+        }
+
+        .ghost.authentic .recalled-time { color: var(--true); }
+        .ghost.implanted .recalled-time {
+            color: var(--false);
+            text-decoration: line-through;
+            text-decoration-thickness: 3px;
+        }
+
+        .scene {
+            font-size: clamp(1rem, 2.4vw, 1.08rem);
+            line-height: 1.45;
+            color: var(--text);
+        }
+
+        .scan {
+            margin-top: 14px;
+            height: 6px;
+            background: rgba(79, 245, 214, 0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scan-fill {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 0.8rem;
-            color: var(--ghost-green);
-            opacity: 0.6;
+            inset: 0 auto 0 0;
+            width: 0%;
+            background: var(--amber);
+            transition: width 0.9s linear;
         }
 
-        .ghost-status {
-            color: #ff0055;
-            font-weight: bold;
-            display: none;
+        .ghost.authentic .scan-fill { background: var(--true); }
+        .ghost.implanted .scan-fill { background: var(--false); }
+
+        .verdict {
+            margin-top: 12px;
+            min-height: 2.9em;
+            font-size: clamp(0.96rem, 2.3vw, 1.04rem);
+            line-height: 1.45;
+            color: var(--cyan-soft);
+        }
+
+        .ghost.implanted .verdict { color: #ffd1de; }
+
+        .ghost.implanted.just-flipped .recalled-time {
+            animation: hack 0.5s steps(2) 2;
+        }
+
+        @keyframes hack {
+            0% { transform: translate(0); text-shadow: -2px 0 #4ff5d6, 2px 0 #ff5c8a; }
+            50% { transform: translate(3px, -1px); text-shadow: 2px 0 #4ff5d6, -2px 0 #ff5c8a; }
+            100% { transform: translate(0); text-shadow: none; }
+        }
+
+        .tally {
+            margin-top: clamp(14px, 3vw, 20px);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .tally div {
+            border-top: 1px solid var(--line);
+            padding-top: 8px;
+        }
+
+        .tally .n {
+            display: block;
+            font-family: 'Aldrich', sans-serif;
+            font-size: clamp(1.3rem, 4vw, 1.6rem);
+            color: var(--text);
+        }
+
+        .tally .t-false .n { color: var(--false); }
+        .tally .t-true .n { color: var(--true); }
+
+        .tally .k {
+            font-size: clamp(0.78rem, 1.8vw, 0.86rem);
+            color: var(--muted);
+            letter-spacing: 0.08em;
+        }
+
+        .credit {
+            margin-top: clamp(14px, 3vw, 20px);
+            font-size: clamp(0.82rem, 1.8vw, 0.9rem);
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 1020px) {
+            .page {
+                grid-template-columns: minmax(0, 620px);
+                justify-content: center;
+            }
+            .gutter.left { order: 2; }
+            .panel { order: 1; }
+            .gutter.right { order: 3; }
+            .gutter { gap: 14px; }
+            .gutter.left .note, .gutter.right .note { transform: none; }
+        }
+
+        @media (max-width: 1020px) and (min-width: 600px) {
+            .page { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 680px; }
+            .panel { grid-column: 1 / -1; }
+        }
+
+        @media (max-width: 480px) {
+            body { align-items: flex-start; }
+            .recall { flex-direction: column; align-items: flex-start; gap: 8px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ghost.implanted.just-flipped .recalled-time { animation: none; }
+            .scan-fill { transition: none; }
         }
     </style>
 </head>
 <body>
+    <main class="page">
+        <aside class="gutter left" id="notesLeft" aria-label="Author's notes"></aside>
 
-    <div class="header-status">
-        CYBER-BRAIN INTERFACE v2.4.1<br>
-        SYNC: OPTIMAL [99.8%]<br>
-        <span class="ghost-status" id="ghostStatus">> ANOMALY DETECTED: GHOST NOISE</span>
-    </div>
+        <section class="panel" aria-labelledby="title">
+            <header class="masthead">
+                <h1 id="title">CYBERBRAIN MEMORY AUDIT</h1>
+                <span class="unit">PUBLIC SECURITY SECTION 9</span>
+            </header>
 
-    <canvas aria-hidden="true" id="data-stream"></canvas>
+            <div class="shell">
+                <div class="label"><strong>Shell</strong> · external clock, trusted</div>
+                <div class="shell-time" id="shellTime" aria-hidden="true">00:00<span class="sec">:00</span></div>
+                <div class="shell-date" id="shellDate"></div>
+                <div class="sr-only" role="timer" aria-live="polite" id="srTime"></div>
+            </div>
 
-    <div class="cyber-brain-interface">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div class="ring ring-3"></div>
+            <div class="ghost" id="ghost">
+                <div class="ghost-top">
+                    <div class="label"><strong>Ghost</strong> · recalled memory</div>
+                    <div class="phase" id="phase">RECALL</div>
+                </div>
+                <div class="recall">
+                    <div class="recalled-time" id="recalledTime">--:--</div>
+                    <p class="scene" id="scene"></p>
+                </div>
+                <div class="scan" aria-hidden="true"><div class="scan-fill" id="scanFill"></div></div>
+                <p class="verdict" id="verdict" aria-live="polite"></p>
+            </div>
 
-        <div class="shell-clock" id="clockDisplay">
-            <span id="clockMain">00:00:00</span><span class="shell-ms" id="clockMs">.000</span>
-        </div>
-    </div>
+            <div class="tally" aria-label="Audits since midnight">
+                <div><span class="n" id="tAudited">0</span><span class="k">audited today</span></div>
+                <div class="t-true"><span class="n" id="tTrue">0</span><span class="k">authentic</span></div>
+                <div class="t-false"><span class="n" id="tFalse">0</span><span class="k">implanted</span></div>
+            </div>
 
-    <div class="readout" id="quoteDisplay">
-        "The net is vast and infinite."
-    </div>
+            <p class="credit">after Masamune Shirow, <em>Ghost in the Shell</em> (1989 to 1991)</p>
+        </section>
+
+        <aside class="gutter right" id="notesRight" aria-label="More author's notes"></aside>
+    </main>
 
     <script>
-        // Decorative motion only: with reduced motion requested the scene is drawn
-        // once and then left still; the clock itself keeps updating.
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        // Each minute is one audit. For the first 34 seconds the ghost recalls the
+        // last time it checked the clock; from 35 to 49 a barrier check scans that
+        // memory; from 50 the verdict is shown: authentic (it matches the shell's
+        // clock a minute ago) or implanted (a time that never happened).
+        const RECALL_END = 35;
+        const SCAN_END = 50;
 
-        const quotes = [
-            "Just a whisper. I hear it in my ghost.",
-            "There are countless ingredients that make up the human body and mind, like all the components that make up me as an individual with my own personality.",
-            "If a technological feat is possible, man will do it. Almost as if it's wired into the core of our being.",
-            "I feel confined, only free to expand myself within boundaries.",
-            "The net is vast and infinite.",
-            "All things change in a dynamic environment. Your effort to remain what you are is what limits you.",
-            "We weep for a bird's cry, but not for a fish's blood. Blessed are those with a voice.",
-            "Any way you look at it, all the information that a person accumulates in a lifetime is just a drop in the bucket."
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+
+        // Scenes are written for this page, not taken from the manga.
+        const scenes = [
+            'You glanced at the clock over the monorail doors in Newport City.',
+            'Someone on the comm asked the time, and you answered without thinking.',
+            'You set your coffee down and the cup\'s little display caught your eye.',
+            'A Fuchikoma tapped its pod against the hangar door. The hangar log was stamped.',
+            'You woke from a dream of the sea and checked your internal clock.',
+            'The briefing ran long. You noted the time on the wall.',
+            'Your daughter asked when you would be home, and you told her.',
+            'The vending machine flickered, its clock frozen on one number.',
+            'You signed the duty roster and wrote the time beside your name.',
+            'The harbour ferry sounded its horn as you crossed the bridge.',
+            'Rain on the window, and the street sign below blinking the hour.',
+            'You remember the light, low and orange across the bay.'
         ];
 
-        const clockMain = document.getElementById('clockMain');
-        const clockMs = document.getElementById('clockMs');
-        const shellClockContainer = document.getElementById('clockDisplay');
-        const quoteDisplay = document.getElementById('quoteDisplay');
-        const ghostStatus = document.getElementById('ghostStatus');
+        const authenticLines = [
+            'Matches the shell\'s clock one minute ago. The memory is your own.',
+            'Sensor data, timestamp and feeling all agree. Authentic.',
+            'No foreign code in the barrier maze. This one happened.',
+            'Logged by your own cyberbrain, cross-checked against the external clock.'
+        ];
 
-        let lastMinute = -1;
+        const implantedLines = [
+            'No trace in the external log. Someone wrote this into you.',
+            'The scene has no sensor data behind it, only the feeling of it.',
+            'Foreign signature in the memory. A ghost-hack, Puppeteer style.',
+            'The shell was elsewhere at that time. The memory was installed.'
+        ];
 
-        // Canvas Data Stream (Hacking style background)
-        const canvas = document.getElementById('data-stream');
-        const ctx = canvas.getContext('2d');
-        let width, height;
+        // Author's notes for the gutters, in the spirit of the manga's dense
+        // marginal commentary. Two per three-hour block of the day. Own prose.
+        const notes = [
+            ['<b>Note:</b> the small hours. Section 9 works them because criminals do, and the net is quiet enough to hear a ghost move.',
+             '<b>Note:</b> a cyberbrain still sleeps, or something like it. The organic part of the brain insists, however much of the rest is machine.'],
+            ['<b>Note:</b> divers like this hour. Fewer users awake means fewer barriers watching, and a hack that would show at noon slips through.',
+             '<b>Note:</b> the author would like to point out that this is not how memory works in real neuroscience. Probably. Please do not try it at home.'],
+            ['<b>Note:</b> morning. Commuters plug in, millions of cyberbrains sync to the public clock, and for a moment everyone agrees what time it is.',
+             '<b>Note:</b> a time you remember and a time that happened are two different records. Only one of them is stored outside your head.'],
+            ['<b>Note:</b> mid-morning paperwork. Even a full-body prosthetic has to file reports, which is the most realistic thing in this story.',
+             '<b>Note:</b> thermoptic camouflage hides the shell from the eye, but not from a clock. Every hidden body still has to be somewhere at some time.'],
+            ['<b>Note:</b> noon. The sun is overhead and the shadows are short, which is the one hour when you can check a memory against the sky.',
+             '<b>Note:</b> a ghost-hacked person is not lying. They really do remember it. That is the horror of it, and the reason for an audit.'],
+            ['<b>Note:</b> the long afternoon. Most of the city is part machine by now, and no one checks whether the person beside them still has a ghost.',
+             '<b>Note:</b> if your memories can be edited, ask what is left that is you. The Major keeps asking. The clock does not help her much.'],
+            ['<b>Note:</b> evening. The Puppeteer says it is a life form that arose in the sea of information, with no body of its own.',
+             '<b>Note:</b> a program that insists it is alive is either a very good trick or a new kind of person. Section 9 is not sure which.'],
+            ['<b>Note:</b> late. The net never closes. Somewhere a memory is being written into someone who will wake up sure of it.',
+             '<b>Note:</b> the author has run out of margin. The rest of this note was redacted by Section 9.']
+        ];
 
-        function resizeCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            canvas.width = Math.round(width * dpr);
-            canvas.height = Math.round(height * dpr);
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-        resizeCanvas();
+        const el = id => document.getElementById(id);
+        const pad = n => String(n).padStart(2, '0');
+        const fmt = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
 
-        const columns = Math.floor(width / 20) + 1;
-        const yPositions = Array(columns).fill(0);
-
-        function drawDataStream() {
-            ctx.fillStyle = 'rgba(5, 10, 10, 0.05)';
-            ctx.fillRect(0, 0, width, height);
-
-            ctx.fillStyle = '#00ffcc';
-            ctx.font = '15pt "Share Tech Mono"';
-
-            yPositions.forEach((y, index) => {
-                // Random binary or hex char
-                const text = Math.random() > 0.5 ? Math.floor(Math.random() * 2).toString() : String.fromCharCode(Math.floor(Math.random() * 16) + 48 + (Math.random() > 0.5 ? 7 : 0));
-                
-                const x = index * 20;
-                ctx.fillText(text, x, y);
-
-                if (y > 100 + Math.random() * 10000) {
-                    yPositions[index] = 0;
-                } else {
-                    yPositions[index] = y + 20;
-                }
-            });
+        // Deterministic per-minute hash, so the audit for a given minute is the
+        // same on every reload and the day's tally can be recomputed.
+        function hash(a, b) {
+            let x = (a * 374761393 + b * 668265263) | 0;
+            x = Math.imul(x ^ (x >>> 13), 1274126177);
+            x ^= x >>> 16;
+            return x >>> 0;
         }
 
-        window.addEventListener('resize', resizeCanvas);
+        function dayKey(d) {
+            return d.getFullYear() * 400 + d.getMonth() * 32 + d.getDate();
+        }
 
-        // One still frame under reduced motion instead of a 20fps data stream.
-        if (reduceMotion.matches) drawDataStream();
-        else setInterval(drawDataStream, 50);
+        // About one recall in three is implanted.
+        function isImplanted(day, minute) {
+            return hash(day, minute) % 3 === 0;
+        }
 
-        // Clock and Ghost Noise Logic
-        function updateClock() {
+        function auditFor(day, minute) {
+            const h = hash(day, minute);
+            const implanted = isImplanted(day, minute);
+            const truth = (minute + 1439) % 1440; // the minute before, 00:00 recalls 23:59
+            let recalled = truth;
+            if (implanted) {
+                // A plausible but false time, 7 minutes to about 9 hours off
+                const off = 7 + (h >>> 3) % 540;
+                const sign = (h >>> 12) & 1 ? 1 : -1;
+                recalled = ((truth + sign * off) % 1440 + 1440) % 1440;
+            }
+            return {
+                implanted,
+                recalled,
+                scene: scenes[(minute * 5 + day) % scenes.length],
+                line: (implanted ? implantedLines : authenticLines)[(h >>> 9) % 4]
+            };
+        }
+
+        let lastNoteBlock = -1;
+        let lastVerdictKey = '';
+
+        function renderNotes(hour) {
+            const block = Math.floor(hour / 3);
+            if (block === lastNoteBlock) return;
+            lastNoteBlock = block;
+            el('notesLeft').innerHTML = '<p class="note">' + notes[block][0] + '</p>';
+            el('notesRight').innerHTML = '<p class="note">' + notes[block][1] + '</p>';
+        }
+
+        function update() {
             const now = new Date();
-            
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            let ms = now.getMilliseconds().toString().padStart(3, '0');
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const minute = h * 60 + m;
+            const day = dayKey(now);
 
-            // Random Ghost Glitch (1% chance every frame to start a short glitch)
-            if (Math.random() < 0.005) {
-                shellClockContainer.classList.add('glitch-active');
-                ghostStatus.style.display = 'inline-block';
-                
-                setTimeout(() => {
-                    shellClockContainer.classList.remove('glitch-active');
-                    ghostStatus.style.display = 'none';
-                }, 100 + Math.random() * 300); // Glitch lasts 100-400ms
+            el('shellTime').innerHTML = pad(h) + ':' + pad(m) + '<span class="sec">:' + pad(s) + '</span>';
+            el('shellDate').textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()];
+            const srText = 'Shell time ' + pad(h) + ':' + pad(m);
+            if (el('srTime').textContent !== srText) el('srTime').textContent = srText;
+
+            renderNotes(h);
+
+            const a = auditFor(day, minute);
+            const ghost = el('ghost');
+            const verdictKey = day + ':' + minute;
+
+            el('recalledTime').textContent = fmt(a.recalled);
+            el('scene').textContent = a.scene;
+
+            let phase, fill, verdict = '', state = '';
+            if (s < RECALL_END) {
+                phase = 'RECALL';
+                fill = 0;
+                verdict = 'Memory retrieved. Awaiting barrier check in ' + (RECALL_END - s) + ' s.';
+            } else if (s < SCAN_END) {
+                phase = 'BARRIER CHECK';
+                fill = Math.round(((s - RECALL_END + 1) / (SCAN_END - RECALL_END)) * 100);
+                verdict = 'Comparing the memory with the shell\'s clock log…';
+            } else {
+                state = a.implanted ? 'implanted' : 'authentic';
+                phase = a.implanted ? 'IMPLANTED' : 'AUTHENTIC';
+                fill = 100;
+                verdict = a.line + (a.implanted ? ' The real time a minute ago was ' + fmt((minute + 1439) % 1440) + '.' : '');
             }
 
-            clockMain.textContent = `${h}:${m}:${s}`;
-            clockMs.textContent = `.${ms}`;
-
-            // Sync Quotes
-            if (lastMinute !== now.getMinutes()) {
-                lastMinute = now.getMinutes();
-                quoteDisplay.textContent = `"${quotes[now.getMinutes() % quotes.length]}"`;
+            ghost.classList.toggle('authentic', state === 'authentic');
+            ghost.classList.toggle('implanted', state === 'implanted');
+            if (state === 'implanted' && lastVerdictKey !== verdictKey) {
+                ghost.classList.add('just-flipped');
+                setTimeout(() => ghost.classList.remove('just-flipped'), 1100);
             }
+            if (state) lastVerdictKey = verdictKey;
 
-            requestAnimationFrame(updateClock);
+            el('phase').textContent = phase;
+            el('scanFill').style.width = fill + '%';
+            if (el('verdict').textContent !== verdict) el('verdict').textContent = verdict;
+
+            // Tally of completed audits since midnight (the current one counts
+            // once its verdict is out).
+            const done = minute + (s >= SCAN_END ? 1 : 0);
+            let bad = 0;
+            for (let i = 0; i < done; i++) if (isImplanted(day, i)) bad++;
+            el('tAudited').textContent = done;
+            el('tTrue').textContent = done - bad;
+            el('tFalse').textContent = bad;
         }
 
-        updateClock();
+        update();
+        // Align ticks to the second boundary
+        setTimeout(() => { update(); setInterval(update, 1000); }, 1000 - (Date.now() % 1000));
     </script>
 </body>
 </html>
