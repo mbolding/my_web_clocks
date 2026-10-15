@@ -4,359 +4,587 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Dispossessed Clock</title>
+    <meta name="description" content="Le Guin's The Dispossessed as a day: thirteen chapters alternating between Anarres and Urras, crossing the wall at every turn, read as sequence or as a whole.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --stone: #1c1a16;
-            --ana-bg: #3a352c;
-            --ana-text: #e8e2d0;
-            --ana-accent: #c08552;
-            --urr-bg: #0f2318;
-            --urr-text: #ecead9;
-            --urr-accent: #d4af37;
+            --stone-2: #26231d;
+            --wall: #4a4436;
+            --wall-hi: #625a48;
+            --ana-bg: #3a332a;
+            --ana-text: #ece5d2;
+            --ana-accent: #d9975e;
+            --urr-bg: #12291c;
+            --urr-text: #eeecdc;
+            --urr-accent: #dcbb4a;
+            --muted: #b5ab95;
+            --dim: #8f8672;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--stone); }
 
         body {
             background: var(--stone);
             color: var(--ana-text);
             font-family: 'Space Mono', monospace;
             min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            justify-content: center;
+            padding: clamp(18px, 4vw, 40px) clamp(14px, 3vw, 32px) clamp(28px, 5vw, 56px);
+            overflow-x: hidden;
+        }
+
+        main {
+            width: 100%;
+            max-width: 1080px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 40px 20px 60px;
+            gap: clamp(14px, 2.4vw, 24px);
         }
 
         header {
-            text-align: center;
-            margin-bottom: 36px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 10px 24px;
         }
 
         h1 {
             font-family: 'Playfair Display', serif;
             font-weight: 600;
-            font-size: clamp(1.8rem, 5vw, 3rem);
-            letter-spacing: 2px;
+            font-size: clamp(1.6rem, 4.6vw, 2.7rem);
+            letter-spacing: 0.02em;
+            line-height: 1.1;
         }
 
         .subtitle {
+            font-family: 'Playfair Display', serif;
             font-style: italic;
-            font-size: clamp(0.8rem, 2vw, 1rem);
-            color: #a89f8c;
-            margin-top: 8px;
-        }
-
-        .wall-frame {
-            display: flex;
-            width: 100%;
-            max-width: 900px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .panel {
-            flex: 1;
-            padding: clamp(20px, 4vw, 40px) clamp(16px, 3vw, 30px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 10px;
-            min-width: 0;
-        }
-
-        .anarres {
-            background: radial-gradient(ellipse at 30% 20%, #453f34, var(--ana-bg));
-            color: var(--ana-text);
-        }
-
-        .urras {
-            background: radial-gradient(ellipse at 70% 20%, #163a27, var(--urr-bg));
-            color: var(--urr-text);
-        }
-
-        .panel-label {
-            font-size: clamp(0.85rem, 2.2vw, 1.1rem);
-            letter-spacing: 5px;
-            text-transform: uppercase;
-        }
-
-        .anarres .panel-label { color: var(--ana-accent); }
-        .urras .panel-label { color: var(--urr-accent); font-family: 'Playfair Display', serif; }
-
-        .panel-tag {
-            font-size: 0.68rem;
-            letter-spacing: 1px;
-            opacity: 0.6;
-            text-transform: uppercase;
+            font-weight: 500;
+            font-size: clamp(0.9rem, 2vw, 1.05rem);
+            color: var(--muted);
+            margin-top: 4px;
         }
 
         .readout {
-            font-size: clamp(1.3rem, 4vw, 2rem);
-            margin-top: 10px;
+            text-align: right;
         }
 
-        .urras .readout {
-            font-family: 'Playfair Display', serif;
-            font-weight: 600;
+        .time {
+            font-size: clamp(2rem, 6.4vw, 3.4rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
         }
 
-        .detail {
-            font-size: 0.78rem;
-            opacity: 0.75;
-            min-height: 1.2em;
+        .chapter-line {
+            margin-top: 6px;
+            font-size: clamp(0.82rem, 1.8vw, 0.95rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
-        .quote {
-            margin-top: 18px;
-            font-size: 0.75rem;
-            line-height: 1.6;
-            font-style: italic;
-            opacity: 0.7;
-            max-width: 26ch;
-        }
+        .chapter-line .side { font-weight: 700; }
+        .is-ana .chapter-line .side { color: var(--ana-accent); }
+        .is-urr .chapter-line .side { color: var(--urr-accent); }
+        .is-wall .chapter-line .side { color: #f1e6c8; }
 
-        .urras .quote { font-family: 'Playfair Display', serif; }
-
-        .wall {
+        .figure {
             position: relative;
-            width: clamp(10px, 1.6vw, 18px);
-            background: repeating-linear-gradient(
-                180deg,
-                #2a271f 0,
-                #2a271f 6px,
-                #322e24 6px,
-                #322e24 12px
-            );
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100%;
+            height: clamp(300px, 46vw, 440px);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+            background: var(--stone-2);
         }
 
-        .ansible-pulse {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #fff8e0;
-            box-shadow: 0 0 6px 2px rgba(255, 248, 224, 0.6);
-            animation: pulse-glow 4s ease-in-out infinite;
+        .figure svg {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.15; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.4); }
+        .now-panel {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px 24px;
+            align-items: start;
         }
 
-        .wall-caption {
+        .now-text {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+            line-height: 1.45;
+        }
+
+        .now-meta {
+            margin-top: 6px;
+            font-size: clamp(0.8rem, 1.7vw, 0.9rem);
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .mode {
+            display: inline-flex;
+            border: 1px solid var(--wall-hi);
+            border-radius: 999px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .mode button {
+            font: inherit;
+            font-size: clamp(0.74rem, 1.6vw, 0.82rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 9px 14px;
+            background: transparent;
+            color: var(--muted);
+            border: 0;
+            cursor: pointer;
+            min-height: 40px;
+        }
+
+        .mode button[aria-pressed="true"] {
+            background: #e9dfc4;
+            color: #1c1a16;
+            font-weight: 700;
+        }
+
+        .mode button:focus-visible {
+            outline: 2px solid var(--urr-accent);
+            outline-offset: -3px;
+        }
+
+        .mode-note {
+            grid-column: 1 / -1;
+            font-size: clamp(0.8rem, 1.7vw, 0.88rem);
+            color: var(--muted);
+            line-height: 1.6;
+            border-left: 2px solid var(--wall-hi);
+            padding-left: 12px;
+        }
+
+        .mode-note strong { color: var(--ana-text); }
+
+        .quotes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .quotes figure {
+            padding: clamp(14px, 2.6vw, 22px) clamp(14px, 2.6vw, 24px);
+        }
+
+        .quotes .q-ana { background: var(--ana-bg); border-right: 6px solid var(--wall); }
+        .quotes .q-urr { background: var(--urr-bg); color: var(--urr-text); }
+
+        .quotes blockquote {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-weight: 500;
+            font-size: clamp(1rem, 2.2vw, 1.2rem);
+            line-height: 1.5;
+        }
+
+        .quotes figcaption {
+            margin-top: 8px;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .q-ana figcaption { color: var(--ana-accent); }
+        .q-urr figcaption { color: var(--urr-accent); }
+
+        .about {
+            font-size: clamp(0.8rem, 1.7vw, 0.9rem);
+            line-height: 1.7;
+            color: var(--muted);
+            max-width: 72ch;
+        }
+
+        .sr-only {
             position: absolute;
-            bottom: -26px;
-            left: 50%;
-            transform: translateX(-50%) rotate(90deg);
-            transform-origin: center;
-            font-size: 0.6rem;
-            letter-spacing: 3px;
-            color: #6a6455;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
             white-space: nowrap;
         }
 
-        .true-time {
-            margin-top: 46px;
-            text-align: center;
-        }
-
-        .true-time-value {
-            font-size: clamp(1.4rem, 4vw, 2rem);
-            letter-spacing: 2px;
-        }
-
-        .true-time-date {
-            font-size: 0.75rem;
-            color: #a89f8c;
-            margin-top: 6px;
-        }
-
-        .theory-note {
-            margin-top: 20px;
-            max-width: 460px;
-            text-align: center;
-            font-size: 0.72rem;
-            line-height: 1.6;
-            color: #8a8272;
-        }
-
-        .theory-note strong {
-            color: #c8c0aa;
-        }
-
-        .omelas-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.88);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 1.2s ease;
-            z-index: 50;
-        }
-
-        .omelas-overlay.visible {
-            opacity: 1;
-        }
-
-        .omelas-text {
-            max-width: 520px;
-            text-align: center;
-            font-family: 'Playfair Display', serif;
-            font-style: italic;
-            font-size: clamp(1.1rem, 3vw, 1.5rem);
-            color: #ece6d2;
-            line-height: 1.7;
-        }
-
-        .omelas-attrib {
-            display: block;
-            margin-top: 18px;
-            font-family: 'Space Mono', monospace;
-            font-style: normal;
-            font-size: 0.7rem;
-            letter-spacing: 1px;
-            color: #999;
-        }
-
         @media (max-width: 640px) {
-            .wall-frame {
-                flex-direction: column;
-            }
-
-            .wall {
-                width: 100%;
-                height: 14px;
-            }
-
-            .wall-caption {
-                transform: translateX(-50%) rotate(0deg);
-                bottom: auto;
-                top: 100%;
-                margin-top: 4px;
-            }
+            header { flex-direction: column; align-items: flex-start; }
+            .readout { text-align: left; }
+            .figure { height: clamp(520px, 140vw, 620px); }
+            .now-panel { grid-template-columns: 1fr; }
+            .mode { justify-self: start; }
+            .quotes { grid-template-columns: 1fr; }
+            .quotes .q-ana { border-right: 0; border-bottom: 6px solid var(--wall); }
         }
     </style>
 </head>
 <body>
-
+<main>
     <header>
-        <h1>The Dispossessed</h1>
-        <div class="subtitle">An Ambiguous Chronometer &mdash; after Ursula K. Le Guin</div>
+        <div>
+            <h1>The Dispossessed</h1>
+            <div class="subtitle">a day in thirteen chapters, after Ursula K. Le Guin</div>
+        </div>
+        <div class="readout" id="readout">
+            <div class="time" id="time" role="timer" aria-live="off">00:00:00</div>
+            <div class="chapter-line" id="chapterLine">Chapter 1 of 13</div>
+        </div>
     </header>
 
-    <div class="wall-frame">
-        <div class="panel anarres">
-            <div class="panel-label">Anarres</div>
-            <div class="panel-tag">Odonian Settlement &middot; Pravic Reckoning</div>
-            <div class="readout" id="anaReadout">Decad &mdash; &middot; Day &mdash;</div>
-            <div class="detail" id="anaDetail">&mdash;</div>
-            <div class="quote">&ldquo;The revolution is in the individual spirit, or it is nowhere.&rdquo;</div>
-        </div>
-
-        <div class="wall">
-            <div class="ansible-pulse"></div>
-            <div class="wall-caption">THE WALL &middot; ANSIBLE</div>
-        </div>
-
-        <div class="panel urras">
-            <div class="panel-label">Urras</div>
-            <div class="panel-tag">A-Io Mercantile Standard</div>
-            <div class="readout" id="urrReadout">00:00:00</div>
-            <div class="detail" id="urrDetail">&mdash;</div>
-            <div class="quote">&ldquo;To make a thief, make an owner; to create crime, create laws.&rdquo;</div>
-        </div>
+    <div class="figure" id="figure">
+        <svg id="svg" role="img" aria-labelledby="svgTitle"><title id="svgTitle">The day as thirteen chapters alternating across the wall</title></svg>
     </div>
 
-    <div class="true-time">
-        <div class="true-time-value" id="trueTimeValue">00:00:00</div>
-        <div class="true-time-date" id="trueTimeDate">&mdash;</div>
-    </div>
-
-    <div class="theory-note">
-        <strong>General Temporal Theory:</strong> Shevek's unification of Sequency &mdash; time as one thing after another, owned and spent, kept by Urras &mdash; and Simultaneity &mdash; time as a whole, always present, held in common on Anarres. Both faces above tell the same instant.
-    </div>
-
-    <div class="omelas-overlay" id="omelasOverlay">
-        <div class="omelas-text">
-            Every utopia has its price. Some walk away from Omelas, into the dark, and do not come back.
-            <span class="omelas-attrib">&mdash; after Le Guin, &ldquo;The Ones Who Walk Away from Omelas&rdquo;</span>
+    <section class="now-panel">
+        <div>
+            <p class="now-text" id="nowText">&nbsp;</p>
+            <p class="now-meta" id="nowMeta">&nbsp;</p>
+            <p class="sr-only" aria-live="polite" id="srLive"></p>
         </div>
-    </div>
+        <div class="mode" role="group" aria-label="How to read the day">
+            <button type="button" id="btnSeq" aria-pressed="true">Sequency</button>
+            <button type="button" id="btnSim" aria-pressed="false">Simultaneity</button>
+        </div>
+        <p class="mode-note" id="modeNote"></p>
+    </section>
 
-    <script>
-        const anaReadout = document.getElementById('anaReadout');
-        const anaDetail = document.getElementById('anaDetail');
-        const urrReadout = document.getElementById('urrReadout');
-        const urrDetail = document.getElementById('urrDetail');
-        const trueTimeValue = document.getElementById('trueTimeValue');
-        const trueTimeDate = document.getElementById('trueTimeDate');
-        const omelasOverlay = document.getElementById('omelasOverlay');
+    <section class="quotes" aria-label="Two lines from the novel">
+        <figure class="q-ana">
+            <blockquote>&ldquo;You can only be the Revolution. It is in your spirit, or it is nowhere.&rdquo;</blockquote>
+            <figcaption>Anarres</figcaption>
+        </figure>
+        <figure class="q-urr">
+            <blockquote>&ldquo;To make a thief, make an owner; to create crime, create laws.&rdquo;</blockquote>
+            <figcaption>Urras</figcaption>
+        </figure>
+    </section>
 
-        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    <p class="about">
+        Le Guin's novel moves in two strands. Odd chapters follow Shevek on Urras, in the present. Even chapters go back to Anarres and the years that led him there, until the past catches up with the moment of leaving and the two strands meet. Here the day is read as that book: thirteen chapters of about 1 h 51 min each, crossing the wall at every turn. The chapter reckoning is this clock's own, not a calendar from the novel. At midnight the return becomes the departure again.
+    </p>
+</main>
 
-        function pad(n) {
-            return String(n).padStart(2, '0');
+<script>
+(function () {
+    const svg = document.getElementById('svg');
+    const figure = document.getElementById('figure');
+    const readout = document.getElementById('readout');
+    const timeEl = document.getElementById('time');
+    const chapterLine = document.getElementById('chapterLine');
+    const nowText = document.getElementById('nowText');
+    const nowMeta = document.getElementById('nowMeta');
+    const srLive = document.getElementById('srLive');
+    const modeNote = document.getElementById('modeNote');
+    const btnSeq = document.getElementById('btnSeq');
+    const btnSim = document.getElementById('btnSim');
+    const NS = 'http://www.w3.org/2000/svg';
+
+    const N = 13;
+    const DAY_MIN = 1440;
+    const CH_MIN = DAY_MIN / N; // about 110.77 minutes
+
+    const C = {
+        anaBg: '#3a332a', anaBg2: '#463d31', anaAcc: '#d9975e', anaText: '#ece5d2',
+        urrBg: '#12291c', urrBg2: '#1a3a28', urrAcc: '#dcbb4a', urrText: '#eeecdc',
+        wall: '#4a4436', wallHi: '#625a48', wallLo: '#3a352a',
+        cross: '#f1e6c8', dim: '#8f8672', future: '#6f6858'
+    };
+
+    // Which world each chapter belongs to: 1 and 13 sit on the wall itself.
+    function sideOf(ch) {
+        if (ch === 1 || ch === N) return 'wall';
+        return ch % 2 === 0 ? 'ana' : 'urr';
+    }
+
+    function describe(ch) {
+        if (ch === 1) return 'At the wall. Shevek leaves Anarres for Urras, and the book begins in the present.';
+        if (ch === N) return 'The return. The ship turns for home and the two strands meet.';
+        if (ch === N - 1) return 'Anarres, the last of the past. The early strand reaches the moment of leaving, where chapter 1 began.';
+        if (ch === 2) return 'Anarres, the past. The strand goes back to the beginning, to Shevek as a child.';
+        if (ch % 2 === 0) return 'Anarres, the past. The years that lead up to the leaving.';
+        return 'Urras, the present. The physicist from the moon, abroad among owners.';
+    }
+
+    const SIDE_LABEL = { ana: 'Anarres · the past', urr: 'Urras · the present', wall: 'The wall' };
+
+    let mode = 'seq';
+    let layout = null;
+    let dyn = null;
+
+    function el(name, attrs, parent) {
+        const e = document.createElementNS(NS, name);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(e);
+        return e;
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function fmtMin(totalMin) {
+        const m = Math.round(totalMin) % DAY_MIN;
+        return pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+    }
+
+    function fmtDur(min) {
+        const m = Math.max(0, Math.ceil(min));
+        const h = Math.floor(m / 60);
+        const r = m % 60;
+        if (h === 0) return r + '\u00a0min';
+        return h + '\u00a0h\u00a0' + r + '\u00a0min';
+    }
+
+    // Build the static figure for the current size; dynamic parts are restyled each tick.
+    function build() {
+        const W = figure.clientWidth;
+        const H = figure.clientHeight;
+        if (!W || !H) return;
+        const vertical = W < 640;
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        while (svg.lastChild && svg.lastChild.nodeName !== 'title') svg.removeChild(svg.lastChild);
+
+        const defs = el('defs', {}, svg);
+        const gA = el('linearGradient', { id: 'gA', x1: 0, y1: 0, x2: vertical ? 1 : 0, y2: vertical ? 0 : 1 }, defs);
+        el('stop', { offset: 0, 'stop-color': C.anaBg2 }, gA);
+        el('stop', { offset: 1, 'stop-color': C.anaBg }, gA);
+        const gU = el('linearGradient', { id: 'gU', x1: 0, y1: 0, x2: vertical ? 1 : 0, y2: vertical ? 0 : 1 }, defs);
+        el('stop', { offset: 0, 'stop-color': C.urrBg }, gU);
+        el('stop', { offset: 1, 'stop-color': C.urrBg2 }, gU);
+        const pat = el('pattern', { id: 'stones', width: 24, height: 12, patternUnits: 'userSpaceOnUse' }, defs);
+        el('rect', { width: 24, height: 12, fill: C.wall }, pat);
+        el('path', { d: 'M0 0.5H24M0 6.5H24M6 0V6M18 6V12', stroke: C.wallLo, 'stroke-width': 1, fill: 'none' }, pat);
+
+        const wallT = vertical ? Math.max(12, W * 0.04) : Math.max(12, H * 0.045);
+        const r = vertical ? Math.min(17, Math.max(13, (H - 60) / 12 * 0.34)) : Math.min(20, Math.max(13, (W - 80) / 12 * 0.2));
+        const fs = Math.round(r * 0.85);
+
+        // Geometry: "along" is the sequence axis, "across" crosses the wall.
+        let pts = [];
+        if (!vertical) {
+            const padL = Math.max(40, r + 26), padR = padL;
+            const mid = H / 2;
+            const off = H * 0.27;
+            for (let i = 1; i <= N; i++) {
+                const x = padL + (i - 1) * (W - padL - padR) / (N - 1);
+                const s = sideOf(i);
+                const y = s === 'wall' ? mid : (s === 'ana' ? mid - off : mid + off);
+                pts.push([x, y]);
+            }
+            el('rect', { x: 0, y: 0, width: W, height: mid, fill: 'url(#gA)' }, svg);
+            el('rect', { x: 0, y: mid, width: W, height: H - mid, fill: 'url(#gU)' }, svg);
+            el('rect', { x: 0, y: mid - wallT / 2, width: W, height: wallT, fill: 'url(#stones)' }, svg);
+            const lab = el('text', { x: 16, y: 26, fill: C.anaAcc, 'font-size': 13, 'letter-spacing': 3, 'font-family': 'Space Mono, monospace', 'font-weight': 700 }, svg);
+            lab.textContent = 'ANARRES · THE PAST';
+            const lab2 = el('text', { x: 16, y: H - 16, fill: C.urrAcc, 'font-size': 13, 'letter-spacing': 3, 'font-family': 'Space Mono, monospace', 'font-weight': 700 }, svg);
+            lab2.textContent = 'URRAS · THE PRESENT';
+            const lab3 = el('text', { x: W - 16, y: 26, fill: C.dim, 'font-size': 12, 'text-anchor': 'end', 'font-family': 'Space Mono, monospace' }, svg);
+            lab3.textContent = 'even chapters';
+            const lab4 = el('text', { x: W - 16, y: H - 16, fill: C.dim, 'font-size': 12, 'text-anchor': 'end', 'font-family': 'Space Mono, monospace' }, svg);
+            lab4.textContent = 'odd chapters';
+        } else {
+            const padT = r + 44, padB = r + 40;
+            const mid = W / 2;
+            const off = W * 0.26;
+            for (let i = 1; i <= N; i++) {
+                const y = padT + (i - 1) * (H - padT - padB) / (N - 1);
+                const s = sideOf(i);
+                const x = s === 'wall' ? mid : (s === 'ana' ? mid - off : mid + off);
+                pts.push([x, y]);
+            }
+            el('rect', { x: 0, y: 0, width: mid, height: H, fill: 'url(#gA)' }, svg);
+            el('rect', { x: mid, y: 0, width: W - mid, height: H, fill: 'url(#gU)' }, svg);
+            const pv = el('pattern', { id: 'stonesV', width: 12, height: 24, patternUnits: 'userSpaceOnUse' }, defs);
+            el('rect', { width: 12, height: 24, fill: C.wall }, pv);
+            el('path', { d: 'M0.5 0V24M6.5 0V24M0 6H6M6 18H12', stroke: C.wallLo, 'stroke-width': 1, fill: 'none' }, pv);
+            el('rect', { x: mid - wallT / 2, y: 0, width: wallT, height: H, fill: 'url(#stonesV)' }, svg);
+            const lab = el('text', { x: 12, y: 24, fill: C.anaAcc, 'font-size': 12, 'letter-spacing': 2, 'font-family': 'Space Mono, monospace', 'font-weight': 700 }, svg);
+            lab.textContent = 'ANARRES';
+            const lab1 = el('text', { x: 12, y: 40, fill: C.dim, 'font-size': 11, 'font-family': 'Space Mono, monospace' }, svg);
+            lab1.textContent = 'the past';
+            const lab2 = el('text', { x: W - 12, y: 24, fill: C.urrAcc, 'font-size': 12, 'letter-spacing': 2, 'text-anchor': 'end', 'font-family': 'Space Mono, monospace', 'font-weight': 700 }, svg);
+            lab2.textContent = 'URRAS';
+            const lab3 = el('text', { x: W - 12, y: 40, fill: C.dim, 'font-size': 11, 'text-anchor': 'end', 'font-family': 'Space Mono, monospace' }, svg);
+            lab3.textContent = 'the present';
         }
 
-        function dayOfYear(date) {
-            const start = new Date(date.getFullYear(), 0, 0);
-            return Math.floor((date - start) / 86400000);
+        // Segments of the journey; each one after chapter 1 crosses the wall.
+        const segs = [];
+        for (let i = 0; i < N - 1; i++) {
+            const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+            segs.push(el('line', { x1, y1, x2, y2, 'stroke-linecap': 'round' }, svg));
         }
 
-        function updateClock() {
-            const now = new Date();
-            const h = now.getHours();
-            const m = now.getMinutes();
-            const s = now.getSeconds();
+        // Chapter boundary times as small labels next to each node.
+        const nodes = [], nums = [], times = [];
+        const ring = el('circle', { r: r + 6, fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'round' }, svg);
+        const ringBg = el('circle', { r: r + 6, fill: 'none', 'stroke-width': 3, stroke: 'rgba(241,230,200,0.18)' }, svg);
+        svg.insertBefore(ringBg, ring);
+        for (let i = 0; i < N; i++) {
+            const ch = i + 1;
+            const [x, y] = pts[i];
+            const s = sideOf(ch);
+            nodes.push(el('circle', { cx: x, cy: y, r, 'stroke-width': 2 }, svg));
+            const t = el('text', { x, y: y + fs * 0.36, 'text-anchor': 'middle', 'font-size': fs, 'font-weight': 700, 'font-family': 'Space Mono, monospace' }, svg);
+            t.textContent = ch;
+            nums.push(t);
+            // Start time of each chapter, placed away from the wall.
+            let tx, ty, anchor = 'middle';
+            if (!vertical) {
+                tx = x;
+                ty = s === 'ana' ? y - r - 10 : y + r + 24;
+            } else {
+                if (s === 'ana') { tx = x - r - 8; ty = y + 4; anchor = 'end'; }
+                else if (s === 'urr') { tx = x + r + 8; ty = y + 4; anchor = 'start'; }
+                else { tx = x + r + 8; ty = y + 4; anchor = 'start'; }
+            }
+            const lbl = el('text', { x: tx, y: ty, 'text-anchor': anchor, 'font-size': vertical ? 11 : 12, 'font-family': 'Space Mono, monospace' }, svg);
+            lbl.textContent = fmtMin((ch - 1) * CH_MIN);
+            times.push(lbl);
+        }
+        // Keep the ring above the nodes.
+        svg.appendChild(ringBg);
+        svg.appendChild(ring);
 
-            // Urras: precise, owned, mercantile time.
-            urrReadout.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-            urrDetail.textContent = h < 12 ? 'Morning Exchange' : h < 18 ? 'Afternoon Trade' : 'Evening Ledger';
+        // Shevek: a small marker moving along the current segment, carrying the time.
+        const marker = el('circle', { r: 4.5, fill: '#fff8e6', stroke: '#1c1a16', 'stroke-width': 1.5 }, svg);
 
-            // Anarres: communal reckoning by decad and rotating shift, not by owned minutes.
-            const doy = dayOfYear(now);
-            const decad = Math.floor((doy - 1) / 10) + 1;
-            const dayInDecad = ((doy - 1) % 10) + 1;
-            anaReadout.textContent = `Decad ${decad} · Day ${dayInDecad}`;
+        layout = { pts, r, vertical };
+        dyn = { segs, nodes, nums, times, ring, ringBg, marker };
+    }
 
-            let shiftName, shiftStartHour;
-            if (h < 8) { shiftName = 'Dawn Shift'; shiftStartHour = 0; }
-            else if (h < 16) { shiftName = 'Day Shift'; shiftStartHour = 8; }
-            else { shiftName = 'Dusk Shift'; shiftStartHour = 16; }
-            const intoShiftMs = (h - shiftStartHour) * 3600000 + m * 60000 + s * 1000;
-            const intoH = Math.floor(intoShiftMs / 3600000);
-            const intoM = Math.floor((intoShiftMs % 3600000) / 60000);
-            anaDetail.textContent = `${intoH}h ${intoM}m into ${shiftName}`;
+    function colorFor(ch) {
+        const s = sideOf(ch);
+        return s === 'ana' ? C.anaAcc : s === 'urr' ? C.urrAcc : C.cross;
+    }
 
-            // The one true instant both worlds share.
-            trueTimeValue.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-            trueTimeDate.textContent = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+    let lastChapter = -1;
 
-            // An Omelas moment: a brief reminder, every quarter hour, that utopias have a cost.
-            const showOmelas = (m % 15 === 0) && (s < 8);
-            omelasOverlay.classList.toggle('visible', showOmelas);
+    function tick() {
+        const now = new Date();
+        const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+        const dm = h * 60 + m + s / 60;
+        const ch = Math.min(N, Math.floor(dm / CH_MIN) + 1);
+        const start = (ch - 1) * CH_MIN;
+        const end = ch * CH_MIN;
+        const frac = Math.min(1, Math.max(0, (dm - start) / CH_MIN));
+        const side = sideOf(ch);
+
+        timeEl.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        readout.className = 'readout is-' + side;
+        chapterLine.innerHTML = `Chapter ${ch} of ${N} · <span class="side">${SIDE_LABEL[side]}</span>`;
+        nowText.textContent = describe(ch);
+        const endLabel = ch === N ? '24:00' : fmtMin(end);
+        const nextWhat = ch === N ? 'midnight, when the return becomes the departure' : 'the next crossing of the wall';
+        nowMeta.textContent = `This chapter runs ${fmtMin(start)} to ${endLabel}, ${Math.floor(frac * 100)}% read. ${fmtDur(end - dm)} until ${nextWhat}.`;
+
+        if (ch !== lastChapter) {
+            srLive.textContent = `Chapter ${ch} of ${N}, ${SIDE_LABEL[side]}.`;
+            lastChapter = ch;
         }
 
-        updateClock();
-        setInterval(updateClock, 1000);
-    </script>
+        if (!dyn) return;
+        const sim = mode === 'sim';
+        const { segs, nodes, nums, times, ring, ringBg, marker } = dyn;
+        const { pts, r } = layout;
+
+        segs.forEach((seg, i) => {
+            // Segment i joins chapter i+1 to chapter i+2.
+            const done = i + 1 < ch;
+            const lit = sim || done;
+            seg.setAttribute('stroke', lit ? 'rgba(241,230,200,0.85)' : C.future);
+            seg.setAttribute('stroke-width', lit ? 2.5 : 1.5);
+            seg.setAttribute('stroke-dasharray', lit ? 'none' : '3 6');
+        });
+
+        nodes.forEach((n, i) => {
+            const c = i + 1;
+            const col = colorFor(c);
+            const isNow = c === ch;
+            const past = c < ch;
+            const lit = sim || past || isNow;
+            const sd = sideOf(c);
+            const fillBase = sd === 'ana' ? C.anaBg : sd === 'urr' ? C.urrBg : '#2c2820';
+            n.setAttribute('fill', isNow ? col : fillBase);
+            n.setAttribute('stroke', lit ? col : C.future);
+            n.setAttribute('opacity', 1);
+            nums[i].setAttribute('fill', isNow ? '#1c1a16' : (lit ? (sd === 'urr' ? C.urrText : C.anaText) : C.dim));
+            times[i].setAttribute('fill', isNow ? col : (lit ? '#cfc5ad' : C.dim));
+            times[i].setAttribute('font-weight', isNow ? 700 : 400);
+        });
+
+        const [cx, cy] = pts[ch - 1];
+        const rr = r + 6;
+        const circ = 2 * Math.PI * rr;
+        ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
+        ringBg.setAttribute('cx', cx); ringBg.setAttribute('cy', cy);
+        ring.setAttribute('stroke', colorFor(ch));
+        ring.setAttribute('stroke-dasharray', `${(frac * circ).toFixed(2)} ${circ.toFixed(2)}`);
+        ring.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+
+        // Marker: travels from this chapter toward the next (for 13, back toward the start).
+        const [nx, ny] = ch < N ? pts[ch] : pts[0];
+        const dx = nx - cx, dy = ny - cy;
+        const len = Math.hypot(dx, dy) || 1;
+        const reach = (len - 2 * (rr + 4)) * frac + rr + 4;
+        let mx, my;
+        if (ch < N) {
+            mx = cx + dx / len * reach; my = cy + dy / len * reach;
+        } else {
+            // Final chapter: the marker circles the node, closing the loop at midnight.
+            const a = -Math.PI / 2 + frac * 2 * Math.PI;
+            mx = cx + Math.cos(a) * rr; my = cy + Math.sin(a) * rr;
+        }
+        marker.setAttribute('cx', mx.toFixed(2));
+        marker.setAttribute('cy', my.toFixed(2));
+    }
+
+    const NOTES = {
+        seq: '<strong>Sequency</strong>: time as an arrow, one thing after another. Only the chapters already lived are lit, and the path runs on into the dark.',
+        sim: '<strong>Simultaneity</strong>: time as a whole, all of it present at once. Every chapter of the day is lit, and now is only the place where you stand in it. Shevek\'s theory was to hold both readings together.'
+    };
+
+    function setMode(m) {
+        mode = m;
+        btnSeq.setAttribute('aria-pressed', m === 'seq');
+        btnSim.setAttribute('aria-pressed', m === 'sim');
+        modeNote.innerHTML = NOTES[m];
+        try { localStorage.setItem('dispossessed-mode', m); } catch (e) { /* storage unavailable */ }
+        tick();
+    }
+
+    btnSeq.addEventListener('click', () => setMode('seq'));
+    btnSim.addEventListener('click', () => setMode('sim'));
+
+    let stored = 'seq';
+    try { stored = localStorage.getItem('dispossessed-mode') || 'seq'; } catch (e) { /* ignore */ }
+
+    build();
+    setMode(stored === 'sim' ? 'sim' : 'seq');
+    setInterval(tick, 1000);
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { build(); tick(); }, 120);
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { build(); tick(); });
+})();
+</script>
 </body>
 </html>
