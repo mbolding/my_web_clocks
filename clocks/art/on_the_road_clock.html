@@ -5,609 +5,701 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>On the Road Clock</title>
+    <meta name="description" content="The day is Kerouac's scroll: the car runs the novel's four crossings of America and down to Mexico City while a typewriter types the minutes onto one unbroken roll.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* One palette, night highway: charcoal ground, headlight amber for the
+           road travelled, typing paper for the scroll. */
+        :root {
+            --night: #151413;
+            --night-2: #1d1c1a;
+            --land: #282623;
+            --coast: #6f6a61;
+            --border: #4d4942;
+            --text: #ece6d8;
+            --muted: #b5ad9d;
+            --faint: #8d8578;
+            --amber: #f2c14e;
+            --amber-dim: #a8843a;
+            --ahead: #5f5a52;
+            --paper: #f1ead8;
+            --paper-edge: #ddd3bb;
+            --ink: #22201c;
+            --ink-soft: #4a453d;
+            --platen: #0e0d0c;
+            --machine: #2c2a27;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body { background: var(--night); }
 
         body {
             min-height: 100vh;
-            background: linear-gradient(to right, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
-            font-family: 'Courier Prime', monospace;
+            min-height: 100dvh;
+            color: var(--text);
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            overflow-x: hidden;
+            background:
+                radial-gradient(ellipse 80% 60% at 30% 40%, #1f1e1b 0%, var(--night) 70%);
+        }
+
+        .wrap {
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+            gap: clamp(1rem, 2.4vw, 2.2rem);
+            height: 100vh;
+            height: 100dvh;
+            padding: clamp(1rem, 2.4vw, 2rem);
+        }
+
+        /* ---------- left: the map ---------- */
+        .left {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            min-height: 0;
+            gap: clamp(0.5rem, 1.2vh, 0.9rem);
+        }
+
+        header h1 {
+            font-family: 'Special Elite', monospace;
+            font-weight: 400;
+            font-size: clamp(1.7rem, 3.4vw, 2.9rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            line-height: 1.05;
+        }
+
+        header .by {
+            color: var(--muted);
+            font-size: clamp(0.78rem, 1.1vw, 0.95rem);
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin-top: 0.3rem;
+        }
+
+        .map-box {
+            flex: 1;
+            min-height: 0;
+            display: flex;
             align-items: center;
-            padding: 2rem;
-            color: #e8e8e8;
-            position: relative;
-            overflow: hidden;
+            justify-content: center;
         }
 
-        .road-lines {
-            position: fixed;
-            bottom: 30%;
-            left: 0;
+        #map {
             width: 100%;
-            height: 4px;
-            background: repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 30px,
-                #f8f8f8 30px,
-                #f8f8f8 60px
-            );
-            animation: roadScroll 2s linear infinite;
-            pointer-events: none;
-            opacity: 0.3;
-            z-index: 0;
-        }
-
-        @keyframes roadScroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-60px); }
-        }
-
-        .horizon {
-            position: fixed;
-            bottom: 30%;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(to right, transparent, #6a6a6a 50%, transparent);
-            pointer-events: none;
-            opacity: 0.5;
-            z-index: 0;
-        }
-
-        .headlights {
-            position: fixed;
-            bottom: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            height: 40%;
-            background: radial-gradient(ellipse at center bottom, rgba(255, 248, 200, 0.1), transparent 70%);
-            pointer-events: none;
-            opacity: 0.3;
-            z-index: 0;
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: rgba(30, 30, 30, 0.95);
-            border: 3px solid #4a4a4a;
-            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
-            padding: 3rem 2.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid #5a5a5a;
-        }
-
-        .title {
-            font-family: 'Special Elite', monospace;
-            font-size: clamp(2.5rem, 5vw, 4.5rem);
-            font-weight: 400;
-            color: #f8f8f8;
-            margin-bottom: 0.75rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .author {
-            font-size: 1.1rem;
-            color: #b8b8b8;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-        }
-
-        .time-display {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #5a5a5a;
-        }
-
-        .current-time {
-            font-family: 'Special Elite', monospace;
-            font-size: clamp(2.5rem, 6vw, 5rem);
-            font-weight: 400;
-            color: #f8f8f8;
-            margin-bottom: 0.5rem;
-        }
-
-        .part-indicator {
-            font-size: 0.9rem;
-            color: #a8a8a8;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-        }
-
-        .journey-section {
-            margin-bottom: 2rem;
-        }
-
-        .moment-title {
-            font-family: 'Special Elite', monospace;
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            font-weight: 400;
-            color: #f8f8f8;
-            margin-bottom: 0.75rem;
-        }
-
-        .location {
-            font-size: 1rem;
-            color: #c8c8c8;
-            font-style: italic;
-            margin-bottom: 1.5rem;
-        }
-
-        .passage-container {
-            position: relative;
-            min-height: 180px;
-            margin-bottom: 1.5rem;
-        }
-
-        .passage {
-            font-size: clamp(0.95rem, 2vw, 1.1rem);
-            line-height: 1.8;
-            color: #e8e8e8;
-            opacity: 0;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            animation: passageFade 12s ease-in-out infinite;
-        }
-
-        .passage:nth-child(1) { animation-delay: 0s; }
-        .passage:nth-child(2) { animation-delay: 4s; }
-        .passage:nth-child(3) { animation-delay: 8s; }
-
-        @keyframes passageFade {
-            0% { opacity: 0; transform: translateX(-10px); }
-            3%, 30% { opacity: 1; transform: translateX(0); }
-            33%, 100% { opacity: 0; transform: translateX(-10px); }
-        }
-
-        .kerouac-line {
-            font-size: clamp(0.9rem, 2vw, 1.1rem);
-            line-height: 1.7;
-            color: #d8d8d8;
-            padding: 1.5rem;
-            background: rgba(90, 90, 90, 0.3);
-            border-left: 4px solid #f8f8f8;
-            margin-top: 1rem;
-            font-style: italic;
-        }
-
-        .speed-meter {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            text-align: right;
-            padding: 1rem;
-            background: rgba(30, 30, 30, 0.9);
-            border: 2px solid #5a5a5a;
-        }
-
-        .speed-meter .speed {
-            font-family: 'Special Elite', monospace;
-            font-size: 2.5rem;
-            font-weight: 400;
-            color: #f8f8f8;
+            height: 100%;
+            max-height: 100%;
             display: block;
+        }
+
+        #map .land { fill: var(--land); stroke: var(--coast); stroke-width: 1.2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+        #map .lake { fill: var(--night); stroke: var(--coast); stroke-width: 1; vector-effect: non-scaling-stroke; }
+        #map .border { fill: none; stroke: var(--border); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+        #map .route { fill: none; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+        #map .route.past { stroke: var(--amber-dim); stroke-width: 1.6; opacity: 0.55; }
+        #map .route.ahead { stroke: var(--ahead); stroke-width: 1.5; stroke-dasharray: 2 5; }
+        #map .route.now { stroke: var(--amber); stroke-width: 3; }
+        #map .city { fill: var(--muted); }
+        #map .city-label {
+            fill: var(--muted);
+            font-family: 'Courier Prime', monospace;
+            font-size: calc(var(--u, 1) * 12px);
+        }
+        #map .car-glow { fill: var(--amber); opacity: 0.22; transform-box: fill-box; transform-origin: center; }
+        #map .car { fill: var(--amber); stroke: var(--night); stroke-width: 2; vector-effect: non-scaling-stroke; }
+
+        @media (prefers-reduced-motion: no-preference) {
+            #map .car-glow { animation: glow 2.4s ease-in-out infinite; }
+        }
+        @keyframes glow {
+            0%, 100% { transform: scale(0.75); opacity: 0.3; }
+            50% { transform: scale(1.25); opacity: 0.12; }
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem 1.2rem;
+            color: var(--muted);
+            font-size: clamp(0.72rem, 0.95vw, 0.85rem);
+            letter-spacing: 0.05em;
+        }
+        .legend span::before {
+            content: '';
+            display: inline-block;
+            width: 1.6em;
+            height: 0;
+            margin-right: 0.45em;
+            vertical-align: middle;
+            border-top: 2px solid var(--amber);
+        }
+        .legend .l-past::before { border-top-color: var(--amber-dim); opacity: 0.7; }
+        .legend .l-ahead::before { border-top: 2px dotted var(--ahead); }
+
+        .mad {
+            color: var(--muted);
+            font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+            font-style: italic;
+        }
+        .mad cite { font-style: normal; color: var(--faint); margin-left: 0.4em; }
+
+        /* ---------- right: scroll and typewriter ---------- */
+        .right {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            align-items: stretch;
+        }
+
+        .paper {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            margin: 0 clamp(0.6rem, 1.6vw, 1.3rem);
+            background:
+                linear-gradient(90deg, var(--paper-edge) 0, var(--paper) 6%, var(--paper) 94%, var(--paper-edge) 100%);
+            color: var(--ink);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0 clamp(0.9rem, 1.8vw, 1.4rem) clamp(0.6rem, 1.2vh, 0.9rem);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* the roll fades into the dark above, as if it keeps going */
+        .paper::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 38%;
+            background: linear-gradient(to bottom, var(--night) 0%, rgba(21, 20, 19, 0) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .paper .feet {
+            position: absolute;
+            top: clamp(0.6rem, 1.4vh, 1rem);
+            right: clamp(0.6rem, 1.4vw, 1rem);
+            z-index: 3;
+            font-size: clamp(0.7rem, 0.9vw, 0.8rem);
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            line-height: 1.4;
+            background: rgba(21, 20, 19, 0.85);
+            color: var(--muted);
+            padding: 0.15em 0.6em;
+            border-radius: 3px;
+        }
+
+        #scroll {
+            font-family: 'Courier Prime', monospace;
+            font-size: clamp(0.88rem, 1.15vw, 1.02rem);
+            line-height: 1.62;
+            color: var(--ink);
+            text-align: left;
+            hyphens: none;
+            overflow-wrap: break-word;
+        }
+        #scroll .t { font-weight: 700; }
+        #scroll .pt { font-weight: 700; letter-spacing: 0.08em; }
+        #scroll .old { color: var(--ink-soft); }
+        #scroll .cursor {
+            display: inline-block;
+            width: 0.6em;
+            height: 1.05em;
+            margin-left: 1px;
+            vertical-align: -0.15em;
+            background: var(--ink);
+            opacity: 0.75;
+        }
+
+        .platen {
+            position: relative;
+            height: clamp(18px, 2.6vh, 24px);
+            background: linear-gradient(to bottom, #2b2926 0%, var(--platen) 55%, #000 100%);
+            border-radius: 12px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+        }
+        .platen::before, .platen::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: clamp(14px, 1.6vw, 20px);
+            height: clamp(26px, 3.4vh, 32px);
+            transform: translateY(-50%);
+            background: #3a3733;
+            border-radius: 5px;
+        }
+        .platen::before { left: -6px; }
+        .platen::after { right: -6px; }
+
+        .machine {
+            background: linear-gradient(to bottom, var(--machine) 0%, #1f1e1c 100%);
+            border: 1px solid #3c3934;
+            border-top: none;
+            border-radius: 0 0 18px 18px;
+            margin: 0 clamp(0.3rem, 0.8vw, 0.6rem);
+            padding: clamp(0.7rem, 1.6vh, 1.1rem) clamp(0.9rem, 1.6vw, 1.3rem) clamp(0.8rem, 1.8vh, 1.2rem);
+            text-align: center;
+        }
+
+        #time {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(2.4rem, 4.6vw, 3.8rem);
             line-height: 1;
-            margin-bottom: 0.25rem;
+            color: var(--text);
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
         }
 
-        .speed-meter .label {
-            font-size: 0.75rem;
-            color: #a8a8a8;
+        .part-line {
+            margin-top: 0.45rem;
+            font-size: clamp(0.8rem, 1.05vw, 0.95rem);
+            letter-spacing: 0.16em;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
+            color: var(--amber);
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
+        .where {
+            margin-top: 0.3rem;
+            font-size: clamp(0.88rem, 1.15vw, 1.02rem);
+            color: var(--text);
+        }
 
-            .speed-meter {
-                bottom: 1rem;
-                right: 1rem;
-                padding: 0.75rem;
+        .blurb {
+            margin-top: 0.45rem;
+            font-size: clamp(0.78rem, 0.98vw, 0.9rem);
+            line-height: 1.45;
+            color: var(--muted);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        /* ---------- narrow screens: stack ---------- */
+        @media (max-width: 820px) {
+            .left { display: contents; }
+            header { order: 1; }
+            .map-box { order: 2; }
+            .right { order: 3; }
+            .legend { order: 4; }
+            .wrap {
+                grid-template-columns: minmax(0, 1fr);
+                height: auto;
+                min-height: 100vh;
+                min-height: 100dvh;
+                padding: 1rem;
+                gap: 0.9rem;
             }
+            .map-box { flex: none; }
+            #map { height: auto; }
+            .right { min-height: 0; }
+            .paper { flex: none; height: clamp(150px, 22vh, 260px); }
+            .mad { order: 5; }
         }
     </style>
 </head>
 
 <body>
-    <div class="road-lines"></div>
-    <div class="horizon"></div>
-    <div class="headlights"></div>
-
-    <div class="container">
-        <div class="header">
-            <h1 class="title">On the Road</h1>
-            <div class="author">Jack Kerouac</div>
-        </div>
-
-        <div class="time-display">
-            <div class="current-time" id="time">00:00</div>
-            <div class="part-indicator" id="part">Part One</div>
-        </div>
-
-        <div class="journey-section">
-            <h2 class="moment-title" id="moment-title">I first met Dean...</h2>
-            <div class="location" id="location">New York</div>
-            <div class="passage-container">
-                <div id="passages">
-                    <!-- Passages injected here -->
-                </div>
+    <main class="wrap">
+        <section class="left">
+            <header>
+                <h1>On the Road</h1>
+                <div class="by">Jack Kerouac &middot; 1957</div>
+            </header>
+            <div class="map-box">
+                <svg id="map" viewBox="-130 0 1070 680" preserveAspectRatio="xMidYMid meet" role="img"
+                     aria-label="Map of the United States and Mexico showing the novel's road trips, with a marker for where the day has reached">
+                    <g id="geo"></g>
+                    <g id="routes"></g>
+                    <g id="cities"></g>
+                    <g id="carG">
+                        <circle class="car-glow" r="16" cx="0" cy="0"></circle>
+                        <circle class="car" r="6" cx="0" cy="0"></circle>
+                    </g>
+                </svg>
             </div>
-            <div class="kerouac-line">
-                "The only people for me are the mad ones, the ones who are mad to live, mad to talk, mad to be saved..."
+            <div class="legend" aria-hidden="true">
+                <span class="l-now">this crossing</span>
+                <span class="l-past">crossings done</span>
+                <span class="l-ahead">road ahead</span>
             </div>
-        </div>
-    </div>
+            <p class="mad">&ldquo;the only people for me are the mad ones&rdquo;<cite>On the Road, Part One</cite></p>
+        </section>
 
-    <div class="speed-meter">
-        <span class="speed" id="speed">GO</span>
-        <span class="label">The Road Is Life</span>
-    </div>
+        <section class="right">
+            <div class="paper">
+                <div class="feet" id="feet">0.0 of 120 ft</div>
+                <div id="scroll" aria-hidden="true"></div>
+            </div>
+            <div class="platen" aria-hidden="true"></div>
+            <div class="machine">
+                <div id="time" role="timer" aria-live="off">--:--:--</div>
+                <div class="part-line" id="part">Part One</div>
+                <div class="where" id="where"></div>
+                <div class="blurb" id="blurb"></div>
+            </div>
+            <div class="sr-only" id="status" aria-live="polite"></div>
+        </section>
+    </main>
 
     <script>
-        const moments = [
+        /* The day is the scroll. Kerouac typed the novel in April 1951 on one
+           taped roll of paper about 120 feet long, with no paragraph breaks.
+           Midnight to midnight runs the book's 43 chapters at equal length
+           (about 33.5 minutes each): Part One 14, Two 11, Three 11, Four 6,
+           Five 1. Within a part the car moves along that part's route; a
+           waypoint listed twice is a stay. Route stops are approximate, drawn
+           from the book's main stopping places, not from chapter breaks. */
+
+        const PARTS = [
             {
-                hour: 0,
-                part: "Part One",
-                title: "I First Met Dean",
-                location: "New York, 1947",
-                passages: [
-                    "I first met Dean not long after my wife and I split up. I had just gotten over a serious illness that I won't bother to talk about, except that it had something to do with the miserably weary split-up and my feeling that everything was dead.",
-                    "With the coming of Dean Moriarty began the part of my life you could call my life on the road. Before that I'd often dreamed of going West to see the country, always vaguely planning and never taking off.",
-                    "Dean is the perfect guy for the road because he actually was born on the road, when his parents were passing through Salt Lake City in 1926, in a jalopy, on their way to Los Angeles."
-                ],
-                speed: "GO"
+                name: 'Part One', roman: 'ONE', ch: 14, when: 'Summer 1947',
+                blurb: 'Sal goes west alone, by thumb, truck and bus, to Denver and San Francisco, then south, then all the way home.',
+                route: [
+                    ['New York', 0], ['New York', 0.12], ['Bear Mountain', 0.15], ['New York', 0.17],
+                    ['Chicago', 0.22], ['Des Moines', 0.26], ['Omaha', 0.29], ['North Platte', 0.32],
+                    ['Cheyenne', 0.35], ['Denver', 0.38], ['Denver', 0.55], ['Salt Lake City', 0.6],
+                    ['San Francisco', 0.65], ['San Francisco', 0.76], ['Bakersfield', 0.8], ['Los Angeles', 0.83],
+                    ['the San Joaquin Valley', 0.87], ['the San Joaquin Valley', 0.9], ['Los Angeles', 0.92],
+                    ['Pittsburgh', 0.98], ['New York', 1]
+                ]
             },
             {
-                hour: 1,
-                part: "Part One",
-                title: "Planning the Trip",
-                location: "Paterson, New Jersey",
-                passages: [
-                    "I spent a week in New York with Dean and his first wife Marylou. We talked all night about everything—jazz, philosophy, girls, poetry, America.",
-                    "Dean said to me, 'Sal, we gotta go and never stop going till we get there.' 'Where we going, man?' 'I don't know but we gotta go.'",
-                    "I prepared for my trip West. I had fifty dollars in my pocket. My aunt gave me a big feed and said, 'When are you going to settle down?'"
-                ],
-                speed: "NOW"
+                name: 'Part Two', roman: 'TWO', ch: 11, when: 'Winter 1948 to 1949',
+                blurb: 'Dean turns up in a new Hudson. Back and forth on the East Coast, then down to New Orleans and out to San Francisco.',
+                route: [
+                    ['Testament, Virginia', 0], ['Testament, Virginia', 0.06], ['New York', 0.14], ['Testament, Virginia', 0.2],
+                    ['New York', 0.27], ['New York', 0.33], ['Washington', 0.38], ['New Orleans', 0.5],
+                    ['New Orleans', 0.6], ['west Texas', 0.68], ['El Paso', 0.73], ['Arizona', 0.8],
+                    ['San Francisco', 0.88], ['San Francisco', 1]
+                ]
             },
             {
-                hour: 2,
-                part: "Part One",
-                title: "The First Ride",
-                location: "Route 6, heading west",
-                passages: [
-                    "I took the bus to Bear Mountain, then started thumbing. Nobody picked me up. Rain started to fall. I spent the whole night in the mountains getting nowhere.",
-                    "Finally I took a bus to Chicago. I was wasting my money and time. In Chicago I had coffee. Dean was supposed to meet me but he was late, as always.",
-                    "I couldn't wait. I had to keep moving. The road called. I caught a ride with two guys going to Des Moines."
-                ],
-                speed: "WEST"
+                name: 'Part Three', roman: 'THREE', ch: 11, when: 'Spring 1949',
+                blurb: 'Denver, then San Francisco with Dean, then back east together, the last long leg flat out in a borrowed Cadillac.',
+                route: [
+                    ['Denver', 0], ['Denver', 0.15], ['San Francisco', 0.25], ['San Francisco', 0.5],
+                    ['Denver', 0.65], ['Chicago', 0.82], ['Detroit', 0.9], ['New York', 1]
+                ]
             },
             {
-                hour: 3,
-                part: "Part One",
-                title: "Nebraska",
-                location: "The Great Plains",
-                passages: [
-                    "We were in Nebraska now. The road stretched endlessly ahead. Grain elevators on the horizon. The American night.",
-                    "I thought all the wilderness of America was in the West till I saw it in the corn of Iowa. The flatness. The endlessness.",
-                    "We drove and drove. I fell asleep in the back. When I woke up we were in the middle of nowhere under a million stars."
-                ],
-                speed: "110"
+                name: 'Part Four', roman: 'FOUR', ch: 6, when: 'Spring 1950',
+                blurb: 'One more push: out to Denver, south through Texas, over the border at Laredo and down to Mexico City.',
+                route: [
+                    ['New York', 0], ['New York', 0.1], ['Denver', 0.32], ['Denver', 0.4],
+                    ['San Antonio', 0.55], ['Laredo', 0.62], ['Mexico City', 0.88], ['Mexico City', 1]
+                ]
             },
             {
-                hour: 4,
-                part: "Part One",
-                title: "Denver",
-                location: "Denver, Colorado",
-                passages: [
-                    "I arrived in Denver at dawn and went looking for my friends. Carlo Marx was there, and Allen Ginsberg, talking about visions and poetry.",
-                    "We spent days in Denver, talking, drinking, listening to jazz. Dean showed up in a stolen car, grinning.",
-                    "'Man, I've been all the way to San Francisco and back! Let's go again!' He never stopped moving."
-                ],
-                speed: "IT"
-            },
-            {
-                hour: 5,
-                part: "Part One",
-                title: "Central City",
-                location: "The Colorado mountains",
-                passages: [
-                    "We drove up to Central City, an old mining town in the mountains. Opera festival. Girls everywhere.",
-                    "Dean pursued a blonde. I wandered the streets. The mountains rose all around. I felt free for the first time.",
-                    "That night we all got drunk. Dean disappeared with the blonde. I slept under the stars on a mountain."
-                ],
-                speed: "YES"
-            },
-            {
-                hour: 6,
-                part: "Part One",
-                title: "Heading to San Francisco",
-                location: "Crossing the Rockies",
-                passages: [
-                    "We left Denver and headed for San Francisco. The Rockies rose before us. We climbed and climbed.",
-                    "At the Continental Divide we stopped and Dean said, 'Think about it! On one side the water goes to the Atlantic, on the other to the Pacific!'",
-                    "We descended into Utah. Red rocks. Desert. The West was opening up."
-                ],
-                speed: "120"
-            },
-            {
-                hour: 7,
-                part: "Part One",
-                title: "San Francisco",
-                location: "The City, the Bay",
-                passages: [
-                    "We hit Frisco at dusk. The lights came on. The bridges. The hills. The city by the bay.",
-                    "We went to a jazz club in North Beach. Slim Gaillard was playing. Dean went mad, dancing, shouting, snapping his fingers.",
-                    "I wandered Chinatown alone. Neon signs. Strange smells. I was as far from home as I'd ever been."
-                ],
-                speed: "DIG"
-            },
-            {
-                hour: 8,
-                part: "Part Two",
-                title: "Back East",
-                location: "New York again",
-                passages: [
-                    "I spent some time in Frisco, working, saving money. But the road called. I went back East.",
-                    "In New York I saw Dean again. He'd left Marylou and married a girl named Camille. But already he was restless.",
-                    "'Sal, man, we gotta go again! This time to Mexico! All the way down!' His eyes gleamed."
-                ],
-                speed: "NEW"
-            },
-            {
-                hour: 9,
-                part: "Part Two",
-                title: "The Second Trip West",
-                location: "Pennsylvania",
-                passages: [
-                    "Dean showed up at my door at midnight in a brand new Hudson. 'Let's GO!' We took off immediately.",
-                    "We drove through Pennsylvania, Ohio, Indiana. Dean at the wheel talking nonstop about everything and nothing.",
-                    "'We gotta make time! Chicago by dawn!' He pushed the accelerator. The needle climbed."
-                ],
-                speed: "130"
-            },
-            {
-                hour: 10,
-                part: "Part Two",
-                title: "Chicago to Denver",
-                location: "The heartland, blazing speed",
-                passages: [
-                    "We made Chicago by dawn. Stopped for coffee. Dean was wild-eyed, hadn't slept.",
-                    "Across Iowa, Nebraska. The car flew. Dean shouted and sang. I held on.",
-                    "We hit Denver and found Carlo. Talked for three hours straight. Then back in the car. 'To Frisco!'"
-                ],
-                speed: "140"
-            },
-            {
-                hour: 11,
-                part: "Part Two",
-                title: "Over the Divide Again",
-                location: "The Rocky Mountains",
-                passages: [
-                    "Up into the mountains again. Higher and higher. The engine strained. Dean laughed.",
-                    "At the top we stopped. Silent mountains all around. Dean said, 'Sal, doesn't it make you want to cry?'",
-                    "We descended into the desert. Sunset. The whole sky on fire."
-                ],
-                speed: "PEAK"
-            },
-            {
-                hour: 12,
-                part: "Part Two",
-                title: "Frisco Again",
-                location: "Back to the City",
-                passages: [
-                    "We rolled into Frisco exhausted. Dean went to see Camille. I crashed at a friend's place.",
-                    "For weeks we stayed in Frisco. Working odd jobs. Going to jazz clubs. Planning the next trip.",
-                    "Dean was becoming more frantic. His marriages were falling apart. He needed to keep moving."
-                ],
-                speed: "REST"
-            },
-            {
-                hour: 13,
-                part: "Part Three",
-                title: "The Third Trip",
-                location: "Denver again",
-                passages: [
-                    "Dean showed up again, more manic than ever. 'Sal! To New York! I need to see my wives!'",
-                    "We drove back across America. Three days straight. Barely stopping.",
-                    "In New York, chaos. Dean running between his wives. Arguments. Tears. He couldn't stay still."
-                ],
-                speed: "MANIC"
-            },
-            {
-                hour: 14,
-                part: "Part Three",
-                title: "South",
-                location: "Heading to the Gulf",
-                passages: [
-                    "We decided to go South. Through Virginia, the Carolinas, into Georgia.",
-                    "The weather got warmer. Palm trees. We could smell the ocean.",
-                    "In Louisiana we met Old Bull Lee, who talked philosophy and took drugs. Dean listened, rapt."
-                ],
-                speed: "SLOW"
-            },
-            {
-                hour: 15,
-                part: "Part Three",
-                title: "New Orleans",
-                location: "The Crescent City",
-                passages: [
-                    "New Orleans. Jazz pouring out of every door. We wandered Bourbon Street.",
-                    "Dean found a girl. I walked alone. The humid night. Spanish moss.",
-                    "'Let's go to Mexico, Sal! That's where we really gotta go!'"
-                ],
-                speed: "JAZZ"
-            },
-            {
-                hour: 16,
-                part: "Part Four",
-                title: "To Mexico",
-                location: "Laredo, the border",
-                passages: [
-                    "We crossed into Mexico at Laredo. Immediately everything was different. Dusty streets. Donkeys.",
-                    "Dean shouted, 'This is IT! This is what we've been looking for! The real world!'",
-                    "We drove deeper into Mexico. Jungle. Mountains. Ancient pyramids."
-                ],
-                speed: "SUR"
-            },
-            {
-                hour: 17,
-                part: "Part Four",
-                title: "The Jungle",
-                location: "Somewhere in Mexico",
-                passages: [
-                    "The road became dirt. We drove through villages where no American had ever been.",
-                    "Kids ran alongside the car. Old women stared. We bought mangoes from a stand.",
-                    "Dean was in ecstasy. 'This is the real world, man! Not America! This!'"
-                ],
-                speed: "DEEP"
-            },
-            {
-                hour: 18,
-                part: "Part Four",
-                title: "Mexico City",
-                location: "The ancient capital",
-                passages: [
-                    "We reached Mexico City. The altitude made us dizzy. Ancient pyramids loomed outside the city.",
-                    "We got a cheap hotel room. That night we got dysentery. I was sick for days.",
-                    "Dean left me there. He had to get back to New York. 'Sorry, Sal. I gotta go.'"
-                ],
-                speed: "SICK"
-            },
-            {
-                hour: 19,
-                part: "Part Four",
-                title: "Abandoned",
-                location: "Alone in Mexico",
-                passages: [
-                    "I woke up and Dean was gone. Took the car. Took everything.",
-                    "I was alone in Mexico City, sick, broke. I'd never felt so far from home.",
-                    "Eventually I recovered enough to take a bus back to the border. The trip was over."
-                ],
-                speed: "END"
-            },
-            {
-                hour: 20,
-                part: "Part Five",
-                title: "Back Home",
-                location: "New York, settling down",
-                passages: [
-                    "I went back to New York. Got a job. Met a girl. Started to settle down.",
-                    "I heard Dean was in San Francisco with Camille. He'd had another kid. Maybe he'd finally stopped.",
-                    "But I knew he'd never really stop. The road was in his blood."
-                ],
-                speed: "STOP"
-            },
-            {
-                hour: 21,
-                part: "Part Five",
-                title: "Dean Returns",
-                location: "New York, one last time",
-                passages: [
-                    "Dean showed up one more time, skeletal, wild-eyed. He'd driven straight from Frisco.",
-                    "'Sal, man, one more time! Let's go!' But I couldn't. I had a life now.",
-                    "We went to a jazz concert. Sat in silence. The music played. We were older now."
-                ],
-                speed: "LAST"
-            },
-            {
-                hour: 22,
-                part: "Part Five",
-                title: "Goodbye",
-                location: "The street, parting",
-                passages: [
-                    "After the concert, Dean had to leave. He had to get back to Frisco.",
-                    "We stood on the corner. I wanted to say so much but couldn't find the words.",
-                    "'Goodbye, Sal.' He got in his car and drove off. I never saw him quite the same way again."
-                ],
-                speed: "BYE"
-            },
-            {
-                hour: 23,
-                part: "Part Five — The End",
-                title: "The Afterglow",
-                location: "Remembering",
-                passages: [
-                    "So in America when the sun goes down and I sit on the old broken-down river pier watching the long, long skies over New Jersey and sense all that raw land that rolls in one unbelievable huge bulge over to the West Coast...",
-                    "...and all that road going, all the people dreaming in the immensity of it...",
-                    "...I think of Dean Moriarty, I even think of Old Dean Moriarty the father we never found, I think of Dean Moriarty."
-                ],
-                speed: "..."
+                name: 'Part Five', roman: 'FIVE', ch: 1, when: 'Coda',
+                blurb: 'New York. A last visit, a parting on a cold street, and the river at sundown with the whole continent rolling away west.',
+                route: [['New York', 0], ['New York', 1]]
             }
         ];
 
+        const PLACES = {
+            'New York': [-74.0, 40.71], 'Bear Mountain': [-74.0, 41.31], 'Chicago': [-87.63, 41.88],
+            'Des Moines': [-93.6, 41.6], 'Omaha': [-95.94, 41.26], 'North Platte': [-100.77, 41.12],
+            'Cheyenne': [-104.82, 41.14], 'Denver': [-104.99, 39.74], 'Salt Lake City': [-111.89, 40.76],
+            'San Francisco': [-122.42, 37.77], 'Bakersfield': [-119.02, 35.37], 'Los Angeles': [-118.24, 34.05],
+            'the San Joaquin Valley': [-119.6, 36.6], 'Pittsburgh': [-79.99, 40.44],
+            'Testament, Virginia': [-77.6, 36.9], 'Washington': [-77.04, 38.9], 'New Orleans': [-90.07, 29.95],
+            'west Texas': [-100.6, 30.6], 'El Paso': [-106.49, 31.76], 'Arizona': [-111.6, 33.4],
+            'Detroit': [-83.05, 42.33], 'San Antonio': [-98.49, 29.42], 'Laredo': [-99.51, 27.53],
+            'Mexico City': [-99.13, 19.43]
+        };
+
+        // Labelled on the map: [name, dx, dy, anchor]
+        const LABELS = [
+            ['New York', 6, 22, 'middle'], ['Chicago', -2, -11, 'middle'], ['Detroit', 9, -6, 'start'],
+            ['Denver', -10, 15, 'end'], ['San Francisco', -9, 4, 'end', 'Frisco'], ['Los Angeles', -9, 10, 'end', 'L.A.'],
+            ['New Orleans', 6, 16, 'middle'], ['El Paso', -9, 13, 'end'], ['Laredo', -10, 6, 'end'],
+            ['Mexico City', 10, 5, 'start'], ['Cheyenne', 0, -11, 'middle'], ['San Antonio', 0, -10, 'middle']
+        ];
+
+        // ---------- projection ----------
+        const K = 20, COS = Math.cos(38 * Math.PI / 180);
+        const proj = ([lon, lat]) => [(lon + 125) * COS * K, (49.8 - lat) * K];
+
+        // Simplified coastline of the lower 48 and Mexico (lon, lat)
+        const LAND = [
+            [-124.7, 48.4], [-123.2, 49.0], [-95.2, 49.0], [-95.2, 49.4], [-89.6, 48.0], [-84.8, 46.5],
+            [-83.5, 46.0], [-82.4, 43.0], [-83.1, 42.0], [-82.4, 41.7], [-79.0, 42.6], [-79.0, 43.3],
+            [-76.5, 44.2], [-75.0, 45.0], [-71.5, 45.0], [-70.0, 46.7], [-68.0, 47.4], [-67.0, 45.0],
+            [-68.8, 44.2], [-70.2, 43.6], [-70.6, 42.6], [-70.0, 41.8], [-71.5, 41.3], [-74.0, 40.6],
+            [-74.0, 39.5], [-75.0, 38.8], [-76.0, 37.0], [-75.5, 35.3], [-77.9, 33.9], [-79.9, 32.7],
+            [-81.4, 30.4], [-80.6, 28.4], [-80.0, 26.7], [-80.4, 25.2], [-81.1, 25.1], [-81.8, 26.6],
+            [-82.6, 28.0], [-83.0, 29.1], [-84.3, 30.0], [-85.4, 29.7], [-87.3, 30.3], [-88.6, 30.3],
+            [-89.6, 30.2], [-89.2, 29.1], [-90.5, 29.1], [-92.0, 29.6], [-93.8, 29.7], [-94.8, 29.3],
+            [-96.5, 28.3], [-97.3, 27.0], [-97.2, 25.9], [-97.7, 24.0], [-97.8, 22.4], [-97.3, 21.0],
+            [-96.1, 19.2], [-94.5, 18.2], [-92.0, 18.6], [-91.4, 17.5],
+            [-92.5, 16.6], [-94.0, 16.2], [-96.5, 15.7], [-99.9, 16.8], [-102.2, 17.9],
+            [-105.3, 20.5], [-105.7, 22.5], [-108.9, 25.6], [-111.0, 27.9], [-112.8, 30.5], [-114.8, 31.8],
+            [-114.3, 30.6], [-113.0, 29.0], [-112.0, 26.5], [-110.3, 24.2], [-109.9, 22.9], [-112.1, 24.8],
+            [-114.2, 27.8], [-115.8, 30.3], [-117.1, 32.5], [-118.4, 33.8], [-120.6, 34.6], [-121.9, 36.6],
+            [-122.5, 37.7], [-123.8, 39.4], [-124.2, 41.0], [-124.5, 42.8], [-124.0, 46.2]
+        ];
+        const BORDER = [
+            [-117.1, 32.5], [-114.7, 32.7], [-111.1, 31.3], [-108.2, 31.3], [-108.2, 31.8], [-106.5, 31.8],
+            [-104.5, 29.6], [-103.1, 29.0], [-101.4, 29.8], [-99.5, 27.5], [-97.2, 25.9]
+        ];
+        const LAKES = [
+            [[-87.8, 42.0], [-87.5, 41.65], [-86.6, 41.9], [-86.2, 43.0], [-86.5, 44.5], [-85.6, 45.8], [-87.0, 45.9], [-87.6, 44.8], [-87.9, 43.5]],
+            [[-83.4, 41.7], [-81.0, 41.9], [-79.1, 42.6], [-80.5, 42.6], [-82.5, 42.1]]
+        ];
+
+        const NS = 'http://www.w3.org/2000/svg';
+        const el = (tag, attrs) => {
+            const e = document.createElementNS(NS, tag);
+            for (const k in attrs) e.setAttribute(k, attrs[k]);
+            return e;
+        };
+        const pts = list => list.map(p => proj(p).map(v => v.toFixed(1)).join(',')).join(' ');
+
+        const geo = document.getElementById('geo');
+        geo.appendChild(el('polygon', { class: 'land', points: pts(LAND) }));
+        LAKES.forEach(l => geo.appendChild(el('polygon', { class: 'lake', points: pts(l) })));
+        geo.appendChild(el('polyline', { class: 'border', points: pts(BORDER) }));
+
+        // ---------- distances ----------
+        function miles(a, b) {
+            const R = 3958.8, rad = Math.PI / 180;
+            const dLat = (b[1] - a[1]) * rad, dLon = (b[0] - a[0]) * rad;
+            const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * rad) * Math.cos(b[1] * rad) * Math.sin(dLon / 2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(h)) * 1.18; // roads are not great circles
+        }
+
+        // ---------- part timing ----------
+        const TOTAL_CH = PARTS.reduce((s, p) => s + p.ch, 0); // 43
+        const DAY = 86400;
+        let chAcc = 0, mileAcc = 0;
+        PARTS.forEach(p => {
+            p.chStart = chAcc;
+            p.t0 = chAcc / TOTAL_CH * DAY;
+            chAcc += p.ch;
+            p.t1 = chAcc / TOTAL_CH * DAY;
+            p.mile0 = mileAcc;
+            p.legMiles = [];
+            for (let i = 1; i < p.route.length; i++) {
+                const m = miles(PLACES[p.route[i - 1][0]], PLACES[p.route[i][0]]);
+                p.legMiles.push(m);
+                mileAcc += m;
+            }
+        });
+        const TOTAL_MILES = mileAcc;
+
+        function stateAt(sec) {
+            sec = ((sec % DAY) + DAY) % DAY;
+            let pi = PARTS.findIndex(p => sec < p.t1);
+            if (pi < 0) pi = PARTS.length - 1;
+            const p = PARTS[pi];
+            const f = (sec - p.t0) / (p.t1 - p.t0);
+            const chapter = Math.min(p.ch, Math.floor((sec / DAY) * TOTAL_CH) - p.chStart + 1);
+            const r = p.route;
+            let i = 0;
+            while (i < r.length - 2 && f >= r[i + 1][1]) i++;
+            const a = r[i], b = r[i + 1];
+            const span = b[1] - a[1];
+            const u = span > 0 ? Math.min(1, Math.max(0, (f - a[1]) / span)) : 0;
+            const A = PLACES[a[0]], B = PLACES[b[0]];
+            const lonlat = [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u];
+            let mile = p.mile0;
+            for (let k = 0; k < i; k++) mile += p.legMiles[k];
+            mile += p.legMiles[i] * u;
+            let where;
+            if (a[0] === b[0]) where = 'in ' + a[0];
+            else if (u < 0.12) where = 'leaving ' + a[0];
+            else if (u > 0.88) where = 'coming into ' + b[0];
+            else where = 'between ' + a[0] + ' and ' + b[0];
+            return { pi, p, f, chapter, seg: i, u, lonlat, mile, where, still: a[0] === b[0] };
+        }
+
+        // ---------- draw routes ----------
+        const routesG = document.getElementById('routes');
+        const routeEls = PARTS.map(p => {
+            const coords = p.route.map(w => PLACES[w[0]]);
+            const e = el('polyline', { class: 'route ahead', points: pts(coords) });
+            routesG.appendChild(e);
+            return e;
+        });
+        const nowLine = el('polyline', { class: 'route now', points: '' });
+        routesG.appendChild(nowLine);
+
+        const citiesG = document.getElementById('cities');
+        const labelEls = [];
+        LABELS.forEach(([name, dx, dy, anchor, shown]) => {
+            const [x, y] = proj(PLACES[name]);
+            citiesG.appendChild(el('circle', { class: 'city', cx: x, cy: y, r: 2.6 }));
+            const t = el('text', { class: 'city-label', x: x, y: y, 'text-anchor': anchor });
+            t.textContent = shown || name;
+            t.dataset.name = name;
+            t.dataset.dx = dx; t.dataset.dy = dy;
+            citiesG.appendChild(t);
+            labelEls.push(t);
+        });
+
+        const svg = document.getElementById('map');
+        const carG = document.getElementById('carG');
+
+        // Keep labels and the car a constant on-screen size however the map scales
+        function rescale() {
+            const w = svg.getBoundingClientRect().width || 1070;
+            const h = svg.getBoundingClientRect().height || 680;
+            const scale = Math.min(w / 1070, h / 680) || 1;
+            const u = 1 / scale;
+            svg.style.setProperty('--u', u.toFixed(3));
+            labelEls.forEach(t => {
+                const [x, y] = proj(PLACES[t.dataset.name]);
+                t.setAttribute('x', (x + t.dataset.dx * u).toFixed(1));
+                t.setAttribute('y', (y + t.dataset.dy * u).toFixed(1));
+            });
+            carG.dataset.u = u;
+            placeCar(lastState);
+        }
+
+        let lastState = null;
+        function placeCar(s) {
+            if (!s) return;
+            const [x, y] = proj(s.lonlat);
+            const u = Math.max(0.9, Math.min(3, +carG.dataset.u || 1));
+            carG.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${u.toFixed(3)})`);
+        }
+
+        function drawRoutes(s) {
+            routeEls.forEach((e, i) => {
+                e.setAttribute('class', 'route ' + (i < s.pi ? 'past' : 'ahead'));
+            });
+            const r = s.p.route;
+            const coords = [];
+            for (let k = 0; k <= s.seg; k++) coords.push(PLACES[r[k][0]]);
+            coords.push(s.lonlat);
+            nowLine.setAttribute('points', pts(coords));
+        }
+
+        // ---------- the scroll ----------
+        const FILLERS = [
+            'radio up', 'coffee and pie at a counter', 'nobody sleeping', 'the engine humming',
+            'a freight train keeping pace', 'talk and more talk', 'bop on the radio', 'stars over the hood',
+            'gas and a candy bar', 'the windows down', 'thumb out at the shoulder', 'cigarettes and road maps',
+            'the sky going on and on', 'a jukebox somewhere', 'wheels singing', 'all of America asleep',
+            'the whole night ahead', 'a diner in the dark', 'a town, then nothing', 'the white line running'
+        ];
+
+        const pad = n => String(n).padStart(2, '0');
+
+        function hash(n) {
+            n = (n ^ 61) ^ (n >>> 16);
+            n = (n + (n << 3)) | 0;
+            n = n ^ (n >>> 4);
+            n = Math.imul(n, 0x27d4eb2d);
+            return (n ^ (n >>> 15)) >>> 0;
+        }
+
+        // The fragment typed during minute m (0..1439) of the day.
+        function fragment(m) {
+            const s = stateAt(m * 60 + 30);
+            const prev = stateAt(((m + 1439) % 1440) * 60 + 30);
+            const head = (m === 0 || prev.pi !== s.pi) ? { part: 'PART ' + s.p.roman } : null;
+            const filler = s.still && s.pi === 4
+                ? ['the river going dark', 'New Jersey across the water', 'the long sky', 'thinking of Dean'][hash(m) % 4]
+                : FILLERS[hash(m + 7) % FILLERS.length];
+            const r = s.p.route, A = r[s.seg][0], B = r[s.seg + 1][0], v = hash(m * 3 + 1);
+            const where = s.still
+                ? [A, 'still in ' + A, 'a stop in ' + A, A + ', not moving'][v % 4]
+                : ['toward ' + B, A + ' behind', 'on the road to ' + B, 'out past ' + A, B + ' ahead'][v % 5];
+            const mileTxt = s.still ? '' : `, mile ${Math.round(s.mile).toLocaleString('en-US')}`;
+            const body = `${where}${mileTxt}, ${filler}, and `;
+            return { time: `${pad(Math.floor(m / 60))}:${pad(m % 60)} `, head, body };
+        }
+
+        const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+        function fragHTML(fr, chars, old) {
+            // chars: how many characters of the full fragment are typed (Infinity = all)
+            const parts = [];
+            if (fr.head) parts.push(['pt', fr.head.part + ' ']);
+            parts.push(['t', fr.time]);
+            parts.push(['', fr.body]);
+            let left = chars, out = '';
+            for (const [cls, text] of parts) {
+                if (left <= 0) break;
+                const piece = text.slice(0, left);
+                left -= piece.length;
+                out += cls ? `<span class="${cls}">${esc(piece)}</span>` : esc(piece);
+            }
+            return old ? `<span class="old">${out}</span>` : out;
+        }
+        const fragLen = fr => (fr.head ? fr.head.part.length + 1 : 0) + fr.time.length + fr.body.length;
+
+        // ---------- tick ----------
         const timeEl = document.getElementById('time');
         const partEl = document.getElementById('part');
-        const momentTitleEl = document.getElementById('moment-title');
-        const locationEl = document.getElementById('location');
-        const passagesEl = document.getElementById('passages');
-        const speedEl = document.getElementById('speed');
+        const whereEl = document.getElementById('where');
+        const blurbEl = document.getElementById('blurb');
+        const feetEl = document.getElementById('feet');
+        const scrollEl = document.getElementById('scroll');
+        const statusEl = document.getElementById('status');
 
-        let currentMomentIndex = -1;
+        let lastMinute = -1, lastPart = -1, history = '';
+        const HISTORY_MIN = 18;
 
-        function getMomentForHour(hour) {
-            return moments.find(m => m.hour === hour) || moments[0];
-        }
-
-        function renderPassages(passages) {
-            passagesEl.innerHTML = passages.map(passage => `
-                <div class="passage">${passage}</div>
-            `).join('');
-        }
-
-        function updateClock() {
+        function tick() {
             const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
+            const h = now.getHours(), mi = now.getMinutes(), se = now.getSeconds();
+            const sec = h * 3600 + mi * 60 + se;
+            const m = h * 60 + mi;
+            const s = stateAt(sec);
+            lastState = s;
 
-            // Update time display
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            timeEl.textContent = `${pad(h)}:${pad(mi)}:${pad(se)}`;
+            whereEl.textContent = s.where.charAt(0).toUpperCase() + s.where.slice(1) + ', mile ' +
+                Math.round(s.mile).toLocaleString('en-US') + ' of ' + Math.round(TOTAL_MILES).toLocaleString('en-US');
+            const ft = sec / DAY * 120;
+            feetEl.textContent = `${ft.toFixed(1)} of 120 ft typed`;
 
-            // Get current moment
-            const moment = getMomentForHour(hour);
-            const momentIndex = moments.indexOf(moment);
-
-            // Update content if moment changed
-            if (momentIndex !== currentMomentIndex) {
-                partEl.textContent = moment.part;
-                momentTitleEl.textContent = moment.title;
-                locationEl.textContent = moment.location;
-                renderPassages(moment.passages);
-                speedEl.textContent = moment.speed;
-
-                currentMomentIndex = momentIndex;
+            if (s.pi !== lastPart) {
+                blurbEl.textContent = s.p.blurb;
+                lastPart = s.pi;
             }
+            partEl.textContent = `${s.p.name} · ${s.p.ch > 1 ? 'chapter ' + s.chapter + ' of ' + s.p.ch : 'one chapter'} · ${s.p.when}`;
+
+            drawRoutes(s);
+            placeCar(s);
+
+            if (m !== lastMinute) {
+                // rebuild the recent roll: one unbroken paragraph, no breaks
+                let html = '';
+                for (let k = HISTORY_MIN; k >= 1; k--) {
+                    const mm = (m - k + 1440) % 1440;
+                    html += fragHTML(fragment(mm), Infinity, k > 3);
+                }
+                history = html;
+                lastMinute = m;
+                statusEl.textContent = `${h % 12 || 12}:${pad(mi)} ${h < 12 ? 'AM' : 'PM'}. ${s.p.name}, ${s.where}.`;
+            }
+
+            // one keystroke a second: the current fragment is complete at :59
+            const fr = fragment(m);
+            const n = Math.max(1, Math.ceil(fragLen(fr) * (se + 1) / 60));
+            scrollEl.innerHTML = history + fragHTML(fr, n, false) + '<span class="cursor"></span>';
         }
 
-        // Initialize
-        updateClock();
-        setInterval(updateClock, 1000);
+        tick();
+        rescale();
+        setInterval(tick, 1000);
+        window.addEventListener('resize', rescale);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(rescale);
     </script>
 </body>
 
