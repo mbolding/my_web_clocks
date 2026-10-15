@@ -1,636 +1,972 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Odyssey Clock</title>
+    <meta name="description" content="Homer's Odyssey as a sea chart: twenty-four books for twenty-four hours, with Odysseus's ship, Telemachus's voyage and the wanderings told in flashback.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=EB+Garamond:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #100a19;
+            --panel: #171022;
+            --ink: #eee4cf;
+            --ink-soft: #bfb398;
+            --ink-faint: #8f8470;
+            --gold: #e2c06c;
+            --gold-dim: #8a7a4a;
+            --rust: #ec8559;
+            --teal: #7cc9b8;
+            --rose: #ef9d9d;
+            --rule: rgba(226, 192, 108, 0.28);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { background: var(--bg); }
 
         body {
             min-height: 100vh;
-            background: linear-gradient(to bottom, #1a1a3a 0%, #2a2a4a 30%, #0a0a1a 100%);
-            font-family: 'Crimson Text', serif;
+            min-height: 100dvh;
+            background: radial-gradient(ellipse at 50% 0%, #22152f 0%, var(--bg) 60%) fixed, var(--bg);
+            color: var(--ink);
+            font-family: 'Crimson Text', Georgia, serif;
+            padding: clamp(12px, 2.6vw, 28px) clamp(16px, 3vw, 36px) clamp(18px, 3vw, 32px);
+            overflow-x: hidden;
+        }
+
+        .greek { font-family: 'EB Garamond', 'Crimson Text', serif; }
+
+        .page {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1.62fr) minmax(300px, 1fr);
+            grid-template-areas:
+                "head head"
+                "chart panel"
+                "ribbon ribbon";
+            gap: clamp(12px, 2vw, 22px) clamp(16px, 2.4vw, 32px);
+            align-items: start;
+        }
+
+        /* ---------- Header ---------- */
+        header {
+            grid-area: head;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: #d8d4cc;
-            position: relative;
-            overflow: hidden;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 4px 20px;
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: clamp(6px, 1.2vw, 12px);
         }
 
-        .wine-dark-sea {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 50%;
-            background: linear-gradient(to bottom, transparent 0%, #2a1a3a 50%, #1a0a2a 100%);
-            pointer-events: none;
-            opacity: 0.6;
-            z-index: 0;
-        }
-
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            opacity: 0.5;
-            z-index: 0;
-        }
-
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #fff;
-            border-radius: 50%;
-            animation: starTwinkle 3s ease-in-out infinite;
-        }
-
-        @keyframes starTwinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .greek-border {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 20px solid transparent;
-            border-image: repeating-linear-gradient(
-                90deg,
-                #8a7a4a 0px,
-                #8a7a4a 20px,
-                transparent 20px,
-                transparent 40px
-            ) 20;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: rgba(20, 15, 25, 0.95);
-            border: 3px solid #8a7a4a;
-            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
-            padding: 3rem 2.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid #6a5a3a;
-        }
-
-        .title {
+        h1 {
             font-family: 'Cinzel', serif;
-            font-size: clamp(2.5rem, 5vw, 4.5rem);
             font-weight: 700;
-            color: #f8e8c8;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+            font-size: clamp(1.35rem, 3.2vw, 2.2rem);
+            letter-spacing: 0.14em;
+            color: #f6e9c8;
+            line-height: 1.1;
         }
 
-        .greek-title {
-            font-size: clamp(1rem, 2.5vw, 1.4rem);
-            color: #c8b898;
+        h1 .greek {
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            color: var(--gold);
+            font-size: 0.8em;
+            margin-left: 0.4em;
+        }
+
+        .incipit {
+            font-size: clamp(0.85rem, 1.6vw, 1.02rem);
+            color: var(--ink-soft);
             font-style: italic;
-            margin-bottom: 1rem;
         }
 
-        .author {
-            font-size: 1rem;
-            color: #a89878;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
+        .incipit .greek { font-style: normal; color: var(--gold); }
+
+        /* ---------- Chart ---------- */
+        .chart { grid-area: chart; min-width: 0; }
+
+        .chart-frame {
+            position: relative;
+            border: 1px solid var(--gold-dim);
+            outline: 1px solid rgba(138, 122, 74, 0.45);
+            outline-offset: 3px;
+            background: #150e22;
+            line-height: 0;
         }
 
-        .time-display {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #6a5a3a;
+        #map { width: 100%; height: auto; display: block; }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 18px;
+            margin-top: 10px;
+            font-size: clamp(0.8rem, 1.5vw, 0.92rem);
+            color: var(--ink-soft);
+            line-height: 1.35;
         }
 
-        .current-time {
+        .legend span { display: inline-flex; align-items: center; gap: 7px; }
+
+        .legend i {
+            display: inline-block;
+            width: 26px;
+            height: 0;
+            border-top: 3px solid var(--gold);
+        }
+
+        .legend .lt i { border-top-color: var(--teal); }
+        .legend .lm i { border-top: 3px dashed var(--rust); }
+
+        /* ---------- Panel ---------- */
+        .panel { grid-area: panel; min-width: 0; }
+
+        .now {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .clock {
             font-family: 'Cinzel', serif;
-            font-size: clamp(2.5rem, 6vw, 5rem);
-            font-weight: 700;
-            color: #f8e8c8;
-            margin-bottom: 0.5rem;
-        }
-
-        .book-indicator {
-            font-family: 'Cinzel', serif;
-            font-size: 0.9rem;
-            color: #a89878;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-        }
-
-        .journey-section {
-            margin-bottom: 2rem;
-        }
-
-        .adventure-title {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.3rem, 3vw, 2rem);
             font-weight: 600;
-            color: #e8d8b8;
-            margin-bottom: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-size: clamp(2rem, 4.6vw, 3.3rem);
+            line-height: 1;
+            color: #f6e9c8;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
         }
 
-        .location {
-            font-size: 1rem;
-            color: #b8a888;
-            font-style: italic;
-            margin-bottom: 1.5rem;
+        .clock .sec { font-size: 0.5em; color: var(--ink-soft); margin-left: 0.15em; }
+
+        .bookline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: clamp(8px, 1.4vw, 14px);
         }
 
-        .verse-container {
-            position: relative;
-            min-height: 180px;
-            margin-bottom: 1.5rem;
-        }
-
-        .verse {
-            font-size: clamp(1rem, 2.2vw, 1.2rem);
-            line-height: 1.9;
-            color: #d8d4cc;
-            font-style: italic;
-            opacity: 0;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            animation: verseFade 15s ease-in-out infinite;
-        }
-
-        .verse:nth-child(1) { animation-delay: 0s; }
-        .verse:nth-child(2) { animation-delay: 5s; }
-        .verse:nth-child(3) { animation-delay: 10s; }
-
-        @keyframes verseFade {
-            0% { opacity: 0; transform: translateY(8px); }
-            3%, 30% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(8px); }
-        }
-
-        .epic-line {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(0.9rem, 2vw, 1.15rem);
-            line-height: 1.7;
-            color: #f8e8c8;
-            padding: 1.5rem;
-            background: rgba(138, 122, 74, 0.2);
-            border-left: 4px solid #c8a858;
-            margin-top: 1rem;
+        .bookletter {
+            font-size: clamp(2.6rem, 6vw, 4.2rem);
+            line-height: 0.9;
+            color: var(--gold);
+            min-width: 0.7em;
             text-align: center;
         }
 
-        .years-marker {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            text-align: right;
-            padding: 1rem;
-            background: rgba(20, 15, 25, 0.9);
-            border: 2px solid #6a5a3a;
-        }
-
-        .years-marker .number {
+        .bookmeta {
             font-family: 'Cinzel', serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #f8e8c8;
-            display: block;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .years-marker .label {
-            font-size: 0.8rem;
-            color: #a89878;
+            font-size: clamp(0.72rem, 1.4vw, 0.85rem);
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            color: var(--ink-soft);
+            line-height: 1.5;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
+        .bookmeta b { color: var(--ink); font-weight: 600; }
 
-            .years-marker {
-                bottom: 1rem;
-                right: 1rem;
-                padding: 0.75rem;
-            }
+        .movement.m-T { color: var(--teal); }
+        .movement.m-P { color: var(--gold); }
+        .movement.m-M { color: var(--rust); }
+        .movement.m-I { color: var(--gold); }
 
-            .greek-border {
-                border-width: 10px;
+        #ithaca {
+            width: clamp(128px, 34vw, 176px);
+            height: auto;
+            display: block;
+        }
+
+        .ith-cap {
+            font-family: 'Cinzel', serif;
+            font-size: 0.68rem;
+            letter-spacing: 0.16em;
+            color: var(--ink-faint);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        h2 {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: clamp(1.15rem, 2.3vw, 1.55rem);
+            color: #f6e9c8;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            margin-top: clamp(10px, 1.6vw, 16px);
+        }
+
+        .loc {
+            font-style: italic;
+            color: var(--ink-soft);
+            font-size: clamp(0.95rem, 1.7vw, 1.06rem);
+            margin-top: 2px;
+        }
+
+        blockquote {
+            margin-top: clamp(10px, 1.6vw, 16px);
+            padding: 2px 0 2px 14px;
+            border-left: 2px solid var(--gold-dim);
+            font-size: clamp(1.05rem, 2vw, 1.22rem);
+            line-height: 1.45;
+            color: var(--ink);
+        }
+
+        blockquote.told { border-left: 2px dashed var(--rust); }
+
+        cite {
+            display: block;
+            margin-top: 4px;
+            font-style: normal;
+            font-size: 0.8em;
+            color: var(--ink-faint);
+            letter-spacing: 0.02em;
+        }
+
+        .formula {
+            margin-top: 12px;
+            padding: 8px 12px;
+            border: 1px solid rgba(239, 157, 157, 0.35);
+            background: rgba(239, 157, 157, 0.07);
+            font-size: clamp(0.95rem, 1.7vw, 1.05rem);
+            line-height: 1.4;
+        }
+
+        .formula[hidden] { display: none; }
+        .formula.dusk { border-color: rgba(226, 160, 90, 0.35); background: rgba(226, 160, 90, 0.07); }
+        .formula .greek { display: block; color: var(--rose); font-size: 0.98em; }
+        .formula.dusk .greek { color: #e6b07a; }
+
+        .where {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 2px 10px;
+            font-size: clamp(0.9rem, 1.6vw, 1rem);
+            color: var(--ink-soft);
+            line-height: 1.35;
+        }
+
+        .where dt {
+            font-family: 'Cinzel', serif;
+            font-size: 0.78em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding-top: 0.2em;
+        }
+
+        .where .wo { color: var(--gold); }
+        .where .wt { color: var(--teal); }
+
+        /* ---------- Ribbon: the 24 books as the dial ---------- */
+        .ribbon {
+            grid-area: ribbon;
+            display: grid;
+            grid-template-columns: repeat(24, minmax(0, 1fr));
+            gap: 3px;
+        }
+
+        .mv {
+            grid-row: 1;
+            grid-column: var(--c24);
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.62rem, 1.1vw, 0.76rem);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            border-bottom: 1px solid currentColor;
+            padding-bottom: 3px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mv-T { color: var(--teal); }
+        .mv-P { color: var(--gold); }
+        .mv-M { color: var(--rust); border-bottom-style: dashed; }
+        .mv-I { color: var(--gold); }
+
+        .cell {
+            grid-row: 2;
+            grid-column: var(--c24);
+            border: 1px solid rgba(226, 192, 108, 0.22);
+            text-align: center;
+            padding: 4px 0 3px;
+            line-height: 1.05;
+            color: var(--ink-faint);
+            background: linear-gradient(to right, rgba(226, 192, 108, 0.22) var(--p, 0%), transparent var(--p, 0%));
+        }
+
+        .cell.M { border-style: dashed; border-color: rgba(236, 133, 89, 0.4); }
+        .cell .gl { display: block; font-size: clamp(1rem, 1.9vw, 1.35rem); color: var(--ink-soft); }
+        .cell .hr { display: block; font-family: 'Cinzel', serif; font-size: clamp(0.55rem, 0.9vw, 0.66rem); letter-spacing: 0.04em; }
+        .cell.past { background: rgba(226, 192, 108, 0.08); }
+        .cell.past .gl { color: var(--ink-faint); }
+        .cell.cur { border-color: var(--gold); color: var(--ink); }
+        .cell.cur .gl { color: #fff1cf; }
+        .cell.M.cur { border-color: var(--rust); background: linear-gradient(to right, rgba(236, 133, 89, 0.28) var(--p, 0%), transparent var(--p, 0%)); }
+
+        footer {
+            grid-column: 1 / -1;
+            font-size: clamp(0.78rem, 1.4vw, 0.88rem);
+            color: var(--ink-faint);
+            line-height: 1.4;
+        }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap; margin: -1px;
+        }
+
+        /* ---------- SVG chart styling ---------- */
+        .land { fill: #3a2f22; stroke: #b39c5e; stroke-linejoin: round; }
+        .grat { stroke: rgba(226, 192, 108, 0.09); fill: none; }
+        .lbl {
+            font-family: 'Cinzel', serif;
+            fill: #e6d6ae;
+            paint-order: stroke;
+            stroke: #140c1e;
+            stroke-linejoin: round;
+        }
+        .lbl.dim { fill: #a8987a; }
+        .lbl.hot { fill: #fff3d2; }
+
+        @media (max-width: 860px) {
+            .page {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-areas: "head" "chart" "panel" "ribbon";
             }
+            .ribbon { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+            .mv { grid-column: var(--c12); grid-row: var(--r12); }
+            .cell { grid-column: var(--c12); grid-row: var(--r12); }
+            .mv-I { margin-top: 8px; }
         }
     </style>
 </head>
-
 <body>
-    <div class="wine-dark-sea"></div>
-    <div class="stars" id="stars"></div>
-    <div class="greek-border"></div>
+<div class="page">
+    <header>
+        <h1>The Odyssey <span class="greek">Ὀδύσσεια</span></h1>
+        <p class="incipit"><span class="greek">ἄνδρα μοι ἔννεπε, μοῦσα, πολύτροπον</span> &middot; Homer &middot; twenty-four books, twenty-four hours</p>
+    </header>
 
-    <div class="container">
-        <div class="header">
-            <h1 class="title">The Odyssey</h1>
-            <div class="greek-title">Ὀδύσσεια</div>
-            <div class="author">Homer</div>
+    <section class="chart" aria-label="Sea chart of the voyages">
+        <div class="chart-frame">
+            <svg id="map" role="img" aria-label="Chart of the Mediterranean with the routes of the Odyssey"></svg>
         </div>
-
-        <div class="time-display">
-            <div class="current-time" id="time">00:00</div>
-            <div class="book-indicator" id="book">Book I</div>
+        <div class="legend">
+            <span><i></i>Odysseus, where the poem finds him now</span>
+            <span class="lt"><i></i>Telemachus</span>
+            <span class="lm"><i></i>The wanderings, as Odysseus tells them (Books IX to XII)</span>
         </div>
+    </section>
 
-        <div class="journey-section">
-            <h2 class="adventure-title" id="adventure-title">The Council of the Gods</h2>
-            <div class="location" id="location">Mount Olympus</div>
-            <div class="verse-container">
-                <div id="verses">
-                    <!-- Verses injected here -->
+    <section class="panel">
+        <div class="now">
+            <div>
+                <div class="clock" id="clock" role="timer" aria-label="Current time"><span id="hm">00:00</span><span class="sec" id="sec">:00</span></div>
+                <div class="bookline">
+                    <div class="bookletter greek" id="letter" aria-hidden="true">α</div>
+                    <div class="bookmeta">
+                        <div><b id="bookno">Book I</b> of XXIV</div>
+                        <div class="movement" id="movement">The Telemachy</div>
+                    </div>
                 </div>
             </div>
-            <div class="epic-line">
-                "Tell me, O Muse, of the man of many devices"
+            <div>
+                <svg id="ithaca" viewBox="0 0 200 215" role="img" aria-label="Ithaca"></svg>
+                <div class="ith-cap">ITHACA</div>
             </div>
         </div>
-    </div>
 
-    <div class="years-marker">
-        <span class="number" id="years">10</span>
-        <span class="label">Years Wandering</span>
-    </div>
+        <h2 id="title">Athena Comes to Ithaca</h2>
+        <div class="loc" id="loc">Olympus and Ithaca</div>
 
-    <script>
-        const books = [
-            {
-                hour: 0,
-                book: "Book I",
-                title: "The Council of the Gods",
-                location: "Mount Olympus and Ithaca",
-                verses: [
-                    "Tell me, O Muse, of the man of many devices, who wandered full many ways after he had sacked the sacred citadel of Troy.",
-                    "All the other Greeks who had survived were safe at home, but Odysseus alone still wandered, for the nymph Calypso kept him captive.",
-                    "Athena spoke to Zeus: 'Father, why do you not pity Odysseus? He has made so many sacrifices to you at Troy.'"
-                ]
-            },
-            {
-                hour: 1,
-                book: "Book II",
-                title: "The Assembly at Ithaca",
-                location: "Ithaca, the palace",
-                verses: [
-                    "Telemachus called an assembly of all the Achaeans. The suitors of Penelope devoured the substance of his house daily.",
-                    "Antinous spoke: 'We will not leave your house until your mother chooses one of us to marry.'",
-                    "Telemachus replied: 'The gods will punish you for this outrage. I will seek news of my father, whether he lives or is dead.'"
-                ]
-            },
-            {
-                hour: 2,
-                book: "Book III",
-                title: "Telemachus Visits Nestor",
-                location: "Pylos, the sandy shore",
-                verses: [
-                    "They came to Pylos, where Nestor the old charioteer was sacrificing bulls to Poseidon by the seashore.",
-                    "Nestor told of the returns from Troy: 'Agamemnon was murdered by his wife and Aegisthus. Menelaus wandered for seven years.'",
-                    "'But of Odysseus I have heard nothing. Perhaps he lives, perhaps he is dead. Only the gods know.'"
-                ]
-            },
-            {
-                hour: 3,
-                book: "Book IV",
-                title: "Telemachus Visits Menelaus",
-                location: "Sparta, the palace of Menelaus",
-                verses: [
-                    "At Sparta they found Menelaus and Helen feasting. Helen recognized Telemachus: 'This must be Odysseus's son, for he looks just like him.'",
-                    "Menelaus wept: 'I would give all my treasure to have Odysseus here again, my dear comrade who suffered so much for my sake.'",
-                    "Helen put a drug in their wine, nepenthe, which makes men forget all sorrows. Then Menelaus told of meeting Proteus, the Old Man of the Sea, who said Odysseus lived, held captive by Calypso."
-                ]
-            },
-            {
-                hour: 4,
-                book: "Book V",
-                title: "Calypso's Island",
-                location: "Ogygia, the nymph's cave",
-                verses: [
-                    "Hermes came to Calypso's island and told her Zeus commanded that she let Odysseus go. The nymph wept but obeyed.",
-                    "Odysseus built a raft with twenty trees. Calypso gave him provisions and a fair wind. He sailed for seventeen days.",
-                    "But Poseidon saw him and raised a great storm. The raft was shattered, and Odysseus clung to a plank in the wine-dark sea."
-                ]
-            },
-            {
-                hour: 5,
-                book: "Book VI",
-                title: "Nausicaa and the Phaeacians",
-                location: "Scheria, the land of the Phaeacians",
-                verses: [
-                    "Odysseus washed ashore naked and covered himself with leaves. He heard voices—Princess Nausicaa and her maidens washing clothes.",
-                    "He emerged from the bushes, and the maidens fled. But Nausicaa stood her ground. She gave him clothing and food.",
-                    "'Follow me to the city,' she said, 'but at a distance, so people won't gossip. Go to the palace and clasp my mother's knees.'"
-                ]
-            },
-            {
-                hour: 6,
-                book: "Book VII",
-                title: "The Palace of Alcinous",
-                location: "The Phaeacian palace",
-                verses: [
-                    "Odysseus entered the palace, marveling at its splendor. The walls were bronze, the doors were gold, and silver dogs guarded the entrance.",
-                    "He threw himself at Queen Arete's feet and begged for help. Alcinous welcomed him: 'Whoever you are, we will help you reach your home.'",
-                    "They feasted, and Odysseus told them he had been with Calypso for seven years, longing always for home."
-                ]
-            },
-            {
-                hour: 7,
-                book: "Book VIII",
-                title: "The Songs of Demodocus",
-                location: "The Phaeacian assembly",
-                verses: [
-                    "The blind bard Demodocus sang of the Trojan War. When he sang of the wooden horse and the sack of Troy, Odysseus wept.",
-                    "Alcinous noticed his tears: 'Tell us your name, stranger, and your story. Why do you weep at the songs of Troy?'",
-                    "The Phaeacians gave gifts and prepared a ship. They promised to take him home at last."
-                ]
-            },
-            {
-                hour: 8,
-                book: "Book IX",
-                title: "The Cyclops",
-                location: "The land of the Cyclopes",
-                verses: [
-                    "'I am Odysseus, son of Laertes,' he said. 'Let me tell you of my wanderings.' First we came to the Lotus-Eaters, who gave my men the lotus that makes you forget.",
-                    "Then we came to the land of the Cyclopes. Polyphemus trapped us in his cave and ate six of my men.",
-                    "I gave him wine and told him my name was Nobody. When he slept, we drove a burning stake into his eye. 'Nobody has blinded me!' he cried."
-                ]
-            },
-            {
-                hour: 9,
-                book: "Book X",
-                title: "Circe the Enchantress",
-                location: "Aeaea, Circe's island",
-                verses: [
-                    "Aeolus the wind-god gave me a bag of winds. But my men opened it, thinking it was treasure, and the winds blew us back.",
-                    "We came to Circe's island. She turned my men into pigs with her magic. Hermes gave me a charm, and I resisted.",
-                    "Circe restored my men and became my lover. We stayed for a year. When we left, she said: 'You must go to the House of Hades and speak with the dead.'"
-                ]
-            },
-            {
-                hour: 10,
-                book: "Book XI",
-                title: "The Land of the Dead",
-                location: "The House of Hades",
-                verses: [
-                    "We sailed to the end of the world and dug a trench. The ghosts came forth to drink the blood of our sacrifice.",
-                    "Tiresias the prophet told me: 'You will reach home, but only after great suffering. Do not harm the cattle of Helios.'",
-                    "I saw my mother's ghost. She told me Penelope still waited, though suitors devoured my substance. She died of grief for me."
-                ]
-            },
-            {
-                hour: 11,
-                book: "Book XII",
-                title: "The Sirens and Scylla",
-                location: "Between the rocks and the whirlpool",
-                verses: [
-                    "We passed the Sirens. I stuffed my men's ears with wax, but I had them tie me to the mast so I could hear their song.",
-                    "Then we sailed between Scylla and Charybdis. Scylla's six heads seized six of my men. I could not save them.",
-                    "We came to the island of Helios. My men killed his sacred cattle while I slept. Zeus destroyed our ship with lightning. Only I survived."
-                ]
-            },
-            {
-                hour: 12,
-                book: "Book XIII",
-                title: "Odysseus Returns to Ithaca",
-                location: "Ithaca, the shore",
-                verses: [
-                    "The Phaeacians brought him home while he slept. They left him on the shore with all his treasure and sailed away.",
-                    "When he woke, Athena disguised the land so he wouldn't recognize it. She tested him, and he lied cleverly about who he was.",
-                    "Then she revealed herself: 'You are in Ithaca, your homeland. But the suitors have taken over your house. We must be cunning.'"
-                ]
-            },
-            {
-                hour: 13,
-                book: "Book XIV",
-                title: "Odysseus and the Swineherd",
-                location: "Eumaeus's hut",
-                verses: [
-                    "Athena disguised Odysseus as an old beggar. He went to the swineherd Eumaeus, who welcomed him kindly.",
-                    "Eumaeus spoke of his master: 'Odysseus has been gone twenty years. Surely he is dead. But his son Telemachus still hopes.'",
-                    "Odysseus did not reveal himself but tested the swineherd's loyalty. Eumaeus passed the test."
-                ]
-            },
-            {
-                hour: 14,
-                book: "Book XV",
-                title: "Telemachus Returns",
-                location: "From Sparta to Ithaca",
-                verses: [
-                    "Athena warned Telemachus to leave Sparta. He sailed home, avoiding the suitors' ambush.",
-                    "Meanwhile, Eumaeus told the disguised Odysseus stories of the suitors' insolence and Penelope's grief.",
-                    "Telemachus landed safely and went first to Eumaeus's hut, as Athena had instructed."
-                ]
-            },
-            {
-                hour: 15,
-                book: "Book XVI",
-                title: "Father and Son Reunited",
-                location: "Eumaeus's hut",
-                verses: [
-                    "When Telemachus arrived, Odysseus was still disguised. Then Athena restored his true appearance.",
-                    "Telemachus could not believe it: 'You must be a god!' But Odysseus embraced him: 'I am your father, for whom you have grieved so long.'",
-                    "They wept together and planned their revenge against the suitors."
-                ]
-            },
-            {
-                hour: 16,
-                book: "Book XVII",
-                title: "Odysseus the Beggar",
-                location: "The palace of Odysseus",
-                verses: [
-                    "Odysseus, disguised again as a beggar, went to his own palace. His old dog Argos recognized him and died of joy.",
-                    "The suitors mocked him and threw things at him. Antinous struck him with a stool.",
-                    "Penelope heard of the beggar and wanted to question him, to see if he had news of Odysseus."
-                ]
-            },
-            {
-                hour: 17,
-                book: "Book XVIII",
-                title: "The Fight with Irus",
-                location: "The great hall",
-                verses: [
-                    "A real beggar named Irus challenged Odysseus to a fight. The suitors laughed and encouraged it.",
-                    "Odysseus knocked him out with one punch. The suitors were amazed at the old beggar's strength.",
-                    "Athena made Penelope appear more beautiful than ever. The suitors gazed at her with desire and brought her gifts."
-                ]
-            },
-            {
-                hour: 18,
-                book: "Book XIX",
-                title: "The Scar",
-                location: "Penelope's chamber",
-                verses: [
-                    "Penelope questioned the beggar. He told her convincing lies about meeting Odysseus long ago.",
-                    "She wept and ordered her nurse Eurycleia to wash the stranger's feet. As the old nurse washed him, she felt the scar from a boar hunt.",
-                    "She recognized him and almost cried out, but Odysseus gripped her throat and silenced her."
-                ]
-            },
-            {
-                hour: 19,
-                book: "Book XX",
-                title: "The Night Before",
-                location: "The palace, preparing",
-                verses: [
-                    "Odysseus could not sleep. He heard the disloyal maidservants sneaking out to the suitors and burned with rage.",
-                    "Athena appeared to him: 'Have courage. Tomorrow you will have your revenge.'",
-                    "Penelope announced she would marry whichever suitor could string Odysseus's bow and shoot through twelve axe-heads."
-                ]
-            },
-            {
-                hour: 20,
-                book: "Book XXI",
-                title: "The Bow",
-                location: "The great hall",
-                verses: [
-                    "Penelope brought out the great bow. One by one the suitors tried to string it and failed.",
-                    "The beggar asked to try. The suitors mocked him, but Penelope allowed it.",
-                    "Odysseus strung the bow easily and shot an arrow through all twelve axes. The suitors turned pale."
-                ]
-            },
-            {
-                hour: 21,
-                book: "Book XXII",
-                title: "The Slaughter",
-                location: "The great hall, blood and carnage",
-                verses: [
-                    "Odysseus cast off his rags and shot Antinous through the throat. The suitors panicked.",
-                    "'You will die here, all of you!' Odysseus cried. He and Telemachus and two faithful servants killed them all.",
-                    "The disloyal maidservants were hanged. The hall was purified with sulfur and fire."
-                ]
-            },
-            {
-                hour: 22,
-                book: "Book XXIII",
-                title: "Penelope's Test",
-                location: "The bedchamber",
-                verses: [
-                    "Penelope could not believe Odysseus had returned. She tested him: 'Move our bed outside for the stranger.'",
-                    "Odysseus grew angry: 'Impossible! I built that bed around a living olive tree. It cannot be moved unless someone cut the tree.'",
-                    "Then Penelope knew it was truly him. They embraced and wept, and he told her all his adventures."
-                ]
-            },
-            {
-                hour: 23,
-                book: "Book XXIV",
-                title: "Peace Restored",
-                location: "Ithaca, the kingdom at rest",
-                verses: [
-                    "Odysseus went to see his father Laertes, who wept with joy. The families of the dead suitors sought revenge.",
-                    "But Athena descended and commanded peace: 'Enough! Let there be no more bloodshed in Ithaca.'",
-                    "Zeus sent down a thunderbolt as a sign. Odysseus made peace with his people, and so his wanderings ended at last."
-                ]
-            }
-        ];
+        <blockquote id="quote">
+            <span id="qtext"></span>
+            <cite id="qcite"></cite>
+        </blockquote>
 
-        const timeEl = document.getElementById('time');
-        const bookEl = document.getElementById('book');
-        const adventureTitleEl = document.getElementById('adventure-title');
-        const locationEl = document.getElementById('location');
-        const versesEl = document.getElementById('verses');
-        const yearsEl = document.getElementById('years');
-        const starsEl = document.getElementById('stars');
+        <div class="formula" id="formula" hidden>
+            <span id="ftext"></span>
+            <span class="greek" id="fgreek" lang="grc"></span>
+        </div>
 
-        let currentBookIndex = -1;
+        <dl class="where">
+            <dt class="wo">Odysseus</dt><dd id="wo"></dd>
+            <dt class="wt">Telemachus</dt><dd id="wt"></dd>
+        </dl>
+    </section>
 
-        // Create stars
-        function createStars() {
-            for (let i = 0; i < 150; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = `${Math.random() * 100}%`;
-                star.style.top = `${Math.random() * 60}%`;
-                star.style.animationDelay = `${Math.random() * 3}s`;
-                starsEl.appendChild(star);
-            }
+    <nav class="ribbon" id="ribbon" aria-label="The twenty-four books, one per hour"></nav>
+
+    <footer>
+        English quotations from A. T. Murray's translation (Loeb, 1919). Places follow the old identifications (Ogygia as Gozo, Scheria as Corfu, Thrinacia as Sicily); Homer's sea is the poet's own, and the House of Hades lies past the western edge, at the stream of Oceanus.
+    </footer>
+    <div class="sr-only" aria-live="polite" id="live"></div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // Natural Earth 1:50m land, clipped to the central Mediterranean and simplified.
+    const RINGS = [[[23.85,35.54],[24.01,35.53],[24.09,35.59],[24.17,35.6],[24.2,35.54],[24.11,35.5],[24.18,35.46],[24.26,35.47],[24.27,35.39],[24.35,35.36],[24.72,35.42],[25.0,35.41],[25.1,35.35],[25.48,35.31],[25.73,35.35],[25.76,35.33],[25.75,35.14],[25.79,35.12],[26.03,35.22],[26.17,35.22],[26.32,35.32],[26.24,35.04],[26.17,35.02],[25.83,35.03],[24.8,34.93],[24.75,34.95],[24.71,35.09],[24.46,35.16],[23.88,35.25],[23.64,35.24],[23.59,35.26],[23.55,35.42],[23.57,35.53],[23.61,35.57],[23.67,35.51],[23.72,35.55],[23.74,35.66],[23.79,35.56]],[[23.42,38.96],[23.47,38.85],[23.52,38.81],[23.88,38.69],[24.13,38.65],[24.2,38.54],[24.19,38.46],[24.28,38.22],[24.36,38.16],[24.56,38.15],[24.59,38.12],[24.58,38.02],[24.5,37.97],[24.36,38.02],[24.21,38.12],[24.19,38.2],[24.04,38.39],[23.76,38.4],[23.65,38.44],[23.62,38.55],[23.25,38.8],[23.03,38.87],[22.88,38.85],[22.87,38.87],[23.26,39.03],[23.31,39.03]],[[9.63,40.88],[9.81,40.5],[9.64,40.27],[9.71,40.02],[9.62,39.35],[9.56,39.17],[9.49,39.14],[9.26,39.22],[9.15,39.2],[9.06,39.24],[9.02,39.04],[8.97,38.96],[8.88,38.91],[8.65,38.93],[8.42,39.21],[8.4,39.48],[8.45,39.56],[8.45,39.72],[8.47,39.75],[8.54,39.73],[8.55,39.84],[8.5,39.9],[8.41,39.92],[8.41,40.04],[8.47,40.13],[8.47,40.29],[8.41,40.35],[8.35,40.5],[8.19,40.65],[8.18,40.77],[8.22,40.91],[8.36,40.85],[8.57,40.85],[8.82,40.95],[9.0,41.11],[9.11,41.14],[9.18,41.24],[9.23,41.26],[9.28,41.2],[9.46,41.15],[9.54,41.05],[9.62,41.02],[9.55,40.93]],[[9.48,42.81],[9.45,42.66],[9.53,42.55],[9.55,42.13],[9.4,41.93],[9.37,41.68],[9.19,41.38],[8.9,41.52],[8.81,41.59],[8.89,41.7],[8.72,41.76],[8.76,41.87],[8.74,41.93],[8.62,41.93],[8.62,41.96],[8.7,42.04],[8.7,42.1],[8.59,42.16],[8.57,42.22],[8.68,42.28],[8.63,42.34],[8.57,42.36],[8.71,42.55],[8.81,42.61],[9.04,42.66],[9.14,42.73],[9.29,42.69],[9.31,42.71],[9.36,43.02],[9.42,43.02],[9.46,42.98]],[[15.58,38.22],[15.23,37.78],[15.1,37.46],[15.12,37.33],[15.23,37.24],[15.17,37.21],[15.29,37.1],[15.3,37.06],[15.29,37.01],[15.19,36.93],[15.12,36.84],[15.11,36.69],[14.89,36.72],[14.78,36.71],[14.5,36.8],[14.37,36.97],[14.26,37.05],[14.14,37.1],[13.91,37.1],[13.8,37.14],[13.36,37.35],[13.17,37.48],[12.92,37.57],[12.64,37.59],[12.53,37.67],[12.44,37.82],[12.55,38.05],[12.66,38.11],[12.73,38.18],[12.9,38.03],[13.05,38.08],[13.06,38.13],[13.16,38.19],[13.29,38.19],[13.68,38.0],[13.79,37.98],[14.05,38.04],[14.29,38.02],[14.51,38.05],[14.79,38.17],[15.12,38.15],[15.5,38.29],[15.63,38.27]],[[14.31,36.03],[14.25,36.01],[14.18,36.06],[14.26,36.08]],[[12.05,36.76],[12.0,36.75],[11.94,36.78],[11.94,36.83],[12.02,36.82]],[[16.65,43.0],[17.09,42.96],[17.19,42.92],[16.98,42.93],[16.85,42.9],[16.7,42.93]],[[17.19,43.13],[16.68,43.12],[16.38,43.21],[16.52,43.23],[16.66,43.21],[16.7,43.17]],[[16.79,43.27],[16.63,43.27],[16.42,43.32],[16.45,43.39],[16.6,43.38],[16.83,43.35],[16.89,43.31]],[[27.84,35.93],[27.75,35.91],[27.72,35.96],[27.76,36.07],[27.72,36.17],[27.91,36.35],[28.23,36.43],[28.23,36.37],[28.14,36.21],[28.07,36.13],[28.09,36.07],[27.97,36.05]],[[27.18,35.47],[27.14,35.41],[27.1,35.46],[27.12,35.51],[27.07,35.6],[27.16,35.73],[27.16,35.79],[27.22,35.82],[27.16,35.63],[27.23,35.48]],[[27.86,36.55],[27.84,36.54],[27.79,36.61],[27.86,36.64]],[[27.02,36.96],[26.92,36.95],[26.94,37.02],[26.89,37.09],[27.04,37.0]],[[26.95,36.73],[26.92,36.73],[26.96,36.77],[27.21,36.9],[27.35,36.87]],[[25.55,36.97],[25.46,36.93],[25.36,37.07],[25.53,37.2],[25.59,37.15],[25.58,37.04]],[[25.28,37.07],[25.2,36.99],[25.13,37.0],[25.11,37.03],[25.15,37.11],[25.24,37.15],[25.28,37.14]],[[25.48,36.39],[25.44,36.34],[25.37,36.36],[25.41,36.4],[25.41,36.47]],[[25.38,36.67],[25.36,36.66],[25.26,36.76],[25.3,36.79],[25.41,36.72]],[[26.82,37.81],[27.04,37.77],[27.06,37.71],[26.84,37.64],[26.72,37.71],[26.58,37.72],[26.64,37.78]],[[26.03,37.53],[25.98,37.53],[26.0,37.57],[26.09,37.63],[26.35,37.67],[26.2,37.57]],[[25.86,36.79],[25.74,36.79],[26.0,36.94],[26.06,36.9]],[[26.46,36.59],[26.33,36.51],[26.27,36.55],[26.27,36.6],[26.34,36.58],[26.38,36.61],[26.37,36.64]],[[24.36,37.58],[24.29,37.53],[24.28,37.6],[24.32,37.68],[24.38,37.68],[24.4,37.65]],[[24.44,37.34],[24.38,37.31],[24.4,37.38],[24.37,37.42],[24.43,37.48],[24.48,37.41]],[[24.54,36.76],[24.53,36.68],[24.33,36.66],[24.36,36.74],[24.43,36.71]],[[24.99,37.76],[24.96,37.69],[24.71,37.9],[24.7,37.96],[24.79,37.99],[24.86,37.91],[24.96,37.9]],[[25.26,37.6],[25.22,37.54],[25.16,37.55],[25.0,37.68],[25.23,37.63]],[[24.72,36.92],[24.68,36.96],[24.68,37.02],[24.72,37.02],[24.76,36.95]],[[26.09,38.22],[26.0,38.16],[25.89,38.24],[25.87,38.27],[25.99,38.35],[25.85,38.51],[25.85,38.57],[26.01,38.6],[26.16,38.54],[26.16,38.3],[26.11,38.28]],[[26.41,39.33],[26.39,39.27],[26.53,39.17],[26.6,39.05],[26.49,39.07],[26.55,38.99],[26.47,38.97],[26.16,39.03],[26.11,39.08],[26.27,39.2],[26.18,39.19],[26.07,39.1],[25.91,39.14],[25.84,39.2],[25.91,39.29],[26.09,39.3],[26.16,39.33],[26.17,39.37],[26.35,39.38]],[[23.78,39.11],[23.74,39.08],[23.67,39.1],[23.59,39.21]],[[23.89,39.16],[23.84,39.15],[23.89,39.23],[23.97,39.27]],[[24.67,38.81],[24.54,38.79],[24.57,38.83],[24.46,38.89],[24.49,38.98],[24.56,38.94],[24.58,38.88]],[[25.69,40.43],[25.57,40.4],[25.45,40.48],[25.57,40.52]],[[25.44,39.98],[25.37,39.89],[25.36,39.81],[25.26,39.82],[25.25,39.89],[25.19,39.83],[25.06,39.85],[25.06,40.0],[25.23,40.01],[25.29,39.96],[25.45,40.03]],[[24.77,40.62],[24.65,40.58],[24.52,40.65],[24.52,40.69],[24.62,40.79],[24.72,40.79],[24.79,40.7]],[[25.97,40.14],[25.74,40.11],[25.67,40.14],[25.74,40.2],[25.92,40.24],[25.98,40.18]],[[11.28,34.75],[11.12,34.68],[11.15,34.74],[11.25,34.82]],[[10.96,33.72],[10.86,33.69],[10.72,33.74],[10.75,33.89],[10.92,33.89],[11.02,33.82],[11.04,33.79]],[[10.4,42.86],[10.43,42.8],[10.42,42.71],[10.34,42.76],[10.13,42.74],[10.11,42.79],[10.13,42.81],[10.36,42.82]],[[8.48,39.07],[8.42,38.97],[8.36,39.04],[8.36,39.1]],[[8.29,41.04],[8.25,40.99],[8.21,41.0],[8.27,41.1],[8.32,41.12],[8.34,41.1]],[[14.57,35.85],[14.53,35.82],[14.44,35.82],[14.35,35.87],[14.35,35.98],[14.45,35.96]],[[15.19,43.92],[15.2,43.9],[15.14,43.91],[15.03,44.0],[15.09,44.0]],[[15.37,43.97],[15.44,43.9],[15.31,43.96],[15.28,44.0]],[[17.61,42.77],[17.74,42.7],[17.34,42.79]],[[20.61,38.38],[20.62,38.27],[20.7,38.25],[20.79,38.14],[20.76,38.07],[20.61,38.12],[20.52,38.11],[20.45,38.23],[20.35,38.18],[20.41,38.34],[20.44,38.36],[20.48,38.32],[20.52,38.33],[20.56,38.47]],[[20.89,37.81],[20.99,37.71],[20.91,37.73],[20.82,37.66],[20.7,37.74],[20.62,37.86],[20.69,37.93],[20.76,37.85]],[[20.69,38.61],[20.55,38.58],[20.59,38.76],[20.69,38.84],[20.72,38.8],[20.71,38.64]],[[20.76,38.33],[20.71,38.32],[20.62,38.48],[20.7,38.45]],[[20.08,39.43],[20.1,39.38],[19.88,39.46],[19.81,39.59],[19.65,39.73],[19.65,39.77],[19.84,39.82],[19.93,39.77],[19.94,39.75],[19.85,39.67],[19.9,39.62],[19.96,39.47]],[[23.55,37.93],[23.47,37.9],[23.42,37.93],[23.48,37.99],[23.53,37.97]],[[23.05,36.19],[23.04,36.15],[22.94,36.18],[22.91,36.22],[22.91,36.32],[22.95,36.38],[23.1,36.25]],[[25.4,37.42],[25.31,37.41],[25.31,37.49],[25.35,37.51],[25.46,37.47]],[[24.52,37.13],[24.42,37.13],[24.44,37.19],[24.48,37.21],[24.53,37.19]],[[31.0,44.0],[31.0,30.5],[6.0,30.5],[6.0,36.85],[6.25,36.94],[6.33,37.05],[6.49,37.09],[6.58,37.0],[6.93,36.92],[7.24,36.97],[7.2,37.09],[7.43,37.06],[7.61,37.0],[7.79,36.88],[7.91,36.86],[8.13,36.91],[8.58,36.94],[8.82,37.0],[9.14,37.19],[9.69,37.34],[9.84,37.31],[9.78,37.21],[9.83,37.14],[9.9,37.18],[9.88,37.25],[10.09,37.25],[10.2,37.21],[10.19,37.03],[10.33,36.87],[10.29,36.78],[10.41,36.73],[10.52,36.79],[10.57,36.88],[10.77,36.93],[10.95,37.06],[11.05,37.07],[11.13,36.87],[10.97,36.74],[10.8,36.49],[10.64,36.42],[10.49,36.25],[10.51,36.03],[10.59,35.89],[10.69,35.8],[11.0,35.63],[11.04,35.34],[11.12,35.24],[10.69,34.68],[10.53,34.54],[10.2,34.35],[10.06,34.21],[10.05,34.06],[10.16,33.85],[10.31,33.73],[10.45,33.66],[10.71,33.69],[10.72,33.51],[10.9,33.53],[10.96,33.63],[11.08,33.56],[11.15,33.37],[11.26,33.31],[11.27,33.29],[11.2,33.25],[11.34,33.21],[11.4,33.22],[11.66,33.12],[11.81,33.09],[12.28,32.86],[12.75,32.8],[13.28,32.91],[13.54,32.82],[13.84,32.79],[14.16,32.71],[14.51,32.51],[15.18,32.39],[15.27,32.31],[15.36,32.16],[15.36,31.97],[15.5,31.66],[15.71,31.43],[16.12,31.26],[16.78,31.21],[17.35,31.08],[17.83,30.93],[17.95,30.85],[18.19,30.78],[18.56,30.5],[19.72,30.5],[20.01,30.8],[20.15,31.08],[20.1,31.3],[19.96,31.56],[19.93,31.82],[20.03,32.11],[20.37,32.43],[20.62,32.58],[21.06,32.78],[21.42,32.8],[21.64,32.94],[21.84,32.91],[22.19,32.92],[23.09,32.62],[23.13,32.45],[23.11,32.33],[23.29,32.21],[23.8,32.16],[24.13,32.01],[24.68,32.02],[24.88,31.98],[25.02,31.88],[25.23,31.53],[25.38,31.51],[25.89,31.62],[26.77,31.47],[27.25,31.38],[27.54,31.21],[27.83,31.2],[27.97,31.1],[28.51,31.05],[29.07,30.83],[29.43,30.93],[29.93,31.23],[30.05,31.27],[30.22,31.26],[30.4,31.46],[30.57,31.47],[30.92,31.57],[30.88,31.52],[30.56,31.42],[30.7,31.4],[31.0,31.46],[31.0,36.84],[30.64,36.87],[30.58,36.8],[30.56,36.53],[30.45,36.27],[30.39,36.24],[30.23,36.31],[29.69,36.16],[29.22,36.32],[29.14,36.4],[29.04,36.69],[28.97,36.72],[28.9,36.67],[28.82,36.68],[28.48,36.8],[28.3,36.81],[28.2,36.69],[28.02,36.63],[28.01,36.67],[28.08,36.75],[27.8,36.74],[27.66,36.67],[27.45,36.71],[27.47,36.75],[27.63,36.79],[28.01,36.83],[28.24,37.03],[27.35,37.02],[27.26,36.98],[27.25,37.08],[27.3,37.13],[27.54,37.16],[27.52,37.25],[27.38,37.34],[27.22,37.39],[27.15,37.6],[27.07,37.66],[27.08,37.69],[27.22,37.73],[27.25,37.88],[27.23,37.98],[26.94,38.06],[26.88,38.05],[26.81,38.14],[26.68,38.2],[26.58,38.15],[26.29,38.28],[26.34,38.37],[26.42,38.37],[26.43,38.44],[26.37,38.56],[26.38,38.62],[26.44,38.64],[26.51,38.63],[26.59,38.56],[26.6,38.42],[26.67,38.34],[26.73,38.42],[26.86,38.37],[27.1,38.42],[27.14,38.45],[26.97,38.45],[26.91,38.48],[26.76,38.71],[26.91,38.78],[27.01,38.89],[26.81,38.96],[26.85,39.12],[26.68,39.29],[26.91,39.52],[26.9,39.55],[26.83,39.56],[26.11,39.47],[26.1,39.52],[26.15,39.66],[26.15,39.87],[26.18,39.99],[26.31,40.02],[26.48,40.2],[26.74,40.4],[27.01,40.4],[27.12,40.45],[27.28,40.46],[27.33,40.38],[27.48,40.32],[27.73,40.33],[27.85,40.38],[27.73,40.48],[27.87,40.51],[27.99,40.49],[27.93,40.38],[27.96,40.37],[28.29,40.4],[28.63,40.38],[29.01,40.39],[29.06,40.42],[28.79,40.53],[28.96,40.63],[29.84,40.74],[29.85,40.76],[29.36,40.81],[29.11,40.94],[29.05,41.01],[29.09,41.18],[29.15,41.22],[29.32,41.23],[29.92,41.15],[30.34,41.2],[30.81,41.08],[31.0,41.09],[31.0,44.0],[28.66,44.0],[28.59,43.8],[28.56,43.5],[28.47,43.39],[28.32,43.43],[28.13,43.4],[27.93,43.19],[27.89,42.75],[27.75,42.71],[27.48,42.47],[27.71,42.35],[27.98,42.05],[28.01,41.97],[27.99,41.85],[28.05,41.73],[28.2,41.55],[28.35,41.47],[29.06,41.23],[28.96,41.01],[28.78,40.97],[28.17,41.08],[27.93,40.99],[27.75,41.01],[27.5,40.97],[27.43,40.84],[27.26,40.69],[26.77,40.5],[26.33,40.12],[26.2,40.08],[26.26,40.2],[26.25,40.31],[26.45,40.45],[26.72,40.54],[26.79,40.63],[26.11,40.61],[26.01,40.77],[25.86,40.84],[25.5,40.89],[25.33,40.94],[25.25,40.93],[25.1,40.99],[24.79,40.86],[24.48,40.95],[24.38,40.91],[24.23,40.79],[24.08,40.72],[23.76,40.75],[23.74,40.68],[23.88,40.54],[23.83,40.48],[23.87,40.42],[24.03,40.41],[24.21,40.33],[24.34,40.15],[24.16,40.28],[23.91,40.36],[23.82,40.37],[23.73,40.33],[23.72,40.29],[23.97,40.11],[24.0,40.02],[23.95,39.97],[23.84,40.02],[23.66,40.22],[23.43,40.26],[23.39,40.22],[23.43,40.12],[23.67,39.96],[23.63,39.92],[23.4,39.99],[23.33,40.09],[23.31,40.22],[22.9,40.4],[22.85,40.49],[22.92,40.59],[22.81,40.58],[22.63,40.5],[22.64,40.37],[22.57,40.12],[22.59,40.04],[22.84,39.8],[22.98,39.56],[23.1,39.49],[23.23,39.36],[23.33,39.17],[23.22,39.1],[23.15,39.1],[23.12,39.13],[23.17,39.21],[23.16,39.26],[22.99,39.33],[22.92,39.31],[22.84,39.26],[22.89,39.17],[22.97,39.03],[23.07,39.04],[22.8,38.9],[22.57,38.87],[23.02,38.74],[23.14,38.67],[23.25,38.66],[23.37,38.53],[23.57,38.49],[23.68,38.35],[23.97,38.27],[24.02,38.14],[24.06,37.77],[24.06,37.71],[23.97,37.68],[23.54,38.03],[23.05,37.9],[23.04,37.88],[23.15,37.8],[23.15,37.72],[23.2,37.62],[23.4,37.58],[23.49,37.46],[23.49,37.44],[23.16,37.33],[23.1,37.36],[23.1,37.44],[23.02,37.48],[22.77,37.59],[22.73,37.54],[22.77,37.39],[22.85,37.29],[23.06,36.85],[23.07,36.77],[23.04,36.64],[23.16,36.45],[22.98,36.53],[22.83,36.69],[22.78,36.79],[22.72,36.79],[22.61,36.78],[22.49,36.57],[22.49,36.45],[22.37,36.51],[22.38,36.7],[22.23,36.88],[22.16,36.9],[22.08,37.03],[21.96,36.99],[21.93,36.8],[21.89,36.74],[21.74,36.86],[21.58,37.08],[21.58,37.2],[21.69,37.31],[21.68,37.39],[21.57,37.54],[21.33,37.67],[21.29,37.77],[21.14,37.85],[21.12,37.89],[21.31,38.03],[21.4,38.2],[21.66,38.18],[21.82,38.33],[21.95,38.32],[22.24,38.19],[22.56,38.11],[22.85,37.97],[22.92,37.96],[22.89,38.05],[23.12,38.07],[23.18,38.13],[23.09,38.2],[22.83,38.23],[22.42,38.44],[22.32,38.36],[21.97,38.41],[21.47,38.32],[21.33,38.49],[21.3,38.37],[21.18,38.35],[21.11,38.38],[20.99,38.65],[20.87,38.78],[20.78,38.81],[20.77,38.87],[20.78,38.93],[20.89,38.94],[21.11,38.9],[21.15,38.92],[21.12,39.03],[20.78,39.01],[20.71,39.04],[20.47,39.26],[20.3,39.33],[20.19,39.55],[20.0,39.71],[19.96,39.87],[19.85,40.04],[19.48,40.21],[19.32,40.41],[19.44,40.38],[19.46,40.41],[19.34,40.66],[19.46,40.93],[19.48,41.24],[19.44,41.42],[19.5,41.56],[19.58,41.64],[19.58,41.79],[19.47,41.86],[19.34,41.87],[19.19,41.95],[19.12,42.06],[18.89,42.25],[18.63,42.38],[18.65,42.44],[18.52,42.43],[17.82,42.8],[17.58,42.84],[17.26,42.97],[17.05,43.01],[17.22,43.03],[17.72,42.85],[17.33,43.11],[17.13,43.21],[16.9,43.39],[16.39,43.54],[16.13,43.51],[15.99,43.52],[15.94,43.57],[15.94,43.66],[15.66,43.81],[15.39,44.0],[12.68,44.0],[12.91,43.92],[13.3,43.69],[13.56,43.57],[13.8,43.18],[14.01,42.69],[14.18,42.51],[14.54,42.24],[14.87,42.05],[15.17,41.93],[15.4,41.91],[15.96,41.94],[16.16,41.9],[16.19,41.81],[16.15,41.76],[15.91,41.62],[15.9,41.51],[16.01,41.44],[16.55,41.23],[17.1,41.06],[17.47,40.84],[17.95,40.66],[18.04,40.56],[18.33,40.37],[18.46,40.22],[18.49,40.1],[18.34,39.82],[18.22,39.85],[18.08,39.94],[17.87,40.28],[17.4,40.34],[17.26,40.4],[17.18,40.5],[17.03,40.51],[16.93,40.46],[16.67,40.14],[16.53,39.86],[16.52,39.75],[16.6,39.64],[16.82,39.58],[17.11,39.38],[17.12,39.14],[17.17,39.0],[17.1,38.92],[16.95,38.94],[16.76,38.89],[16.62,38.8],[16.56,38.71],[16.57,38.49],[16.55,38.41],[16.28,38.25],[16.06,37.94],[15.72,37.94],[15.65,38.03],[15.64,38.18],[15.7,38.26],[15.82,38.3],[15.9,38.48],[15.88,38.61],[15.93,38.67],[15.97,38.71],[16.2,38.76],[16.21,38.94],[16.11,39.02],[16.02,39.35],[15.85,39.63],[15.69,39.99],[15.59,40.05],[15.29,40.07],[14.95,40.24],[14.93,40.31],[14.99,40.38],[14.95,40.47],[14.84,40.63],[14.77,40.67],[14.34,40.6],[14.46,40.73],[14.31,40.81],[14.04,40.81],[14.05,40.87],[13.86,41.13],[13.73,41.24],[13.67,41.25],[13.55,41.23],[13.25,41.29],[13.09,41.24],[12.85,41.41],[12.63,41.47],[12.08,41.94],[11.81,42.08],[11.64,42.29],[11.3,42.42],[11.14,42.39],[11.1,42.42],[11.18,42.46],[11.17,42.54],[10.94,42.74],[10.8,42.8],[10.71,42.94],[10.51,42.97],[10.52,43.2],[10.45,43.37],[10.32,43.51],[10.25,43.85],[10.19,43.95],[10.09,44.0],[8.16,44.0],[8.0,43.88],[7.26,43.7],[6.72,43.37],[6.66,43.26],[6.57,43.2],[6.12,43.07],[6.0,43.1],[6.0,44.0]]];
+
+    // ---------- Projection ----------
+    const LON0 = 8.3, LON1 = 28.2, LAT0 = 32.4, LAT1 = 42.6;
+    const KX = Math.cos(37.5 * Math.PI / 180);
+    const W = 1000;
+    const SX = W / (LON1 - LON0);
+    const SY = SX / KX;
+    const H = Math.round(SY * (LAT1 - LAT0));
+    const P = (ll) => [(ll[0] - LON0) * SX, (LAT1 - ll[1]) * SY];
+
+    // ---------- Places ----------
+    // a: label anchor, dx/dy: label offset in em, key: always labelled
+    const PL = {
+        troy:      { ll: [26.12, 39.98], name: 'Troy', a: 'start', dx: 0.7, dy: 0.35, key: true },
+        ismarus:   { ll: [25.55, 40.83], name: 'Ismarus, Cicones', a: 'end', dx: -0.6, dy: -0.4 },
+        malea:     { ll: [23.30, 36.35], name: 'Cape Malea', a: 'start', dx: 0.6, dy: 0.9 },
+        lotus:     { ll: [11.12, 33.80], name: 'Lotus-Eaters', a: 'start', dx: 0.6, dy: 1.0 },
+        cyclops:   { ll: [15.27, 37.58], name: 'Cyclopes', a: 'start', dx: 0.7, dy: 0.3 },
+        aeolus:    { ll: [14.95, 38.42], name: 'Aeolia', a: 'end', dx: -0.6, dy: -0.3 },
+        laestry:   { ll: [13.62, 41.20], name: 'Laestrygonians', a: 'start', dx: 0.6, dy: -0.4 },
+        circe:     { ll: [13.08, 41.20], name: 'Aeaea, Circe', a: 'end', dx: -0.6, dy: -0.4 },
+        hades:     { ll: [8.55, 38.62], name: 'Oceanus, House of Hades', a: 'start', dx: 0.3, dy: 1.25 },
+        sirens:    { ll: [14.40, 40.55], name: 'Sirens', a: 'start', dx: 0.6, dy: 0.4 },
+        scylla:    { ll: [15.62, 38.22], name: 'Scylla and Charybdis', a: 'start', dx: 0.7, dy: 0.1 },
+        thrinacia: { ll: [15.35, 37.05], name: 'Thrinacia', a: 'end', dx: -0.6, dy: 1.0 },
+        ogygia:    { ll: [14.27, 36.05], name: 'Ogygia, Calypso', a: 'middle', dx: 0, dy: 1.6, key: true },
+        scheria:   { ll: [19.76, 39.60], name: 'Scheria', a: 'end', dx: -1.2, dy: 0.3, key: true },
+        ithaca:    { ll: [20.74, 38.38], name: 'Ithaca', a: 'start', dx: 0.8, dy: 0.25, key: true, big: true },
+        pylos:     { ll: [21.63, 36.93], name: 'Pylos', a: 'end', dx: -0.6, dy: 0.5 },
+        pherae:    { ll: [22.11, 37.04], name: '', a: 'start', dx: 0, dy: 0 },
+        sparta:    { ll: [22.43, 37.07], name: 'Sparta', a: 'start', dx: 0.6, dy: 0.35 },
+        sight:     { ll: [20.15, 38.45], name: '', a: 'start', dx: 0, dy: 0 },
+        charyb:    { ll: [15.60, 38.20], name: '', a: 'start', dx: 0, dy: 0 },
+        landing:   { ll: [20.78, 38.33], name: '', a: 'start', dx: 0, dy: 0 }
+    };
+
+    // Reusable sea lanes (lists of waypoints, places by id)
+    const R = {
+        troyIsm:   ['troy', [26.10, 40.25], [25.90, 40.55], 'ismarus'],
+        ismMal:    ['ismarus', [25.20, 40.40], [24.90, 39.40], [24.75, 38.30], [24.00, 37.20], [23.40, 36.30], 'malea'],
+        malLot:    ['malea', [21.50, 35.30], [17.00, 34.80], [12.50, 34.05], 'lotus'],
+        lotCyc:    ['lotus', [12.60, 34.60], [15.00, 36.30], [15.48, 36.80], [15.35, 37.30], 'cyclops'],
+        cycOut:    ['cyclops', [15.45, 37.90]],
+        cycAeo:    [[15.45, 37.90], [15.60, 38.25], [15.35, 38.45], 'aeolus'],
+        aeoSight:  ['aeolus', [15.55, 38.30], [16.00, 37.80], [16.60, 37.75], [18.50, 38.30], 'sight'],
+        aeoLae:    ['aeolus', [14.60, 39.30], [14.00, 40.40], [13.75, 41.10], 'laestry'],
+        laeCir:    ['laestry', [13.30, 41.12], 'circe'],
+        cirHad:    ['circe', [12.20, 40.60], [10.30, 39.00], [9.30, 38.75], 'hades'],
+        cirSir:    ['circe', [13.60, 40.75], [14.15, 40.48], 'sirens'],
+        sirScy:    ['sirens', [14.90, 39.60], [15.55, 38.60], 'scylla'],
+        scyThr:    ['scylla', [15.45, 37.60], 'thrinacia'],
+        thrCha:    ['thrinacia', [15.45, 37.60], 'charyb'],
+        chaOgy:    ['charyb', [15.45, 37.60], [15.50, 36.60], [14.60, 36.12], 'ogygia'],
+        ogySch:    ['ogygia', [15.20, 36.30], [18.00, 37.60], [19.40, 39.00], [19.60, 39.45], 'scheria'],
+        schIth:    ['scheria', [19.60, 39.45], [20.10, 39.10], [20.45, 38.75], [20.80, 38.48], 'ithaca'],
+        ithOut:    ['ithaca', [20.80, 38.30], [20.85, 38.15]],
+        outPyl:    [[20.85, 38.15], [21.08, 37.75], [21.45, 37.10], 'pylos'],
+        pylPhe:    ['pylos', 'pherae'],
+        pheSpa:    ['pherae', 'sparta'],
+        spaPyl:    ['sparta', 'pherae', 'pylos'],
+        pylHome:   ['pylos', [21.45, 37.10], [21.08, 37.75], [21.00, 38.30], 'landing']
+    };
+    const rev = (a) => a.slice().reverse();
+
+    // ---------- The 24 books ----------
+    // O, T: Odysseus / Telemachus on the main chart. M: the ghost ship of the told wanderings.
+    // A track is a place id (stationary) or a list of legs [t0, t1, route, mode].
+    // io, it: positions on the Ithaca inset, same format (null = not on Ithaca).
+    const BOOKS = [
+        { title: 'Athena Comes to Ithaca', loc: 'Olympus, then the house of Odysseus on Ithaca',
+          q: 'Tell me, O Muse, of the man of many devices, who wandered full many ways after he had sacked the sacred citadel of Troy.',
+          who: 'The opening invocation',
+          O: 'ogygia', T: 'ithaca', io: null, it: 'palace',
+          wo: 'held on Ogygia by Calypso, unseen', wt: 'at home among the suitors' },
+        { title: 'The Assembly', loc: 'Ithaca, the place of assembly',
+          q: 'Then day by day she would weave at the great web, but by night would unravel it',
+          who: 'Antinous, of Penelope’s web',
+          O: 'ogygia', T: [[0.85, 1, R.ithOut]], io: null, it: [[0.78, 0.85, ['palace', 'phorcys']]], itUntil: 0.86,
+          wo: 'still on Ogygia', wt: 'sails at nightfall, in secret' },
+        { title: 'Nestor at Pylos', loc: 'Sandy Pylos',
+          q: 'And now the sun, leaving the beauteous mere, sprang up into the brazen heaven',
+          who: 'Telemachus lands at Pylos',
+          O: 'ogygia', T: [[0, 0.2, R.outPyl], [0.8, 1, R.pylPhe, 'land']], io: null, it: null,
+          wo: 'still on Ogygia', wt: 'with Nestor, then by chariot inland' },
+        { title: 'Menelaus and Helen', loc: 'Lacedaemon, the house of Menelaus',
+          q: 'a drug to quiet all pain and strife, and bring forgetfulness of every ill',
+          who: 'Helen’s drug, from Egypt',
+          O: 'ogygia', T: [[0, 0.15, R.pheSpa, 'land']], io: null, it: null,
+          wo: 'on Ogygia, as Proteus told Menelaus', wt: 'at Sparta; the suitors plan an ambush' },
+        { title: 'Calypso Lets Him Go', loc: 'Ogygia, then the raft, then the storm',
+          q: 'racking his soul with tears and groans and griefs, and he would look over the unresting sea, shedding tears.',
+          who: 'Odysseus on Calypso’s shore, as Hermes finds him',
+          O: [[0.35, 1, R.ogySch]], T: 'sparta', io: null, it: null,
+          wo: 'on a raft, then swimming for Scheria', wt: 'at Sparta' },
+        { title: 'Nausicaa', loc: 'Scheria, the river mouth',
+          q: 'Forth he came like a mountain-nurtured lion trusting in his might',
+          who: 'Odysseus comes out of the thicket',
+          O: 'scheria', T: 'sparta', io: null, it: null,
+          wo: 'shipwrecked on Scheria', wt: 'at Sparta' },
+        { title: 'The Palace of Alcinous', loc: 'Scheria, the city of the Phaeacians',
+          q: 'Of these the fruit perishes not nor fails in winter or in summer, but lasts throughout the year',
+          who: 'The orchard of Alcinous',
+          O: 'scheria', T: 'sparta', io: null, it: null,
+          wo: 'a nameless guest of Alcinous', wt: 'at Sparta' },
+        { title: 'The Songs of Demodocus', loc: 'Scheria, the games and the feast',
+          q: 'of his sight she deprived him, but gave him the gift of sweet song.',
+          who: 'Demodocus, the blind singer',
+          O: 'scheria', T: 'sparta', io: null, it: null,
+          wo: 'weeping at the song of Troy', wt: 'at Sparta' },
+        { title: 'The Cyclops', loc: 'Ismarus, the Lotus-Eaters, the cave of Polyphemus',
+          q: 'Noman is my name, Noman do they call me',
+          who: 'Odysseus to Polyphemus',
+          O: 'scheria', T: 'sparta',
+          M: [[0.05, 0.2, R.troyIsm], [0.25, 0.4, R.ismMal], [0.42, 0.6, R.malLot], [0.65, 0.76, R.lotCyc], [0.94, 1, R.cycOut]],
+          io: null, it: null, told: true,
+          wo: 'at the court of Alcinous, telling his tale', wt: 'at Sparta' },
+        { title: 'Aeolus, the Laestrygonians, Circe', loc: 'Aeolia, Telepylus, the isle of Aeaea',
+          q: 'They loosed the wallet, and all the winds leapt forth',
+          who: 'Odysseus, of his crew and the bag of winds',
+          O: 'scheria', T: 'sparta',
+          M: [[0, 0.1, R.cycAeo], [0.14, 0.3, R.aeoSight], [0.3, 0.4, rev(R.aeoSight)], [0.45, 0.56, R.aeoLae], [0.6, 0.66, R.laeCir]],
+          io: null, it: null, told: true,
+          wo: 'at the court of Alcinous, telling his tale', wt: 'at Sparta' },
+        { title: 'The Land of the Dead', loc: 'Deep-flowing Oceanus, the land of the Cimmerians',
+          q: 'I should choose, so I might live on earth, to serve as the hireling of another',
+          who: 'The ghost of Achilles',
+          O: 'scheria', T: 'sparta',
+          M: [[0, 0.14, R.cirHad]],
+          io: null, it: null, told: true,
+          wo: 'at the court of Alcinous, telling his tale', wt: 'at Sparta' },
+        { title: 'Sirens, Scylla, the Cattle of the Sun', loc: 'Aeaea, the Sirens, the strait, Thrinacia, Ogygia',
+          q: 'Come hither, as thou farest, renowned Odysseus, great glory of the Achaeans',
+          who: 'The song of the Sirens',
+          O: 'scheria', T: 'sparta',
+          M: [[0, 0.12, rev(R.cirHad)], [0.24, 0.34, R.cirSir], [0.37, 0.5, R.sirScy], [0.52, 0.58, R.scyThr], [0.8, 0.86, R.thrCha], [0.88, 1, R.chaOgy]],
+          io: null, it: null, told: true,
+          wo: 'at the court of Alcinous, ending his tale', wt: 'at Sparta' },
+        { title: 'Home, Asleep', loc: 'Scheria to Ithaca, the harbour of Phorcys',
+          q: 'sweet sleep fell upon his eyelids, an unawakening sleep, most sweet, and most like to death.',
+          who: 'Odysseus on the Phaeacian ship',
+          O: [[0.08, 0.3, R.schIth]], T: 'sparta', io: 'phorcys', ioFrom: 0.3, it: null,
+          wo: 'carried home asleep, then woken on Ithaca', wt: 'at Sparta; Athena goes to fetch him' },
+        { title: 'The Swineherd', loc: 'The hut of Eumaeus',
+          q: 'from Zeus are all strangers and beggars, and a gift, though small, is welcome',
+          who: 'Eumaeus to the stranger',
+          O: 'ithaca', T: 'sparta', io: [[0.04, 0.2, ['phorcys', 'hut']]], it: null,
+          wo: 'disguised as an old beggar', wt: 'at Sparta' },
+        { title: 'Telemachus Sails Home', loc: 'Sparta, Pylos, the open sea, Ithaca',
+          q: 'Than roaming naught else is more evil for mortals',
+          who: 'Odysseus to Eumaeus',
+          O: 'ithaca', T: [[0, 0.2, R.spaPyl, 'land'], [0.3, 0.72, R.pylHome]], io: 'hut',
+          it: 'landing', itFrom: 0.72,
+          wo: 'at the swineherd’s hut', wt: 'sailing home past the ambush' },
+        { title: 'Father and Son', loc: 'The hut of Eumaeus',
+          q: 'Be sure I am no god; why dost thou liken me to the immortals? Nay, I am thy father',
+          who: 'Odysseus to Telemachus',
+          O: 'ithaca', T: 'ithaca', io: 'hut', it: [[0, 0.15, ['landing', 'hut']]],
+          wo: 'revealed to his son', wt: 'at the hut, with his father' },
+        { title: 'Argos', loc: 'The palace of Odysseus',
+          q: 'when he marked Odysseus standing near, he wagged his tail and dropped both his ears',
+          who: 'The old hound Argos',
+          O: 'ithaca', T: 'ithaca', io: [[0.3, 0.5, ['hut', 'palace']]], it: [[0, 0.12, ['hut', 'palace']]],
+          wo: 'a beggar in his own hall', wt: 'at the palace' },
+        { title: 'Irus', loc: 'The great hall',
+          q: 'Nothing feebler does earth nurture than man',
+          who: 'Odysseus to Amphinomus',
+          O: 'ithaca', T: 'ithaca', io: 'palace', it: 'palace',
+          wo: 'a beggar in his own hall', wt: 'at the palace' },
+        { title: 'The Scar', loc: 'The hall at night, Penelope and the stranger',
+          q: 'straightway knew the scar of the wound which long ago a boar had dealt him with his white tusk',
+          who: 'Eurycleia, washing his feet',
+          O: 'ithaca', T: 'ithaca', io: 'palace', it: 'palace',
+          wo: 'known to his old nurse, and to no one else', wt: 'at the palace' },
+        { title: 'The Night Before', loc: 'The palace, the last feast of the suitors',
+          q: 'Endure, my heart; a worse thing even than this didst thou once endure',
+          who: 'Odysseus to his own heart',
+          O: 'ithaca', T: 'ithaca', io: 'palace', it: 'palace',
+          wo: 'awake in the forecourt', wt: 'at the palace' },
+        { title: 'The Bow', loc: 'The great hall',
+          q: 'tried the string, which sang sweetly beneath his touch, like to a swallow in tone.',
+          who: 'Odysseus strings the bow',
+          O: 'ithaca', T: 'ithaca', io: 'palace', it: 'palace',
+          wo: 'holding his own bow', wt: 'at the palace' },
+        { title: 'The Slaughter of the Suitors', loc: 'The great hall',
+          q: 'Ye dogs, ye thought that I should never more come home from the land of the Trojans',
+          who: 'Odysseus to the suitors',
+          O: 'ithaca', T: 'ithaca', io: 'palace', it: 'palace',
+          wo: 'master of his house again', wt: 'fighting at his side' },
+        { title: 'The Bed', loc: 'The bedchamber',
+          q: 'A bush of long-leafed olive was growing within the court, strong and vigorous, and girth it was like a pillar.',
+          who: 'Odysseus to Penelope, the secret of the bed',
+          O: 'ithaca', T: 'ithaca', io: 'palace', it: 'palace',
+          wo: 'with Penelope at last', wt: 'at the palace' },
+        { title: 'Peace', loc: 'The farm of Laertes',
+          q: 'let them love one another as before, and let wealth and peace abound.',
+          who: 'Zeus to Athena',
+          O: 'ithaca', T: 'ithaca', io: [[0.15, 0.35, ['palace', 'farm']]], it: [[0.15, 0.35, ['palace', 'farm']]],
+          wo: 'with his father, Laertes', wt: 'with them both' }
+    ];
+
+    const LETTERS = 'αβγδεζηθικλμνξοπρστυφχψω'.split('');
+    const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX','XXI','XXII','XXIII','XXIV'];
+    const NUMWORD = ['one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty','twenty-one','twenty-two','twenty-three','twenty-four'];
+    const MOVES = [
+        { k: 'T', name: 'The Telemachy', from: 0, to: 4 },
+        { k: 'P', name: 'The Phaeacians', from: 4, to: 8 },
+        { k: 'M', name: 'The wanderings', from: 8, to: 12 },
+        { k: 'I', name: 'Ithaca', from: 12, to: 24 }
+    ];
+    const moveOf = (i) => MOVES.find(m => i >= m.from && i < m.to);
+
+    // ---------- Geometry helpers ----------
+    const pt = (p) => (typeof p === 'string' ? PL[p].ll : p);
+    const routePts = (r) => r.map(p => P(pt(p)));
+
+    function along(pts, f) {
+        let total = 0;
+        const seg = [];
+        for (let i = 1; i < pts.length; i++) {
+            const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+            seg.push(d); total += d;
         }
-
-        function getBookForHour(hour) {
-            return books.find(b => b.hour === hour) || books[0];
-        }
-
-        function renderVerses(verses) {
-            versesEl.innerHTML = verses.map(verse => `
-                <div class="verse">${verse}</div>
-            `).join('');
-        }
-
-        function updateClock() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
-
-            // Update time display
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
-
-            // Get current book
-            const book = getBookForHour(hour);
-            const bookIndex = books.indexOf(book);
-
-            // Update years wandering (10 years for the journey)
-            if (hour < 6) {
-                yearsEl.textContent = '10';
-            } else if (hour < 12) {
-                yearsEl.textContent = '7';
-            } else if (hour < 18) {
-                yearsEl.textContent = '3';
-            } else {
-                yearsEl.textContent = '0';
+        let want = Math.max(0, Math.min(1, f)) * total;
+        for (let i = 0; i < seg.length; i++) {
+            if (want <= seg[i] || i === seg.length - 1) {
+                const k = seg[i] ? Math.min(1, want / seg[i]) : 0;
+                return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k, pts[i + 1][0] - pts[i][0]];
             }
-
-            // Update content if book changed
-            if (bookIndex !== currentBookIndex) {
-                bookEl.textContent = book.book;
-                adventureTitleEl.textContent = book.title;
-                locationEl.textContent = book.location;
-                renderVerses(book.verses);
-                currentBookIndex = bookIndex;
-            }
+            want -= seg[i];
         }
+        return [pts[0][0], pts[0][1], 0];
+    }
 
-        // Initialize
-        createStars();
-        updateClock();
-        setInterval(updateClock, 1000);
-    </script>
+    // Position on a track at fraction t of the hour. proj: route -> projected points.
+    function trackPos(track, t, proj) {
+        if (track == null) return null;
+        if (typeof track === 'string') { const p = proj([track])[0]; return { x: p[0], y: p[1], dir: 1, moving: false }; }
+        let last = null;
+        for (const leg of track) {
+            const pts = proj(leg[2]);
+            if (t < leg[0]) {
+                const p = last || pts[0];
+                return { x: p[0], y: p[1], dir: last ? last[2] : (pts[1][0] - pts[0][0] < 0 ? -1 : 1), moving: false };
+            }
+            if (t <= leg[1]) {
+                const a = along(pts, (t - leg[0]) / (leg[1] - leg[0]));
+                return { x: a[0], y: a[1], dir: a[2] < 0 ? -1 : 1, moving: true, leg };
+            }
+            const e = pts[pts.length - 1], b = pts[pts.length - 2];
+            last = [e[0], e[1], e[0] - b[0] < 0 ? -1 : 1];
+        }
+        return { x: last[0], y: last[1], dir: last[2], moving: false };
+    }
+
+    // ---------- Static chart ----------
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const map = document.getElementById('map');
+    map.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    const f1 = (n) => Math.round(n * 10) / 10;
+    const ringPath = (rings, proj) => rings.map(r => 'M' + r.map(ll => proj(ll).map(f1).join(',')).join('L') + 'Z').join('');
+    const polyline = (pts) => 'M' + pts.map(p => p.map(f1).join(',')).join('L');
+
+    // Stars, from a fixed seed so they never jump
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let stars = '';
+    for (let i = 0; i < 140; i++) {
+        stars += `<circle cx="${f1(rnd() * W)}" cy="${f1(rnd() * H)}" r="${f1(0.6 + rnd() * 1.1)}" opacity="${f1(0.35 + rnd() * 0.65)}"/>`;
+    }
+
+    let grat = '';
+    for (let lon = 10; lon <= 28; lon += 2) { const x = f1(P([lon, 0])[0]); grat += `M${x},0V${H}`; }
+    for (let lat = 34; lat <= 42; lat += 2) { const y = f1(P([0, lat])[1]); grat += `M0,${y}H${W}`; }
+
+    map.innerHTML = `
+        <defs>
+            <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" id="seaTop" stop-color="#2b1b3e"/>
+                <stop offset="1" id="seaBot" stop-color="#1b1029"/>
+            </linearGradient>
+            <radialGradient id="dawnG" cx="1.05" cy="0.35" r="0.85">
+                <stop offset="0" stop-color="#f39a9a" stop-opacity="0.55"/>
+                <stop offset="0.5" stop-color="#d77a8a" stop-opacity="0.18"/>
+                <stop offset="1" stop-color="#d77a8a" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="duskG" cx="-0.05" cy="0.4" r="0.85">
+                <stop offset="0" stop-color="#e9a25a" stop-opacity="0.5"/>
+                <stop offset="0.5" stop-color="#c0703a" stop-opacity="0.15"/>
+                <stop offset="1" stop-color="#c0703a" stop-opacity="0"/>
+            </radialGradient>
+        </defs>
+        <rect width="${W}" height="${H}" fill="url(#seaG)"/>
+        <g id="stars" fill="#f4ead2">${stars}</g>
+        <rect id="dawn" width="${W}" height="${H}" fill="url(#dawnG)" opacity="0"/>
+        <rect id="dusk" width="${W}" height="${H}" fill="url(#duskG)" opacity="0"/>
+        <path class="grat" d="${grat}" stroke-width="1"/>
+        <path class="land" d="${ringPath(RINGS, P)}" stroke-width="1"/>
+        <g id="routes" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+        <g id="dyn"></g>
+        <g id="labels"></g>`;
+
+    // ---------- Ithaca inset ----------
+    const ITH = [[20.640,38.505],[20.660,38.497],[20.672,38.470],[20.690,38.455],[20.700,38.440],[20.688,38.420],[20.675,38.400],[20.682,38.385],[20.700,38.383],[20.712,38.378],[20.720,38.368],[20.730,38.366],[20.727,38.378],[20.740,38.392],[20.760,38.386],[20.776,38.370],[20.768,38.350],[20.756,38.330],[20.745,38.312],[20.726,38.300],[20.708,38.303],[20.700,38.320],[20.685,38.340],[20.672,38.355],[20.660,38.365],[20.655,38.378],[20.648,38.395],[20.635,38.420],[20.625,38.445],[20.622,38.470],[20.628,38.495]];
+    const IP = {
+        phorcys: { ll: [20.722, 38.374], name: 'Phorcys', a: 'start', dx: 10, dy: -12 },
+        palace:  { ll: [20.668, 38.374], name: 'Palace', a: 'middle', dx: -16, dy: 26 },
+        hut:     { ll: [20.744, 38.327], name: 'Eumaeus', a: 'end', dx: -9, dy: 12 },
+        farm:    { ll: [20.648, 38.452], name: 'Laertes', a: 'start', dx: 10, dy: -14 },
+        landing: { ll: [20.712, 38.306], name: '', a: 'start', dx: 0, dy: 0 }
+    };
+    const ILON0 = 20.535, ILON1 = 20.865, ILAT1 = 38.525;
+    const ISX = 200 / (ILON1 - ILON0), ISY = ISX / KX;
+    const IPj = (ll) => [(ll[0] - ILON0) * ISX, (ILAT1 - ll[1]) * ISY];
+    const iproj = (r) => r.map(p => IPj(typeof p === 'string' ? IP[p].ll : p));
+    const ithaca = document.getElementById('ithaca');
+    const neighbours = RINGS.filter(r => {
+        const xs = r.map(p => p[0]), ys = r.map(p => p[1]);
+        const small = Math.max(...xs) - Math.min(...xs) < 0.2 && Math.min(...xs) > 20.6;
+        return !small && Math.max(...xs) > 20.4 && Math.min(...xs) < 21.0 && Math.max(...ys) > 38.2 && Math.min(...ys) < 38.6;
+    });
+    let ilabels = '';
+    for (const k in IP) {
+        const p = IP[k]; if (!p.name) continue;
+        const [x, y] = IPj(p.ll);
+        ilabels += `<circle cx="${f1(x)}" cy="${f1(y)}" r="3.2" fill="#b39c5e"/><text class="lbl dim" x="${f1(x + p.dx)}" y="${f1(y + p.dy)}" text-anchor="${p.a}" font-size="16" stroke-width="4">${p.name}</text>`;
+    }
+    ithaca.innerHTML = `
+        <defs><clipPath id="iclip"><rect width="200" height="215"/></clipPath></defs>
+        <rect width="200" height="215" fill="#1d1230" stroke="#8a7a4a" stroke-width="1.5"/>
+        <g clip-path="url(#iclip)">
+            <path class="land" d="${ringPath(neighbours, IPj)}" stroke-width="1" opacity="0.55"/>
+            <path class="land" d="${ringPath([ITH], IPj)}" stroke-width="1.6"/>
+            ${ilabels}
+            <g id="idyn"></g>
+        </g>`;
+
+    // ---------- Ship glyph ----------
+    function ship(x, y, dir, color, s, ghost, title) {
+        const fill = ghost ? 'none' : color;
+        return `<g transform="translate(${f1(x)},${f1(y)}) scale(${(dir < 0 ? -s : s).toFixed(2)},${s.toFixed(2)})">` +
+            (title ? `<title>${title}</title>` : '') +
+            `<circle r="13" fill="#140c1e" opacity="0.55"/>` +
+            `<path d="M-11,2 L11,2 L7,8 L-8,8 Z" fill="${fill}" stroke="${color}" stroke-width="${ghost ? 1.6 : 1}" stroke-linejoin="round"/>` +
+            `<path d="M0,2 V-12" stroke="${color}" stroke-width="1.6"/>` +
+            `<path d="M-6,-11 H6 V-1 H-6 Z" fill="${fill}" stroke="${color}" stroke-width="${ghost ? 1.6 : 1}" opacity="${ghost ? 1 : 0.9}"/>` +
+            `<path d="M11,2 L14,-2" stroke="${color}" stroke-width="1.6" stroke-linecap="round"/>` +
+            `</g>`;
+    }
+
+    const COL = { O: '#e2c06c', T: '#7cc9b8', M: '#ec8559' };
+
+    // ---------- Dynamic drawing ----------
+    let unit = 1;          // SVG units per CSS pixel
+    let lastBook = -1;
+    let lastRouteKey = '';
+
+    function measure() {
+        const w = map.getBoundingClientRect().width || 800;
+        unit = W / w;
+    }
+
+    function drawRoutes(bi) {
+        const key = bi + ':' + unit.toFixed(2);
+        if (key === lastRouteKey) return;
+        lastRouteKey = key;
+        let out = '';
+        BOOKS.forEach((b, i) => {
+            const state = i < bi ? 'past' : i === bi ? 'now' : 'future';
+            ['M', 'T', 'O'].forEach(w => {
+                const tr = b[w];
+                if (!tr || typeof tr === 'string') return;
+                tr.forEach(leg => {
+                    const land = leg[3] === 'land';
+                    const op = state === 'now' ? 0.95 : state === 'past' ? 0.5 : 0.24;
+                    const sw = (state === 'now' ? 2.6 : 1.5) * unit;
+                    let dash = '';
+                    if (w === 'M') dash = `${f1(7 * unit)} ${f1(5 * unit)}`;
+                    if (land) dash = `${f1(1.5 * unit)} ${f1(4 * unit)}`;
+                    out += `<path d="${polyline(routePts(leg[2]))}" stroke="${COL[w]}" stroke-width="${f1(sw)}" opacity="${op}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+                });
+            });
+        });
+        document.getElementById('routes').innerHTML = out;
+    }
+
+    function drawLabels(bi) {
+        const wide = W / unit >= 560;
+        const b = BOOKS[bi];
+        const hot = new Set();
+        ['O', 'T', 'M'].forEach(w => {
+            const tr = b[w];
+            if (typeof tr === 'string') hot.add(tr);
+            else if (tr) tr.forEach(l => l[2].forEach(p => { if (typeof p === 'string') hot.add(p); }));
+        });
+        const fs = (wide ? 13 : 11) * unit;
+        let out = '';
+        for (const k in PL) {
+            const p = PL[k];
+            if (!p.name) continue;
+            const isHot = hot.has(k);
+            if (!wide && !p.key && !isHot) continue;
+            const [x, y] = P(p.ll);
+            const size = p.big ? fs * 1.25 : fs;
+            out += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.6 * unit)}" fill="${isHot ? '#fff3d2' : '#b39c5e'}"/>`;
+            out += `<text class="lbl${isHot ? ' hot' : (p.key ? '' : ' dim')}" x="${f1(x + p.dx * size)}" y="${f1(y + p.dy * size)}" text-anchor="${p.a}" font-size="${f1(size)}" stroke-width="${f1(3.5 * unit)}">${p.name}</text>`;
+        }
+        document.getElementById('labels').innerHTML = out;
+    }
+
+    function tint(h) {
+        // h: hours as a real number. Sea brightness and the dawn/dusk glows.
+        const day = Math.max(0, Math.cos((h - 13) / 24 * 2 * Math.PI));   // 0 at night, 1 mid-afternoon
+        const night = h < 5 || h >= 21 ? 1 : h < 7 ? (7 - h) / 2 : h >= 19 ? (h - 19) / 2 : 0;
+        const mix = (a, b, k) => '#' + [0, 2, 4].map(i => {
+            const c = Math.round(parseInt(a.substr(i + 1, 2), 16) * (1 - k) + parseInt(b.substr(i + 1, 2), 16) * k);
+            return c.toString(16).padStart(2, '0');
+        }).join('');
+        document.getElementById('seaTop').setAttribute('stop-color', mix('#1a1030', '#3a2550', day));
+        document.getElementById('seaBot').setAttribute('stop-color', mix('#0f0a1c', '#28183a', day));
+        document.getElementById('stars').setAttribute('opacity', (night * 0.8).toFixed(2));
+        const bell = (c, w) => Math.max(0, 1 - Math.abs(h - c) / w);
+        document.getElementById('dawn').setAttribute('opacity', bell(6.2, 1.9).toFixed(2));
+        document.getElementById('dusk').setAttribute('opacity', bell(19, 1.6).toFixed(2));
+    }
+
+    function drawDynamic(bi, t) {
+        const b = BOOKS[bi];
+        const s = (W / unit < 560 ? 0.9 : 1.15) * unit;
+        let out = '';
+        const o = trackPos(b.O, t, routePts);
+        const tl = trackPos(b.T, t, routePts);
+        // keep the two ships apart when both are at Ithaca
+        if (o && tl && Math.hypot(o.x - tl.x, o.y - tl.y) < 18 * unit) { tl.x += 10 * unit; tl.y += 16 * unit; o.x -= 6 * unit; o.y -= 8 * unit; }
+        if (b.M) {
+            const m = trackPos(b.M, t, routePts);
+            out += `<path d="M${f1(o.x)},${f1(o.y)}L${f1(m.x)},${f1(m.y)}" stroke="${COL.M}" stroke-width="${f1(1 * unit)}" stroke-dasharray="${f1(2 * unit)} ${f1(5 * unit)}" opacity="0.55"/>`;
+            out += ship(m.x, m.y, m.dir, COL.M, s * 1.1, true, 'The ship as Odysseus remembers it');
+        }
+        if (tl) out += ship(tl.x, tl.y, tl.dir, COL.T, s, false, 'Telemachus');
+        if (o) out += ship(o.x, o.y, o.dir, COL.O, s * 1.15, false, 'Odysseus');
+        document.getElementById('dyn').innerHTML = out;
+
+        // Inset
+        let iout = '';
+        const [px, py] = IPj(IP.palace.ll);
+        iout += `<circle cx="${f1(px + 4)}" cy="${f1(py + 15)}" r="5" fill="#ef9d9d" stroke="#140c1e" stroke-width="1.5"><title>Penelope, waiting</title></circle>`;
+        let io = b.io && !(b.ioFrom && t < b.ioFrom) ? trackPos(b.io, t, iproj) : null;
+        let it = b.it && !(b.itFrom && t < b.itFrom) && !(b.itUntil && t > b.itUntil) ? trackPos(b.it, t, iproj) : null;
+        if (io && it && Math.hypot(io.x - it.x, io.y - it.y) < 14) { it.x += 12; it.y += 12; io.x -= 7; io.y -= 9; }
+        if (it) iout += ship(it.x, it.y, 1, COL.T, 1.0, false, 'Telemachus');
+        if (io) iout += ship(io.x, io.y, 1, COL.O, 1.1, false, 'Odysseus');
+        document.getElementById('idyn').innerHTML = iout;
+    }
+
+    // ---------- Text ----------
+    const $ = (id) => document.getElementById(id);
+    const ribbon = $('ribbon');
+    MOVES.forEach((m, i) => {
+        const d = document.createElement('div');
+        d.className = 'mv mv-' + m.k;
+        d.textContent = m.name;
+        d.style.setProperty('--c24', `${m.from + 1} / ${m.to + 1}`);
+        const half = m.from >= 12 ? 1 : 0;
+        d.style.setProperty('--c12', `${m.from - half * 12 + 1} / ${m.to - half * 12 + 1}`);
+        d.style.setProperty('--r12', String(1 + half * 2));
+        ribbon.appendChild(d);
+    });
+    const cells = LETTERS.map((L, i) => {
+        const c = document.createElement('div');
+        c.className = 'cell' + (i >= 8 && i < 12 ? ' M' : '');
+        c.innerHTML = `<span class="gl greek">${L}</span><span class="hr">${String(i).padStart(2, '0')}</span>`;
+        c.title = `Book ${ROMAN[i]}, ${BOOKS[i].title} (${String(i).padStart(2, '0')}:00 to ${String(i).padStart(2, '0')}:59)`;
+        c.style.setProperty('--c24', String(i + 1));
+        const half = i >= 12 ? 1 : 0;
+        c.style.setProperty('--c12', String(i - half * 12 + 1));
+        c.style.setProperty('--r12', String(2 + half * 2));
+        ribbon.appendChild(c);
+        return c;
+    });
+
+    function setBookText(bi) {
+        const b = BOOKS[bi];
+        const m = moveOf(bi);
+        $('letter').textContent = LETTERS[bi];
+        $('bookno').textContent = 'Book ' + ROMAN[bi];
+        const mv = $('movement');
+        mv.textContent = m.k === 'M' ? 'In flashback, told at Scheria' : m.name;
+        mv.className = 'movement m-' + m.k;
+        $('title').textContent = b.title;
+        $('loc').textContent = b.loc;
+        $('qtext').textContent = '“' + b.q + '”';
+        $('qcite').textContent = b.who + ', Book ' + ROMAN[bi];
+        $('quote').classList.toggle('told', !!b.told);
+        $('wo').textContent = b.wo;
+        $('wt').textContent = b.wt;
+        cells.forEach((c, i) => {
+            c.classList.toggle('past', i < bi);
+            c.classList.toggle('cur', i === bi);
+            if (i !== bi) c.style.removeProperty('--p');
+            c.setAttribute('aria-current', i === bi ? 'true' : 'false');
+        });
+        $('live').textContent = `Hour ${bi}: Book ${NUMWORD[bi]}, ${b.title}.`;
+    }
+
+    function setFormula(h) {
+        const f = $('formula');
+        if (h >= 5 && h < 8) {
+            f.hidden = false; f.className = 'formula';
+            $('ftext').textContent = '“Soon as early Dawn appeared, the rosy-fingered …”';
+            $('fgreek').textContent = 'ἦμος δʼ ἠριγένεια φάνη ῥοδοδάκτυλος Ἠώς';
+        } else if (h >= 18 && h < 20) {
+            f.hidden = false; f.className = 'formula dusk';
+            $('ftext').textContent = '“Now the sun set and all the ways grew dark.”';
+            $('fgreek').textContent = 'δύσετό τʼ ἠέλιος σκιόωντό τε πᾶσαι ἀγυιαί';
+        } else {
+            f.hidden = true;
+        }
+    }
+
+    function tick() {
+        const now = new Date();
+        const h = now.getHours(), mi = now.getMinutes(), se = now.getSeconds();
+        const t = (mi * 60 + se) / 3600;
+        const bi = h;  // hour 0 is Book I, hour 23 is Book XXIV
+        $('hm').textContent = String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+        $('sec').textContent = ':' + String(se).padStart(2, '0');
+        $('clock').setAttribute('aria-label', `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}, Book ${ROMAN[bi]}`);
+        if (bi !== lastBook) { setBookText(bi); lastBook = bi; }
+        cells[bi].style.setProperty('--p', (t * 100).toFixed(1) + '%');
+        setFormula(h);
+        tint(h + mi / 60);
+        drawRoutes(bi);
+        drawLabels(bi);
+        drawDynamic(bi, t);
+    }
+
+    measure();
+    tick();
+    setInterval(tick, 1000);
+    let rz;
+    window.addEventListener('resize', () => {
+        clearTimeout(rz);
+        rz = setTimeout(() => { measure(); lastRouteKey = ''; tick(); }, 120);
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); lastRouteKey = ''; tick(); });
+})();
+</script>
 </body>
-
 </html>
