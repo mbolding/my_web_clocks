@@ -1,635 +1,1136 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Old Man and the Sea Clock</title>
+    <meta name="description" content="Santiago's three days on the Gulf Stream run once a day, as a cross-section of sea: the skiff on top, the line under strain, the marlin below, then the sharks.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --deep: #020b16;
+            --ink: #e6edf2;
+            --ink-soft: #b3c4d2;
+            --ink-dim: #8ea4b7;
+            --line: #e7dcbc;
+            --strain: #f0a35a;
+            --blood: #d0574a;
+            --bone: #ece3cc;
+            --panel: rgba(2, 10, 20, 0.72);
+            --rule: rgba(180, 205, 225, 0.22);
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; background: var(--deep); }
 
         body {
-            min-height: 100vh;
-            background: linear-gradient(to bottom, #0a2a4a 0%, #1a4a6a 50%, #0a1a2a 100%);
-            font-family: 'PT Serif', serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: #c8d4dc;
-            position: relative;
+            color: var(--ink);
+            font-family: 'PT Serif', Georgia, serif;
             overflow: hidden;
-            transition: background 3s ease;
+            position: relative;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
-        body.dawn {
-            background: linear-gradient(to bottom, #ff6b4a 0%, #ffa06a 30%, #4a6a8a 100%);
-        }
-
-        body.day {
-            background: linear-gradient(to bottom, #4a8aca 0%, #6aaaea 50%, #2a5a8a 100%);
-        }
-
-        body.dusk {
-            background: linear-gradient(to bottom, #2a3a5a 0%, #ff6b4a 30%, #1a2a4a 100%);
-        }
-
-        body.night {
-            background: linear-gradient(to bottom, #0a1a2a 0%, #1a2a3a 50%, #000010 100%);
-        }
-
-        .ocean-waves {
+        canvas#sea {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 40%;
-            pointer-events: none;
-            opacity: 0.2;
+            inset: 0;
+            display: block;
             z-index: 0;
         }
 
-        .wave {
-            position: absolute;
-            bottom: 0;
-            width: 200%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 50px,
-                rgba(200, 220, 240, 0.1) 50px,
-                rgba(200, 220, 240, 0.1) 100px
-            );
-            animation: waveMove 20s linear infinite;
-        }
-
-        @keyframes waveMove {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
-        .wave:nth-child(2) {
-            animation-duration: 15s;
-            opacity: 0.5;
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: rgba(10, 20, 30, 0.85);
-            border: 2px solid #4a6a8a;
-            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
-            padding: 3rem 2.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
         .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid rgba(200, 212, 220, 0.2);
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 4px 24px;
+            padding: clamp(10px, 2vw, 18px) clamp(16px, 3vw, 36px);
+            background: linear-gradient(to bottom, rgba(2, 10, 20, 0.7), rgba(2, 10, 20, 0.45));
+            border-bottom: 1px solid var(--rule);
         }
 
         .title {
             font-family: 'Merriweather', serif;
-            font-size: clamp(2rem, 5vw, 3.5rem);
             font-weight: 700;
-            color: #e8ecf0;
-            margin-bottom: 0.75rem;
-            letter-spacing: 0.02em;
+            font-size: clamp(1.05rem, 2.6vw, 1.6rem);
+            letter-spacing: 0.01em;
+            line-height: 1.2;
         }
 
         .author {
-            font-size: 1.1rem;
-            color: #a8b4bc;
-            letter-spacing: 0.2em;
+            font-size: clamp(0.7rem, 1.3vw, 0.85rem);
+            letter-spacing: 0.22em;
             text-transform: uppercase;
+            color: var(--ink-soft);
+            margin-top: 2px;
         }
 
-        .time-display {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(200, 212, 220, 0.15);
-        }
-
-        .current-time {
-            font-family: 'Merriweather', serif;
-            font-size: clamp(2.5rem, 6vw, 5rem);
-            font-weight: 700;
-            color: #c8d4dc;
-            margin-bottom: 0.5rem;
-        }
-
-        .day-indicator {
-            font-size: 0.9rem;
-            color: #8a94a0;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-        }
-
-        .struggle-section {
-            margin-bottom: 2rem;
-        }
-
-        .moment-title {
-            font-family: 'Merriweather', serif;
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            font-weight: 700;
-            color: #d8e4ec;
-            margin-bottom: 1rem;
-        }
-
-        .location {
-            font-size: 0.95rem;
-            color: #9aa4b0;
+        .key {
+            font-size: clamp(0.78rem, 1.4vw, 0.92rem);
+            color: var(--ink-soft);
             font-style: italic;
-            margin-bottom: 1.5rem;
+            max-width: 34em;
+            text-align: right;
         }
 
-        .passage-container {
+        .panel {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 2;
+            background: linear-gradient(to bottom, rgba(2, 10, 20, 0.35), var(--panel) 28%);
+            border-top: 1px solid var(--rule);
+            padding: clamp(12px, 2vw, 20px) clamp(16px, 3vw, 36px) clamp(14px, 2.4vw, 24px);
+        }
+
+        .panel-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+            column-gap: clamp(20px, 4vw, 48px);
+            row-gap: clamp(10px, 1.6vw, 16px);
+            align-items: start;
+        }
+
+        .clock-col { min-width: 0; }
+
+        .time {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            font-size: clamp(2.6rem, 7vw, 4.6rem);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+
+        .time .sec {
+            font-size: 0.42em;
+            color: var(--ink-dim);
+            font-weight: 400;
+            margin-left: 0.1em;
+        }
+
+        .aboard {
+            margin-top: 8px;
+            font-size: clamp(0.85rem, 1.6vw, 1rem);
+            color: var(--ink-soft);
+        }
+
+        .aboard b { color: var(--ink); font-weight: 700; }
+
+        .story-col { min-width: 0; }
+
+        .phase {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            font-size: clamp(1rem, 2.1vw, 1.3rem);
+            color: var(--ink);
+            margin-bottom: 4px;
+        }
+
+        .prose {
+            font-size: clamp(0.92rem, 1.7vw, 1.05rem);
+            line-height: 1.5;
+            color: #d3dee7;
+            max-width: 46em;
+        }
+
+        .meter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: clamp(0.75rem, 1.3vw, 0.85rem);
+            color: var(--ink-soft);
+        }
+
+        .meter .label { white-space: nowrap; }
+
+        .meter .bar {
+            display: block;
+            flex: 1;
+            max-width: 220px;
+            height: 6px;
+            background: rgba(180, 205, 225, 0.16);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .meter .fill {
+            display: block;
+            height: 100%;
+            width: 0%;
+            background: var(--line);
+            border-radius: 3px;
+        }
+
+        .quote {
+            margin-top: 10px;
+            font-style: italic;
+            font-size: clamp(0.9rem, 1.6vw, 1rem);
+            color: var(--bone);
+            border-left: 2px solid var(--blood);
+            padding-left: 10px;
+        }
+
+        .quote cite {
+            font-style: normal;
+            color: var(--ink-dim);
+            font-size: 0.85em;
+            margin-left: 0.4em;
+        }
+
+        .quote[hidden] { display: none; }
+
+        /* The voyage, 72 hours of it, laid along the 24 hours of the clock */
+        .voyage {
+            grid-column: 1 / -1;
             position: relative;
-            min-height: 180px;
-            margin-bottom: 1.5rem;
+            padding-top: 2px;
         }
 
-        .passage {
-            font-size: clamp(1rem, 2.2vw, 1.2rem);
-            line-height: 1.9;
-            color: #d8dce0;
-            opacity: 0;
+        .days {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            font-size: clamp(0.68rem, 1.2vw, 0.8rem);
+            color: var(--ink-dim);
+            margin-bottom: 5px;
+        }
+
+        .days span { padding-left: 6px; border-left: 1px solid var(--rule); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .days span i { font-style: normal; }
+        .days span.on { color: var(--ink); }
+
+        .track {
+            position: relative;
+            height: 10px;
+            background: rgba(180, 205, 225, 0.12);
+            border-radius: 2px;
+        }
+
+        .seg {
+            position: absolute;
+            top: 0; bottom: 0;
+            border-radius: 2px;
+        }
+
+        .seg.tow { background: rgba(231, 220, 188, 0.35); }
+        .seg.sharks { background: rgba(208, 87, 74, 0.45); }
+
+        .daymark {
+            position: absolute;
+            top: -3px; bottom: -3px;
+            width: 1px;
+            background: var(--rule);
+        }
+
+        .tick {
+            position: absolute;
+            top: -2px; bottom: -2px;
+            width: 2px;
+            margin-left: -1px;
+            background: var(--ink-soft);
+        }
+
+        .now {
+            position: absolute;
+            top: -6px; bottom: -6px;
+            width: 3px;
+            margin-left: -1.5px;
+            background: #fff;
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+        }
+
+        .ticklabels {
+            position: relative;
+            height: 1.3em;
+            margin-top: 6px;
+            font-size: clamp(0.66rem, 1.1vw, 0.76rem);
+            color: var(--ink-dim);
+        }
+
+        .ticklabels span {
             position: absolute;
             top: 0;
-            left: 0;
-            right: 0;
-            animation: passageFade 15s ease-in-out infinite;
+            transform: translateX(-50%);
+            white-space: nowrap;
         }
 
-        .passage:nth-child(1) { animation-delay: 0s; }
-        .passage:nth-child(2) { animation-delay: 5s; }
-        .passage:nth-child(3) { animation-delay: 10s; }
+        .ticklabels span.end { transform: translateX(-100%); }
+        .ticklabels span.past { color: var(--ink-soft); }
 
-        @keyframes passageFade {
-            0% { opacity: 0; transform: translateY(8px); }
-            3%, 30% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(8px); }
+        .sr-only {
+            position: absolute;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
-        .hemingway-line {
-            font-size: clamp(0.95rem, 2vw, 1.15rem);
-            line-height: 1.8;
-            color: #b8c4cc;
-            padding: 1.5rem;
-            background: rgba(74, 106, 138, 0.15);
-            border-left: 4px solid #6a9aca;
-            margin-top: 1rem;
-            font-style: italic;
-        }
-
-        .catch-counter {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            text-align: right;
-            padding: 1rem;
-            background: rgba(10, 20, 30, 0.8);
-            border: 2px solid #4a6a8a;
-        }
-
-        .catch-counter .day {
-            font-family: 'Merriweather', serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #c8d4dc;
-            display: block;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .catch-counter .label {
-            font-size: 0.8rem;
-            color: #8a94a0;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
-
-            .catch-counter {
-                bottom: 1rem;
-                right: 1rem;
-                padding: 0.75rem;
-            }
+        @media (max-width: 760px) {
+            .header { align-items: flex-start; }
+            .key { text-align: left; max-width: none; }
+            .panel-inner { grid-template-columns: 1fr; }
+            .clock-col { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; }
+            .aboard { margin-top: 0; }
+            .ticklabels { display: none; }
+            .meter .bar { max-width: none; }
+            .days span i { display: block; }
         }
     </style>
 </head>
+<body>
+    <canvas id="sea" aria-hidden="true"></canvas>
 
-<body class="night">
-    <div class="ocean-waves">
-        <div class="wave"></div>
-        <div class="wave"></div>
-    </div>
-
-    <div class="container">
-        <div class="header">
+    <header class="header">
+        <div>
             <h1 class="title">The Old Man and the Sea</h1>
             <div class="author">Ernest Hemingway</div>
         </div>
+        <p class="key">His three days at sea, run once a day: each clock hour is three hours in the skiff.</p>
+    </header>
 
-        <div class="time-display">
-            <div class="current-time" id="time">00:00</div>
-            <div class="day-indicator" id="day-indicator">Far Out at Sea</div>
-        </div>
-
-        <div class="struggle-section">
-            <h2 class="moment-title" id="moment-title">The Struggle</h2>
-            <div class="location" id="location">The Gulf Stream, alone</div>
-            <div class="passage-container">
-                <div id="passages">
-                    <!-- Passages injected here -->
+    <section class="panel" id="panel" aria-label="The time, and where Santiago is">
+        <div class="panel-inner">
+            <div class="clock-col">
+                <div class="time" aria-hidden="true"><span id="hm">--:--</span><span class="sec" id="sec">:--</span></div>
+                <div class="aboard" id="aboard">&nbsp;</div>
+            </div>
+            <div class="story-col">
+                <h2 class="phase" id="phase">&nbsp;</h2>
+                <p class="prose" id="prose">&nbsp;</p>
+                <div class="meter" aria-hidden="true">
+                    <span class="label" id="meterLabel">Line</span>
+                    <span class="bar"><span class="fill" id="meterFill"></span></span>
                 </div>
+                <p class="quote" id="quote" hidden>&ldquo;A man can be destroyed but not defeated.&rdquo;<cite>Santiago, after the first shark</cite></p>
             </div>
-            <div class="hemingway-line">
-                "A man can be destroyed but not defeated."
+            <div class="voyage" aria-hidden="true">
+                <div class="days" id="days">
+                    <span>First day, <i>0:00 to 8:00</i></span>
+                    <span>Second day, <i>8:00 to 16:00</i></span>
+                    <span>Third day, <i>16:00 to 24:00</i></span>
+                </div>
+                <div class="track" id="track"></div>
+                <div class="ticklabels" id="ticklabels"></div>
             </div>
+            <div class="sr-only" aria-live="polite" id="live"></div>
         </div>
-    </div>
-
-    <div class="catch-counter">
-        <span class="day" id="day-count">1</span>
-        <span class="label">Day of Struggle</span>
-    </div>
+    </section>
 
     <script>
-        const moments = [
-            // BEFORE THE JOURNEY (Midnight - 4 AM)
-            {
-                hour: 0,
-                title: "The Night Before",
-                location: "The shack, sleeping",
-                day: "Day 0",
-                passages: [
-                    "He was asleep in a short time and he dreamed of Africa when he was a young man and the long golden beaches and the white beaches, so white they hurt your eyes, and the high capes and the great brown mountains.",
-                    "He no longer dreamed of storms, nor of women, nor of great occurrences, nor of great fish, nor fights, nor contests of strength. He only dreamed of places now and of the lions on the beach.",
-                    "The old man had taught the boy to fish and the boy loved him."
-                ],
-                timeOfDay: "night"
-            },
-            {
-                hour: 1,
-                title: "Sleep and Dreams",
-                location: "The shack",
-                day: "Day 0",
-                passages: [
-                    "The boy loved him and he pitied him. If Manolin had no money of his own, he begged or stole to make sure the old man had enough to eat.",
-                    "Santiago dreamed of lions. He had seen them on the beaches of Africa when he was young, shipped before the mast on a square riggerbound for that coast.",
-                    "He slept peacefully and the boy sat by him and watched him."
-                ],
-                timeOfDay: "night"
-            },
-            {
-                hour: 2,
-                title: "Before Dawn",
-                location: "The shack",
-                day: "Day 0",
-                passages: [
-                    "It was too early to wake the old man and he rested against the stern and waited for the first of the light.",
-                    "He had no mysticism about turtles although he had gone in turtle boats for many years. He was sorry for them all, even the great trunk backs that were as long as the skiff.",
-                    "Most people are heartless about turtles because a turtle's heart will beat for hours after it has been cut up. But the old man thought, I have such a heart too."
-                ],
-                timeOfDay: "night"
-            },
+    (function () {
+        'use strict';
 
-            // DAY ONE — SETTING OUT (4 AM - Midnight)
-            {
-                hour: 3,
-                title: "The Old Man Wakes",
-                location: "The shack",
-                day: "Day 1",
-                passages: [
-                    "The old man woke and the boy brought him coffee. Then they went down the road to wake the other fishermen.",
-                    "'I know you did not leave me because you doubted.' 'It was papa made me leave. I am a boy and I must obey him.' 'I know,' the old man said. 'It is quite normal.'",
-                    "'How much did you suffer?' 'Plenty,' the old man said."
-                ],
-                timeOfDay: "dawn"
-            },
-            {
-                hour: 4,
-                title: "Dawn — Setting Sail",
-                location: "Rowing out from harbor",
-                day: "Day 1",
-                passages: [
-                    "He was rowing steadily and it was no effort for him since he kept well within his speed. The ocean was very dark and the light made prisms in the water.",
-                    "The old man knew he was going far out and he left the smell of the land behind and rowed out into the clean early morning smell of the ocean.",
-                    "Just before it was dark, as they passed the great island of sargasso weed, he saw the scattered purple, formless, iridescent, gelatinous bladder of a Portuguese man-of-war."
-                ],
-                timeOfDay: "dawn"
-            },
-            {
-                hour: 5,
-                title: "First Light",
-                location: "Rowing farther out",
-                day: "Day 1",
-                passages: [
-                    "The sun rose thinly from the sea and the old man could see the other boats, low on the water and well in toward the shore, spread out across the current.",
-                    "'I may not be as strong as I think,' the old man said. 'But I know many tricks and I have resolution.'",
-                    "He loved green turtles and hawk-bills with their elegance and speed. He was sorry for all of them, even the great loggerheads."
-                ],
-                timeOfDay: "dawn"
-            },
-            {
-                hour: 6,
-                title: "The Lines Are Set",
-                location: "Far out, alone",
-                day: "Day 1",
-                passages: [
-                    "Each line, as thick around as a big pencil, was looped onto a green-sapped stick so that any pull or touch on the bait would make the stick dip.",
-                    "The old man watched the dip of the three sticks over the side of the skiff and rowed gently to keep the lines straight up and down.",
-                    "'Eighty-five is a lucky number,' the old man said. 'How would you like to see me bring one in that dressed out over a thousand pounds?'"
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 7,
-                title: "Morning on the Gulf Stream",
-                location: "Deep water",
-                day: "Day 1",
-                passages: [
-                    "The old man looked at the fish constantly to make sure it was true. It was an hour before the first shark hit him.",
-                    "But, he thought, I keep them with precision. Only I have no luck anymore. But who knows? Maybe today. Every day is a new day.",
-                    "'Fish,' he said softly, aloud, 'I'll stay with you until I am dead.'"
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 8,
-                title: "A Small Bird Rests",
-                location: "The skiff, alone at sea",
-                day: "Day 1",
-                passages: [
-                    "Just then the stern line came taut under his foot, where he had kept the loop of the line, and he dropped his oars and felt the weight of the small tuna's shivering pull.",
-                    "A small bird came toward the skiff from the north. He was a warbler and flying very low over the water.",
-                    "'Take a good rest, small bird,' he said. 'Then go in and take your chance like any man or bird or fish.'"
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 9,
-                title: "The Bird Leaves",
-                location: "The endless sea",
-                day: "Day 1",
-                passages: [
-                    "The bird made the stern of the boat and rested there. Then it flew around the old man's head and rested on the line where it was more comfortable.",
-                    "'How old are you?' the old man asked the bird. 'Is this your first trip?' The bird looked at him when he spoke.",
-                    "'Stay at my house if you like, bird,' he said. 'I am sorry I cannot hoist the sail and take you in with the small breeze that is rising. But I am with a friend.'"
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 10,
-                title: "The Line Moves",
-                location: "Drifting far from land",
-                day: "Day 1",
-                passages: [
-                    "Then the line began to rise slowly and steadily toward the surface and the old man kneeled down and crawled backward against the pull.",
-                    "He felt faint again now but he held on the great fish all the strain that he could. The fish came up slowly and the old man raised him steadily.",
-                    "'Fish,' he said, 'I love you and respect you very much. But I will kill you before this day ends.'"
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 11,
-                title: "Midday Heat",
-                location: "Under the burning sun",
-                day: "Day 1",
-                passages: [
-                    "The sun was hot now and the old man felt it on the back of his neck and felt the sweat drip down his back.",
-                    "'I wish I had the boy,' he said aloud and settled himself against the rounded planks of the bow.",
-                    "The fish is my friend too, he thought. I have never seen or heard of such a fish. But I must kill him."
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 12,
-                title: "The Great Fish",
-                location: "Locked in battle",
-                day: "Day 1",
-                passages: [
-                    "The line rose slowly and steadily and then the surface of the ocean bulged ahead of the boat and the fish came out.",
-                    "He came out unendingly and water poured from his sides. He was bright in the sun and his head and back were dark purple and in the sun the stripes on his sides showed wide and a light lavender.",
-                    "The old man dropped the line and put his foot on it and lifted the harpoon as high as he could and drove it down with all his strength into the fish's side."
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 13,
-                title: "Afternoon — The Pull",
-                location: "Towed by the fish",
-                day: "Day 1",
-                passages: [
-                    "The fish swam steadily and they traveled slowly on the calm water. The fish never changed his course nor his direction all that night.",
-                    "'I wonder why he jumped,' the old man thought. 'He jumped almost as though to show me how big he was.'",
-                    "'I'll kill him though,' he said. 'In all his greatness and his glory.' Although it is unjust, he thought. But I will show him what a man can do and what a man endures."
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 14,
-                title: "Hand Cramps",
-                location: "Far from any shore",
-                day: "Day 1",
-                passages: [
-                    "His left hand was still cramped, but he was unknotting it slowly. I hate a cramp, he thought. It is a treachery of one's own body.",
-                    "'Please, hand,' he said. 'Please work for me. You have done it before.'",
-                    "He looked across the sea and knew how alone he was now. But he could see the prisms in the deep dark water and the line stretching ahead."
-                ],
-                timeOfDay: "day"
-            },
-            {
-                hour: 15,
-                title: "Late Afternoon",
-                location: "The endless struggle",
-                day: "Day 1",
-                passages: [
-                    "He did not truly feel good because the pain from the cord across his back had almost passed pain and into dullness.",
-                    "'Fish,' he said, 'I love you and respect you very much. But I will kill you dead before this day ends.'",
-                    "Let us hope so, he thought. A thousand times he had proved it meant nothing. Now he was proving it again. Each time was a new time and he never thought about the past when he was doing it."
-                ],
-                timeOfDay: "dusk"
-            },
-            {
-                hour: 16,
-                title: "Evening Comes",
-                location: "Drifting northwest",
-                day: "Day 1",
-                passages: [
-                    "Now the old man looked up and saw that the bird was circling again. 'You'd better settle down again, bird,' the old man said.",
-                    "It was getting dark now. The old man took the line in his left hand and slowly and carefully reeled in until he could see the swirls of the great fish.",
-                    "'You're tired, fish,' he said. 'I'll tire you to death.'"
-                ],
-                timeOfDay: "dusk"
-            },
-            {
-                hour: 17,
-                title: "Dusk",
-                location: "The darkening sea",
-                day: "Day 1",
-                passages: [
-                    "He looked at the sky and saw the white cumulus built like friendly piles of ice cream and high above were the thin feathers of the cirrus against the high September sky.",
-                    "'I cannot think of wars,' he said to himself. 'But what is this fish to think of?'",
-                    "The old man settled himself to steer. He did not even watch the big fish now. He only watched the sky and the line."
-                ],
-                timeOfDay: "dusk"
-            },
-            {
-                hour: 18,
-                title: "Night Falls — Day One Ends",
-                location: "Under the stars",
-                day: "Day 1",
-                passages: [
-                    "After it was dark the old man knew the fish would not change nor would it change before morning. After it was really dark he eased his position.",
-                    "The stars were bright now and he saw the dolphin clearly. When the fish jumped it made a great bursting of water.",
-                    "'Sleep well, fish,' the old man said. 'I will sleep well too.'"
-                ],
-                timeOfDay: "night"
-            },
+        /* ---------- The voyage, in book hours (0 to 72) ----------
+           The clock's day is laid over the three days at sea, three book hours
+           to each clock hour, so midnight on the clock is midnight in the shack
+           both before he sails and after he comes home. */
+        const BOOK_PER_CLOCK = 3;
 
-            // DAY TWO (7 PM - 6 AM next day)
-            {
-                hour: 19,
-                title: "Night — The Fish Circles",
-                location: "The dark ocean",
-                day: "Day 2",
-                passages: [
-                    "Twice more it was the same on the turns. I do not know, the old man thought. He had been on the point of feeling himself go each time.",
-                    "He felt sick and his whole hand was stiff and his shoulder ached. 'Fish,' he said, 'I'll stay with you until I am dead.'",
-                    "He thought of the great DiMaggio. 'I must be worthy of the great DiMaggio who does all things perfectly even with the pain of the bone spur in his heel.'"
-                ],
-                timeOfDay: "night"
-            },
-            {
-                hour: 20,
-                title: "Late Night",
-                location: "Alone with the fish",
-                day: "Day 2",
-                passages: [
-                    "The old man had seen many great fish. He had seen many that weighed more than a thousand pounds and he had caught two of that size in his life, but never alone.",
-                    "Now alone, and out of sight of land, he was fast to the biggest fish that he had ever seen.",
-                    "'I wish the boy was here,' he said aloud and settled himself against the worn wood of the bow."
-                ],
-                timeOfDay: "night"
-            },
-            {
-                hour: 21,
-                title: "Deep Night",
-                location: "Stars above",
-                day: "Day 2",
-                passages: [
-                    "He looked at the stars and he thought: I am being towed by this fish and I am the towing bitt.",
-                    "'He cannot know that it is only one man against him, nor that it is an old man. But what a great fish he is!'",
-                    "He rested sitting on the un-stepped mast and sail and tried not to think but only to endure."
-                ],
-                timeOfDay: "night"
-            },
-            {
-                hour: 22,
-                title: "Past Midnight",
-                location: "The endless sea",
-                day: "Day 2",
-                passages: [
-                    "Once he stood up and urinated over the side of the skiff and looked at the stars and checked his course.",
-                    "The line showed like a phosphorescent streak in the water straight out from his shoulders.",
-                    "'Fish,' he said, 'I love you. But I must kill you.'"
-                ],
-                timeOfDay: "night"
-            },
-            {
-                hour: 23,
-                title: "Before Dawn — Day Three",
-                location: "Still far out",
-                day: "Day 3",
-                passages: [
-                    "When the old man woke he could see the fish and knew that nothing had changed. One line went out from the fish's mouth.",
-                    "'I think the great DiMaggio would be proud of me today,' he thought.",
-                    "'I must kill him. I am glad we do not have to try to kill the stars. Imagine if each day a man must try to kill the moon, he thought.'"
-                ],
-                timeOfDay: "night"
-            }
+        const PHASES = [
+            { from: 0,    title: 'In the shack',        text: 'The eighty-fifth day. Eighty-four days without a fish. Before light he and the boy carry the gear down to the skiff.' },
+            { from: 3,    title: 'Rowing out',          text: 'He rows out in the dark past the other boats, alone, farther than any of them, over the deep water of the Gulf Stream.' },
+            { from: 6,    title: 'Baits down',          text: 'The sun comes up. Four baits hang at their depths, and he keeps each line plumb and waits.' },
+            { from: 12,   title: 'Hooked',              text: 'Around noon a fish takes one of the deep baits. It does not run or jump. It swims away to the north-west and pulls the skiff after it.' },
+            { from: 18,   title: 'The first night',     text: 'He braces the line across his back and lets the fish pull. The glow of Havana fades behind him. He rests, but does not let go.' },
+            { from: 30,   title: 'The second day',      text: 'His left hand cramps shut. He cuts strips of raw tuna and eats them for strength, and talks to the hand.' },
+            { from: 36,   title: 'The fish shows itself', text: 'The line rises and the fish comes up out of the sea, longer than the skiff, purple and striped, then goes down again.' },
+            { from: 38,   title: 'Afternoon',           text: 'He says prayers he does not much believe in, and thinks of DiMaggio playing on with the bone spur.' },
+            { from: 42,   title: 'The second night',    text: 'He sleeps at last, the line under his body, and dreams of the lions on the beach.' },
+            { from: 49,   title: 'The fish runs',       text: 'The line wakes him, tearing through his hand. The fish jumps again and again in the dark. Then it settles, and it is tired too.' },
+            { from: 54,   title: 'The third morning',   text: 'At sunrise the fish begins to circle. Each turn brings it closer. He takes in line on every turn and keeps what he gains.' },
+            { from: 60,   title: 'The harpoon',         text: 'The fish comes alongside. He drives the harpoon in. The fish rises high out of the water, then falls back dead.' },
+            { from: 61,   title: 'The first shark',     text: 'A mako comes up the trail of blood. He kills it, and loses the harpoon with it.' },
+            { from: 62.5, title: 'Galanos',             text: 'Two more come. He lashes the knife to an oar and fights them, and each one tears meat from the fish.' },
+            { from: 66,   title: 'Sunset',              text: 'Another shark at sundown. The knife blade snaps. He has the club left, and the tiller.' },
+            { from: 68.3, title: 'The pack',            text: 'In the dark they come together. He clubs at heads he cannot see, then swings the broken tiller. There is nothing more to take.' },
+            { from: 70.6, title: 'Sailing in',          text: 'Only the skeleton is lashed alongside. He sees the glow of the city and steers for it, light and fast now.' },
+            { from: 71.5, title: 'Ashore',              text: 'He carries the mast up the hill to the shack, sleeps face down, and dreams of the lions.' }
         ];
 
-        const timeEl = document.getElementById('time');
-        const dayIndicatorEl = document.getElementById('day-indicator');
-        const momentTitleEl = document.getElementById('moment-title');
-        const locationEl = document.getElementById('location');
-        const passagesEl = document.getElementById('passages');
-        const dayCountEl = document.getElementById('day-count');
-        const bodyEl = document.body;
+        const TICKS = [
+            { t: 12,   label: 'hooked' },
+            { t: 36.5, label: 'it jumps' },
+            { t: 54,   label: 'circling' },
+            { t: 60,   label: 'harpoon' },
+            { t: 65,   label: 'sharks' },
+            { t: 71.5, label: 'home', end: true }
+        ];
 
-        let currentMomentIndex = -1;
+        const SHARKS = [
+            { from: 61,   to: 62.4, n: 1, kind: 'mako' },
+            { from: 63,   to: 65.4, n: 2, kind: 'galano' },
+            { from: 66,   to: 67.6, n: 1, kind: 'shovel' },
+            { from: 68.3, to: 70.6, n: 5, kind: 'pack' }
+        ];
 
-        function getMomentForHour(hour) {
-            return moments.find(m => m.hour === hour) || moments[0];
+        /* ---------- small helpers ---------- */
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = t => t * t * (3 - 2 * t);
+        const seg = (T, a, b) => clamp((T - a) / (b - a), 0, 1);
+        function mixRGB(c1, c2, t) {
+            return [lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t)];
+        }
+        const rgb = (c, a) => a === undefined
+            ? `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`
+            : `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+
+        function clockToBook(d) {
+            const h = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600 + d.getMilliseconds() / 3600000;
+            return (h * BOOK_PER_CLOCK) % 72;
         }
 
-        function renderPassages(passages) {
-            passagesEl.innerHTML = passages.map(passage => `
-                <div class="passage">${passage}</div>
-            `).join('');
+        function phaseAt(T) {
+            let p = PHASES[0];
+            for (const ph of PHASES) if (T >= ph.from) p = ph;
+            return p;
         }
 
-        function updateClock() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
+        /* How hard the fish is pulling, 0 slack to 1 at breaking point */
+        function tension(T, wob) {
+            if (T < 12 || T >= 60) return 0;
+            if (T < 12.4) return lerp(0.2, 0.8, seg(T, 12, 12.4));
+            if (T >= 36 && T < 37.5) return 0.97;
+            if (T >= 49 && T < 50.5) return 0.98;
+            if (T >= 42 && T < 49) return 0.55 + 0.04 * wob;
+            if (T >= 54) {
+                // circling: hard on the turn away, easier on the turn back
+                const th = (T - 54) * Math.PI * 2 * 1.4;
+                return 0.62 + 0.32 * Math.cos(th);
+            }
+            return 0.72 + 0.05 * wob;
+        }
 
-            // Update time display
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+        /* How much of the marlin is left */
+        function flesh(T) {
+            if (T < 61.3) return 1;
+            if (T < 62.4) return lerp(1, 0.78, seg(T, 61.3, 62.2));
+            if (T < 66) return lerp(0.78, 0.5, seg(T, 63.4, 65.3));
+            if (T < 68.3) return lerp(0.5, 0.4, seg(T, 66.4, 67.4));
+            return lerp(0.4, 0, seg(T, 68.6, 70.4));
+        }
 
-            // Get current moment
-            const moment = getMomentForHour(hour);
-            const momentIndex = moments.indexOf(moment);
+        function skiffX(T) {
+            if (T < 3) return 0.15;
+            if (T < 12) return lerp(0.15, 0.36, ease(seg(T, 3, 12)));
+            if (T < 60) return lerp(0.36, 0.56, ease(seg(T, 12, 60)));
+            if (T < 61) return 0.56;
+            if (T < 71.5) return lerp(0.56, 0.16, ease(seg(T, 61, 71.5)));
+            return 0.16;
+        }
 
-            // Update time of day class
-            bodyEl.className = moment.timeOfDay;
+        // Land on the left: there when he leaves, gone out at sea, back as he comes in
+        function landVis(T) {
+            if (T < 5) return 1;
+            if (T < 9) return 1 - seg(T, 5, 9);
+            if (T > 69) return seg(T, 69, 71);
+            return 0;
+        }
 
-            // Update content if moment changed
-            if (momentIndex !== currentMomentIndex) {
-                dayIndicatorEl.textContent = `${moment.title} — ${moment.day}`;
-                momentTitleEl.textContent = moment.title;
-                locationEl.textContent = moment.location;
-                renderPassages(moment.passages);
+        // Fish relative to skiff: dx in skiff lengths, depth in fathoms (negative is in the air)
+        function fishPose(T, wob) {
+            if (T < 12) {
+                // somewhere below the baits, unseen until it takes one
+                return { dx: 0.9 + 0.6 * Math.sin(T * 0.9), depth: 108 + 6 * Math.sin(T * 1.7), dir: Math.cos(T * 0.9) > 0 ? 1 : -1, alpha: 0.3 * seg(T, 6.5, 9) + 0.7 * seg(T, 11.2, 12) };
+            }
+            let depth, dx = 1.7;
+            if (T < 18) depth = lerp(100, 88, seg(T, 12, 18));
+            else if (T < 30) depth = lerp(88, 70, seg(T, 18, 30));
+            else if (T < 36) depth = lerp(70, 50, seg(T, 30, 36));
+            else if (T < 37.5) {
+                // the jump: up, out, back, down
+                const u = seg(T, 36, 37.5);
+                if (u < 0.35) depth = lerp(50, 0, ease(u / 0.35));
+                else if (u < 0.6) { const v = (u - 0.35) / 0.25; depth = -Math.sin(v * Math.PI) * 5; }
+                else depth = lerp(0, 55, ease((u - 0.6) / 0.4));
+                dx = 1.9;
+            }
+            else if (T < 49) depth = 55 + 4 * wob;
+            else if (T < 50.5) {
+                const u = seg(T, 49, 50.5);
+                depth = 30 - 30 * Math.max(0, Math.sin(u * Math.PI * 3)) - 2;
+                dx = 2.1;
+            }
+            else if (T < 54) depth = lerp(32, 14, seg(T, 50.5, 54));
+            else {
+                // circling, seen edge on: swings around the skiff, each turn closer and shallower
+                const u = seg(T, 54, 60);
+                const th = (T - 54) * Math.PI * 2 * 1.4;
+                const r = lerp(2.2, 0.5, u);
+                return { dx: r * Math.cos(th), depth: lerp(14, 2.5, u) + 4 * (1 - u) * Math.sin(th), dir: -Math.sin(th) >= 0 ? 1 : -1, alpha: 1 };
+            }
+            return { dx, depth, dir: 1, alpha: 1 };
+        }
 
-                // Update day counter (simplified)
-                if (hour < 3) {
-                    dayCountEl.textContent = '0';
-                } else if (hour < 19) {
-                    dayCountEl.textContent = '1';
-                } else {
-                    dayCountEl.textContent = '2';
+        /* ---------- canvas ---------- */
+        const canvas = document.getElementById('sea');
+        const ctx = canvas.getContext('2d');
+        const header = document.querySelector('.header');
+        const panel = document.getElementById('panel');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        let W = 0, H = 0, topY = 0, bottomY = 0, horizonY = 0;
+        let stars = [];
+        let specks = [];
+
+        function seeded(seed) {
+            let s = seed >>> 0;
+            return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+        }
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            topY = header.getBoundingClientRect().bottom;
+            bottomY = panel.getBoundingClientRect().top;
+            if (bottomY - topY < 180) bottomY = Math.min(H, topY + 180);
+            horizonY = topY + (bottomY - topY) * 0.3;
+
+            const r = seeded(84);
+            stars = [];
+            for (let i = 0; i < 140; i++) stars.push({ x: r(), y: r(), s: r() * 1.2 + 0.4, tw: r() * 6.28 });
+            specks = [];
+            for (let i = 0; i < 70; i++) specks.push({ x: r(), y: r(), s: r() * 1.4 + 0.5, v: r() * 0.4 + 0.1 });
+            if (reduceMotion.matches) draw(performance.now());
+        }
+
+        // fathoms to screen y
+        function depthY(fm) {
+            const top = horizonY + 10;
+            const bot = bottomY - 14;
+            return top + (fm / 140) * (bot - top);
+        }
+
+        function skyAt(hb) {
+            const elev = Math.sin(Math.PI * (hb - 6) / 12); // -1..1, 0 at 6 and 18
+            const day = clamp((elev + 0.08) / 0.35, 0, 1);
+            const glow = Math.exp(-Math.pow(elev / 0.17, 2));
+            const nightTop = [4, 10, 24], nightBot = [14, 32, 58];
+            const dayTop = [52, 110, 170], dayBot = [158, 198, 222];
+            let top = mixRGB(nightTop, dayTop, day);
+            let bot = mixRGB(nightBot, dayBot, day);
+            bot = mixRGB(bot, [236, 140, 84], glow * 0.75);
+            top = mixRGB(top, [86, 70, 110], glow * 0.35);
+            return { elev, day, glow, top, bot };
+        }
+
+        function drawSky(T, now, sky) {
+            const g = ctx.createLinearGradient(0, 0, 0, horizonY);
+            g.addColorStop(0, rgb(sky.top));
+            g.addColorStop(1, rgb(sky.bot));
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, horizonY + 1);
+
+            // stars, which he steers by at night
+            const night = 1 - sky.day;
+            if (night > 0.05) {
+                for (const s of stars) {
+                    const y = s.y * horizonY * 0.95;
+                    const tw = reduceMotion.matches ? 1 : 0.75 + 0.25 * Math.sin(now / 900 + s.tw);
+                    ctx.fillStyle = `rgba(235,240,255,${(night * 0.85 * tw * (0.4 + 0.6 * (1 - y / horizonY))).toFixed(3)})`;
+                    ctx.fillRect(s.x * W, y, s.s, s.s);
                 }
+            }
 
-                currentMomentIndex = momentIndex;
+            // sun on its arc
+            const hb = T % 24;
+            if (hb > 5.4 && hb < 18.6) {
+                const u = (hb - 6) / 12;
+                const sx = lerp(W * 0.94, W * 0.06, u);
+                const sy = horizonY - Math.sin(Math.PI * clamp(u, -0.05, 1.05)) * (horizonY - topY) * 0.85;
+                const rad = clamp(W * 0.018, 9, 18);
+                const halo = ctx.createRadialGradient(sx, sy, 0, sx, sy, rad * 5);
+                const warm = sky.glow;
+                halo.addColorStop(0, `rgba(255,${(235 - 70 * warm) | 0},${(180 - 90 * warm) | 0},0.55)`);
+                halo.addColorStop(1, 'rgba(255,200,140,0)');
+                ctx.fillStyle = halo;
+                ctx.beginPath(); ctx.arc(sx, sy, rad * 5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = `rgb(255,${(244 - 80 * warm) | 0},${(214 - 120 * warm) | 0})`;
+                ctx.beginPath(); ctx.arc(sx, sy, rad, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // glow of Havana on the horizon at night, while it is near enough to see
+            const havana = (T > 17 && T < 27 ? (1 - seg(T, 20, 27)) * seg(T, 17, 19) * 0.8 : 0)
+                + (T > 69 && T < 72 ? seg(T, 69, 70.6) : 0) + (T < 4 ? 0.5 : 0);
+            if (havana > 0 && night > 0.3) {
+                const hg = ctx.createRadialGradient(W * 0.02, horizonY, 0, W * 0.02, horizonY, W * 0.3);
+                hg.addColorStop(0, `rgba(255,190,120,${(0.35 * havana * night).toFixed(3)})`);
+                hg.addColorStop(1, 'rgba(255,190,120,0)');
+                ctx.fillStyle = hg;
+                ctx.fillRect(0, topY * 0.5, W * 0.4, horizonY - topY * 0.5);
             }
         }
 
-        // Initialize
-        updateClock();
-        setInterval(updateClock, 1000);
+        let seaGrad = null;
+        function drawWater(T, now, sky) {
+            const surf = mixRGB([12, 40, 66], [28, 98, 134], sky.day);
+            const g = ctx.createLinearGradient(0, horizonY, 0, H);
+            g.addColorStop(0, rgb(surf));
+            g.addColorStop(0.45, rgb(mixRGB([6, 22, 40], [10, 46, 76], sky.day)));
+            g.addColorStop(1, rgb([2, 9, 18]));
+            seaGrad = g;
+            ctx.fillStyle = g;
+            ctx.fillRect(0, horizonY, W, H - horizonY);
+
+            // light reaching down into the water by day
+            if (sky.day > 0.1) {
+                const t = reduceMotion.matches ? 0 : now / 4000;
+                for (let i = 0; i < 7; i++) {
+                    const x0 = ((i / 7) + 0.04 * Math.sin(t + i * 1.7)) * W;
+                    const w = W * 0.035;
+                    const rg = ctx.createLinearGradient(0, horizonY, 0, depthY(70));
+                    rg.addColorStop(0, `rgba(190,230,255,${(0.07 * sky.day).toFixed(3)})`);
+                    rg.addColorStop(1, 'rgba(190,230,255,0)');
+                    ctx.fillStyle = rg;
+                    ctx.beginPath();
+                    ctx.moveTo(x0, horizonY);
+                    ctx.lineTo(x0 + w, horizonY);
+                    ctx.lineTo(x0 + w * 2.5 + W * 0.05, depthY(70));
+                    ctx.lineTo(x0 + W * 0.05, depthY(70));
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // plankton, the small lights in the dark water
+            const drift = reduceMotion.matches ? 0 : now / 60000;
+            for (const p of specks) {
+                const x = ((p.x + drift * p.v) % 1) * W;
+                const y = horizonY + 20 + p.y * (H - horizonY - 20);
+                ctx.fillStyle = `rgba(170,215,235,${(0.12 + 0.18 * (1 - sky.day)).toFixed(3)})`;
+                ctx.fillRect(x, y, p.s, p.s);
+            }
+
+            // depth scale in fathoms, right edge
+            ctx.font = `${clamp(W * 0.009, 10, 12)}px 'PT Serif', serif`;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let fm = 20; fm <= 140; fm += 20) {
+                const y = depthY(fm);
+                if (y > bottomY - 8) break;
+                ctx.strokeStyle = 'rgba(160,190,212,0.35)';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(W - 10, y); ctx.lineTo(W - 4, y); ctx.stroke();
+                ctx.fillStyle = 'rgba(170,195,215,0.75)';
+                ctx.fillText(fm + ' fm', W - 14, y);
+            }
+        }
+
+        function waveY(x, now) {
+            const t = reduceMotion.matches ? 0 : now / 1000;
+            return horizonY + Math.sin(x * 0.018 + t * 1.1) * 1.6 + Math.sin(x * 0.047 - t * 1.7) * 0.9;
+        }
+
+        function drawSurface(now, sky) {
+            ctx.strokeStyle = rgb(mixRGB([90, 130, 165], [220, 238, 248], sky.day), 0.6);
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            for (let x = 0; x <= W; x += 6) {
+                const y = waveY(x, now);
+                x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        function drawLand(T, sky) {
+            const v = landVis(T);
+            if (v <= 0) return;
+            ctx.save();
+            ctx.globalAlpha = v;
+            const edge = W * 0.08;
+            const landCol = rgb(mixRGB([8, 14, 20], [62, 70, 58], sky.day));
+            ctx.fillStyle = landCol;
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY - 34);
+            ctx.lineTo(edge * 0.55, horizonY - 30);
+            ctx.lineTo(edge, horizonY);
+            ctx.lineTo(0, horizonY);
+            ctx.closePath();
+            ctx.fill();
+            // the shack
+            const sx = edge * 0.18, sw = clamp(W * 0.03, 18, 34), sh = sw * 0.6, base = horizonY - 33;
+            ctx.beginPath();
+            ctx.moveTo(sx, base); ctx.lineTo(sx, base - sh); ctx.lineTo(sx + sw / 2, base - sh * 1.6);
+            ctx.lineTo(sx + sw, base - sh); ctx.lineTo(sx + sw, base); ctx.closePath();
+            ctx.fill();
+            if (sky.day < 0.5) {
+                ctx.fillStyle = `rgba(255,200,120,${(0.8 * (1 - sky.day * 2)).toFixed(3)})`;
+                ctx.fillRect(sx + sw * 0.4, base - sh * 0.7, sw * 0.2, sh * 0.3);
+            }
+            // sea floor shelving away from the beach
+            ctx.fillStyle = rgb(mixRGB([14, 26, 36], [62, 78, 80], sky.day * 0.7), 0.85);
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY);
+            ctx.lineTo(edge, horizonY);
+            ctx.bezierCurveTo(edge * 1.3, horizonY + 20, edge * 1.5, depthY(60), W * 0.2, H);
+            ctx.lineTo(0, H);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawSkiff(x, y, L, dir, opts, sky) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(dir, 1);
+            const hull = rgb(mixRGB([46, 34, 26], [120, 82, 54], sky.day));
+            const trim = rgb(mixRGB([70, 64, 56], [214, 206, 186], sky.day));
+            // hull: square stern on the left, bow on the right
+            ctx.fillStyle = hull;
+            ctx.beginPath();
+            ctx.moveTo(-L / 2, -L * 0.1);
+            ctx.lineTo(L / 2, -L * 0.13);
+            ctx.quadraticCurveTo(L * 0.42, L * 0.07, L * 0.2, L * 0.09);
+            ctx.lineTo(-L * 0.42, L * 0.09);
+            ctx.lineTo(-L / 2, -L * 0.1);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = trim;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(-L / 2, -L * 0.1); ctx.lineTo(L / 2, -L * 0.13); ctx.stroke();
+
+            const fig = rgb(mixRGB([20, 20, 24], [40, 32, 30], sky.day));
+            if (opts.mast) {
+                // mast up, patched sail drawing for home
+                ctx.strokeStyle = trim;
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(L * 0.18, -L * 0.1); ctx.lineTo(L * 0.18, -L * 0.85); ctx.stroke();
+                ctx.fillStyle = rgb(mixRGB([90, 86, 78], [222, 212, 188], sky.day), 0.92);
+                ctx.beginPath();
+                ctx.moveTo(L * 0.16, -L * 0.82);
+                ctx.lineTo(L * 0.16, -L * 0.16);
+                ctx.quadraticCurveTo(-L * 0.12, -L * 0.3, -L * 0.3, -L * 0.18);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = rgb(mixRGB([70, 66, 60], [186, 176, 150], sky.day), 0.9);
+                ctx.fillRect(-L * 0.02, -L * 0.42, L * 0.1, L * 0.09);
+                ctx.fillRect(L * 0.04, -L * 0.62, L * 0.08, L * 0.08);
+            }
+            if (opts.oars) {
+                ctx.strokeStyle = trim;
+                ctx.lineWidth = 1.6;
+                const a = opts.oarPhase;
+                ctx.beginPath();
+                ctx.moveTo(-L * 0.06, -L * 0.2);
+                ctx.lineTo(-L * 0.06 + Math.cos(a) * L * 0.35, L * 0.1 + Math.sin(a) * L * 0.04);
+                ctx.stroke();
+            }
+            if (opts.man) {
+                // Santiago, low in the boat, the line over his shoulders
+                const mx = opts.manX * L;
+                ctx.fillStyle = fig;
+                ctx.beginPath();
+                ctx.moveTo(mx - L * 0.07, -L * 0.1);
+                ctx.quadraticCurveTo(mx - L * 0.08, -L * 0.3, mx + L * 0.01 + opts.lean * L, -L * 0.3);
+                ctx.lineTo(mx + L * 0.05 + opts.lean * L, -L * 0.24);
+                ctx.lineTo(mx + L * 0.05, -L * 0.1);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(mx + L * 0.03 + opts.lean * L * 1.4, -L * 0.34, L * 0.045, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function marlinPath(L) {
+            ctx.beginPath();
+            ctx.moveTo(L * 0.52, -L * 0.005);          // bill tip
+            ctx.lineTo(L * 0.3, -L * 0.03);
+            ctx.quadraticCurveTo(L * 0.18, -L * 0.085, 0, -L * 0.08);
+            ctx.quadraticCurveTo(-L * 0.22, -L * 0.065, -L * 0.36, -L * 0.012);
+            ctx.lineTo(-L * 0.5, -L * 0.13);            // upper tail lobe
+            ctx.lineTo(-L * 0.42, 0);
+            ctx.lineTo(-L * 0.5, L * 0.13);             // lower tail lobe
+            ctx.lineTo(-L * 0.36, L * 0.012);
+            ctx.quadraticCurveTo(-L * 0.2, L * 0.07, 0, L * 0.075);
+            ctx.quadraticCurveTo(L * 0.2, L * 0.07, L * 0.3, L * 0.01);
+            ctx.closePath();
+        }
+
+        function drawMarlin(x, y, L, dir, tilt, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(x, y);
+            ctx.rotate(tilt);
+            ctx.scale(dir, 1);
+            // the tall dorsal fin
+            ctx.fillStyle = '#2c2050';
+            ctx.beginPath();
+            ctx.moveTo(L * 0.2, -L * 0.075);
+            ctx.quadraticCurveTo(L * 0.14, -L * 0.24, L * 0.04, -L * 0.2);
+            ctx.lineTo(-L * 0.12, -L * 0.075);
+            ctx.closePath();
+            ctx.fill();
+            // body: dark purple back, lavender stripes, silver belly
+            const g = ctx.createLinearGradient(0, -L * 0.08, 0, L * 0.075);
+            g.addColorStop(0, '#2e2358');
+            g.addColorStop(0.45, '#5b5a9a');
+            g.addColorStop(1, '#c9d2dc');
+            ctx.fillStyle = g;
+            marlinPath(L);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(190,175,235,0.55)';
+            ctx.lineWidth = Math.max(1, L * 0.008);
+            for (let i = 0; i < 7; i++) {
+                const sx = L * (0.16 - i * 0.065);
+                ctx.beginPath(); ctx.moveTo(sx, -L * 0.05); ctx.lineTo(sx - L * 0.012, L * 0.035); ctx.stroke();
+            }
+            ctx.fillStyle = '#0c0a18';
+            ctx.beginPath(); ctx.arc(L * 0.26, -L * 0.022, Math.max(1.2, L * 0.011), 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        function drawSkeleton(x, y, L, dir, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(x, y);
+            ctx.scale(dir, 1);
+            ctx.strokeStyle = '#ece3cc';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = Math.max(1.2, L * 0.012);
+            ctx.beginPath(); ctx.moveTo(L * 0.27, 0); ctx.lineTo(-L * 0.4, 0); ctx.stroke(); // spine
+            ctx.beginPath(); ctx.moveTo(L * 0.52, -L * 0.005); ctx.lineTo(L * 0.3, -L * 0.02); ctx.stroke(); // bill
+            // the head, still whole
+            ctx.fillStyle = 'rgba(236,227,204,0.85)';
+            ctx.beginPath();
+            ctx.moveTo(L * 0.31, -L * 0.03); ctx.quadraticCurveTo(L * 0.26, -L * 0.075, L * 0.19, -L * 0.07);
+            ctx.lineTo(L * 0.19, L * 0.06); ctx.quadraticCurveTo(L * 0.27, L * 0.05, L * 0.31, L * 0.008);
+            ctx.closePath(); ctx.fill();
+            ctx.lineWidth = Math.max(0.8, L * 0.006);
+            for (let i = 0; i < 16; i++) {
+                const rx = L * (0.16 - i * 0.034);
+                const h = L * 0.065 * (1 - Math.pow(i / 18, 1.5));
+                ctx.beginPath(); ctx.moveTo(rx, 0); ctx.lineTo(rx - L * 0.01, -h); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(rx, 0); ctx.lineTo(rx - L * 0.01, h * 0.85); ctx.stroke();
+            }
+            ctx.lineWidth = Math.max(1, L * 0.009);
+            ctx.beginPath();
+            ctx.moveTo(-L * 0.5, -L * 0.13); ctx.lineTo(-L * 0.4, 0); ctx.lineTo(-L * 0.5, L * 0.13);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawShark(x, y, L, dir, kind, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(x, y);
+            ctx.scale(dir, 1);
+            const col = kind === 'mako' ? '#2f5784' : kind === 'shovel' ? '#4e5560' : '#5a5148';
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            ctx.moveTo(L * 0.5, 0);
+            ctx.quadraticCurveTo(L * 0.35, -L * 0.1, 0, -L * 0.09);
+            ctx.lineTo(L * 0.02, -L * 0.22);               // dorsal fin
+            ctx.lineTo(-L * 0.12, -L * 0.08);
+            ctx.quadraticCurveTo(-L * 0.3, -L * 0.05, -L * 0.36, -L * 0.02);
+            ctx.lineTo(-L * 0.52, -L * 0.17);             // tail, long upper lobe
+            ctx.lineTo(-L * 0.46, L * 0.02);
+            ctx.lineTo(-L * 0.5, L * 0.09);
+            ctx.lineTo(-L * 0.36, L * 0.02);
+            ctx.quadraticCurveTo(-L * 0.1, L * 0.08, L * 0.1, L * 0.07);
+            ctx.lineTo(L * 0.12, L * 0.16);                // pectoral
+            ctx.lineTo(L * 0.22, L * 0.06);
+            ctx.quadraticCurveTo(L * 0.42, L * 0.05, L * 0.5, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'rgba(230,236,240,0.85)';
+            ctx.beginPath(); ctx.arc(L * 0.36, -L * 0.035, Math.max(1, L * 0.012), 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, ten, now) {
+            const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+            const len = Math.hypot(x2 - x1, y2 - y1);
+            const sag = (1 - ten) * len * 0.22;
+            let jitter = 0;
+            if (ten > 0.9 && !reduceMotion.matches) jitter = Math.sin(now / 23) * 1.2;
+            const col = mixRGB([231, 220, 188], [240, 163, 90], clamp((ten - 0.6) / 0.4, 0, 1));
+            ctx.strokeStyle = rgb(col, 0.95);
+            ctx.lineWidth = lerp(1.6, 1.1, ten);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.quadraticCurveTo(mx + jitter, my + sag + jitter, x2, y2);
+            ctx.stroke();
+        }
+
+        function draw(now) {
+            const d = new Date();
+            const T = clockToBook(d);
+            const hb = T % 24;
+            const sky = skyAt(hb);
+            const wob = Math.sin(T * 2.3) * 0.6 + Math.sin(T * 5.1) * 0.4;
+
+            ctx.clearRect(0, 0, W, H);
+            drawSky(T, now, sky);
+            drawWater(T, now, sky);
+            drawLand(T, sky);
+
+            const L = clamp(W * 0.11, 78, 150);       // skiff length
+            const fishL = L * 1.18;                     // the fish is longer than the boat
+            const sx = skiffX(T) * W;
+            const bob = reduceMotion.matches ? 0 : Math.sin(now / 900) * 1.5;
+            const sy = waveY(sx, now) + bob;
+            const home = T >= 61;
+            const dir = home ? -1 : 1;
+            const ashore = T < 3 || T >= 71.5;
+
+            // the baited lines, straight down
+            if (T >= 5.5 && T < 12) {
+                const drop = seg(T, 5.5, 6.6);
+                [40, 75, 100, 125].forEach((fm, i) => {
+                    const lx = sx + (i - 1.5) * L * 0.16;
+                    const ly = depthY(fm * drop);
+                    ctx.strokeStyle = 'rgba(231,220,188,0.55)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(lx, sy); ctx.lineTo(lx, ly); ctx.stroke();
+                    ctx.fillStyle = 'rgba(200,215,225,0.8)';
+                    ctx.fillRect(lx - 2, ly, 4, 6);
+                });
+            }
+
+            // the fish, before and during the fight
+            if (T < 60) {
+                const p = fishPose(T, wob);
+                const fx = clamp(sx + p.dx * L, fishL * 0.55, W - 60 - fishL * 0.5);
+                const fy = p.depth < 0 ? horizonY + p.depth * 6 - fishL * 0.05 : depthY(p.depth);
+                let tilt = 0;
+                if (T >= 36 && T < 37.5) {
+                    const u = seg(T, 36, 37.5);
+                    tilt = u < 0.35 ? -0.9 : u < 0.6 ? lerp(-0.9, 0.9, (u - 0.35) / 0.25) : 0.6 * (1 - seg(u, 0.6, 1));
+                } else if (T >= 49 && T < 50.5) {
+                    tilt = -0.5 * Math.cos(seg(T, 49, 50.5) * Math.PI * 6);
+                }
+                const mouth = { x: fx + p.dir * fishL * 0.3 * Math.cos(tilt), y: fy + fishL * 0.3 * Math.sin(tilt) * p.dir };
+                if (T >= 12) {
+                    const ten = tension(T, wob);
+                    const shoulder = { x: sx + L * 0.06, y: sy - L * 0.3 };
+                    drawLine(shoulder.x, shoulder.y, mouth.x, mouth.y, ten, now);
+                }
+                drawMarlin(fx, fy, fishL, p.dir, tilt, p.alpha);
+                if (T >= 36.3 && T < 37 && !reduceMotion.matches) {
+                    // spray where it broke the surface
+                    ctx.fillStyle = 'rgba(235,245,255,0.55)';
+                    for (let i = 0; i < 10; i++) {
+                        const a = i / 10 * Math.PI;
+                        ctx.fillRect(fx + Math.cos(a) * fishL * 0.3, horizonY - Math.sin(a) * 10 - 2, 2, 2);
+                    }
+                }
+            }
+
+            // the harpoon stroke
+            if (T >= 60 && T < 61) {
+                const u = seg(T, 60, 60.6);
+                const rise = Math.sin(u * Math.PI);
+                const fx = sx + L * 0.55;
+                const fy = horizonY + L * 0.12 - rise * L * 0.9;
+                drawMarlin(fx, fy, fishL, 1, -0.5 * rise, 1);
+                if (u < 0.6) {
+                    ctx.strokeStyle = '#d8d0bc';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(sx + L * 0.08, sy - L * 0.4); ctx.lineTo(fx + fishL * 0.02, fy - fishL * 0.02); ctx.stroke();
+                }
+                if (u >= 0.6) {
+                    ctx.fillStyle = 'rgba(160,40,40,0.35)';
+                    ctx.beginPath(); ctx.ellipse(fx, horizonY + L * 0.2, fishL * 0.5, L * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+
+            // lashed alongside on the way home, and the sharks at it
+            if (T >= 61) {
+                const f = flesh(T);
+                const cx = sx - dir * L * 0.02;
+                const cy = horizonY + L * 0.13;
+                // blood in the water while there is meat to bleed
+                if (f > 0.02 && T < 71) {
+                    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, fishL * 0.9);
+                    bg.addColorStop(0, `rgba(150,30,30,${(0.28 * f).toFixed(3)})`);
+                    bg.addColorStop(1, 'rgba(150,30,30,0)');
+                    ctx.fillStyle = bg;
+                    ctx.beginPath(); ctx.arc(cx, cy, fishL * 0.9, 0, Math.PI * 2); ctx.fill();
+                }
+                if (f > 0) {
+                    drawMarlin(cx, cy, fishL, dir, 0, 1);
+                    // bites, painted back to open water
+                    const r = seeded(7);
+                    const bites = Math.round((1 - f) * 22);
+                    ctx.fillStyle = seaGrad;
+                    for (let i = 0; i < bites; i++) {
+                        const bx = cx + dir * (-0.32 + r() * 0.52) * fishL;
+                        const by = cy + (r() > 0.5 ? 1 : -1) * fishL * (0.03 + r() * 0.06);
+                        ctx.beginPath(); ctx.arc(bx, by, fishL * (0.045 + r() * 0.03), 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+                drawSkeleton(cx, cy, fishL, dir, f <= 0 ? 1 : clamp((1 - f) * 1.4, 0, 1));
+
+                for (const s of SHARKS) {
+                    if (T < s.from - 0.2 || T > s.to + 0.3) continue;
+                    const a = Math.min(seg(T, s.from - 0.2, s.from + 0.1), 1 - seg(T, s.to, s.to + 0.3));
+                    for (let k = 0; k < s.n; k++) {
+                        const ph = reduceMotion.matches ? T * 6 + k * 2.1 : now / (1600 + k * 270) + k * 2.1;
+                        const sL = fishL * (s.kind === 'mako' ? 0.75 : 0.6) * (s.kind === 'pack' ? 0.85 + 0.1 * (k % 3) : 1);
+                        const ox = Math.cos(ph) * fishL * (0.55 + 0.12 * k);
+                        const oy = Math.abs(Math.sin(ph)) * fishL * (0.18 + 0.06 * k) + fishL * 0.12;
+                        const shDir = -Math.sin(ph) >= 0 ? 1 : -1;
+                        drawShark(cx + ox, cy + oy, sL, shDir, s.kind, a * (s.kind === 'pack' ? 0.85 : 1));
+                    }
+                }
+            }
+
+            drawSurface(now, sky);
+
+            // the skiff on top of it all
+            const rowing = T >= 3 && T < 6;
+            const lean = T >= 12 && T < 60 ? 0.04 * tension(T, wob) : 0;
+            drawSkiff(sx, sy, L, dir, {
+                man: !ashore,
+                manX: T >= 12 && T < 60 ? 0.22 : T >= 61 ? -0.3 : 0,
+                lean,
+                mast: T >= 61 && T < 71.5,
+                oars: rowing,
+                oarPhase: reduceMotion.matches ? 0.4 : Math.sin(now / 700) * 0.6 + 0.3
+            }, sky);
+        }
+
+        function loop(now) {
+            draw(now);
+            if (!reduceMotion.matches) requestAnimationFrame(loop);
+        }
+
+        /* ---------- text, once a second ---------- */
+        const $ = id => document.getElementById(id);
+        const hmEl = $('hm'), secEl = $('sec'), aboardEl = $('aboard'), phaseEl = $('phase'), proseEl = $('prose');
+        const meterLabel = $('meterLabel'), meterFill = $('meterFill'), quoteEl = $('quote'), liveEl = $('live');
+        const track = $('track'), tickLabels = $('ticklabels'), dayEls = $('days').children;
+
+        const pct = t => (t / 72 * 100).toFixed(3) + '%';
+        function buildTrack() {
+            const segs = [['tow', 12, 60], ['sharks', 61, 71.5]];
+            for (const [cls, a, b] of segs) {
+                const s = document.createElement('div');
+                s.className = 'seg ' + cls;
+                s.style.left = pct(a);
+                s.style.width = pct(b - a);
+                track.appendChild(s);
+            }
+            for (const t of [24, 48]) {
+                const m = document.createElement('div');
+                m.className = 'daymark';
+                m.style.left = pct(t);
+                track.appendChild(m);
+            }
+            for (const tk of TICKS) {
+                const m = document.createElement('div');
+                m.className = 'tick';
+                m.style.left = pct(tk.t);
+                track.appendChild(m);
+                const l = document.createElement('span');
+                l.textContent = tk.label;
+                l.style.left = pct(tk.t);
+                if (tk.end) l.className = 'end';
+                l.dataset.t = tk.t;
+                tickLabels.appendChild(l);
+            }
+            const n = document.createElement('div');
+            n.className = 'now';
+            n.id = 'nowMark';
+            track.appendChild(n);
+        }
+
+        const DAY_NAMES = ['First day', 'Second day', 'Third day'];
+        function bookHourText(hb) {
+            const h = Math.floor(hb + 0.5) % 24;
+            if (h === 0) return 'about midnight';
+            if (h === 12) return 'about noon';
+            return 'about ' + (h % 12) + (h < 12 ? ' in the morning' : h < 18 ? ' in the afternoon' : ' at night');
+        }
+
+        let lastPhase = null, lastMinute = -1;
+        function updateText() {
+            const d = new Date();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            hmEl.textContent = hh + ':' + mm;
+            secEl.textContent = ':' + String(d.getSeconds()).padStart(2, '0');
+
+            const T = clockToBook(d);
+            const dayIdx = Math.min(2, Math.floor(T / 24));
+            let hb = T - dayIdx * 24;
+            let rounded = Math.floor(hb + 0.5);
+            let where = DAY_NAMES[dayIdx];
+            // "about midnight" at the end of a day belongs to the next one
+            if (rounded === 24) { hb = 0; where = dayIdx < 2 ? DAY_NAMES[dayIdx + 1] : 'Home'; }
+            aboardEl.innerHTML = `<b>${where}</b> in the skiff, ${bookHourText(hb)}`;
+            if (T < 3) aboardEl.innerHTML = `<b>First day</b>, ashore, ${bookHourText(hb)}`;
+            if (T >= 71.5) aboardEl.innerHTML = `<b>Home</b>, ${bookHourText(hb)}`;
+
+            const ph = phaseAt(T);
+            if (ph !== lastPhase) {
+                phaseEl.textContent = ph.title;
+                proseEl.textContent = ph.text;
+                lastPhase = ph;
+            }
+
+            if (T < 12) {
+                meterLabel.textContent = T < 5.5 ? 'Lines coiled' : 'Line slack, baits down';
+                meterFill.style.width = '0%';
+            } else if (T < 60) {
+                const ten = tension(T, 0);
+                meterLabel.textContent = ten > 0.9 ? 'Line near breaking' : 'Strain on the line';
+                meterFill.style.width = (ten * 100).toFixed(0) + '%';
+                meterFill.style.backgroundColor = ten > 0.85 ? 'var(--strain)' : 'var(--line)';
+            } else {
+                const f = flesh(T);
+                meterLabel.textContent = f > 0 ? 'What is left of the fish' : 'Nothing left but bone';
+                meterFill.style.width = (f * 100).toFixed(0) + '%';
+                meterFill.style.backgroundColor = f < 1 ? 'var(--blood)' : 'var(--line)';
+            }
+
+            quoteEl.hidden = !(T >= 61.6 && T < 72);
+
+            $('nowMark').style.left = pct(T);
+            for (let i = 0; i < 3; i++) dayEls[i].classList.toggle('on', i === dayIdx);
+            for (const l of tickLabels.children) l.classList.toggle('past', T >= +l.dataset.t);
+
+            if (d.getMinutes() !== lastMinute) {
+                lastMinute = d.getMinutes();
+                liveEl.textContent = `${hh}:${mm}. ${where}, ${bookHourText(hb)}. ${ph.title}.`;
+            }
+            // panel height can change with the text, so keep the sea fitted to it
+            if (W && Math.abs(panel.getBoundingClientRect().top - bottomY) > 2) resizeCanvas();
+        }
+
+        buildTrack();
+        updateText();
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        setInterval(() => {
+            updateText();
+            if (reduceMotion.matches) draw(performance.now());
+        }, 1000);
+        requestAnimationFrame(loop);
+        reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(loop); });
+    })();
     </script>
 </body>
-
 </html>

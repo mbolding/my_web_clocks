@@ -5,479 +5,724 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infinite Jest Clock</title>
+    <meta name="description" content="Infinite Jest in Subsidized Time: nine sponsored years share the day, the time is the main text, and 388 endnotes, with sub-notes, do the rest.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --desk: #e9e6dc;
+            --paper: #fbfaf5;
+            --ink: #1c1b19;
+            --ink-soft: #4b4943;
+            --ink-faint: #6b6860;
+            --rule: #cfcabb;
+            --yellow: #ffe066;
+            --yellow-deep: #e9c22e;
+            --blue: #1d4f9c;
+            --court: #2f6b4f;
+            --court-2: #5f9a7d;
+            --court-3: #a9cdb9;
+            --house: #8a3b2b;
+            --house-2: #b8705c;
+            --house-3: #e3bfb2;
+            --sleep: #dedad0;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { background: var(--desk); }
 
         body {
             min-height: 100vh;
-            background: #f8f8f4;
-            font-family: 'IBM Plex Sans', sans-serif;
-            padding: 2rem;
-            color: #2a2a2a;
+            min-height: 100dvh;
+            background: var(--desk);
+            color: var(--ink);
+            font-family: 'Source Serif 4', Georgia, serif;
+            padding: clamp(12px, 3vw, 36px) clamp(12px, 3vw, 36px) clamp(24px, 4vw, 48px);
+            overflow-x: hidden;
+        }
+
+        .page {
+            width: min(100%, 1120px);
+            margin: 0 auto;
+            background: var(--paper);
+            border: 1px solid var(--rule);
+            box-shadow: 0 2px 0 #d8d3c4, 0 10px 28px rgba(40, 34, 20, 0.12);
+            padding: clamp(14px, 3.4vw, 40px);
+        }
+
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+
+        /* Running head, as in a paperback */
+        .running-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(0.66rem, 1.4vw, 0.78rem);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--ink);
+            margin-bottom: clamp(14px, 2.6vw, 24px);
+        }
+
+        .running-head h1 {
+            font: inherit;
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        /* Sponsor banner */
+        .sponsor {
+            background: var(--yellow);
+            border: 3px solid var(--ink);
+            padding: clamp(12px, 2.4vw, 20px) clamp(14px, 3vw, 26px) clamp(10px, 2vw, 16px);
+            margin-bottom: clamp(18px, 3vw, 30px);
+            text-align: center;
             position: relative;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 2rem;
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-        }
-
-        .title {
+        .sponsor-label {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: clamp(2rem, 5vw, 4rem);
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            color: #5a5a5a;
-        }
-
-        .subsidized-year {
-            background: #ffe066;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border: 3px solid #1a1a1a;
-            text-align: center;
-        }
-
-        .year-label {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.8rem;
-            color: #5a5a5a;
+            font-size: clamp(0.64rem, 1.4vw, 0.76rem);
+            letter-spacing: 0.16em;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.5rem;
+            color: #3d3500;
+            margin-bottom: 6px;
         }
 
-        .year-name {
+        .sponsor-name {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
             font-weight: 600;
-            color: #1a1a1a;
+            font-size: clamp(1.15rem, 3.4vw, 2rem);
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+            hyphens: manual;
         }
 
-        .time-display {
-            text-align: center;
+        .sponsor-name.long {
+            font-size: clamp(0.82rem, 1.7vw, 1.08rem);
+            line-height: 1.35;
+        }
+
+        .sponsor-meta {
+            margin-top: 8px;
             font-family: 'IBM Plex Mono', monospace;
-            font-size: clamp(2rem, 5vw, 4rem);
-            font-weight: 600;
-            color: #1a1a1a;
-            margin: 2rem 0;
-            padding: 1rem;
-            background: #ffffff;
-            border: 2px solid #e0e0e0;
+            font-size: clamp(0.68rem, 1.4vw, 0.8rem);
+            color: #3d3500;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 14px;
         }
 
-        .main-content {
+        .sponsor-meta .abbr { overflow-wrap: anywhere; }
+
+        .years {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 3px;
+            margin-top: 10px;
         }
 
-        .narrative-panel {
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            padding: 2rem;
+        .years span {
+            height: 7px;
+            background: rgba(28, 27, 25, 0.14);
+            position: relative;
+            overflow: hidden;
         }
 
-        .location-label {
+        .years span.past { background: rgba(28, 27, 25, 0.55); }
+
+        .years span i {
+            position: absolute;
+            inset: 0 auto 0 0;
+            background: var(--ink);
+        }
+
+        /* Two columns: main text and the apparatus */
+        .spread {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+            gap: clamp(18px, 3.4vw, 40px);
+            align-items: start;
+        }
+
+        .main-label, .notes h2 {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.75rem;
-            color: #5a5a5a;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 1rem;
-        }
-
-        .location-name {
-            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            font-size: clamp(0.66rem, 1.4vw, 0.76rem);
             font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 1.5rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            margin-bottom: 8px;
         }
 
-        .narrative-text {
-            font-size: clamp(0.95rem, 2vw, 1.05rem);
-            line-height: 1.8;
-            color: #2a2a2a;
-            margin-bottom: 1rem;
+        .time {
+            font-size: clamp(3.6rem, 13vw, 8.4rem);
+            font-weight: 600;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums lining-nums;
+            white-space: nowrap;
+            display: flex;
+            align-items: flex-start;
         }
 
-        .footnote-ref {
-            font-size: 0.7em;
-            vertical-align: super;
-            color: #0066cc;
-            cursor: pointer;
+        .time .ampm {
+            font-size: 0.24em;
+            font-weight: 400;
+            letter-spacing: 0.06em;
+            font-variant: small-caps;
+            align-self: flex-end;
+            margin: 0 0 0.5em 0.18em;
+            color: var(--ink-soft);
+        }
+
+        .time .ref {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.27em;
+            font-weight: 600;
+            color: var(--blue);
             text-decoration: none;
+            margin-left: 0.12em;
+            margin-top: 0.05em;
+            letter-spacing: 0;
         }
 
-        .footnote-ref:hover {
-            text-decoration: underline;
-        }
+        .time .ref:hover, .time .ref:focus-visible { text-decoration: underline; }
 
-        .footnotes-panel {
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            padding: 1.5rem;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .footnotes-title {
+        .seconds {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.85rem;
-            color: #1a1a1a;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #d0d0d0;
+            font-size: clamp(0.8rem, 1.7vw, 0.95rem);
+            color: var(--ink-soft);
+            margin-top: 8px;
+            font-variant-numeric: tabular-nums;
         }
 
-        .footnote {
-            font-size: 0.85rem;
+        .gloss {
+            font-size: clamp(1rem, 1.9vw, 1.14rem);
             line-height: 1.6;
-            color: #3a3a3a;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #d8d8d8;
+            margin: clamp(14px, 2.4vw, 22px) 0;
+            max-width: 38em;
         }
 
-        .footnote:last-child {
-            border-bottom: none;
+        .gloss sup, .hill-now sup {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.66em;
+            color: var(--blue);
+            font-weight: 600;
+            line-height: 0;
         }
 
-        .footnote-number {
+        /* The hill: E.T.A. above, Ennet House below */
+        .hill {
+            border-top: 1px solid var(--rule);
+            padding-top: clamp(12px, 2vw, 18px);
+        }
+
+        .hill-row { margin-bottom: 12px; }
+
+        .hill-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+
+        .hill-place {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(0.66rem, 1.4vw, 0.76rem);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+
+        .hill-now {
+            font-size: clamp(0.95rem, 1.8vw, 1.06rem);
+            font-weight: 600;
+        }
+
+        .hill-now small {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 400;
+            font-size: 0.74em;
+            color: var(--ink-faint);
+            margin-left: 4px;
+            white-space: nowrap;
+        }
+
+        .ribbon {
+            position: relative;
+            height: 16px;
+            display: flex;
+            border: 1px solid var(--ink);
+            background: var(--sleep);
+        }
+
+        .ribbon b {
+            display: block;
+            height: 100%;
+            border-right: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .ribbon b:last-child { border-right: 0; }
+
+        .needle {
+            position: absolute;
+            top: -5px;
+            bottom: -5px;
+            width: 3px;
+            margin-left: -1.5px;
+            background: var(--ink);
+            box-shadow: 0 0 0 1px var(--paper);
+        }
+
+        .hours {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--ink-faint);
+            margin-top: 2px;
+        }
+
+        .hill-caption {
+            font-size: clamp(0.88rem, 1.6vw, 0.96rem);
+            font-style: italic;
+            color: var(--ink-soft);
+            line-height: 1.5;
+            margin-top: 6px;
+        }
+
+        /* Notes and Errata */
+        .notes {
+            border-left: 1px solid var(--rule);
+            padding-left: clamp(16px, 2.6vw, 30px);
+            min-width: 0;
+        }
+
+        .notes h2 { display: flex; justify-content: space-between; gap: 8px; }
+
+        .notes h2 span { font-weight: 400; color: var(--ink-faint); letter-spacing: 0.06em; }
+
+        .notes ol.endnotes {
+            list-style: none;
+            font-size: clamp(0.9rem, 1.6vw, 0.98rem);
+            line-height: 1.55;
+        }
+
+        .endnotes > li {
+            padding: 10px 0;
+            border-top: 1px solid var(--rule);
+            color: var(--ink-soft);
+            overflow-wrap: anywhere;
+        }
+
+        .endnotes > li.old-2 { opacity: 0.62; }
+        .endnotes > li.old-1 { opacity: 0.8; }
+
+        .endnotes > li.current {
+            color: var(--ink);
+            background: linear-gradient(90deg, rgba(255, 224, 102, 0.42), rgba(255, 224, 102, 0.12));
+            border-left: 4px solid var(--yellow-deep);
+            padding-left: 12px;
+            padding-right: 8px;
+            margin-left: -16px;
+        }
+
+        .n {
             font-family: 'IBM Plex Mono', monospace;
             font-weight: 600;
-            color: #0066cc;
-            margin-right: 0.5rem;
+            color: var(--blue);
+            margin-right: 4px;
         }
 
-        .entertainment-list {
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .entertainment-title {
+        .stamp {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.9rem;
-            color: #1a1a1a;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 1rem;
+            font-size: 0.76em;
+            color: var(--ink-faint);
+            margin-right: 6px;
+            white-space: nowrap;
         }
 
-        .entertainment-item {
-            font-size: 0.9rem;
+        .xref { font-style: italic; }
+
+        ol.sub {
+            list-style: none;
+            margin: 8px 0 2px;
+            padding-left: 14px;
+            border-left: 1px dotted var(--ink-faint);
+            font-size: 0.93em;
+            color: var(--ink-soft);
+        }
+
+        ol.sub li { margin-top: 5px; }
+
+        ol.sub .n { color: var(--ink-soft); }
+
+        .live { font-variant-numeric: tabular-nums; font-family: 'IBM Plex Mono', monospace; font-size: 0.92em; }
+
+        @keyframes arrive {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        .fresh { animation: arrive 0.6s ease-out; }
+
+        .colophon {
+            margin-top: clamp(18px, 3vw, 28px);
+            padding-top: 10px;
+            border-top: 1px solid var(--ink);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: clamp(0.64rem, 1.3vw, 0.72rem);
+            color: var(--ink-faint);
             line-height: 1.6;
-            color: #3a3a3a;
-            margin-bottom: 0.5rem;
-            padding-left: 1rem;
         }
 
-        .entertainment-item::before {
-            content: '▸';
-            color: #5a5a5a;
-            margin-right: 0.5rem;
-            margin-left: -1rem;
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
         }
 
-        @media (max-width: 900px) {
-            .main-content {
-                grid-template-columns: 1fr;
+        @media (max-width: 820px) {
+            .spread { grid-template-columns: 1fr; }
+            .notes {
+                border-left: 0;
+                padding-left: 0;
+                border-top: 1px solid var(--ink);
+                padding-top: 14px;
             }
+            .endnotes > li.current { margin-left: 0; }
+        }
 
-            .footnotes-panel {
-                max-height: 400px;
-            }
+        @media (prefers-reduced-motion: reduce) {
+            .fresh { animation: none; }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 class="title">INFINITE JEST</h1>
-            <div class="subtitle">David Foster Wallace</div>
-        </div>
+    <main class="page">
+        <header class="running-head">
+            <h1>Infinite Jest</h1>
+            <span>David Foster Wallace</span>
+            <span>A clock in Subsidized Time</span>
+        </header>
 
-        <div class="subsidized-year">
-            <div class="year-label">Current Subsidized Year</div>
-            <div class="year-name" id="subsidizedYear">Year of the Depend Adult Undergarment</div>
-        </div>
+        <section class="sponsor" aria-label="Current subsidized year">
+            <div class="sponsor-label">This stretch of the day is brought to you by the</div>
+            <div class="sponsor-name" id="sponsorName">Year of Glad</div>
+            <div class="sponsor-meta">
+                <span id="sponsorOrd">Year 9 of 9</span>
+                <span id="sponsorMin">minute 1 of 160</span>
+                <span class="abbr" id="sponsorAbbr">Y.G.</span>
+            </div>
+            <div class="years" id="years" aria-hidden="true"></div>
+        </section>
 
-        <div class="time-display" id="time">00:00:00</div>
-
-        <div class="main-content">
-            <div class="narrative-panel">
-                <div class="location-label">Location</div>
-                <div class="location-name" id="location">Enfield Tennis Academy</div>
-
-                <div id="narrative">
-                    <!-- Narrative injected here -->
+        <div class="spread">
+            <section class="main" aria-label="Main text">
+                <div class="main-label">Main text</div>
+                <div class="time" role="timer" aria-live="off" aria-atomic="true">
+                    <span id="hm">12:00</span><span class="ampm" id="ampm">a.m.</span><a class="ref" id="ref" href="#current" aria-label="go to the current endnote">1</a>
                 </div>
-            </div>
+                <div class="seconds" id="secs">and 00 seconds</div>
 
-            <div class="footnotes-panel">
-                <div class="footnotes-title">Footnotes & Endnotes</div>
-                <div id="footnotes">
-                    <!-- Footnotes injected here -->
+                <p class="gloss" id="gloss">The novel keeps 388 endnotes in the back. This clock spreads them across the day, one every three minutes and forty-three seconds or so, which leaves the time itself as the main text and puts everything of interest in the notes.</p>
+
+                <div class="hill" aria-label="Up the hill and down the hill">
+                    <div class="hill-row">
+                        <div class="hill-head">
+                            <span class="hill-place">Up the hill · E.T.A.</span>
+                            <span class="hill-now" id="etaNow">Asleep, mostly</span>
+                        </div>
+                        <div class="ribbon" id="etaRibbon" aria-hidden="true"></div>
+                    </div>
+                    <div class="hill-row">
+                        <div class="hill-head">
+                            <span class="hill-place">Down the hill · Ennet House</span>
+                            <span class="hill-now" id="ennetNow">The night desk</span>
+                        </div>
+                        <div class="ribbon" id="ennetRibbon" aria-hidden="true"></div>
+                        <div class="hours" aria-hidden="true"><span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span></div>
+                    </div>
+                    <p class="hill-caption" id="hillCaption"></p>
                 </div>
-            </div>
+            </section>
+
+            <aside class="notes" aria-label="Notes and Errata">
+                <h2>Notes and Errata <span id="noteCount">1 / 388</span></h2>
+                <ol class="endnotes" id="notes"></ol>
+            </aside>
         </div>
 
-        <div class="entertainment-list">
-            <div class="entertainment-title">Entertainment Cartridges Available This Hour</div>
-            <div id="entertainments">
-                <!-- Entertainments injected here -->
-            </div>
-        </div>
-    </div>
+        <footer class="colophon">
+            The nine sponsored years run in the novel's order, 160 minutes apiece, so the day ends where the book begins, in the Year of Glad. The notes are generated from the time and written for this clock; none of them is from the novel. The schedules up and down the hill are this clock's own.
+        </footer>
+
+        <div class="sr-only" aria-live="polite" id="live"></div>
+    </main>
 
     <script>
-        // Subsidized years cycle through the day
-        const subsidizedYears = [
-            "Year of the Whopper",
-            "Year of the Tucks Medicated Pad",
-            "Year of the Trial-Size Dove Bar",
-            "Year of the Perdue Wonderchicken",
-            "Year of the Whisper-Quiet Maytag Dishmaster",
-            "Year of the Yushityu 2007 Mimetic-Resolution-Cartridge-View-Motherboard-Easy-To-Install-Upgrade",
-            "Year of Dairy Products from the American Heartland",
-            "Year of the Depend Adult Undergarment",
-            "Year of Glad"
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        const DAY = 86400;
+        const NOTES = 388;
+        const YEAR_LEN = DAY / 9; // 9600 s, i.e. 160 minutes
+
+        // The Subsidized Time calendar, in order.
+        const YEARS = [
+            { name: 'Year of the Whopper', abbr: 'Y.W.' },
+            { name: 'Year of the Tucks Medicated Pad', abbr: 'Y.T.M.P.' },
+            { name: 'Year of the Trial-Size Dove Bar', abbr: 'Y.T.S.D.B.' },
+            { name: 'Year of the Perdue Wonderchicken', abbr: 'Y.P.W.' },
+            { name: 'Year of the Whisper-Quiet Maytag Dishmaster', abbr: 'Y.W.Q.M.D.' },
+            { name: 'Year of the Yushityu 2007 Mimetic-Resolution-Cartridge-View-Motherboard-Easy-To-Install-Upgrade For Infernatron/InterLace TP Systems For Home, Office, Or Mobile', abbr: 'Y.Y.2007M.R.C.V.M.E.T.I.U.F.I.I.T.S.F.H.O.O.M.', long: true },
+            { name: 'Year of Dairy Products from the American Heartland', abbr: 'Y.D.P.A.H.' },
+            { name: 'Year of the Depend Adult Undergarment', abbr: 'Y.D.A.U.' },
+            { name: 'Year of Glad', abbr: 'Y.G.' }
         ];
 
-        const hourlyContent = [
-            {
-                hours: [0, 1, 2],
-                location: "Ennet House Drug and Alcohol Recovery House",
-                narrative: [
-                    "The thing about being in a halfway house is that you're in this place where everybody's trying to quit the same Substance you are, and you're all free to call one another on their Substance-patterns.",
-                    "Don Gately<a class='footnote-ref' href='#fn1'>[1]</a>, former professional burglar and Demerol addict, lay in his staff bed thinking about the difference between abstinence and recovery.",
-                    "The thing about AA is they claim there's no difference between wanting to stop and actually stopping. The paradox is you have to want to want to."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> Don Gately, six-foot-four and 270 pounds of former narcotics addict, now Ennet House's live-in staff member and enforcer of sobriety.",
-                    "<span class='footnote-number'>[2]</span> Demerol (generic meperidine hydrochloride), a Schedule II narcotic analgesic, produces euphoria and analgesia similar to morphine but with less sedation.",
-                    "<span class='footnote-number'>[3]</span> Alcoholics Anonymous, founded 1935 in Akron OH, follows the famous Twelve Steps, which begin with admitting powerlessness over alcohol."
-                ],
-                entertainments: [
-                    "The Medusa v. The Odalisque — A Study in Comparative Stillness",
-                    "Valuable Coupon Has Been Removed — A consumer's lament",
-                    "Sorry All Over Your Face — Apology studies"
-                ]
-            },
-            {
-                hours: [3, 4, 5],
-                location: "Enfield Tennis Academy",
-                narrative: [
-                    "At the Enfield Tennis Academy<a class='footnote-ref' href='#fn1'>[1]</a>, the pre-dawn drills were underway. Hal Incandenza thought about his father's films while practicing serves.",
-                    "The thing about competitive junior tennis is that it's about junior competitive tennis. Not about learning. Not about maturity. About winning now.",
-                    "Hal's internal monologue ran at multiple levels simultaneously, a consequence of both intelligence and certain Substances<a class='footnote-ref' href='#fn2'>[2]</a>."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> Enfield Tennis Academy (E.T.A.), founded by James O. Incandenza and located on the hill above Ennet House, trains pre-adolescent tennis players.",
-                    "<span class='footnote-number'>[2]</span> Cannabis, which Hal consumes regularly via one-hitters hidden throughout E.T.A., produces complex cognitive effects including temporal distortion and recursive thinking.",
-                    "<span class='footnote-number'>[3]</span> James O. Incandenza, a.k.a. 'Himself,' former tennis player and optical physicist, created over 300 films before his suicide by microwave."
-                ],
-                entertainments: [
-                    "Infinite Jest (V or VI?) — The Entertainment, allegedly lethally entertaining",
-                    "Tennis and the Feral Prodigy — A documentary study",
-                    "Death in Scarsdale — Suburban mortality studies"
-                ]
-            },
-            {
-                hours: [6, 7, 8],
-                location: "Enfield Tennis Academy — Morning Drills",
-                narrative: [
-                    "Mario Incandenza<a class='footnote-ref' href='#fn1'>[1]</a>, despite or because of his various challenges, was perhaps the most cheerful person at E.T.A. He filmed everything with innocent enthusiasm.",
-                    "The morning drills involved serves, returns, tactical positioning, and the grinding repetition that separated the potentially great from the merely good.",
-                    "Hal considered the recursive nature of competition: you compete to get better to compete better to get better to compete."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> Mario Incandenza, Hal's older adopted brother, born with severe physical challenges including bradykinesia and an oversized head, nevertheless remains unfailingly cheerful.",
-                    "<span class='footnote-number'>[2]</span> The Eschaton game, invented by Otis P. Lord and played on the tennis courts with tennis balls representing thermonuclear warheads, ended in chaos when metaphor collapsed into reality.",
-                    "<span class='footnote-number'>[3]</span> James Incandenza's obsession with tennis and optics merged in his films, particularly in his studies of light, reflection, and competitive isolation."
-                ],
-                entertainments: [
-                    "Pre-Nuptial Agreement of Heaven and Hell — Theological studies",
-                    "Cage III — Free Show — Performance art piece",
-                    "Blood Sister: One Tough Nun — Action dramedy"
-                ]
-            },
-            {
-                hours: [9, 10, 11],
-                location: "Enfield Tennis Academy — Academic Classes",
-                narrative: [
-                    "The thing about E.T.A. is it's both tennis academy and accredited secondary school, which means the students are exhausted both physically and intellectually.",
-                    "Pemulis<a class='footnote-ref' href='#fn1'>[1]</a> dealt various Substances to students, carefully calibrated to enhance performance without detection, a pharmacological balancing act.",
-                    "Classes covered calculus, literature, chemistry—all taught with the understanding that tennis came first, academics second, in a kind of unstated hierarchy."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> Michael Pemulis, chemistry prodigy and dealer of performance-enhancing and recreational Substances, maintains an extensive pharmacopoeia hidden throughout E.T.A.",
-                    "<span class='footnote-number'>[2]</span> The Disciplines: total focus on the present moment, taught by Lyle in the weight room, achieved through various physical and mental practices.",
-                    "<span class='footnote-number'>[3]</span> Organization of North American Nations (O.N.A.N.), formed after the U.S. ceded substantial territory to Canada in the Great Concavity/Convexity exchange."
-                ],
-                entertainments: [
-                    "It Was a Great Marvel That He Was in the Father Without Knowing Him — Experimental narrative",
-                    "The Man Who Began to Suspect He Was Made of Glass — Phenomenological study",
-                    "Accomplice! — Co-dependency thriller"
-                ]
-            },
-            {
-                hours: [12, 13, 14],
-                location: "Ennet House — Group Meetings",
-                narrative: [
-                    "The thing about Group meetings at Ennet House is that you're supposed to share your feelings without expecting solutions, which seems paradoxical.",
-                    "Residents talked about the Cage<a class='footnote-ref' href='#fn1'>[1]</a>, about dreams of using, about the difficulty of living in the present moment without chemical assistance.",
-                    "Don Gately listened to stories of bottoming out: the DUIs, the lost jobs, the burned bridges, the pattern of progressive enslavement to Substance."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> The Cage, a particularly bad withdrawl state where the addict feels trapped in their own skin, desperate and unable to escape consciousness.",
-                    "<span class='footnote-number'>[2]</span> The Disease Concept: addiction as progressive, chronic, and potentially fatal illness rather than moral failing or lack of willpower.",
-                    "<span class='footnote-number'>[3]</span> White Flag Group, one of the many AA meetings residents attend, known for militant enthusiasm and aggressive sharing."
-                ],
-                entertainments: [
-                    "The ONANtiad — Epic poem about continental reconfiguration",
-                    "Every Inch of Disney Leith — Experimental travelogue",
-                    "Kinds of Light — Optical studies by James O. Incandenza"
-                ]
-            },
-            {
-                hours: [15, 16, 17],
-                location: "Enfield Tennis Academy — Afternoon Matches",
-                narrative: [
-                    "Competitive matches at E.T.A. were grueling psychological battles disguised as athletic contests. The real opponent was always yourself.",
-                    "Hal Incandenza<a class='footnote-ref' href='#fn1'>[1]</a> played with mechanical precision, his mind simultaneously engaged in the match and floating elsewhere, dissociated through practice and Substances.",
-                    "The thing about tennis is it's one of the few sports where you're completely alone out there with your failure."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> Harold James Incandenza, age 17, ranked #2 in Eastern North America for boys 18-and-under, linguistic prodigy and secret marijuana addict.",
-                    "<span class='footnote-number'>[2]</span> The Show Court, where matches of note are played, equipped with stadium seating and occasionally attended by professional scouts.",
-                    "<span class='footnote-number'>[3]</span> Schtitt's philosophy: junior tennis should be joyless preparation for professional joylessness, embracing suffering as path to excellence."
-                ],
-                entertainments: [
-                    "The Machine in the Ghost: Annular Fusion — Science documentary",
-                    "Tennis and the Feral Prodigy — Incandenza family studies",
-                    "Fun with Teeth — Dental horror-comedy"
-                ]
-            },
-            {
-                hours: [18, 19, 20],
-                location: "Ennet House — Evening Routine",
-                narrative: [
-                    "Evening at Ennet House meant dinner, chores, mandatory AA meetings, and the grinding routine of staying clean one day at a time.",
-                    "Residents discussed The Entertainment<a class='footnote-ref' href='#fn1'>[1]</a> in hushed tones—the supposedly lethally entertaining film that made viewers unable to do anything but watch it repeatedly.",
-                    "Gately, in his patient way, reminded residents that the only thing they had to do was not pick up a Substance today, just today, then repeat."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> The Entertainment, also known as 'Infinite Jest' or 'The Samizdat,' James Incandenza's final film, allegedly so entertaining that viewers lose all will to do anything but watch it.",
-                    "<span class='footnote-number'>[2]</span> The Wheelchair Assassins, Québécois separatist group seeking The Entertainment as a weapon to destabilize O.N.A.N.",
-                    "<span class='footnote-number'>[3]</span> A.F.R. (Les Assassins des Fauteuils Rollents), the militant Québécois separatist group led by the remorseless Fortier and theatrical Marathe."
-                ],
-                entertainments: [
-                    "The Joke — Audience-specific humor studies",
-                    "Infinite Jest (V or VI?) — The Entertainment itself",
-                    "Death and the Single Girl — Mortality comedy"
-                ]
-            },
-            {
-                hours: [21, 22, 23],
-                location: "Enfield Tennis Academy — Night",
-                narrative: [
-                    "Late at night, E.T.A. students dealt with insomnia through various means: Substances, exercise, reading, or simply lying awake contemplating competition and mortality.",
-                    "Mario wandered the halls with his camera<a class='footnote-ref' href='#fn1'>[1]</a>, filming the empty courts, the sleeping students, the architecture of institutional athletics.",
-                    "Hal, unable to sleep, consumed Substances and thought about his father's suicide, about The Entertainment, about the recursive trap of self-consciousness."
-                ],
-                footnotes: [
-                    "<span class='footnote-number'>[1]</span> Mario's documentaries captured E.T.A. life with unsentimental affection, seeing beauty in the grinding repetition his brother Hal found oppressive.",
-                    "<span class='footnote-number'>[2]</span> James Incandenza's death by microwave: placing head in microwave oven and activating it, an act of either supreme despair or ultimate commitment to optical experiments.",
-                    "<span class='footnote-number'>[3]</span> The Year of the Depend Adult Undergarment, when most of the novel's action occurs, representing the commercialization and infantilization of American culture."
-                ],
-                entertainments: [
-                    "Found Drama — Reality as entertainment",
-                    "The American Century as Seen Through a Brick — Historical compression",
-                    "Mobius Strips — Infinite loops and paradoxes"
-                ]
-            }
+        // This clock's schedules, in minutes of the day. [start, end, label, colour]
+        const ETA = [
+            [0, 330, 'Asleep, mostly', 'var(--sleep)'],
+            [330, 450, 'Dawn drills', 'var(--court)'],
+            [450, 495, 'Breakfast', 'var(--court-3)'],
+            [495, 780, 'Classes', 'var(--court-2)'],
+            [780, 840, 'Lunch', 'var(--court-3)'],
+            [840, 1050, 'Afternoon drills and challenge matches', 'var(--court)'],
+            [1050, 1110, 'Weight room', 'var(--court-2)'],
+            [1110, 1170, 'Dinner', 'var(--court-3)'],
+            [1170, 1320, 'Study hours', 'var(--court-2)'],
+            [1320, 1440, 'Lights out, in theory', 'var(--sleep)']
+        ];
+        const ENNET = [
+            [0, 390, 'The night desk', 'var(--house-3)'],
+            [390, 480, 'Wake-up and chores', 'var(--house-2)'],
+            [480, 1020, 'Residents out at their jobs', 'var(--sleep)'],
+            [1020, 1110, 'Dinner and chores', 'var(--house-2)'],
+            [1110, 1170, 'House meeting', 'var(--house)'],
+            [1170, 1320, 'Out at the evening meeting', 'var(--house)'],
+            [1320, 1440, 'Curfew, and talk on the front steps', 'var(--house-3)']
         ];
 
-        const timeEl = document.getElementById('time');
-        const subsidizedYearEl = document.getElementById('subsidizedYear');
-        const locationEl = document.getElementById('location');
-        const narrativeEl = document.getElementById('narrative');
-        const footnotesEl = document.getElementById('footnotes');
-        const entertainmentsEl = document.getElementById('entertainments');
+        const pad = n => String(n).padStart(2, '0');
 
-        let currentContentIndex = -1;
+        function clock12(minOfDay) {
+            const h = Math.floor(minOfDay / 60) % 24;
+            const m = minOfDay % 60;
+            const h12 = h % 12 === 0 ? 12 : h % 12;
+            return { hm: h12 + ':' + pad(m), ampm: h < 12 ? 'a.m.' : 'p.m.' };
+        }
+        const fmt = minOfDay => { const c = clock12(((minOfDay % 1440) + 1440) % 1440); return c.hm + ' ' + c.ampm; };
 
-        function getContentForHour(hour) {
-            for (const content of hourlyContent) {
-                if (content.hours.includes(hour)) {
-                    return content;
+        const slot = (table, minOfDay) => table.find(r => minOfDay >= r[0] && minOfDay < r[1]) || table[0];
+        const lower = s => s.charAt(0).toLowerCase() + s.slice(1);
+
+        function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+        function span(mins) {
+            if (mins <= 0) return 'less than a minute';
+            const h = Math.floor(mins / 60), m = mins % 60;
+            if (h && m) return plural(h, 'hour') + ' and ' + plural(m, 'minute');
+            if (h) return plural(h, 'hour');
+            return plural(m, 'minute');
+        }
+
+        // Endnote n (1..388) begins at this second of the day.
+        const noteStart = n => Math.ceil((n - 1) * DAY / NOTES);
+        const noteAt = sec => Math.min(NOTES, Math.floor(sec * NOTES / DAY) + 1);
+
+        function ctx(n) {
+            const sec = noteStart(n);
+            const min = Math.floor(sec / 60);
+            const y = Math.floor(sec / YEAR_LEN);
+            return {
+                n, sec, min,
+                time: fmt(min),
+                eta: slot(ETA, min),
+                ennet: slot(ENNET, min),
+                year: YEARS[y], yi: y,
+                ymin: Math.floor((sec - y * YEAR_LEN) / 60) + 1
+            };
+        }
+
+        // Endnote bodies. All of this is written for the clock.
+        const BODIES = [
+            c => `At ${c.time}, up the hill: ${lower(c.eta[2])}. Down the hill: ${lower(c.ennet[2])}. Neither place is thinking about the other at this precise minute, which is itself worth a note.`,
+            c => `That is ${c.min} minutes after midnight, or ${(c.min / 14.4).toFixed(2)} percent of the day, a figure someone at E.T.A. would carry to four more decimal places in order not to think about something else.`,
+            c => c.n > 2 ? `<span class="xref">See n. ${c.n - 2}, above,</span> which is already ${span(c.min - ctx(c.n - 2).min)} out of date and has not been told.` : `There is no earlier note to cross-refer to yet. The apparatus regrets this and will make up for it shortly.`,
+            c => `Minute ${c.ymin} of the ${c.year.name}. On this clock a sponsored year lasts 160 minutes, which is roughly how long anyone remembers a sponsor anyway.`,
+            c => `Down the hill they do it one day at a time. This note is doing it one minute at a time, which the House staff would regard as showing off.`,
+            c => `Hal could tell you that minute comes from the Latin for a small part, and at ${c.time} he probably would, unprompted.`,
+            c => `Mario would like to film this minute. It will not be a long film, and it will be very kindly lit.`,
+            c => { const o = (c.min + 720) % 1440; return `Not to be confused with ${fmt(o)}, the same time on the other side of the dial. Up the hill it will be ${lower(slot(ETA, o)[2])}; down the hill, ${lower(slot(ENNET, o)[2])}. Same clock face, different hill.`; },
+            c => `The sponsor has asked that this note be shorter. The request has been noted <span class="xref">(see this note)</span>.`,
+            c => c.yi > 0 ? `In the ${YEARS[c.yi - 1].name}, which ended ${span(c.min - (c.yi * 160))} ago, this note would have read exactly the same and felt somehow cheaper.` : `This is the first sponsored year of the day, so there is nothing to compare it with except yesterday, which nobody paid for.`,
+            c => `Strictly this should be a footnote, but footnotes belong at the bottom of a page and this clock has declined to have a bottom.`,
+            c => `${NOTES - c.n} endnotes remain before midnight, when the apparatus starts again at n. 1 and nobody admits to having read them all.`,
+            c => `Around n. ${c.n}, readers of the book traditionally acquire a second bookmark. Readers of the clock may use the scroll wheel.`,
+            c => { const nx = ETA.find(r => r[0] > c.min); return nx ? `Next at E.T.A., in ${span(nx[0] - c.min)}: ${lower(nx[2])}. Which is either a long time or no time, depending on which side of the net you are standing.` : `Nothing else is scheduled at E.T.A. before midnight. This has never once stopped anyone from setting an alarm.`; },
+            c => `Under the terms of Subsidized Time the sponsor holds naming rights to this minute, but not to its contents, which remain the property of whoever is living through it.`,
+            c => `Whoever is on the front desk at Ennet House at ${c.time} writes the time in the log, in pen, and is the only person in this note doing anything useful.`,
+            c => `The O.N.A.N. would like it known that ${c.time} applies throughout the continent, adjusted for time zones, which it has also tried to sell.`
+        ];
+
+        // Sub-notes accumulate inside the current endnote as its seconds pass.
+        const SUBS = [
+            [
+                () => `This note expires in <span class="live" data-live="left"></span>, when n. <span class="live" data-live="next"></span> takes over.`
+            ],
+            [
+                () => `Or <span class="live" data-live="sod"></span> seconds since midnight, for those who like their time unabridged.`,
+                () => `Seconds, here, are the sub-notes of minutes. This is the sub-note of a note about that.`,
+                () => `The sub-note is in smaller type, as is customary, so that it can say more while seeming to say less.`
+            ],
+            [
+                () => `A sub-note, like a tennis ball, is something you keep returning to long after you meant to stop.`,
+                () => `It is still the <span class="live" data-live="year"></span>. Sub-notes do not get a sponsor of their own; it was discussed.`,
+                () => `If you have been reading these aloud, the clock has moved on without you. It does that.`
+            ],
+            [
+                () => `Sub-note (d) is the last. Any further digression waits for the next endnote, as in life.`,
+                () => `This is as deep as the nesting goes today. Tomorrow, possibly (e).`
+            ]
+        ];
+        const SUB_LETTERS = ['a', 'b', 'c', 'd'];
+
+        // Build the static parts: year strip and ribbons.
+        const yearsEl = document.getElementById('years');
+        YEARS.forEach(() => yearsEl.appendChild(document.createElement('span')));
+
+        function buildRibbon(el, table) {
+            table.forEach(r => {
+                const b = document.createElement('b');
+                b.style.flex = String(r[1] - r[0]);
+                b.style.background = r[3];
+                el.appendChild(b);
+            });
+            const needle = document.createElement('span');
+            needle.className = 'needle';
+            el.appendChild(needle);
+            return needle;
+        }
+        const etaNeedle = buildRibbon(document.getElementById('etaRibbon'), ETA);
+        const ennetNeedle = buildRibbon(document.getElementById('ennetRibbon'), ENNET);
+
+        const $ = id => document.getElementById(id);
+        const notesEl = $('notes');
+        let lastKey = '', lastYear = -1, lastMinute = -1;
+
+        function caption(min) {
+            const e = slot(ETA, min), h = slot(ENNET, min);
+            const etaAwake = e[3] !== 'var(--sleep)';
+            const houseBusy = h[3] === 'var(--house)' || h[3] === 'var(--house-2)';
+            if (etaAwake && !houseBusy) return 'The academy has the daylight. The House is out at work, keeping its head down until evening.';
+            if (!etaAwake && houseBusy) return 'The academy is asleep or pretending to be. Down the hill, this is when the House does its real work.';
+            if (etaAwake && houseBusy) return 'Both ends of the hill are awake and busy, one with ball machines, the other with folding chairs and coffee.';
+            return 'Both ends of the hill are dark, apart from one lit desk at the bottom and a few lit windows at the top.';
+        }
+
+        function renderNotes(n, subCount) {
+            let html = '';
+            for (let j = n - 3; j <= n; j++) {
+                // Before n. 4 the list reaches back into yesterday's notes.
+                const k = j < 1 ? j + NOTES : j;
+                const c = ctx(k);
+                const body = BODIES[(k * 7) % BODIES.length](c);
+                const age = n - j;
+                const cls = k === n ? 'current' : age >= 2 ? 'old-2' : 'old-1';
+                html += `<li class="${cls}"${k === n ? ' id="current"' : ''}><span class="n">${k}.</span><span class="stamp">${c.time}</span>${body}`;
+                if (k === n && subCount > 0) {
+                    html += '<ol class="sub">';
+                    for (let s = 0; s < subCount; s++) {
+                        const pool = SUBS[s];
+                        const fresh = s === subCount - 1 ? ' class="fresh"' : '';
+                        html += `<li${fresh}><span class="n">${SUB_LETTERS[s]}.</span>${pool[k % pool.length]()}</li>`;
+                    }
+                    html += '</ol>';
                 }
+                html += '</li>';
             }
-            return hourlyContent[0];
+            notesEl.innerHTML = html;
         }
 
-        function updateClock() {
+        function tick() {
             const now = new Date();
-            const hour = now.getHours();
+            const sod = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            const min = Math.floor(sod / 60);
+            const n = noteAt(sod);
+            const into = sod - noteStart(n);
+            const nextStart = n < NOTES ? noteStart(n + 1) : DAY;
+            const subCount = Math.min(4, 1 + Math.floor(into / 56));
 
-            // Update time
-            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+            // Main text
+            const c12 = clock12(min);
+            $('hm').textContent = c12.hm;
+            $('ampm').textContent = c12.ampm;
+            $('ref').textContent = n;
+            $('secs').textContent = 'and ' + pad(now.getSeconds()) + ' seconds';
+            $('noteCount').textContent = n + ' / ' + NOTES;
 
-            // Update subsidized year (cycles through hours)
-            const yearIndex = Math.floor(hour / 3) % subsidizedYears.length;
-            subsidizedYearEl.textContent = subsidizedYears[yearIndex];
-
-            // Get content
-            const content = getContentForHour(hour);
-            const contentIndex = hourlyContent.indexOf(content);
-
-            // Update if changed
-            if (contentIndex !== currentContentIndex) {
-                locationEl.textContent = content.location;
-                narrativeEl.innerHTML = content.narrative.map(para =>
-                    `<p class="narrative-text">${para}</p>`
-                ).join('');
-                footnotesEl.innerHTML = content.footnotes.map(note =>
-                    `<div class="footnote">${note}</div>`
-                ).join('');
-                entertainmentsEl.innerHTML = content.entertainments.map(ent =>
-                    `<div class="entertainment-item">${ent}</div>`
-                ).join('');
-                currentContentIndex = contentIndex;
+            // Sponsor
+            const yi = Math.min(8, Math.floor(sod / YEAR_LEN));
+            const yr = YEARS[yi];
+            if (yi !== lastYear) {
+                $('sponsorName').textContent = yr.name;
+                $('sponsorName').classList.toggle('long', !!yr.long);
+                $('sponsorAbbr').textContent = yr.abbr;
+                $('sponsorOrd').textContent = 'Year ' + (yi + 1) + ' of 9';
+                lastYear = yi;
             }
+            const ymin = Math.floor((sod - yi * YEAR_LEN) / 60) + 1;
+            $('sponsorMin').textContent = 'minute ' + ymin + ' of 160';
+            [...yearsEl.children].forEach((el, i) => {
+                el.className = i < yi ? 'past' : '';
+                if (i === yi) {
+                    el.innerHTML = `<i style="width:${((sod - yi * YEAR_LEN) / YEAR_LEN * 100).toFixed(2)}%"></i>`;
+                } else if (el.firstChild) {
+                    el.innerHTML = '';
+                }
+            });
+
+            // The hill
+            if (min !== lastMinute) {
+                const e = slot(ETA, min), h = slot(ENNET, min);
+                $('etaNow').innerHTML = `${e[2]} <small>${fmt(e[0])} to ${fmt(e[1])}</small>`;
+                $('ennetNow').innerHTML = `${h[2]} <small>${fmt(h[0])} to ${fmt(h[1])}</small>`;
+                const pct = (min / 1440 * 100).toFixed(3) + '%';
+                etaNeedle.style.left = pct;
+                ennetNeedle.style.left = pct;
+                $('hillCaption').textContent = caption(min);
+                $('live').textContent = `${c12.hm} ${c12.ampm}, endnote ${n} of ${NOTES}, ${yr.name}.`;
+                lastMinute = min;
+            }
+
+            // Notes
+            const key = n + ':' + subCount;
+            if (key !== lastKey) {
+                renderNotes(n, subCount);
+                lastKey = key;
+            }
+            const left = nextStart - sod;
+            notesEl.querySelectorAll('[data-live]').forEach(el => {
+                const k = el.dataset.live;
+                if (k === 'left') el.textContent = plural(left, 'second');
+                else if (k === 'next') el.textContent = n < NOTES ? n + 1 : 1;
+                else if (k === 'sod') el.textContent = sod.toLocaleString('en-US');
+                else if (k === 'year') el.textContent = yr.name;
+            });
         }
 
-        // Initialize
-        updateClock();
-        setInterval(updateClock, 1000);
+        tick();
+        setInterval(tick, 1000);
     </script>
 </body>
 

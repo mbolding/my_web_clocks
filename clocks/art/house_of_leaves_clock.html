@@ -4,239 +4,485 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>House of Leaves Clock</title>
+    <meta name="description" content="Danielewski's House of Leaves as a clock: the house on Ash Tree Lane is a quarter inch bigger inside than out at midnight, the gap doubles every hour, and the hallway keeps going.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=Courier+Prime&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8f8f8;
-            --text: #1a1a1a;
-            --house-blue: #0000ff;
-            --minotaur-red: #8b0000;
+            --desk: #e4e2dc;
+            --paper: #fdfdfb;
+            --ink: #161616;
+            --ink-soft: #4b4b48;
+            --rule: #9a9a94;
+            --house: #0a2fe0;       /* "house" is always blue */
+            --minotaur: #b0201a;    /* struck passages in red */
+            --dark: #0b0b0b;
+            --ash: #bdbcb4;         /* explored corridor walls */
+            --zampano: 'Tinos', 'Times New Roman', Times, serif;
+            --truant: 'Courier Prime', 'Courier New', monospace;
+            --editors: 'Libre Baskerville', 'Bookman Old Style', Georgia, serif;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--desk); }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Crimson Text', serif;
+            background: var(--desk);
+            color: var(--ink);
+            font-family: var(--zampano);
             min-height: 100vh;
-            overflow: hidden;
-            position: relative;
+            min-height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: clamp(8px, 2.4vw, 28px);
+            overflow-x: hidden;
         }
 
-        .time-element {
-            position: absolute;
-            transition: all 2s cubic-bezier(0.25, 0.1, 0.25, 1);
+        .house { color: var(--house); }
+
+        .page {
+            width: min(100%, 1060px);
+            background: var(--paper);
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.14);
+            padding: clamp(16px, 3.4vw, 38px) clamp(16px, 3.6vw, 44px) clamp(14px, 2.6vw, 26px);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: clamp(14px, 2.4vw, 26px);
+        }
+
+        @media (min-width: 900px) {
+            .page {
+                grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+                grid-template-areas:
+                    "head head"
+                    "text plan"
+                    "notes plan"
+                    "colo colo";
+                align-items: start;
+            }
+            .head  { grid-area: head; }
+            .text  { grid-area: text; }
+            .plan  { grid-area: plan; }
+            .notes { grid-area: notes; }
+            .colophon { grid-area: colo; }
+        }
+
+        /* ---------- Running head ---------- */
+        .head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 8px;
+            font-size: clamp(0.72rem, 1.6vw, 0.86rem);
+            letter-spacing: 0.08em;
+            color: var(--ink-soft);
+        }
+        .head .title { text-transform: uppercase; letter-spacing: 0.22em; }
+        .head .dedication { font-style: italic; letter-spacing: 0.02em; }
+
+        /* ---------- Zampano's layer: the time ---------- */
+        .text { min-width: 0; }
+
+        .chapter {
+            font-size: clamp(0.78rem, 1.7vw, 0.92rem);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            margin-bottom: 4px;
+        }
+
+        .time-box {
+            display: inline-block;
+            position: relative;
+            line-height: 0.95;
+            padding: 0.04em 0.06em;
+        }
+
+        .time {
+            font-family: var(--zampano);
+            font-weight: 400;
+            font-size: clamp(4.4rem, 17vw, 9.2rem);
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
             white-space: nowrap;
         }
-
-        #hours {
-            font-size: clamp(8rem, 20vw, 15rem);
-            font-weight: 700;
-            opacity: 0.9;
+        .time .sec {
+            font-size: 0.32em;
+            letter-spacing: 0;
+            color: var(--ink-soft);
+            vertical-align: 0.15em;
+            margin-left: 0.08em;
         }
-
-        #minutes {
-            font-size: clamp(4rem, 10vw, 8rem);
-            font-weight: 400;
-            opacity: 0.8;
-            mix-blend-mode: multiply;
+        .time sup, .sentence sup, .note sup {
+            font-size: 0.62em;
+            line-height: 0;
+            color: var(--ink-soft);
         }
+        .time sup { font-size: 0.2em; vertical-align: 2.6em; margin-left: 0.1em; font-family: var(--zampano); }
 
-        #seconds {
-            font-family: 'Courier Prime', monospace;
-            font-size: 2rem;
-            color: var(--minotaur-red);
-            font-weight: bold;
-            letter-spacing: 5px;
-            transition: all 0.5s ease-out; /* Seconds move faster/jumpier */
-        }
-
-        .footnote {
-            position: absolute;
-            font-size: 0.8rem;
-            color: #555;
-            width: 250px;
+        .sentence {
+            margin-top: clamp(8px, 1.6vw, 14px);
+            font-size: clamp(1.05rem, 2.5vw, 1.32rem);
+            line-height: 1.5;
+            max-width: 34em;
             text-align: justify;
-            border-top: 1px solid #aaa;
-            padding-top: 5px;
-            opacity: 0.4;
-            transition: opacity 1s, transform 5s;
+            hyphens: auto;
+        }
+        .sentence .measure { font-weight: 700; white-space: nowrap; }
+
+        /* As the day goes on, the layout gets harder to walk through */
+        .lvl-3 .sentence, .lvl-4 .sentence, .lvl-5 .sentence {
+            max-width: 19em;
+            border-left: 1px solid var(--rule);
+            padding-left: 0.8em;
+        }
+        .lvl-5 .time-box {
+            outline: 2px solid var(--house);
+            outline-offset: 0.12em;
+            border: 1px solid var(--house);
+            padding: 0.08em 0.14em;
+            margin: 0.14em;
         }
 
-        .house {
-            color: var(--house-blue);
+        /* ---------- The plan ---------- */
+        .plan { min-width: 0; margin: 0; }
+        .plan svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: min(78vh, 640px);
         }
-
-        /* The Void / Navidson Record */
-        .the-void {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 0px;
-            height: 0px;
-            background-color: #000;
-            box-shadow: 0 0 50px #000;
-            transition: all 10s ease-in-out;
-            z-index: 0;
-        }
-
-        .quote-box {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            font-size: 1rem;
-            max-width: 400px;
+        .plan figcaption {
+            margin-top: 8px;
+            font-size: clamp(0.82rem, 1.8vw, 0.92rem);
+            line-height: 1.45;
+            color: var(--ink-soft);
             font-style: italic;
-            z-index: 100;
-            background: rgba(248, 248, 248, 0.8);
-            padding: 10px;
-            border-left: 3px solid var(--text);
         }
+        .corr { stroke: var(--ash); stroke-linecap: square; fill: none; }
+        .hall { stroke: var(--ash); stroke-linecap: butt; fill: none; }
+        .lamp { fill: #fffbe6; }
+        @media (prefers-reduced-motion: no-preference) {
+            .lamp { animation: flicker 1s steps(2, jump-none) infinite; }
+        }
+        @keyframes flicker { 0% { opacity: 1; } 100% { opacity: 0.45; } }
 
+        /* ---------- Footnotes: three narrators ---------- */
+        .notes {
+            min-width: 0;
+            border-top: 1px solid var(--rule);
+            padding-top: clamp(10px, 1.8vw, 14px);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: clamp(10px, 1.8vw, 16px) clamp(14px, 2.4vw, 22px);
+        }
+        .note {
+            flex: 1 1 100%;
+            font-size: clamp(0.84rem, 1.9vw, 0.95rem);
+            line-height: 1.5;
+            min-width: 0;
+        }
+        .note.z { font-family: var(--zampano); font-size: clamp(0.9rem, 2vw, 1rem); }
+        .note.j { font-family: var(--truant); }
+        .note.e { font-family: var(--editors); font-size: clamp(0.78rem, 1.75vw, 0.88rem); color: #2b2b2b; }
+        .note .who {
+            display: block;
+            font-family: var(--editors);
+            font-size: 0.68rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            margin-bottom: 2px;
+        }
+        .note.e .who, .note.z .who { font-style: normal; }
 
-        /* Positions are set by script; without transitions the text simply
-           appears in its new place rather than travelling there. */
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                transition: none !important;
-                animation: none !important;
-            }
+        /* Labyrinth typesetting variants */
+        .note.narrow {
+            flex: 0 1 15em;
+            text-align: justify;
+            hyphens: auto;
+        }
+        @media (max-width: 600px) { .note.narrow { text-align: left; } }
+        .note.upside { flex: 1 1 14em; transform: rotate(180deg); }
+        .note.sideways {
+            flex: 0 0 auto;
+            writing-mode: vertical-rl;
+            max-height: 15em;
+            min-height: 9em;
+        }
+        .note.sideways .who { margin: 0 0 0 4px; }
+        .note.mirror { flex: 1 1 14em; transform: scaleX(-1); }
+        .note.struck { flex: 1 1 14em; color: var(--minotaur); }
+        .note.struck .who { color: var(--minotaur); }
+        .note.struck .body { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+        /* ---------- Colophon ---------- */
+        .colophon {
+            border-top: 1px solid var(--rule);
+            padding-top: 8px;
+            font-family: var(--editors);
+            font-size: clamp(0.72rem, 1.6vw, 0.8rem);
+            line-height: 1.5;
+            color: var(--ink-soft);
+            display: flex;
+            justify-content: space-between;
+            gap: 6px 18px;
+            flex-wrap: wrap;
+        }
+        .key span { white-space: nowrap; margin-right: 1.1em; }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
     </style>
 </head>
 <body>
+    <main class="page" id="page">
+        <header class="head">
+            <span class="title"><span class="house">House</span> of Leaves &middot; a clock</span>
+            <span class="dedication" title="The novel's dedication page">This is not for you.</span>
+        </header>
 
-    <div class="the-void" id="theVoid"></div>
+        <section class="text" aria-label="Time">
+            <div class="chapter" id="chapter">Measurement, hour 0</div>
+            <div class="time-box"><div class="time" id="time" aria-hidden="true">00:00<span class="sec">:00</span></div></div>
+            <p class="sentence" id="sentence"></p>
+            <p class="sr-only" id="live" aria-live="polite"></p>
+        </section>
 
-    <div class="time-element" id="hours">00</div>
-    <div class="time-element" id="minutes">00</div>
-    <div class="time-element" id="seconds">00</div>
+        <figure class="plan">
+            <svg id="plan" viewBox="0 0 400 500" role="img" aria-labelledby="planCap"></svg>
+            <figcaption id="planCap"></figcaption>
+        </figure>
 
-    <div class="quote-box">
-        "This is not for you." <br>
-        <span style="font-size: 0.8rem; font-style: normal;">- Zampanò</span>
-    </div>
+        <section class="notes" id="notes" aria-label="Footnotes"></section>
 
-    <!-- Generated footnotes will append here -->
+        <footer class="colophon">
+            <span class="key">
+                <span style="font-family:var(--zampano);font-size:1.1em">Zampan&ograve;</span>
+                <span style="font-family:var(--truant)">Johnny Truant</span>
+                <span>The Editors</span>
+            </span>
+            <span>[Every note on this page was written for this clock; none is taken from the novel. &mdash;Ed.]</span>
+        </footer>
+    </main>
 
     <script>
-        const hoursEl = document.getElementById('hours');
-        const minutesEl = document.getElementById('minutes');
-        const secondsEl = document.getElementById('seconds');
-        const theVoid = document.getElementById('theVoid');
-        
-        let lastMinute = -1;
-        let lastSecond = -1;
+        const H = '<span class="house">house</span>';
+        const pageEl = document.getElementById('page');
+        const timeEl = document.getElementById('time');
+        const sentenceEl = document.getElementById('sentence');
+        const chapterEl = document.getElementById('chapter');
+        const liveEl = document.getElementById('live');
+        const notesEl = document.getElementById('notes');
+        const planEl = document.getElementById('plan');
+        const capEl = document.getElementById('planCap');
 
-        // Arrays of nonsense academic footnotes referencing "house"
-        const footnoteFragments = [
-            "See Appendix C regarding the architectural impossibility of the <span class='house'>house</span>.",
-            "As Pelafina notes, the labyrinth grows when the <span class='house'>house</span> is observed.",
-            "Footnote 112: The hallway extends beyond the topological limits of any known <span class='house'>house</span>.",
-            "[Ed. Note: The preceding paragraph discussing the <span class='house'>house</span> was struck through in original manuscript.]",
-            "Refer to the Navidson Record. The dark consumes the <span class='house'>house</span>.",
-            "A <span class='house'>house</span> is a machine for living in, but this one is a machine for breathing."
-        ];
+        const pad = n => String(n).padStart(2, '0');
+        const ordinal = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven',
+            'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty',
+            'twenty-one', 'twenty-two', 'twenty-three'];
 
-        function getRandomPosition(elementWidth, elementHeight) {
-            const x = Math.random() * (window.innerWidth - elementWidth);
-            const y = Math.random() * (window.innerHeight - elementHeight);
-            return { x, y };
+        /* ---------- The measurement ----------
+           A quarter inch at midnight, doubling every hour.
+           log2(gap / 0.25 in) is the time in hours. */
+        function gapInches(h, m, s) {
+            return 0.25 * Math.pow(2, h + m / 60 + s / 3600);
         }
 
-        function createFootnote() {
-            const fn = document.createElement('div');
-            fn.className = 'footnote';
-            fn.innerHTML = `<sup>${Math.floor(Math.random() * 500)}</sup> ` + footnoteFragments[Math.floor(Math.random() * footnoteFragments.length)];
-            
-            const pos = getRandomPosition(250, 100);
-            fn.style.left = `${pos.x}px`;
-            fn.style.top = `${pos.y}px`;
-            
-            // Randomly rotate footnotes to simulate chaotic typesetting
-            const rotations = [0, 90, -90, 180];
-            const rotation = rotations[Math.floor(Math.random() * rotations.length)];
-            fn.style.transform = `rotate(${rotation}deg)`;
+        function gcd(a, b) { return b ? gcd(b, a % b) : a; }
 
-            document.body.appendChild(fn);
-
-            // Remove slowly
-            setTimeout(() => {
-                fn.style.opacity = 0;
-                setTimeout(() => fn.remove(), 1000);
-            }, 10000 + Math.random() * 10000);
+        function fmtLen(inches) {
+            if (inches < 12) {
+                const sixteenths = Math.round(inches * 16);
+                const whole = Math.floor(sixteenths / 16);
+                let num = sixteenths % 16;
+                let frac = '';
+                if (num) {
+                    const g = gcd(num, 16);
+                    frac = (num / g) + '/' + (16 / g);
+                }
+                if (whole && frac) return whole + ' ' + frac + ' in';
+                if (whole) return whole + ' in';
+                return frac + ' in';
+            }
+            if (inches < 63360) {
+                let ft = Math.floor(inches / 12);
+                let inch = Math.round(inches - ft * 12);
+                if (inch === 12) { ft += 1; inch = 0; }
+                return ft.toLocaleString('en-US') + ' ft ' + inch + ' in';
+            }
+            return (inches / 63360).toFixed(2) + ' miles';
         }
 
-        function jumpElement(el, maxRotation = 360) {
-            const rect = el.getBoundingClientRect();
-            const pos = getRandomPosition(rect.width || 100, rect.height || 100);
-            
-            // Random rotation (snapping to 90s or completely random depending on element)
-            const rotation = (Math.random() - 0.5) * maxRotation;
-            
-            el.style.left = `${pos.x}px`;
-            el.style.top = `${pos.y}px`;
-            el.style.transform = `rotate(${rotation}deg)`;
+        /* ---------- The labyrinth: seeded per day ---------- */
+        const COLS = 18, ROWS = 17, CELL = 20, MX = 20, MY = 34;
+        const TOTAL = COLS * ROWS;        // 306 passages, one opens every ~4.7 minutes
+        const START = { c: 3, r: ROWS - 1 };
+
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
         }
 
-        function updateClock() {
+        function buildMaze(seed) {
+            const rnd = mulberry32(seed);
+            const seen = new Uint8Array(TOTAL);
+            const order = [];          // cells in the order they are first entered
+            const parent = new Int16Array(TOTAL).fill(-1);
+            const idx = (c, r) => r * COLS + c;
+            const startI = idx(START.c, START.r);
+            const stack = [startI];
+            seen[startI] = 1;
+            order.push(startI);
+            while (stack.length) {
+                const cur = stack[stack.length - 1];
+                const c = cur % COLS, r = Math.floor(cur / COLS);
+                const nb = [];
+                if (c > 0 && !seen[idx(c - 1, r)]) nb.push(idx(c - 1, r));
+                if (c < COLS - 1 && !seen[idx(c + 1, r)]) nb.push(idx(c + 1, r));
+                if (r > 0 && !seen[idx(c, r - 1)]) nb.push(idx(c, r - 1));
+                if (r < ROWS - 1 && !seen[idx(c, r + 1)]) nb.push(idx(c, r + 1));
+                if (!nb.length) { stack.pop(); continue; }
+                const nxt = nb[Math.floor(rnd() * nb.length)];
+                seen[nxt] = 1;
+                parent[nxt] = cur;
+                order.push(nxt);
+                stack.push(nxt);
+            }
+            return { order, parent };
+        }
+
+        let maze = null, mazeSeed = -1, drawnCount = -1;
+        const cx = i => MX + (i % COLS) * CELL + CELL / 2;
+        const cy = i => MY + Math.floor(i / COLS) * CELL + CELL / 2;
+
+        const HOUSE = { x: 20, y: 418, w: 150, h: 64 };
+        const DOOR_X = cx(START.r * COLS + START.c);
+
+        function drawPlan(count, gapText, hhmm) {
+            const mazeBottom = MY + ROWS * CELL;
+            let corr = '';
+            for (let k = 1; k < count; k++) {
+                const i = maze.order[k], p = maze.parent[i];
+                corr += `M${cx(p)} ${cy(p)}L${cx(i)} ${cy(i)}`;
+            }
+            const first = maze.order[0];
+            const last = maze.order[count - 1];
+            planEl.innerHTML = `
+                <rect x="${MX - 4}" y="${MY - 4}" width="${COLS * CELL + 8}" height="${ROWS * CELL + 8}" fill="var(--dark)"/>
+                <path class="hall" d="M${DOOR_X} ${HOUSE.y}L${DOOR_X} ${cy(first)}" stroke-width="12"/>
+                <path class="corr" d="M${cx(first)} ${cy(first)}L${cx(first)} ${cy(first)}${corr}" stroke-width="12"/>
+                <circle class="lamp" cx="${cx(last)}" cy="${cy(last)}" r="3.2"/>
+                <text x="${MX + 6}" y="${MY - 12}" font-family="Tinos, serif" font-size="12" fill="var(--ink-soft)" font-style="italic">interior: the exterior plus ${gapText}</text>
+                <rect x="${HOUSE.x}" y="${HOUSE.y}" width="${HOUSE.w}" height="${HOUSE.h}" fill="var(--paper)" stroke="var(--house)" stroke-width="2"/>
+                <line x1="${HOUSE.x + 98}" y1="${HOUSE.y}" x2="${HOUSE.x + 98}" y2="${HOUSE.y + HOUSE.h}" stroke="var(--house)" stroke-width="1"/>
+                <line x1="${DOOR_X - 7}" y1="${HOUSE.y}" x2="${DOOR_X + 7}" y2="${HOUSE.y}" stroke="var(--paper)" stroke-width="3"/>
+                <text x="${HOUSE.x + 8}" y="${HOUSE.y + 40}" font-family="Tinos, serif" font-size="11" fill="var(--ink-soft)">living room</text>
+                <text x="${HOUSE.x + 104}" y="${HOUSE.y + 40}" font-family="Tinos, serif" font-size="11" fill="var(--ink-soft)">study</text>
+                <line x1="${HOUSE.x}" y1="${HOUSE.y + HOUSE.h + 9}" x2="${HOUSE.x + HOUSE.w}" y2="${HOUSE.y + HOUSE.h + 9}" stroke="var(--rule)" stroke-width="1"/>
+                <line x1="${HOUSE.x}" y1="${HOUSE.y + HOUSE.h + 5}" x2="${HOUSE.x}" y2="${HOUSE.y + HOUSE.h + 13}" stroke="var(--rule)"/>
+                <line x1="${HOUSE.x + HOUSE.w}" y1="${HOUSE.y + HOUSE.h + 5}" x2="${HOUSE.x + HOUSE.w}" y2="${HOUSE.y + HOUSE.h + 13}" stroke="var(--rule)"/>
+                <text x="${HOUSE.x + HOUSE.w + 12}" y="${HOUSE.y + 22}" font-family="Tinos, serif" font-size="13" fill="var(--house)">the house</text>
+                <text x="${HOUSE.x + HOUSE.w + 12}" y="${HOUSE.y + 38}" font-family="Tinos, serif" font-size="12" fill="var(--ink-soft)">exterior: 32 ft 9 in,</text>
+                <text x="${HOUSE.x + HOUSE.w + 12}" y="${HOUSE.y + 53}" font-family="Tinos, serif" font-size="12" fill="var(--ink-soft)">every time</text>
+                <text x="${DOOR_X + 10}" y="${HOUSE.y - 8}" font-family="Courier Prime, monospace" font-size="10.5" fill="var(--ink-soft)">the hallway</text>`;
+            capEl.innerHTML = `Plan of the ${H} on Ash Tree Lane at ${hhmm}. The small rectangle is the outside; the dark ground is the inside. ` +
+                `${count} of ${TOTAL} passages entered since midnight, one more every few minutes.`;
+        }
+
+        /* ---------- Footnotes (the clock's own words) ---------- */
+        function pick(list, n) { return list[((n % list.length) + list.length) % list.length]; }
+
+        function buildNotes(ctx) {
+            const { h, m, hhmm, gap, count, n, level } = ctx;
+            const doublings = h === 0 ? 'not one doubling yet, only the quarter inch' :
+                `${ordinal[h]} doubling${h === 1 ? '' : 's'}` + (m ? `, and ${m} minutes into the next` : ', exactly');
+            const slot = Math.floor((h * 60 + m) / 10);   // text turns over every ten minutes
+
+            const truant = [
+                `I took the tape to the wall again at ${hhmm}. ${gap}. Same tape, same wall. Here is how I finally read it: a quarter inch at midnight, doubled every hour. Count the doublings and you have the hour. Right now: ${doublings}.`,
+                `Nobody believes the number until they hold the end of the tape themselves. ${gap} at ${hhmm}. I wrote it on my arm so I would stop checking.`,
+                `${count} passages so far today. I keep a count on the back of a receipt. The receipt is getting longer too, which I know is not possible.`,
+                `The stove clock agrees with this one: ${hhmm}. That should be comforting. It is not. The next footnote will explain, or it won't.`,
+                `I can hear the ${H} settle at night, the way any old ${H} does, except this one settles outward.`,
+                `Started this note at ${hhmm} and I already want to start it over.`
+            ];
+            const zampano = [
+                `The surveyor's second reading, taken at ${hhmm}, agrees with the first only in its units.`,
+                `Note that the exterior never changes. Every account of the ${H} returns to this, as if repetition could hold the walls still.`,
+                `A gap of ${gap} is either a rounding error or a corridor, depending on how long one is willing to look at it.`,
+                `The plan reproduced opposite is necessarily incomplete; it shows only what has been walked.`
+            ];
+            const editors = [
+                `[Mr. Truant's figures are reproduced as received. The gap doubles on the hour. &mdash;Ed.]`,
+                `[The plan was redrawn at ${hhmm}. Grey corridors have been entered at least once. &mdash;Ed.]`,
+                `[Footnote numbers on this page count the minutes since midnight. &mdash;Ed.]`
+            ];
+
+            const notes = [];
+            notes.push({ who: 'Johnny Truant', cls: 'j' + (level >= 1 ? ' narrow' : ''), text: pick(truant, slot) });
+            notes.push({ who: 'The Editors', cls: 'e', text: pick(editors, slot) });
+            if (level >= 1) notes.push({ who: 'Zampan&ograve;', cls: 'z', text: pick(zampano, slot + 1) });
+            if (level >= 2) notes.push({ who: 'The Editors', cls: 'e upside', text: pick(editors, slot + 1) });
+            if (level >= 3) notes.push({ who: 'Johnny Truant', cls: 'j sideways', text: pick(truant, slot + 3) });
+            if (level >= 4) notes.push({ who: 'Zampan&ograve;', cls: 'z mirror', text: pick(zampano, slot + 2) });
+            if (level >= 5) notes.push({ who: 'Zampan&ograve;, struck', cls: 'z struck', text: `Something at the far end of the corridor keeps its own time, and it is not ${hhmm}.` });
+
+            notesEl.innerHTML = notes.map((x, i) =>
+                `<div class="note ${x.cls}"><span class="who">${x.who}</span><span class="body"><sup>${n + i}</sup> ${x.text}</span></div>`
+            ).join('');
+        }
+
+        /* ---------- Tick ---------- */
+        let lastMinuteKey = '';
+
+        function update() {
             const now = new Date();
-            
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            hoursEl.textContent = h;
-            minutesEl.textContent = m;
-            secondsEl.textContent = s;
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const hhmm = pad(h) + ':' + pad(m);
+            const minuteOfDay = h * 60 + m;
+            const n = minuteOfDay + 1;                         // footnote number
+            const level = Math.floor(h / 4);                   // 0..5, the labyrinth deepens every four hours
+            const gapMin = fmtLen(gapInches(h, m, 0));   // one reading per minute, shared by text, plan and notes
 
-            // Every second, seconds jump nervously
-            if(lastSecond !== now.getSeconds()) {
-                lastSecond = now.getSeconds();
-                jumpElement(secondsEl, 30); // small irregular rotation
+            timeEl.innerHTML = `${hhmm}<span class="sec">:${pad(s)}</span>`;
+            sentenceEl.innerHTML = `At ${hhmm} the interior of the ${H} exceeds its exterior by <span class="measure">${gapMin}</span>.<sup>${n}</sup>`;
 
-                // Every 10 seconds, spawn a footnote
-                if (now.getSeconds() % 10 === 0) {
-                    createFootnote();
-                }
+            const key = now.toDateString() + ' ' + hhmm;
+            if (key === lastMinuteKey) return;
+            lastMinuteKey = key;
 
-                // The Void breathes
-                if (Math.random() > 0.8) {
-                    const voidSize = Math.random() * 300;
-                    theVoid.style.width = `${voidSize}px`;
-                    theVoid.style.height = `${voidSize}px`;
-                }
-            }
+            const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+            if (seed !== mazeSeed) { maze = buildMaze(seed); mazeSeed = seed; drawnCount = -1; }
 
-            // Every minute, hours and minutes shift violently
-            if (lastMinute !== now.getMinutes()) {
-                lastMinute = now.getMinutes();
-                // Drastic re-layout
-                jumpElement(hoursEl, 180);
-                jumpElement(minutesEl, 360);
-            }
+            for (let l = 0; l <= 5; l++) pageEl.classList.toggle('lvl-' + l, l === level);
 
-            requestAnimationFrame(updateClock);
+            chapterEl.textContent = h === 0
+                ? 'Measured before the first doubling'
+                : `Measured after ${h} doubling${h === 1 ? '' : 's'}`;
+
+            const count = Math.min(TOTAL, Math.floor(minuteOfDay * TOTAL / 1440) + 1);
+            drawPlan(count, gapMin, hhmm);
+            buildNotes({ h, m, hhmm, gap: gapMin, count, n: n + 1, level });
+
+            liveEl.textContent = `${hhmm}. The interior exceeds the exterior by ${gapMin}.`;
         }
 
-        // Initial Layout
-        setTimeout(() => {
-            jumpElement(hoursEl, 90);
-            jumpElement(minutesEl, 90);
-            for(let i=0; i<3; i++) createFootnote();
-        }, 100);
-
-        updateClock();
+        update();
+        setInterval(update, 1000);
     </script>
 </body>
 </html>

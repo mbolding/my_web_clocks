@@ -5,419 +5,771 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>One Hundred Years Clock</title>
+    <meta name="description" content="The Buendía family tree as a clock: seven generations spiral inward through the day while Melquíades's parchments are deciphered up to the hour hand.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&family=Cardo:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&display=swap&text=%E0%A4%95%E0%A4%96%E0%A4%97%E0%A4%98%E0%A4%9A%E0%A4%9B%E0%A4%9C%E0%A4%9D%E0%A4%9F%E0%A4%A0%E0%A4%A1%E0%A4%A2%E0%A4%A4%E0%A4%A5%E0%A4%A6%E0%A4%A7%E0%A4%A8%E0%A4%AA%E0%A4%AB%E0%A4%AC%E0%A4%AD%E0%A4%AE%E0%A4%AF%E0%A4%B0%E0%A4%B2%E0%A4%B5%E0%A4%B6%E0%A4%B7%E0%A4%B8%E0%A4%B9" rel="stylesheet">
     <style>
+        /* One palette, locked: the parchment of Melquíades's room. */
+        :root {
+            --paper: #efe4c8;
+            --paper-2: #e6d8b6;
+            --paper-3: #dccb9f;
+            --ink: #2b2016;
+            --muted: #5a4a37;
+            --faint: #8c7a5f;
+            --rule: #c4b089;
+            --accent: #8e2f1f;          /* the name that returns */
+            --accent-soft: rgba(142, 47, 31, 0.12);
+            --gold: #9a6a12;            /* Úrsula's thread */
+            --gold-soft: rgba(154, 106, 18, 0.16);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            background: var(--paper);
+            color: var(--ink);
+        }
+
         body {
             min-height: 100vh;
-            background: radial-gradient(ellipse at center, #d8c8a0 0%, #b8a880 100%);
-            font-family: 'Gentium Book Plus', serif;
-            display: flex;
+            font-family: 'Gentium Book Plus', Georgia, serif;
+        }
+
+        html {
+            min-height: 100%;
+            background: radial-gradient(ellipse at 35% 40%, var(--paper) 0%, var(--paper-2) 75%, var(--paper-3) 100%) var(--paper-2);
+        }
+
+        body {
+            background: transparent;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: auto minmax(300px, 440px);
             justify-content: center;
             align-items: center;
-            padding: 2rem;
-            color: #3d3226;
-            overflow: hidden;
-            position: relative;
+            gap: clamp(1rem, 3vw, 3rem);
+            min-height: 100vh;
+            padding: clamp(12px, 2.5vh, 28px) clamp(16px, 3vw, 40px);
         }
 
-        .butterflies {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .butterfly {
-            position: absolute;
-            font-size: 1.5rem;
-            opacity: 0.3;
-            animation: flutter 15s ease-in-out infinite;
-        }
-
-        @keyframes flutter {
-            0%, 100% {
-                transform: translate(0, 0) rotate(0deg);
-            }
-            25% {
-                transform: translate(50px, -30px) rotate(10deg);
-            }
-            50% {
-                transform: translate(100px, 20px) rotate(-5deg);
-            }
-            75% {
-                transform: translate(30px, -50px) rotate(15deg);
-            }
-        }
-
-        .page {
-            max-width: 1000px;
-            width: 100%;
-            background: rgba(248, 240, 220, 0.95);
-            border: 3px solid #8a7a6a;
-            padding: 3rem 2.5rem;
-            position: relative;
-            z-index: 10;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 2rem;
-            border-bottom: 2px solid #a89878;
-        }
-
-        .title {
-            font-family: 'Cardo', serif;
-            font-size: clamp(2rem, 5vw, 3.8rem);
-            font-weight: 700;
-            color: #2a1f14;
-            margin-bottom: 0.75rem;
-            letter-spacing: 0.03em;
-        }
-
-        .subtitle {
-            font-size: clamp(1rem, 2.5vw, 1.4rem);
-            font-style: italic;
-            color: #5a4d3e;
-            margin-bottom: 0.5rem;
-        }
-
-        .macondo {
-            font-size: 0.95rem;
-            color: #6a5d4e;
-            margin-top: 0.5rem;
-        }
-
-        .circular-time {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
+        /* ---------- the dial ---------- */
+        .dial-wrap {
+            width: min(94vh, 58vw);
             aspect-ratio: 1;
-            margin: 0 auto 2rem;
+            position: relative;
         }
 
-        .circle-svg {
+        svg#dial {
+            display: block;
             width: 100%;
             height: 100%;
+            overflow: visible;
         }
 
-        .time-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
+        .ring-name {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 16px;
+            fill: var(--muted);
+            letter-spacing: 0.02em;
         }
 
-        .time-display {
-            font-family: 'Cardo', serif;
-            font-size: clamp(2rem, 4vw, 3rem);
-            color: #2a1f14;
-            margin-bottom: 0.5rem;
+        .ring-name tspan.cur {
+            fill: var(--accent);
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .ring-name tspan.kin {
+            fill: var(--accent);
+        }
+
+        .ring-name tspan.sep {
+            fill: var(--faint);
+        }
+
+        .numeral {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 17px;
+            fill: var(--muted);
+        }
+
+        .numeral.major {
+            fill: var(--ink);
             font-weight: 700;
         }
 
-        .generation-label {
-            font-size: 0.85rem;
-            color: #5a4d3e;
-            text-transform: uppercase;
+        .glyph {
+            font-size: 15px;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        .glyph.cipher {
+            font-family: 'Tiro Devanagari Sanskrit', 'Noto Serif Devanagari', serif;
+            fill: var(--faint);
+        }
+
+        .glyph.read {
+            font-family: 'Cardo', Georgia, serif;
+            font-weight: 700;
+            font-size: 13px;
+            fill: var(--ink);
+        }
+
+        .glyph.read.kin {
+            fill: var(--accent);
+        }
+
+        #rings {
+            transition: opacity 1s linear;
+        }
+
+        .center-time {
+            font-family: 'Cardo', Georgia, serif;
+            font-weight: 700;
+            font-size: 74px;
+            fill: var(--ink);
+            text-anchor: middle;
+            font-variant-numeric: lining-nums tabular-nums;
+        }
+
+        .center-sec {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 20px;
+            fill: var(--muted);
+            text-anchor: middle;
+            font-variant-numeric: tabular-nums;
             letter-spacing: 0.1em;
         }
 
-        .generation-container {
-            background: rgba(138, 122, 106, 0.1);
-            border: 2px solid #a89878;
-            border-radius: 8px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+        .center-gen {
+            font-family: 'Gentium Book Plus', Georgia, serif;
+            font-size: 15px;
+            fill: var(--accent);
+            text-anchor: middle;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
         }
 
-        .generation-name {
-            font-family: 'Cardo', serif;
-            font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-            color: #2a1f14;
-            margin-bottom: 1rem;
+        /* ---------- the reading panel ---------- */
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.7rem, 1.8vh, 1.15rem);
+            max-height: 100%;
+        }
+
+        .masthead {
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 0.55rem;
+        }
+
+        .title {
+            font-family: 'Cardo', Georgia, serif;
+            font-weight: 700;
+            font-size: clamp(1.45rem, 2.4vw, 2rem);
+            line-height: 1.1;
+            letter-spacing: 0.01em;
+        }
+
+        .byline {
+            font-style: italic;
+            color: var(--muted);
+            font-size: clamp(0.9rem, 1.2vw, 1rem);
+            margin-top: 0.2rem;
+        }
+
+        .kicker {
+            font-size: 0.74rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .gen-title {
+            font-family: 'Cardo', Georgia, serif;
+            font-weight: 700;
+            font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+            line-height: 1.15;
+            margin-top: 0.15rem;
+        }
+
+        .gen-until {
+            font-size: 0.88rem;
+            color: var(--muted);
+            margin-top: 0.15rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.55rem;
+            list-style: none;
+        }
+
+        .members li {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: clamp(0.92rem, 1.2vw, 1.02rem);
+            padding: 0.12rem 0.55rem;
+            border: 1px solid var(--rule);
+            border-radius: 999px;
+            color: var(--muted);
+            background: rgba(255, 250, 235, 0.35);
+        }
+
+        .members li.cur {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
             font-weight: 700;
         }
 
-        .character-role {
-            font-size: 1rem;
-            color: #5a4d3e;
+        .gen-text {
+            font-size: clamp(0.98rem, 1.25vw, 1.08rem);
+            line-height: 1.55;
+            margin-top: 0.6rem;
+        }
+
+        .note {
+            border-left: 3px solid var(--accent);
+            padding: 0.15rem 0 0.15rem 0.75rem;
+            font-size: clamp(0.92rem, 1.15vw, 1rem);
+            line-height: 1.5;
+        }
+
+        .note.gold {
+            border-left-color: var(--gold);
+        }
+
+        .note b {
+            font-family: 'Cardo', Georgia, serif;
+        }
+
+        .note .kin-name {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .note .gold-name {
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        .parch {
+            border-top: 1px solid var(--rule);
+            padding-top: 0.75rem;
+        }
+
+        .parch-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+        }
+
+        .parch-pct {
+            font-family: 'Cardo', Georgia, serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bar {
+            height: 6px;
+            background: var(--paper-3);
+            border-radius: 3px;
+            margin: 0.45rem 0 0.5rem;
+            overflow: hidden;
+        }
+
+        .bar span {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: var(--ink);
+        }
+
+        .parch-text {
+            font-size: clamp(0.9rem, 1.1vw, 0.98rem);
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        .parch-text q {
             font-style: italic;
-            margin-bottom: 1.5rem;
+            color: var(--ink);
+            quotes: none;
         }
 
-        .memory {
-            font-size: clamp(1rem, 2.2vw, 1.2rem);
-            line-height: 1.9;
-            color: #3d3226;
-            margin-bottom: 1.2rem;
-            position: relative;
-            padding-left: 1.5rem;
+        .legend {
+            font-size: 0.82rem;
+            line-height: 1.45;
+            color: var(--muted);
         }
 
-        .memory::before {
-            content: '◆';
+        .sr-only {
             position: absolute;
-            left: 0;
-            color: #a89878;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
         }
 
-        .memory {
-            opacity: 0.4;
+        @media (max-width: 860px) {
+            .layout {
+                grid-template-columns: minmax(0, 1fr);
+                align-items: start;
+                padding-top: 14px;
+                gap: 1.1rem;
+            }
+
+            .dial-wrap {
+                width: min(100%, 560px, 72vh);
+                justify-self: center;
+            }
+
+            .panel {
+                max-width: 560px;
+                width: 100%;
+                justify-self: center;
+                padding-bottom: 1.5rem;
+            }
         }
 
-        .memory:hover {
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-
-        .ice-quote {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.9rem;
-            color: #5a4d3e;
-            font-style: italic;
-            text-align: center;
-            max-width: 600px;
-        }
-
-        @media (max-width: 768px) {
-            .page {
-                padding: 2rem 1.5rem;
+        @media (prefers-reduced-motion: reduce) {
+            #rings {
+                transition: none;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="butterflies" id="butterflies"></div>
-
-    <div class="page">
-        <div class="header">
-            <h1 class="title">Cien Años de Soledad</h1>
-            <div class="subtitle">Gabriel García Márquez</div>
-            <div class="macondo">In Macondo, where time moves in circles</div>
-        </div>
-
-        <div class="circular-time">
-            <svg class="circle-svg" viewBox="0 0 200 200" id="circleSvg">
-                <circle cx="100" cy="100" r="90" fill="none" stroke="#a89878" stroke-width="2" opacity="0.3"/>
-                <circle cx="100" cy="100" r="70" fill="none" stroke="#8a7a6a" stroke-width="2" opacity="0.4"/>
-                <circle cx="100" cy="100" r="50" fill="none" stroke="#6a5d4e" stroke-width="3" opacity="0.5"/>
+    <main class="layout">
+        <div class="dial-wrap">
+            <svg id="dial" viewBox="-500 -500 1000 1000" role="img"
+                aria-label="A 24-hour dial. Seven rings, one per generation of the Buendía family, step inward through the day; the outer band is Melquíades's parchments, deciphered up to the hour hand.">
+                <defs id="defs"></defs>
+                <circle cx="0" cy="0" r="497" fill="none" stroke="var(--rule)" stroke-width="1.5"/>
+                <circle cx="0" cy="0" r="462" fill="none" stroke="var(--rule)" stroke-width="1"/>
+                <g id="parchment"></g>
+                <g id="numerals"></g>
+                <g id="rings"></g>
+                <g id="hand"></g>
+                <circle cx="0" cy="0" r="150" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>
+                <text class="center-gen" id="cGen" x="0" y="-58">Generation I</text>
+                <text class="center-time" id="cTime" x="0" y="22">--:--</text>
+                <text class="center-sec" id="cSec" x="0" y="64">--</text>
             </svg>
-            <div class="time-center">
-                <div class="time-display" id="time">00:00</div>
-                <div class="generation-label" id="genLabel">The Cycle Continues</div>
-            </div>
         </div>
 
-        <div class="generation-container">
-            <div class="generation-name" id="genName">José Arcadio Buendía</div>
-            <div class="character-role" id="genRole">The Patriarch who discovered ice</div>
+        <section class="panel">
+            <header class="masthead">
+                <h1 class="title">Cien años de soledad</h1>
+                <div class="byline">Gabriel García Márquez, 1967 · seven generations of Buendías in one day</div>
+            </header>
 
-            <div id="memories">
-                <div class="memory active">
-                    Many years later, as he faced the firing squad, Colonel Aureliano Buendía was to remember that distant afternoon when his father took him to discover ice.
+            <div>
+                <div class="kicker">The hour belongs to</div>
+                <div class="gen-title" id="genTitle">The first generation</div>
+                <div class="gen-until" id="genUntil"></div>
+                <ul class="members" id="members"></ul>
+                <p class="gen-text" id="genText"></p>
+            </div>
+
+            <p class="note" id="nameNote"></p>
+            <p class="note gold" id="ursulaNote"></p>
+
+            <div class="parch">
+                <div class="parch-head">
+                    <span class="kicker">Melquíades's parchments</span>
+                    <span class="parch-pct" id="parchPct">0%</span>
                 </div>
+                <div class="bar" aria-hidden="true"><span id="parchBar"></span></div>
+                <p class="parch-text" id="parchText"></p>
             </div>
-        </div>
-    </div>
 
-    <div class="ice-quote">
-        "It's the largest diamond in the world." — "No," the gypsy countered. "It's ice."
-    </div>
+            <p class="legend">The day is the century. Each ring is a generation, eldest outermost, and the family steps inward one ring every 3 h 25 m until the line ends at midnight. Red marks every bearer of the name now in focus; the gold thread winding inward is Úrsula, who outlives five generations.</p>
+
+            <p class="sr-only" id="live" aria-live="polite"></p>
+        </section>
+    </main>
 
     <script>
-        // Cyclical generations mapped to hours (repeating names)
-        const generations = [
+        const NS = 'http://www.w3.org/2000/svg';
+        const DAY = 86400;
+        const SPAN = DAY / 7;                 // 12342.857… s per generation
+        const SECTOR = (Math.PI * 2) / 7;
+        const R0 = 405, STEP = 38;            // ring radius of generation 1, step inward
+
+        // Families of names, the repetition the novel is built on.
+        const FAMILY = {
+            ja: 'José Arcadio',
+            au: 'Aureliano',
+            ur: 'Úrsula',
+            am: 'Amaranta',
+            re: 'Remedios'
+        };
+
+        // Blood line only, by generation. Facts of the novel, described in our own words.
+        const GENS = [
             {
-                hours: [0, 1, 2],
-                name: "José Arcadio Buendía",
-                role: "The Patriarch who discovered ice",
-                memories: [
-                    "Many years later, as he faced the firing squad, Colonel Aureliano Buendía was to remember that distant afternoon when his father took him to discover ice.",
-                    "José Arcadio Buendía, obsessed with alchemy and magnets, tied to the chestnut tree, speaking in Latin and seeing ghosts of the dead.",
-                    "The world was so recent that many things lacked names, and in order to indicate them it was necessary to point."
-                ]
+                ord: 'first',
+                members: [
+                    { name: 'José Arcadio Buendía', fam: ['ja'] },
+                    { name: 'Úrsula Iguarán', fam: ['ur'] }
+                ],
+                text: 'The founders. Cousins who marry in spite of the family fear of a child born with a pig’s tail, they lead the expedition that founds Macondo. He loses himself in the gypsies’ science; she keeps the house standing.'
             },
             {
-                hours: [3, 4, 5],
-                name: "Úrsula Iguarán",
-                role: "The Matriarch who lived beyond a century",
-                memories: [
-                    "Úrsula, who lived to be between one hundred fifteen and one hundred twenty-two years old, watching the same cycles repeat with each generation.",
-                    "She had seen the yellow butterflies before, always preceding death, following Mauricio Babilonia wherever he went.",
-                    "In the precision of her vast experience, Úrsula knew that time was not passing but turning in a circle."
-                ]
+                ord: 'second',
+                members: [
+                    { name: 'José Arcadio', fam: ['ja'] },
+                    { name: 'Aureliano', short: 'Col. Aureliano', fam: ['au'] },
+                    { name: 'Amaranta', fam: ['am'] }
+                ],
+                text: 'The pattern is set. José Arcadio is huge and impulsive and runs off with the gypsies; Aureliano is withdrawn and lucid, and becomes the colonel of thirty-two uprisings, all lost. Amaranta never marries. Rebeca grows up beside them.'
             },
             {
-                hours: [6, 7, 8],
-                name: "Colonel Aureliano Buendía",
-                role: "Who waged thirty-two wars and lost them all",
-                memories: [
-                    "Colonel Aureliano Buendía organized thirty-two armed uprisings and lost them all. He had seventeen male children by seventeen different women.",
-                    "Alone in his workshop, making little gold fishes, melting them down, and making them again in an endless cycle.",
-                    "He drew a circle in the dirt with his stick. 'I'm staying here, until the Conservative government falls.'"
-                ]
+                ord: 'third',
+                members: [
+                    { name: 'Arcadio', fam: ['ja'] },
+                    { name: 'Aureliano José', fam: ['au'] },
+                    { name: 'the 17 Aurelianos', short: '17 Aurelianos', fam: ['au'] }
+                ],
+                text: 'Both sons of Pilar Ternera. Arcadio, christened José Arcadio, rules Macondo as a petty tyrant during the war; Aureliano José falls for his aunt Amaranta. The colonel’s seventeen sons, every one named Aureliano, are hunted down one by one.'
             },
             {
-                hours: [9, 10, 11],
-                name: "Remedios the Beauty",
-                role: "Who ascended to heaven while folding sheets",
-                memories: [
-                    "Remedios the Beauty, the most beautiful woman in the world, ascending into the sky on a Thursday afternoon while folding sheets.",
-                    "She was oblivious to her devastating beauty, to the men who died for love of her, to the chaos she left in her wake.",
-                    "The yellow butterflies preceded her ascension, a golden cloud that lifted her into the air as she waved goodbye."
-                ]
+                ord: 'fourth',
+                members: [
+                    { name: 'Remedios the Beauty', fam: ['re'] },
+                    { name: 'José Arcadio Segundo', fam: ['ja'] },
+                    { name: 'Aureliano Segundo', fam: ['au'] }
+                ],
+                text: 'Twins so alike they may have swapped names as boys, so that each seems to carry the other’s nature. José Arcadio Segundo survives the massacre of the banana workers that no one else will remember; Remedios the Beauty rises into the sky.'
             },
             {
-                hours: [12, 13, 14],
-                name: "Aureliano Segundo",
-                role: "Whose animals multiplied endlessly",
-                memories: [
-                    "During the time of the rains that lasted four years, eleven months, and two days, Aureliano Segundo's animals multiplied with impossible fecundity.",
-                    "His legendary parties, his accordion, his appetite that seemed to expand the house itself with prosperity.",
-                    "He searched for Úrsula's buried gold with such passion that the floor of the house was left like a honeycomb."
-                ]
+                ord: 'fifth',
+                members: [
+                    { name: 'Meme', full: 'Renata Remedios (Meme)', fam: ['re'] },
+                    { name: 'José Arcadio', fam: ['ja'] },
+                    { name: 'Amaranta Úrsula', fam: ['am', 'ur'] }
+                ],
+                text: 'Children of Aureliano Segundo and Fernanda del Carpio. Meme is sent to a convent after her love affair is discovered; José Arcadio comes home from Rome, never a priest; Amaranta Úrsula returns from Brussels to rebuild the house.'
             },
             {
-                hours: [15, 16, 17],
-                name: "Fernanda del Carpio",
-                role: "The Queen of Madagascar",
-                memories: [
-                    "Fernanda del Carpio, raised to be a queen, brought European pretensions to the chaos of Macondo.",
-                    "She wrote letters to invisible doctors, maintained schedules no one followed, and tried to impose order on the cyclical disorder of the Buendías.",
-                    "Even in death, her influence lingered, her rigid schedules and invisible enemies haunting the house."
-                ]
+                ord: 'sixth',
+                members: [
+                    { name: 'Aureliano Babilonia', fam: ['au'] }
+                ],
+                text: 'Meme’s son, raised hidden in the house. He shuts himself in Melquíades’s old room with the parchments, and for years works at the cipher without knowing it is his own family’s history.'
             },
             {
-                hours: [18, 19, 20],
-                name: "Meme (Renata Remedios)",
-                role: "Who loved Mauricio Babilonia and the yellow butterflies",
-                memories: [
-                    "Meme and Mauricio Babilonia, always accompanied by yellow butterflies that gave away his presence.",
-                    "She was sent to a convent after they shot him, spent the rest of her life in silence, never speaking again.",
-                    "The butterflies persisted long after, a golden reminder of impossible love destroyed by propriety and fear."
-                ]
-            },
-            {
-                hours: [21, 22, 23],
-                name: "Aureliano Babilonia",
-                role: "The Last, who deciphered the manuscripts",
-                memories: [
-                    "Aureliano Babilonia, born in secret, raised in solitude, destined to decipher the Sanskrit manuscripts of Melquíades.",
-                    "In those manuscripts he found the history of his family written one hundred years before it happened, every moment predicted, every tragedy foretold.",
-                    "As he read the final line describing himself reading the final line, the wind began, and Macondo was swept from memory forever."
-                ]
+                ord: 'seventh',
+                members: [
+                    { name: 'Aureliano', short: 'the last Aureliano', fam: ['au'] }
+                ],
+                text: 'The son of Amaranta Úrsula and her nephew Aureliano Babilonia, born with the pig’s tail Úrsula feared from the first generation. The line ends with him, and the last of the parchments is read.'
             }
         ];
 
-        const timeEl = document.getElementById('time');
-        const genLabelEl = document.getElementById('genLabel');
-        const genNameEl = document.getElementById('genName');
-        const genRoleEl = document.getElementById('genRole');
-        const memoriesEl = document.getElementById('memories');
-        const butterfliesEl = document.getElementById('butterflies');
-        const circleSvg = document.getElementById('circleSvg');
+        const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+        const pad = n => String(n).padStart(2, '0');
+        const ringR = g => R0 - STEP * g;
+        const ang = frac => frac * Math.PI * 2 - Math.PI / 2;   // 0 = top, clockwise
+        const pt = (r, a) => [Math.cos(a) * r, Math.sin(a) * r];
+        const el = (tag, attrs, parent) => {
+            const e = document.createElementNS(NS, tag);
+            for (const k in attrs) e.setAttribute(k, attrs[k]);
+            if (parent) parent.appendChild(e);
+            return e;
+        };
+        const fmt = s => {
+            s = Math.round(s) % DAY;
+            return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60);
+        };
 
-        let currentGenIndex = -1;
-
-        // Create butterflies
-        function createButterflies() {
-            const emojis = ['🦋', '🦋', '🦋'];
-            for (let i = 0; i < 12; i++) {
-                const butterfly = document.createElement('div');
-                butterfly.className = 'butterfly';
-                butterfly.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-                butterfly.style.left = Math.random() * 100 + '%';
-                butterfly.style.top = Math.random() * 100 + '%';
-                butterfly.style.animationDelay = Math.random() * 5 + 's';
-                butterfly.style.animationDuration = (10 + Math.random() * 10) + 's';
-                butterfliesEl.appendChild(butterfly);
-            }
+        function arcPath(r, a0, a1, sweep) {
+            const [x0, y0] = pt(r, a0);
+            const [x1, y1] = pt(r, a1);
+            const large = Math.abs(a1 - a0) > Math.PI ? 1 : 0;
+            return `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} ${sweep} ${x1.toFixed(2)},${y1.toFixed(2)}`;
         }
 
-        // Draw hour markers on circle
-        function drawCircularHours() {
-            const svg = circleSvg;
-            const centerX = 100;
-            const centerY = 100;
-            const radius = 85;
+        // ---------- build the dial ----------
+        const defs = document.getElementById('defs');
+        const ringsG = document.getElementById('rings');
+        const numG = document.getElementById('numerals');
+        const parchG = document.getElementById('parchment');
+        const handG = document.getElementById('hand');
 
-            for (let hour = 0; hour < 24; hour++) {
-                const angle = (hour / 24) * Math.PI * 2 - Math.PI / 2;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', x);
-                text.setAttribute('y', y);
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('dominant-baseline', 'middle');
-                text.setAttribute('fill', '#6a5d4e');
-                text.setAttribute('font-size', '8');
-                text.setAttribute('font-family', 'Cardo, serif');
-                text.setAttribute('opacity', '0.6');
-                text.textContent = hour;
-                svg.appendChild(text);
-            }
+        // 24 hour numerals
+        for (let h = 0; h < 24; h++) {
+            const a = ang(h / 24);
+            const [x, y] = pt(438, a);
+            const t = el('text', {
+                x: x.toFixed(1), y: y.toFixed(1),
+                'text-anchor': 'middle', 'dominant-baseline': 'central',
+                class: 'numeral' + (h % 6 === 0 ? ' major' : '')
+            }, numG);
+            t.textContent = h;
+            const [tx0, ty0] = pt(456, a), [tx1, ty1] = pt(462, a);
+            el('line', { x1: tx0, y1: ty0, x2: tx1, y2: ty1, stroke: 'var(--faint)', 'stroke-width': 1.5 }, numG);
         }
 
-        function getGenerationForHour(hour) {
-            for (const gen of generations) {
-                if (gen.hours.includes(hour)) {
-                    return gen;
+        // Faint full circles: every generation's ring goes all the way round
+        for (let g = 0; g < 7; g++) {
+            el('circle', { cx: 0, cy: 0, r: ringR(g) - 7, fill: 'none', stroke: 'var(--rule)', 'stroke-width': 1, 'stroke-dasharray': '2 5' }, ringsG);
+        }
+
+        // The staircase: each generation's own arc of the day, joined by steps inward
+        const sectorArcs = [];
+        let stairD = '';
+        for (let g = 0; g < 7; g++) {
+            const r = ringR(g) - 7;
+            const a0 = ang(g / 7), a1 = ang((g + 1) / 7);
+            const p = el('path', { d: arcPath(r, a0, a1, 1), fill: 'none', stroke: 'var(--ink)', 'stroke-width': 2.2, 'stroke-linecap': 'round' }, ringsG);
+            sectorArcs.push(p);
+            if (g < 6) {
+                const [x0, y0] = pt(r, a1), [x1, y1] = pt(ringR(g + 1) - 7, a1);
+                stairD += `M${x0.toFixed(2)},${y0.toFixed(2)} L${x1.toFixed(2)},${y1.toFixed(2)} `;
+            }
+        }
+        el('path', { d: stairD, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 1.2, opacity: 0.55 }, ringsG);
+
+        // Úrsula's thread: a line from the first ring to the middle of the sixth,
+        // running in the gap just inside each ring.
+        (function () {
+            let d = '';
+            const end = 5.5;            // she dies while Aureliano Babilonia is a child
+            for (let i = 0; i <= 330; i++) {
+                const u = (i / 330) * end;  // generations elapsed
+                // hold in the gap inside ring k, then step in just before the boundary
+                const k = Math.floor(u), t = u - k;
+                const e = t < 0.9 ? 0 : (t - 0.9) / 0.1;
+                const r = R0 - 18 - STEP * (k + e * e * (3 - 2 * e));
+                const [x, y] = pt(r, ang(u / 7));
+                d += (i ? 'L' : 'M') + x.toFixed(2) + ',' + y.toFixed(2);
+            }
+            el('path', { d, fill: 'none', stroke: 'var(--gold)', 'stroke-width': 2, 'stroke-dasharray': '7 4', opacity: 0.9 }, ringsG);
+            const [ex, ey] = pt(R0 - 18 - STEP * 5, ang(end / 7));
+            el('circle', { cx: ex, cy: ey, r: 4.5, fill: 'var(--gold)' }, ringsG);
+            const [sx, sy] = pt(R0 - 18, ang(0));
+            el('circle', { cx: sx, cy: sy, r: 4.5, fill: 'var(--gold)' }, ringsG);
+        })();
+
+        // Names along each generation's arc, upright on every side of the dial
+        const nameSpans = [];   // [{g, i, span, fam}]
+        GENS.forEach((gen, g) => {
+            const mid = (g + 0.5) / 7;
+            const a = ang(mid);
+            const bottom = Math.sin(a) > 0.25;
+            const half = SECTOR * 0.9;
+            const id = 'gp' + g;
+            const r = bottom ? ringR(g) + 11 : ringR(g);
+            el('path', {
+                id,
+                d: bottom ? arcPath(r, a + half, a - half, 0) : arcPath(r, a - half, a + half, 1)
+            }, defs);
+            const text = el('text', { class: 'ring-name' }, ringsG);
+            const tp = el('textPath', { href: '#' + id, startOffset: '50%', 'text-anchor': 'middle' }, text);
+            gen.members.forEach((m, i) => {
+                if (i) {
+                    const s = el('tspan', { class: 'sep' }, tp);
+                    s.textContent = '  ·  ';
                 }
-            }
-            return generations[0];
+                const s = el('tspan', {}, tp);
+                s.textContent = m.short || m.name;
+                nameSpans.push({ g, i, span: s, fam: m.fam });
+            });
+        });
+
+        // Parchment band: 192 glyphs, one per 7.5 minutes
+        const SLOTS = 192;
+        const CIPHER = 'कखगघचछजझटठडढतथदधनपफबभमयरलवशषसह';
+        let chronicle = '';
+        const chronFam = [];
+        while (chronicle.length < SLOTS) {
+            GENS.forEach(gen => gen.members.forEach(m => {
+                const word = (m.name.replace(/^the /, '')).toUpperCase() + ' · ';
+                for (const ch of word) { chronicle += ch; chronFam.push(m.fam); }
+            }));
+        }
+        const glyphs = [];
+        for (let i = 0; i < SLOTS; i++) {
+            const a = ang((i + 0.5) / SLOTS);
+            const [x, y] = pt(479, a);
+            const deg = ((i + 0.5) / SLOTS) * 360;
+            const t = el('text', {
+                x: x.toFixed(1), y: y.toFixed(1),
+                transform: `rotate(${deg.toFixed(2)} ${x.toFixed(1)} ${y.toFixed(1)})`,
+                class: 'glyph cipher'
+            }, parchG);
+            t.textContent = CIPHER[(i * 7 + 3) % CIPHER.length];
+            glyphs.push({ t, read: false });
         }
 
-        function renderMemories(memories) {
-            memoriesEl.innerHTML = memories.map((memory, i) =>
-                `<div class="memory ${i === 0 ? 'active' : ''}">${memory}</div>`
-            ).join('');
+        // The hand
+        const hand = el('line', { x1: 0, y1: 0, x2: 0, y2: -497, stroke: 'var(--accent)', 'stroke-width': 2.4, 'stroke-linecap': 'round' }, handG);
+        const handDot = el('circle', { cx: 0, cy: -497, r: 6, fill: 'var(--accent)' }, handG);
+
+        // ---------- per-second update ----------
+        const $ = id => document.getElementById(id);
+        let lastKey = '', lastSlots = -1, lastLiveMin = -1;
+
+        function familyNames(fams) {
+            return fams.map(f => FAMILY[f]).join(' and ');
         }
 
-        function updateClock() {
+        function generationsBearing(fam) {
+            const out = [];
+            GENS.forEach((gen, g) => {
+                if (gen.members.some(m => m.fam.includes(fam))) out.push(ROMAN[g]);
+            });
+            return out;
+        }
+
+        function update() {
             const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const secs = h * 3600 + m * 60 + s;
+            const frac = secs / DAY;
+            const g = Math.min(6, Math.floor(secs / SPAN));
+            const gen = GENS[g];
+            const within = (secs - g * SPAN) / SPAN;
+            const fi = Math.min(gen.members.length - 1, Math.floor(within * gen.members.length));
+            const focus = gen.members[fi];
+            const finalMinute = h === 23 && m === 59;
 
-            // Update time
-            timeEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+            // centre
+            $('cTime').textContent = pad(h) + ':' + pad(m);
+            $('cSec').textContent = pad(s);
+            $('cGen').textContent = finalMinute ? 'the last line' : 'Generation ' + ROMAN[g];
 
-            // Get current generation
-            const gen = getGenerationForHour(hour);
-            const genIndex = generations.indexOf(gen);
+            // hand
+            const a = ang(frac);
+            const [hx, hy] = pt(497, a);
+            hand.setAttribute('x2', hx.toFixed(2));
+            hand.setAttribute('y2', hy.toFixed(2));
+            handDot.setAttribute('cx', hx.toFixed(2));
+            handDot.setAttribute('cy', hy.toFixed(2));
 
-            // Update content if changed
-            if (genIndex !== currentGenIndex) {
-                genLabelEl.textContent = `Generation ${genIndex + 1}`;
-                genNameEl.textContent = gen.name;
-                genRoleEl.textContent = gen.role;
-                renderMemories(gen.memories);
-                currentGenIndex = genIndex;
+            // the wind: in the final minute the rings are carried away
+            ringsG.style.opacity = finalMinute ? (1 - 0.9 * (s + 1) / 60).toFixed(3) : '1';
+
+            const key = g + ':' + fi + ':' + finalMinute;
+            if (key !== lastKey) {
+                lastKey = key;
+                lastSlots = -1;   // recolour the deciphered names for the new focus
+                sectorArcs.forEach((p, i) => {
+                    p.setAttribute('stroke', i === g ? 'var(--accent)' : 'var(--ink)');
+                    p.setAttribute('stroke-width', i === g ? 5 : 2.2);
+                });
+                nameSpans.forEach(n => {
+                    const isCur = n.g === g && n.i === fi;
+                    const isKin = !isCur && n.fam.some(f => focus.fam.includes(f));
+                    n.span.setAttribute('class', isCur ? 'cur' : (isKin ? 'kin' : ''));
+                });
+
+                const start = g * SPAN, end = (g + 1) * SPAN;
+                $('genTitle').textContent = 'The ' + gen.ord + ' generation';
+                $('genUntil').textContent = `${fmt(start)} to ${g === 6 ? '24:00' : fmt(end)} · ring ${ROMAN[g]} of VII`;
+                const ul = $('members');
+                ul.textContent = '';
+                gen.members.forEach((mm, i) => {
+                    const li = document.createElement('li');
+                    li.textContent = mm.full || mm.name;
+                    if (i === fi) li.className = 'cur';
+                    ul.appendChild(li);
+                });
+                $('genText').textContent = gen.text;
+
+                // the name that returns
+                const nn = $('nameNote');
+                nn.textContent = '';
+                focus.fam.forEach((f, k) => {
+                    if (k) nn.appendChild(document.createElement('br'));
+                    const gs = generationsBearing(f);
+                    const b = document.createElement('span');
+                    b.className = 'kin-name';
+                    b.textContent = FAMILY[f];
+                    nn.appendChild(document.createTextNode('The name '));
+                    nn.appendChild(b);
+                    nn.appendChild(document.createTextNode(
+                        gs.length > 1
+                            ? ` returns in generations ${gs.slice(0, -1).join(', ')} and ${gs[gs.length - 1]}.`
+                            : ' appears once.'));
+                });
+                const extra = {
+                    ja: ' Úrsula came to see the José Arcadios as impulsive and enterprising, and marked for tragedy.',
+                    au: ' Úrsula came to see the Aurelianos as withdrawn and lucid.',
+                    re: ' The name comes from Remedios Moscote, the colonel’s child bride.',
+                    am: ' Amaranta Úrsula carries both of the founding women’s names.',
+                    ur: ''
+                }[focus.fam[0]];
+                nn.appendChild(document.createTextNode(extra));
+
+                // Úrsula's thread
+                const un = $('ursulaNote');
+                const uName = '<span class="gold-name">Úrsula</span>';
+                un.innerHTML = g < 5
+                    ? `${uName} is alive, the thread through every ring so far. She lives past a hundred and comes to feel that time is not passing but going round in a circle.`
+                    : g === 5
+                        ? `${uName} dies in this ring, blind and tiny, somewhere between 115 and 122 years old. The gold thread stops here, one generation short of the end.`
+                        : `${uName}’s thread ended a generation ago. What she feared from her wedding day comes true in this ring.`;
+            }
+
+            // Melquíades's parchments: deciphered up to the hand
+            const nRead = finalMinute ? SLOTS : Math.floor(frac * SLOTS);
+            if (nRead !== lastSlots) {
+                lastSlots = nRead;
+                glyphs.forEach((gl, i) => {
+                    const read = i < nRead;
+                    if (read) {
+                        gl.t.textContent = chronicle[i] === ' ' ? '·' : chronicle[i];
+                        if (chronicle[i] === ' ') gl.t.textContent = '';
+                        const kin = chronFam[i].some(f => focus.fam.includes(f));
+                        gl.t.setAttribute('class', 'glyph read' + (kin ? ' kin' : ''));
+                    } else if (gl.read) {
+                        gl.t.textContent = CIPHER[(i * 7 + 3) % CIPHER.length];
+                        gl.t.setAttribute('class', 'glyph cipher');
+                    }
+                    gl.read = read;
+                });
+            }
+            const pct = finalMinute ? 100 : Math.floor(frac * 100);
+            $('parchPct').textContent = pct + '%';
+            $('parchBar').style.width = (finalMinute ? 100 : frac * 100).toFixed(2) + '%';
+            const pt_ = $('parchText');
+            if (finalMinute) {
+                pt_.innerHTML = 'Aureliano Babilonia reads the last page as he lives it, and the wind takes Macondo: <q lang="es">las estirpes condenadas a cien años de soledad no tenían una segunda oportunidad sobre la tierra</q>. At midnight the circle starts again.';
+            } else {
+                const left = DAY - 60 - secs;
+                const hh = Math.floor(left / 3600), mm = Math.floor(left / 60) % 60;
+                pt_.textContent = `Written a hundred years ahead in Sanskrit and cipher, deciphered so far up to the hand. The family history is all there; the last line falls at 23:59, ${hh ? hh + ' h ' : ''}${mm} min from now.`;
+            }
+
+            if (m !== lastLiveMin) {
+                lastLiveMin = m;
+                $('live').textContent = `${pad(h)}:${pad(m)}. The ${gen.ord} generation of Buendías: ${focus.full || focus.name}. Parchments ${pct}% deciphered.`;
             }
         }
 
-        // Initialize
-        createButterflies();
-        drawCircularHours();
-        updateClock();
-        setInterval(updateClock, 1000);
+        update();
+        setInterval(update, 1000);
     </script>
 </body>
 

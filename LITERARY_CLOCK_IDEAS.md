@@ -16,43 +16,43 @@ A collection of literary, creative, and technical concepts for future web clock 
 - ✅ **Bloomsday** - James Joyce's Ulysses (18 episodes at their Gilbert-schema hours, the time retold in each episode's style)
 - ✅ **The Waste Land** - T.S. Eliot (a torn collage keyed to the hours the poem names: the stroke of nine, the violet hour, closing time)
 - ✅ **Mrs Dalloway** - Virginia Woolf (Big Ben's leaden circles spread over a map of London, handing the story between characters)
-- ✅ **One Hundred Years of Solitude** - Gabriel García Márquez, implemented twice on purpose: `one_hundred_years_clock.html` takes the structural reading (Macondo's circular time as concentric rings, Buendía generations) and `solitude_clock.html` the atmospheric one (the time dissolving into memory among the yellow butterflies). Two readings, one novel; don't add a third without a distinct angle.
-- ✅ **Infinite Jest** - David Foster Wallace (subsidized years, footnotes, E.T.A./Ennet House)
+- ✅ **One Hundred Years of Solitude** - Gabriel García Márquez, implemented twice on purpose: `one_hundred_years_clock.html` takes the structural reading (seven Buendía generations spiralling inward through the day while Melquíades's parchments are deciphered up to the hour hand) and `solitude_clock.html` the atmospheric one (the time remembered rather than read while Macondo's weather follows the hour, from the insomnia plague to the long rain). Two readings, one novel; don't add a third without a distinct angle.
+- ✅ **Infinite Jest** - David Foster Wallace (the nine sponsored years of Subsidized Time share the day while 388 endnotes pile up beside the time; E.T.A. vs Ennet House)
 - ✅ **À la recherche du temps perdu** - Marcel Proust (seven volumes laid across the day as a bookshelf, with involuntary memories of the same minute on earlier days)
 
 #### Other Literary & Thematic Works
 - ✅ **The Metamorphosis** - Franz Kafka (the time read from Gregor's alarm clock, from his back, the floor and the ceiling)
-- ✅ **Slaughterhouse-Five** - Kurt Vonnegut
+- ✅ **Slaughterhouse-Five** - Kurt Vonnegut (Billy's life fills the hours out of order, the day drawn as a Tralfamadorian mountain range)
 - ✅ **The Divine Comedy** - Dante Alighieri (a cross-section of Dante's universe; the day is the poem's 100 cantos)
 - ✅ **The Canterbury Tales** - Geoffrey Chaucer (24 tales, 24 hours, on the 60-mile road; the Host reads the hour from a shadow)
 - ✅ **The Odyssey** - Homer (24 books as 24 hours on a sea chart, the wanderings replayed in flashback from Scheria)
 - ✅ **Hamlet** - William Shakespeare (the play once a day from a midnight curtain; the Ghost knocks the dial out of joint until Hamlet sets it right)
-- ✅ **The Old Man and the Sea** - Ernest Hemingway
+- ✅ **The Old Man and the Sea** - Ernest Hemingway (Santiago's three days at sea in cross-section, once a day, line strain to sharks)
 - ✅ **The Stranger** - Albert Camus (the sun as the clock, peaking at the beach at two, then a cell until the stars)
 - ✅ **The Sisyphus Clock** - Albert Camus' "The Myth of Sisyphus," in flat cutout collage: the boulder up each minute, then the walk back down, the hour he is aware, and a Giant Foot on the hour
 - ✅ **Crime and Punishment** - Fyodor Dostoevsky (the 730 steps to the pawnbroker's as the minute hand, with a fever chart)
-- ✅ **On the Road** - Jack Kerouac
+- ✅ **On the Road** - Jack Kerouac (a car on the four crossings while a typewriter types each minute onto Kerouac's scroll)
 - ✅ **Catch-22** - Joseph Heller (a mission log where Cathcart keeps raising the number required to go home)
-- ✅ **Dune** - Frank Herbert
+- ✅ **Dune** - Frank Herbert (the Fremen day, sealed in the sietch while the sun crosses the sand, out under two moons at night)
 - ✅ **Don Quixote** - Miguel de Cervantes (a windmill whose sails and the Don's lance tell the time, Part One by morning, Part Two by night)
-- ✅ **Ghost in the Shell** - Masamune Shirow
-- ✅ **The Lord of the Rings** - J.R.R. Tolkien
-- ✅ **The Great Gatsby** - F. Scott Fitzgerald
+- ✅ **Ghost in the Shell** - Masamune Shirow (each minute a recalled time is audited against the shell's clock, some memories real and some implanted)
+- ✅ **The Lord of the Rings** - J.R.R. Tolkien (the 185-day Quest on a map once a day, the hour read as a date in Shire Reckoning)
+- ✅ **The Great Gatsby** - F. Scott Fitzgerald (young Jimmy Gatz's schedule runs the day; the green light burns across the bay from dusk to dawn)
 - ✅ **The Trial** - Franz Kafka (a court form where the time arrives by numbered amendment, arrest at eight to the end at nine)
-- ✅ **House of Leaves** - Mark Z. Danielewski
+- ✅ **House of Leaves** - Mark Z. Danielewski (the house a quarter inch bigger inside than out at midnight, the gap doubling every hour, footnoted by three narrators)
 - ✅ **The Sound and the Fury** - William Faulkner (four narrators, four clocks: Quentin's handless watch, Dilsey's one-hand kitchen clock)
-- ✅ **If on a winter's night a traveler** - Italo Calvino
+- ✅ **If on a winter's night a traveler** - Italo Calvino (ten interrupted novels across the day, one every 2.4 hours, with a chapter addressed to You)
 - ✅ **Finnegans Wake** - James Joyce (riverrun ring turning once a day through Vico's four ages)
 - ✅ **Snow Country** - Yasunari Kawabata (the time as a reflection in the night train's window)
 - ✅ **The Magic Mountain** - Thomas Mann (seven chapters on a dial where story time accelerates, plus the Berghof's seven-minute thermometer)
 - ✅ **Macbeth** - William Shakespeare (blood drips into a basin that turns red between midnights; the hour struck in Lady Macbeth's sleepwalking count)
-- ✅ **2001: A Space Odyssey** - Arthur C. Clarke
+- ✅ **2001: A Space Odyssey** - Arthur C. Clarke (the novel's six parts and three million years across the day, the 1:4:9 slab in every scene)
 - ✅ **Nelson Ball Clock** - George Nelson (Eames Era)
 - ✅ **Bach Clock** - J. S. Bach. Three concentric staves engraved with the subject of Contrapunctus I from *Die Kunst der Fuge*, read by three playheads at one note per second, minute and hour. Because the voices share one subject and differ only in speed, the clock's 1:60:720 hand ratio is literally a canon by augmentation. Optional Web Audio plays the three voices an octave apart; the hour is marked with B♭–A–C–B♮.
 - ✅ **Candide** - Voltaire (the journey's disasters behind Pangloss's certified hour, and a garden that grows until dusk)
-- ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges
+- ✅ **Ficciones (The Library of Babel)** - Jorge Luis Borges (the time spelled in the library's 25 symbols and found, with its full address, on one page of one book)
 - ✅ **Prehistoric Deep Time Clock** - Conceptual
-- ✅ **The Dispossessed** - Ursula K. Le Guin (Anarres/Urras split by a wall, Sequency vs. Simultaneity, Omelas moments)
+- ✅ **The Dispossessed** - Ursula K. Le Guin (the day as thirteen chapters alternating across the wall between Anarres and Urras, with a Sequency / Simultaneity toggle)
 - ✅ **The Tempest** - William Shakespeare (unity of time made literal: real 2-6pm storm window, five acts, Prospero's "sixth hour" deadline; the rest of the day tells the twelve years of exile before and the voyage home after)
 
 ### To Build

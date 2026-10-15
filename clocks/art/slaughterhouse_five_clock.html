@@ -1,271 +1,643 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="world-ilium">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slaughterhouse-Five Clock</title>
+    <meta name="description" content="Vonnegut's Slaughterhouse-Five as a clock: each hour of the day holds one moment of Billy Pilgrim's life, out of order, and the whole day is drawn at once like a Tralfamadorian mountain range.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Jost:wght@300;600&family=Monoton&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Jost:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        /* Three worlds Billy keeps landing in. The page takes on the palette
+           of whichever moment the current hour holds. */
         :root {
-            /* Base */
-            --bg: #111;
-            --text: #fff;
-            
-            /* State 1: Ilium 1968 (Suburban/Optometry) */
-            --bg-ilium: #f5fafd;
-            --text-ilium: #2c3e50;
-            --accent-ilium: #3498db;
-            
-            /* State 2: Dresden 1945 (War/Fire) */
-            --bg-dresden: #1a0a00;
-            --text-dresden: #e6b800;
-            --accent-dresden: #ff3300;
-
-            /* State 3: Tralfamadore 1976 (Alien Zoo) */
-            --bg-tralf: #2b0033;
-            --text-tralf: #00ffcc;
-            --accent-tralf: #ff00ff;
+            --bg: #eef3f6;
+            --bg-2: #dde7ee;
+            --ink: #1b2a37;
+            --ink-soft: #4a5a68;
+            --accent: #1d6aa8;
+            --accent-2: #0f4c7c;
+            --death: #a3241a;
+            --grid: rgba(27, 42, 55, 0.16);
+            --fill-a: rgba(29, 106, 168, 0.30);
+            --fill-b: rgba(29, 106, 168, 0.03);
+        }
+        html.world-war {
+            --bg: #170c06;
+            --bg-2: #2a1408;
+            --ink: #f3dfb6;
+            --ink-soft: #c5a77c;
+            --accent: #ff7a33;
+            --accent-2: #ffb15c;
+            --death: #ff5a4a;
+            --grid: rgba(243, 223, 182, 0.15);
+            --fill-a: rgba(255, 122, 51, 0.38);
+            --fill-b: rgba(255, 122, 51, 0.02);
+        }
+        html.world-tralf {
+            --bg: #170420;
+            --bg-2: #2a0a3a;
+            --ink: #eafff8;
+            --ink-soft: #b9a6cc;
+            --accent: #3ff0c8;
+            --accent-2: #ff6be6;
+            --death: #ff6be6;
+            --grid: rgba(234, 255, 248, 0.14);
+            --fill-a: rgba(63, 240, 200, 0.32);
+            --fill-b: rgba(63, 240, 200, 0.02);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            transition: background-color 0.1s, color 0.1s; /* Very snappy transitions for 'unstuck' effect */
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { background: var(--bg); transition: background-color 0.6s; }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Courier Prime', monospace;
             min-height: 100vh;
+            min-height: 100dvh;
+            background: radial-gradient(ellipse at 50% 0%, var(--bg-2), var(--bg) 70%) fixed;
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            padding: clamp(16px, 4vw, 44px) clamp(16px, 4vw, 44px) clamp(20px, 4vw, 40px);
+            overflow-x: hidden;
+            transition: background-color 0.6s, color 0.6s;
+        }
+
+        .page {
+            width: min(100%, 980px);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
+            gap: clamp(18px, 3.2vw, 34px);
         }
 
-        /* -------------------------------------
-           STATE THEMES 
-           ------------------------------------- */
-
-        /* 1: ILIUM 1968 */
-        body.mode-ilium {
-            background-color: var(--bg-ilium);
-            color: var(--text-ilium);
-            background-image: linear-gradient(0deg, transparent 24%, rgba(44, 62, 80, 0.05) 25%, rgba(44, 62, 80, 0.05) 26%, transparent 27%, transparent 74%, rgba(44, 62, 80, 0.05) 75%, rgba(44, 62, 80, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(44, 62, 80, 0.05) 25%, rgba(44, 62, 80, 0.05) 26%, transparent 27%, transparent 74%, rgba(44, 62, 80, 0.05) 75%, rgba(44, 62, 80, 0.05) 76%, transparent 77%, transparent);
-            background-size: 50px 50px;
-        }
-        .mode-ilium .clock-display {
+        /* ---------- header ---------- */
+        header { text-align: center; }
+        .kicker {
             font-family: 'Jost', sans-serif;
-            font-weight: 300;
-            border: 2px solid var(--accent-ilium);
-            border-radius: 10px;
-            padding: 30px;
-            background: #fff;
-            box-shadow: 10px 10px 0px rgba(52, 152, 219, 0.2);
+            font-size: clamp(0.72rem, 1.6vw, 0.85rem);
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
         }
-        .mode-ilium .year-badge {
-            background: var(--accent-ilium);
-            color: #fff;
-            font-family: 'Jost', sans-serif;
+        h1 {
+            margin-top: 0.6em;
+            font-weight: 400;
+            font-style: italic;
+            font-size: clamp(1rem, 2.6vw, 1.4rem);
+            line-height: 1.4;
         }
-
-        /* 2: DRESDEN 1945 */
-        body.mode-dresden {
-            background-color: var(--bg-dresden);
-            color: var(--text-dresden);
-            background-image: radial-gradient(circle at center, transparent 0%, #000 100%);
-        }
-        .mode-dresden .clock-display {
-            font-family: 'Courier Prime', monospace;
+        h1 .listen {
+            font-style: normal;
             font-weight: 700;
-            border: none;
-            text-shadow: 2px 2px 0px var(--accent-dresden), -2px -2px 0px #000;
-            animation: fireFlicker 0.1s infinite;
+            color: var(--accent);
+            margin-right: 0.35em;
         }
-        .mode-dresden .year-badge {
+
+        /* ---------- the present ---------- */
+        .now {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+            gap: clamp(18px, 4vw, 48px);
+            align-items: center;
+        }
+        .clockface { text-align: center; }
+        .time {
+            font-weight: 700;
+            font-size: clamp(3rem, 11vw, 6.4rem);
+            line-height: 1;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .time .sec { font-size: 0.42em; color: var(--ink-soft); margin-left: 0.12em; letter-spacing: 0; }
+        .date {
+            margin-top: 0.7em;
+            font-family: 'Jost', sans-serif;
+            font-size: clamp(0.82rem, 1.8vw, 0.95rem);
+            letter-spacing: 0.08em;
+            color: var(--ink-soft);
+        }
+
+        /* The current clump: one moment, set like a section of the book */
+        .clump {
+            border-left: 3px solid var(--accent);
+            padding: 0.2em 0 0.2em clamp(14px, 2.4vw, 24px);
+            min-height: 11.5em;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .clump-meta {
+            font-family: 'Jost', sans-serif;
+            font-size: clamp(0.72rem, 1.6vw, 0.82rem);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+        .clump-year {
+            margin-top: 0.25em;
+            font-weight: 700;
+            font-size: clamp(1.9rem, 5vw, 2.8rem);
+            line-height: 1.05;
+            color: var(--accent);
+        }
+        .clump-place {
+            margin-top: 0.2em;
+            font-weight: 700;
+            font-size: clamp(0.95rem, 2.1vw, 1.1rem);
+        }
+        .clump-text {
+            margin-top: 0.6em;
+            font-size: clamp(0.95rem, 2.1vw, 1.08rem);
+            line-height: 1.5;
+            max-width: 38em;
+        }
+        .clump-sig {
+            margin-top: 0.7em;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--death);
+            font-size: clamp(1rem, 2.3vw, 1.15rem);
+        }
+        .clump-sig[hidden] { display: none; }
+        .visiting {
+            margin-top: 0.9em;
+            font-family: 'Jost', sans-serif;
+            font-size: 0.82rem;
+            color: var(--ink-soft);
+            display: flex;
+            gap: 0.8em;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .visiting[hidden] { display: none; }
+        .visiting button {
+            font: inherit;
+            color: var(--ink);
             background: transparent;
-            color: var(--accent-dresden);
-            border-bottom: 2px solid var(--accent-dresden);
-            font-family: 'Courier Prime', monospace;
+            border: 1px solid var(--ink-soft);
+            border-radius: 999px;
+            padding: 0.25em 0.9em;
+            cursor: pointer;
         }
-        @keyframes fireFlicker {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            50% { transform: translate(-2px, 1px) scale(1.01); opacity: 0.9; }
-            100% { transform: translate(1px, -2px) scale(0.99); opacity: 1; }
+        .visiting button:hover, .visiting button:focus-visible { border-color: var(--accent); color: var(--accent); }
+
+        .unstuck { animation: unstuck 0.55s steps(5, end); }
+        @keyframes unstuck {
+            0%   { opacity: 0; transform: translateX(-6px); filter: blur(2px); }
+            40%  { opacity: 1; transform: translateX(5px); }
+            70%  { transform: translateX(-2px); }
+            100% { opacity: 1; transform: none; filter: none; }
         }
 
-        /* 3: TRALFAMADORE 1976 */
-        body.mode-tralf {
-            background-color: var(--bg-tralf);
-            color: var(--text-tralf);
-            background-image: repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 20px, rgba(255,0,255,0.1) 21px, rgba(255,0,255,0.1) 22px);
+        /* ---------- the day, seen all at once ---------- */
+        .range-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1em;
+            flex-wrap: wrap;
+            margin-bottom: 0.5em;
         }
-        .mode-tralf .clock-display {
-            font-family: 'Monoton', cursive;
-            font-size: clamp(3rem, 10vw, 5rem); /* Monoton is thick, needs scale down */
-            border: none;
-            padding: 40px;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.5);
-            box-shadow: 0 0 40px var(--accent-tralf), inset 0 0 20px var(--text-tralf);
-            animation: floatZoo 4s ease-in-out infinite alternate;
-        }
-        .mode-tralf .year-badge {
-            background: var(--text-tralf);
-            color: var(--bg-tralf);
-            font-family: 'Courier Prime', monospace;
-            border-radius: 20px;
-        }
-        @keyframes floatZoo {
-            0% { transform: translateY(10px); }
-            100% { transform: translateY(-10px); }
-        }
-
-        /* -------------------------------------
-           SHARED STRUCTURE
-           ------------------------------------- */
-
-        .title-bar {
-            position: absolute;
-            top: 30px;
-            text-align: center;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
+        .range-title {
+            font-family: 'Jost', sans-serif;
+            font-weight: 600;
+            font-size: clamp(0.78rem, 1.7vw, 0.88rem);
+            letter-spacing: 0.18em;
             text-transform: uppercase;
         }
+        .range-note {
+            font-size: clamp(0.8rem, 1.7vw, 0.88rem);
+            color: var(--ink-soft);
+        }
+        #range { width: 100%; }
+        #range svg { display: block; width: 100%; overflow: visible; }
+        .g-grid { stroke: var(--grid); stroke-width: 1; }
+        .g-grid-dash { stroke: var(--grid); stroke-width: 1; stroke-dasharray: 3 4; }
+        .g-axis { fill: var(--ink-soft); font-family: 'Jost', sans-serif; font-size: 11px; }
+        .g-fill { fill: url(#mtn); }
+        .g-line { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linejoin: round; }
+        .g-dot { fill: var(--bg); stroke: var(--accent); stroke-width: 1.6; }
+        .g-dot.past { fill: var(--accent); }
+        .g-dot.tralf { stroke: var(--accent-2); }
+        .g-dot.tralf.past { fill: var(--accent-2); }
+        .g-death { fill: none; stroke: var(--death); stroke-width: 1.4; }
+        .g-cur { fill: var(--accent); stroke: var(--ink); stroke-width: 2; }
+        .g-shown { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 2 2; }
+        .g-label { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; fill: var(--ink-soft); font-family: 'Courier Prime', monospace; font-size: 10.5px; text-anchor: middle; }
+        .g-label.cur { fill: var(--ink); font-weight: 700; font-size: 12px; stroke-width: 4px; }
+        .g-now { stroke: var(--ink); stroke-width: 1.2; }
+        .g-now-head { fill: var(--ink); }
+        .g-hit { fill: transparent; cursor: pointer; outline: none; }
+        .g-hit:hover, .g-hit:focus-visible { fill: var(--grid); }
 
-        .clock-container {
+        /* ---------- so it goes ---------- */
+        footer {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            position: relative;
-            z-index: 10;
+            gap: 0.8em 1.6em;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--grid);
+            padding-top: clamp(12px, 2vw, 18px);
+        }
+        .tally {
+            display: flex;
+            align-items: center;
+            gap: 0.9em;
+            flex-wrap: wrap;
+        }
+        .tally-phrase { font-weight: 700; font-style: italic; color: var(--death); }
+        .tally-count { font-size: 0.92rem; color: var(--ink-soft); }
+        .marks { display: flex; gap: 4px; align-items: center; }
+        .mark {
+            width: 3px; height: 16px; border-radius: 1px;
+            background: var(--grid);
+        }
+        .mark.on { background: var(--death); }
+        .footnote {
+            font-size: clamp(0.78rem, 1.6vw, 0.85rem);
+            color: var(--ink-soft);
+            max-width: 34em;
         }
 
-        .year-badge {
-            font-size: 1.5rem;
-            padding: 5px 20px;
-            margin-bottom: 20px;
-            font-weight: bold;
-            transition: all 0s; /* Instant snap */
-            letter-spacing: 4px;
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
         }
 
-        .clock-display {
-            font-size: clamp(4rem, 15vw, 8rem);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-align: center;
-            line-height: 1;
+        @media (max-width: 720px) {
+            .now { grid-template-columns: 1fr; }
+            .clump { min-height: 0; }
         }
 
-        .quote-box {
-            position: absolute;
-            bottom: 40px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-transform: lowercase;
-            letter-spacing: 5px;
+        @media (prefers-reduced-motion: reduce) {
+            .unstuck { animation: none; }
+            body { transition: none; }
         }
-
-        /* Glitch flash screen effect */
-        .flash-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #fff;
-            z-index: 999;
-            pointer-events: none;
-            opacity: 0;
-        }
-        
-        .is-flashing {
-            animation: shutter 0.15s ease-out;
-        }
-
-        @keyframes shutter {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
     </style>
 </head>
-<body class="mode-ilium" id="bodyEl">
+<body>
+    <main class="page">
+        <header>
+            <p class="kicker">Kurt Vonnegut &middot; Slaughterhouse-Five</p>
+            <h1><span class="listen">Listen:</span>&ldquo;Billy Pilgrim has come unstuck in time.&rdquo;</h1>
+        </header>
 
-    <div class="flash-overlay" id="flashOverlay"></div>
+        <section class="now">
+            <div class="clockface">
+                <div class="time" id="time" role="timer" aria-label="Current time">--:--<span class="sec">--</span></div>
+                <div class="date" id="date">&nbsp;</div>
+            </div>
+            <article class="clump" id="clump" aria-label="Billy's current moment">
+                <div class="clump-meta" id="clumpMeta">&nbsp;</div>
+                <div class="clump-year" id="clumpYear">&nbsp;</div>
+                <div class="clump-place" id="clumpPlace">&nbsp;</div>
+                <p class="clump-text" id="clumpText">&nbsp;</p>
+                <p class="clump-sig" id="clumpSig" hidden>So it goes.</p>
+                <div class="visiting" id="visiting" hidden>
+                    <span id="visitingText"></span>
+                    <button type="button" id="backBtn">Back to now</button>
+                </div>
+            </article>
+        </section>
 
-    <div class="title-bar">
-        Billy Pilgrim has come unstuck in time.
-    </div>
+        <section aria-labelledby="rangeTitle">
+            <div class="range-head">
+                <h2 class="range-title" id="rangeTitle">Today, seen all at once</h2>
+                <p class="range-note">Across: the hours of today. Up: the year in Billy's life. Tap a peak to visit it.</p>
+            </div>
+            <div id="range"></div>
+        </section>
 
-    <div class="clock-container">
-        <div class="year-badge" id="yearBadge">1968</div>
-        <div class="clock-display" id="timeDisplay">00:00:00</div>
-    </div>
+        <footer>
+            <div class="tally">
+                <span class="tally-phrase">So it goes.</span>
+                <span class="tally-count" id="tallyCount"></span>
+                <span class="marks" id="marks" aria-hidden="true"></span>
+            </div>
+            <p class="footnote" id="footnote">Each hour holds one moment of Billy's life. The order is shuffled fresh every midnight, and he does not get to choose it.</p>
+        </footer>
 
-    <div class="quote-box">
-        so it goes.
-    </div>
+        <div class="sr-only" aria-live="polite" id="live"></div>
+    </main>
 
     <script>
-        const bodyEl = document.getElementById('bodyEl');
-        const yearBadge = document.getElementById('yearBadge');
-        const timeDisplay = document.getElementById('timeDisplay');
-        const flashOverlay = document.getElementById('flashOverlay');
-
-        // Three moments in Billy Pilgrim's life
-        const timeModes = [
-            { class: 'mode-ilium', year: '1968', desc: 'Optometry Practice' },
-            { class: 'mode-dresden', year: '1945', desc: 'Dresden' },
-            { class: 'mode-tralf', year: '1976', desc: 'Tralfamadore' }
+        // Twenty-four moments of Billy Pilgrim's life, one for each hour.
+        // y is the year used to plot the moment; label is what is shown.
+        // The prose is a paraphrase of the novel, not quotation.
+        const MOMENTS = [
+            { y: 1922, label: '1922', world: 'ilium', place: 'Ilium, New York',
+              text: 'Billy is born. Every other moment of his life is already out there, waiting for him to drop into it.' },
+            { y: 1931, label: 'Boyhood', world: 'ilium', place: 'The YMCA pool, Ilium',
+              text: 'His father throws him into the deep end so he will learn to swim. Billy sinks to the bottom and would happily stay there.' },
+            { y: 1934, label: 'Boyhood', world: 'ilium', place: 'Grand Canyon, then Carlsbad Caverns',
+              text: 'On a family trip west he is frightened at the canyon rim, and again underground when the guide puts out the lights.' },
+            { y: 1944, label: 'Dec 1944', world: 'war', place: 'The Ardennes, behind German lines',
+              text: "A chaplain's assistant with no helmet and no weapon, Billy stumbles through the snow after Roland Weary and two scouts. The scouts are killed.", death: true },
+            { y: 1944, label: 'Dec 1944', world: 'war', place: 'A locked boxcar crossing Germany',
+              text: 'Christmas among the prisoners. Roland Weary dies of gangrene, blaming Billy, and Paul Lazzaro promises to avenge him.', death: true },
+            { y: 1945, label: '1945', world: 'war', place: 'A prison camp run by English officers',
+              text: 'Long-held English prisoners welcome the Americans with a feast and a play of Cinderella. Billy laughs until he has to be sedated.' },
+            { y: 1945, label: '1945', world: 'war', place: 'Dresden, Germany',
+              text: 'The prisoners march into an untouched city of spires and statues, and are lodged in slaughterhouse building number five.' },
+            { y: 1945, label: '13 Feb 1945', world: 'war', place: 'Dresden, a meat locker underground',
+              text: 'The city is firebombed. Billy and the other prisoners shelter among the hanging carcasses, far under the street.', death: true },
+            { y: 1945, label: 'Feb 1945', world: 'war', place: 'Dresden, the next day',
+              text: 'They climb out into a city with nothing left standing. It looks like the surface of the moon.', death: true },
+            { y: 1945, label: '1945', world: 'war', place: 'Dresden, the corpse mines',
+              text: 'The prisoners are set to digging the dead out of cellars, and burning them.', death: true },
+            { y: 1945, label: '1945', world: 'war', place: 'Dresden, the ruins',
+              text: 'Edgar Derby, the schoolteacher who had tried to be a good leader, is shot by a firing squad for taking a teapot.', death: true },
+            { y: 1945, label: 'May 1945', world: 'war', place: 'A suburb of Dresden, springtime',
+              text: 'The war in Europe is over. Billy dozes in a green wagon shaped like a coffin, and a bird in the trees asks him something.' },
+            { y: 1948, label: '1948', world: 'ilium', place: "A veterans' hospital near Lake Placid",
+              text: 'Billy has committed himself. In the next bed, Eliot Rosewater gets him reading the novels of Kilgore Trout.' },
+            { y: 1964, label: '1964', world: 'ilium', place: 'Ilium',
+              text: 'Billy meets Kilgore Trout in person, a bitter, unknown science fiction writer bossing a crew of newspaper boys.' },
+            { y: 1965, label: '1960s', world: 'ilium', place: "Billy's optometry office, Ilium",
+              text: 'Billy is rich now. He fits the people of Ilium with lenses, and comes to think his real job is correcting how souls see.' },
+            { y: 1967, label: '1967', world: 'ilium', place: 'His living room, after midnight',
+              text: "Sleepless after his daughter's wedding, Billy watches a war movie backwards. The fires shrink, the bombs fly up into the planes." },
+            { y: 1967, label: '1967', world: 'tralf', place: 'His back yard, Ilium',
+              text: 'The same night, a flying saucer from Tralfamadore takes him aboard.' },
+            { y: 1967, label: 'Tralfamadore', world: 'tralf', place: 'A zoo on Tralfamadore',
+              text: 'Billy lives naked under a geodesic dome, furnished from a Sears catalogue, while crowds of Tralfamadorians watch.' },
+            { y: 1967, label: 'Tralfamadore', world: 'tralf', place: 'The zoo dome',
+              text: 'The film star Montana Wildhack is brought to be his mate. In time they have a baby.' },
+            { y: 1967, label: 'Tralfamadore', world: 'tralf', place: 'Tralfamadore',
+              text: 'His keepers see every moment at once, like a mountain range. A death, to them, is one bad moment among a great many good ones.' },
+            { y: 1968, label: '1968', world: 'war', place: 'Sugarbush Mountain, Vermont',
+              text: 'A chartered plane full of optometrists flies into the mountain. Billy survives with a fractured skull. His father-in-law does not.', death: true },
+            { y: 1968, label: '1968', world: 'ilium', place: 'On the road to the hospital',
+              text: 'Rushing to see him, Valencia damages her car, and dies of carbon monoxide poisoning.', death: true },
+            { y: 1968, label: '1968', world: 'ilium', place: 'New York City',
+              text: 'Billy slips away and tells an all-night radio talk show about Tralfamadore.' },
+            { y: 1976, label: '13 Feb 1976', world: 'tralf', place: 'Chicago',
+              text: 'Billy tells a crowd he is about to be killed, and he is, by the gunman Lazzaro hired. For a while there is only violet light.', death: true }
         ];
 
-        let currentModeIndex = 0;
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                        'August', 'September', 'October', 'November', 'December'];
 
-        function jumpTimeDirectionless() {
-            // Pick a random mode that is NOT the current mode
-            let nextModeIndex;
-            do {
-                nextModeIndex = Math.floor(Math.random() * timeModes.length);
-            } while (nextModeIndex === currentModeIndex);
+        const $ = id => document.getElementById(id);
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const pad = n => String(n).padStart(2, '0');
 
-            currentModeIndex = nextModeIndex;
-            const mode = timeModes[currentModeIndex];
-
-            // Flash effect
-            flashOverlay.classList.remove('is-flashing');
-            void flashOverlay.offsetWidth; // Trigger reflow
-            flashOverlay.classList.add('is-flashing');
-
-            // Apply new mode
-            bodyEl.className = mode.class;
-            yearBadge.textContent = mode.year;
-
-            // Schedule next jump (unpredictable, between 4 and 12 seconds)
-            const nextJumpMs = Math.floor(Math.random() * 8000) + 4000;
-            setTimeout(jumpTimeDirectionless, nextJumpMs);
+        // ---- today's order: a deterministic shuffle seeded by the date ----
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+        function orderFor(date) {
+            const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+            const rand = mulberry32(seed);
+            const idx = MOMENTS.map((_, i) => i);
+            for (let i = idx.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [idx[i], idx[j]] = [idx[j], idx[i]];
+            }
+            return idx; // idx[hour] = moment index
         }
 
-        // Start the unstuck jumping loops
-        setTimeout(jumpTimeDirectionless, 5000);
+        let dayKey = '';
+        let order = [];
+        let currentHour = -1;
+        let shownHour = -1;       // the hour whose moment is on screen (may be a visit)
+        let visitUntil = 0;       // ms timestamp when a visit ends, 0 when not visiting
+        let lastNow = new Date();
 
-        // Core Clock Loop - ALWAYS ACCURATE
-        function updateClock() {
+        // ---- clump panel ----
+        function showMoment(hour, animate) {
+            const m = MOMENTS[order[hour]];
+            const changed = hour !== shownHour;
+            shownHour = hour;
+            document.documentElement.className = 'world-' + m.world;
+            const visiting = visitUntil > 0;
+            $('clumpMeta').textContent = (visiting ? 'Visiting ' : 'This hour, ') +
+                pad(hour) + ':00 to ' + pad((hour + 1) % 24) + ':00';
+            $('clumpYear').textContent = m.label;
+            $('clumpPlace').textContent = m.place;
+            $('clumpText').textContent = m.text;
+            $('clumpSig').hidden = !m.death;
+            $('visiting').hidden = !visiting;
+            if (changed && animate && !reduceMotion.matches) {
+                const el = $('clump');
+                el.classList.remove('unstuck');
+                void el.offsetWidth;
+                el.classList.add('unstuck');
+            }
+        }
+
+        // ---- the mountain range ----
+        const SVGNS = 'http://www.w3.org/2000/svg';
+        let geom = null;
+        function el(name, attrs, parent) {
+            const e = document.createElementNS(SVGNS, name);
+            for (const k in attrs) e.setAttribute(k, attrs[k]);
+            if (parent) parent.appendChild(e);
+            return e;
+        }
+
+        function drawRange() {
+            const host = $('range');
+            const W = Math.max(260, host.clientWidth);
+            const H = Math.round(Math.min(240, Math.max(170, W * 0.26)));
+            const padL = W < 480 ? 34 : 42, padR = 10, padT = 26, padB = 24;
+            const plotW = W - padL - padR, plotH = H - padT - padB;
+            const Y0 = 1918, Y1 = 1978;
+            const x = h => padL + (h / 24) * plotW;
+            const y = yr => padT + (1 - (yr - Y0) / (Y1 - Y0)) * plotH;
+            const base = padT + plotH;
+            geom = { x, y, base, padT };
+
+            const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img',
+                'aria-label': "Today's hours plotted against the years of Billy's life, a jagged line like a mountain range" });
+            const defs = el('defs', {}, svg);
+            const grad = el('linearGradient', { id: 'mtn', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+            el('stop', { offset: '0%', style: 'stop-color: var(--fill-a)' }, grad);
+            el('stop', { offset: '100%', style: 'stop-color: var(--fill-b)' }, grad);
+
+            // year guides
+            [1922, 1945, 1976].forEach(yr => {
+                el('line', { x1: padL, x2: W - padR, y1: y(yr), y2: y(yr), class: 'g-grid-dash' }, svg);
+                const t = el('text', { x: padL - 6, y: y(yr) + 4, class: 'g-axis', 'text-anchor': 'end' }, svg);
+                t.textContent = W < 480 ? "'" + String(yr).slice(2) : yr;
+            });
+            // hour guides
+            for (let h = 0; h <= 24; h += (W < 480 ? 6 : 3)) {
+                el('line', { x1: x(h), x2: x(h), y1: padT - 4, y2: base, class: 'g-grid' }, svg);
+                const t = el('text', { x: x(h), y: H - 6, class: 'g-axis', 'text-anchor': h === 0 ? 'start' : h === 24 ? 'end' : 'middle' }, svg);
+                t.textContent = pad(h % 24 === 0 && h ? 24 : h);
+            }
+
+            // the range itself
+            const pts = order.map((mi, h) => [x(h + 0.5), y(MOMENTS[mi].y)]);
+            const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+            el('path', { d: `M${x(0)} ${base} ` + pts.map(p => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') + ` L${x(24)} ${base} Z`, class: 'g-fill' }, svg);
+            el('path', { d: line, class: 'g-line' }, svg);
+
+            // now marker (moved every second)
+            geom.nowLine = el('line', { y1: padT - 10, y2: base, class: 'g-now' }, svg);
+            geom.nowHead = el('path', { class: 'g-now-head' }, svg);
+
+            // dots, labels, hit areas
+            const slotW = plotW / 24;
+            const roomy = slotW >= 34;
+            geom.dots = []; geom.labels = []; geom.rings = []; geom.shown = [];
+            order.forEach((mi, h) => {
+                const m = MOMENTS[mi];
+                const [px, py] = pts[h];
+                if (m.death) geom.rings.push(el('circle', { cx: px, cy: py, r: 7.5, class: 'g-death' }, svg));
+                geom.shown.push(el('circle', { cx: px, cy: py, r: 11, class: 'g-shown', visibility: 'hidden' }, svg));
+                geom.dots.push(el('circle', { cx: px, cy: py, r: 4, class: 'g-dot' + (m.world === 'tralf' && m.label === 'Tralfamadore' ? ' tralf' : '') }, svg));
+                const short = m.label === 'Tralfamadore' ? 'Tr.' : m.label === 'Boyhood' ? 'boy' : m.label === '1960s' ? "'60s" : "'" + m.label.slice(-2);
+                const lab = el('text', { x: px, y: py - 11, class: 'g-label', 'data-short': short, 'data-long': m.label }, svg);
+                lab.textContent = roomy ? short : '';
+                lab.dataset.roomy = roomy ? '1' : '';
+                geom.labels.push(lab);
+            });
+            order.forEach((mi, h) => {
+                const m = MOMENTS[mi];
+                const hit = el('rect', { x: x(h), y: 0, width: slotW, height: base, class: 'g-hit',
+                    tabindex: 0, role: 'button',
+                    'aria-label': `${pad(h)}:00, ${m.label}, ${m.place}` }, svg);
+                const tt = el('title', {}, hit);
+                tt.textContent = `${pad(h)}:00  ${m.label}, ${m.place}`;
+                hit.addEventListener('click', () => visit(h));
+                hit.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); visit(h); }
+                });
+            });
+
+            host.replaceChildren(svg);
+            markRange(lastNow);
+        }
+
+        function markRange(now) {
+            if (!geom) return;
+            const hf = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+            const nx = geom.x(hf);
+            geom.nowLine.setAttribute('x1', nx); geom.nowLine.setAttribute('x2', nx);
+            const ty = geom.padT - 10;
+            geom.nowHead.setAttribute('d', `M${nx - 5} ${ty - 6} L${nx + 5} ${ty - 6} L${nx} ${ty} Z`);
+            const hNow = now.getHours();
+            geom.dots.forEach((d, h) => {
+                d.classList.toggle('past', h < hNow);
+                d.classList.toggle('g-cur', h === hNow);
+                d.setAttribute('r', h === hNow ? 6 : 4);
+            });
+            geom.shown.forEach((c, h) => c.setAttribute('visibility', h === shownHour && h !== hNow ? 'visible' : 'hidden'));
+            geom.labels.forEach((l, h) => {
+                const isCur = h === hNow;
+                l.classList.toggle('cur', isCur);
+                if (isCur) {
+                    l.textContent = l.dataset.long;
+                    // keep the long label inside the plot at the edges
+                    const lx = Number(l.getAttribute('x'));
+                    l.setAttribute('text-anchor', lx < 60 ? 'start' : lx > geom.x(24) - 60 ? 'end' : 'middle');
+                    l.setAttribute('y', Number(geom.dots[h].getAttribute('cy')) - 15);
+                } else {
+                    l.textContent = l.dataset.roomy ? l.dataset.short : '';
+                    l.setAttribute('text-anchor', 'middle');
+                    l.setAttribute('y', Number(geom.dots[h].getAttribute('cy')) - 12);
+                }
+            });
+        }
+
+        // ---- so it goes ----
+        function updateTally(hNow) {
+            const total = order.filter(mi => MOMENTS[mi].death).length;
+            let said = 0;
+            const marks = $('marks');
+            if (marks.children.length !== total) {
+                marks.replaceChildren(...Array.from({ length: total }, () => {
+                    const s = document.createElement('span'); s.className = 'mark'; return s;
+                }));
+            }
+            order.forEach((mi, h) => { if (h <= hNow && MOMENTS[mi].death) said++; });
+            Array.from(marks.children).forEach((s, i) => s.classList.toggle('on', i < said));
+            $('tallyCount').textContent = `said ${said} of ${total} times today`;
+        }
+
+        // ---- visiting another hour ----
+        function visit(h) {
             const now = new Date();
-            
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            timeDisplay.textContent = `${h}:${m}:${s}`;
+            if (h === now.getHours()) { endVisit(); return; }
+            visitUntil = Date.now() + 20000;
+            showMoment(h, true);
+            markRange(now);
+            tickVisit();
+            $('live').textContent = `Billy visits ${MOMENTS[order[h]].label}, ${MOMENTS[order[h]].place}.`;
+        }
+        function endVisit() {
+            visitUntil = 0;
+            const now = new Date();
+            showMoment(now.getHours(), true);
+            markRange(now);
+        }
+        function tickVisit() {
+            const left = Math.max(0, Math.ceil((visitUntil - Date.now()) / 1000));
+            $('visitingText').textContent = `Billy will come unstuck again in ${left} s.`;
+        }
+        $('backBtn').addEventListener('click', endVisit);
+
+        // ---- the clock ----
+        function tick() {
+            const now = new Date();
+            lastNow = now;
+            const h = now.getHours(), mi = now.getMinutes(), s = now.getSeconds();
+            $('time').innerHTML = `${pad(h)}:${pad(mi)}<span class="sec">${pad(s)}</span>`;
+            $('time').setAttribute('aria-label', `${pad(h)}:${pad(mi)}`);
+
+            const key = now.toDateString();
+            if (key !== dayKey) {
+                dayKey = key;
+                order = orderFor(now);
+                $('date').textContent = `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+                const feb13 = now.getMonth() === 1 && now.getDate() === 13;
+                $('footnote').textContent = feb13
+                    ? "February 13: the night Dresden burned in 1945, and the day Billy dies in 1976. He has been to both many times."
+                    : "Each hour holds one moment of Billy's life. The order is shuffled fresh every midnight, and he does not get to choose it.";
+                currentHour = -1; shownHour = -1; visitUntil = 0;
+                drawRange();
+            }
+
+            if (visitUntil && Date.now() >= visitUntil) visitUntil = 0;
+            if (visitUntil) tickVisit();
+
+            if (h !== currentHour) {
+                const first = currentHour === -1;
+                currentHour = h;
+                if (!visitUntil) {
+                    showMoment(h, !first);
+                    const m = MOMENTS[order[h]];
+                    $('live').textContent = `${pad(h)}:00. Billy is in ${m.label}, ${m.place}.` + (m.death ? ' So it goes.' : '');
+                }
+                updateTally(h);
+            } else if (!visitUntil && shownHour !== h) {
+                showMoment(h, true);
+            }
+            markRange(now);
         }
 
-        updateClock();
-        setInterval(updateClock, 1000);
+        tick();
+        setInterval(tick, 1000);
+
+        let resizeTimer = 0;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(drawRange, 120);
+        });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawRange);
     </script>
 </body>
 </html>

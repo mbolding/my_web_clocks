@@ -4,300 +4,1043 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Great Gatsby Clock</title>
+    <meta name="description" content="Young Jimmy Gatz's schedule from the back of Hopalong Cassidy runs the day, while across the bay the green light on Daisy's dock comes on at dusk and pulses every second.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Limelight&family=Poiret+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Libre+Baskerville:ital,wght@0,400;1,400&family=Limelight&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-night: #080808;
-            --gold: #d4af37;
-            --gold-muted: #8b7324;
-            --green-light: #2ecc71;
-            --green-glow: rgba(46, 204, 113, 0.6);
+            --bg: #0a0b10;
+            --bg-2: #12131a;
+            --gold: #d9b65c;
+            --gold-bright: #f1d98f;
+            --gold-dim: #8f7838;
+            --text: #e9dfc4;
+            --muted: #bfae84;
+            --green: #3fe08a;
+            --green-glow: rgba(63, 224, 138, 0.55);
+            --paper: #efe5cb;
+            --paper-edge: #d9caa3;
+            --ink: #2a2116;
+            --ink-soft: #5b4c36;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { background: var(--bg); color: var(--text); }
 
         body {
-            background-color: var(--bg-night);
-            color: var(--gold);
-            font-family: 'Poiret One', cursive;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
+            font-family: 'Libre Baskerville', Georgia, serif;
+            background:
+                radial-gradient(ellipse at 50% -10%, rgba(217, 182, 92, 0.10), transparent 55%),
+                var(--bg);
+            padding: clamp(12px, 2.4vw, 28px) clamp(16px, 3vw, 40px) clamp(20px, 3vw, 36px);
         }
 
-        /* Water reflection effect on background */
-        body::before {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100vw;
-            height: 30vh;
-            background: linear-gradient(0deg, rgba(46,204,113,0.05) 0%, transparent 100%);
-            animation: tide 6s ease-in-out infinite alternate;
-        }
+        .page { max-width: 1240px; margin: 0 auto; }
 
-        @keyframes tide {
-            0% { transform: translateY(10px); opacity: 0.5; }
-            100% { transform: translateY(-10px); opacity: 1; }
-        }
-
-        /* Art Deco Border Container */
-        .deco-container {
-            position: relative;
-            width: clamp(320px, 80vw, 600px);
-            height: clamp(400px, 80vw, 700px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            border: 2px solid var(--gold);
-            padding: 40px;
-            background: radial-gradient(circle at center, #111 0%, var(--bg-night) 100%);
-            z-index: 10;
-        }
-
-        /* Nested borders for the geometric deco look */
-        .deco-container::before {
-            content: "";
-            position: absolute;
-            top: 10px; right: 10px; bottom: 10px; left: 10px;
-            border: 1px solid var(--gold-muted);
-            pointer-events: none;
-        }
-        
-        .deco-container::after {
-            content: "";
-            position: absolute;
-            top: 20px; right: 20px; bottom: 20px; left: 20px;
-            border: 1px dashed var(--gold-muted);
-            pointer-events: none;
-        }
-
-        /* Title */
-        .title {
-            font-family: 'Limelight', cursive;
-            font-size: 2rem;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-            margin-top: 20px;
-            color: var(--gold);
-            text-shadow: 2px 2px 0px #000, 4px 4px 10px rgba(212, 175, 55, 0.3);
-        }
-
-        /* The Green Light */
-        .green-light-container {
-            position: relative;
-            margin: 40px 0;
-            height: 80px;
+        /* ---------- Header ---------- */
+        header {
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .green-light {
-            width: 25px;
-            height: 25px;
-            background-color: var(--green-light);
-            border-radius: 50%;
-            box-shadow: 0 0 20px var(--green-glow), 0 0 40px var(--green-light);
-            transition: all 0.5s ease;
-        }
-
-        /* Pulse every second */
-        .pulse {
-            transform: scale(1.3);
-            box-shadow: 0 0 30px var(--green-glow), 0 0 60px var(--green-light), 0 0 100px var(--green-light);
-        }
-
-        /* Distant Dock Lines */
-        .dock-line {
-            width: 2px;
-            height: 50px;
-            background: linear-gradient(var(--green-glow), transparent);
-            position: absolute;
-            top: 35px;
-        }
-
-        /* Clock Time Display */
-        .time-display {
-            font-size: clamp(4rem, 12vw, 6rem);
-            font-weight: bold;
-            color: var(--gold);
+            gap: clamp(10px, 2vw, 22px);
+            margin-bottom: clamp(10px, 1.8vw, 20px);
             text-align: center;
-            letter-spacing: 4px;
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-            margin-top: 10px;
+        }
+        header .rule {
+            flex: 1;
+            max-width: 260px;
+            height: 7px;
+            border-top: 1px solid var(--gold-dim);
+            border-bottom: 1px solid var(--gold-dim);
             position: relative;
         }
-
-        /* Secs */
-        .seconds {
-            font-size: 1.5rem;
-            opacity: 0.8;
-            margin-left: 5px;
-        }
-
-        /* Quote Box */
-        .quote-box {
+        header .rule::after {
+            content: "";
             position: absolute;
-            bottom: 60px;
-            text-align: center;
-            font-size: 1.2rem;
-            color: var(--gold-muted);
-            line-height: 1.6;
-            max-width: 80%;
-            transition: opacity 1s ease;
-        }
-        
-        .quote-author {
-            display: block;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            font-family: 'Limelight', cursive;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        /* Geometric Deco Accents */
-        .accent-top {
-            position: absolute;
-            top: -20px;
-            width: 100px;
-            height: 40px;
-            background: var(--bg-night);
-            border: 2px solid var(--gold);
-            border-bottom: none;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            padding-bottom: 5px;
-            z-index: 15;
-            left: calc(50% - 50px);
-        }
-        
-        .accent-bottom {
-            position: absolute;
-            bottom: -20px;
-            width: 100px;
-            height: 40px;
-            background: var(--bg-night);
-            border: 2px solid var(--gold);
-            border-top: none;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding-top: 5px;
-            z-index: 15;
-            left: calc(50% - 50px);
-        }
-
-        .diamond {
-            width: 15px;
-            height: 15px;
+            top: 50%; width: 9px; height: 9px;
             background: var(--gold);
-            transform: rotate(45deg);
+            transform: translateY(-50%) rotate(45deg);
+        }
+        header .rule.l::after { right: -4px; }
+        header .rule.r::after { left: -4px; }
+        h1 {
+            font-family: 'Limelight', serif;
+            font-weight: 400;
+            font-size: clamp(1.35rem, 3.2vw, 2.3rem);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--gold);
+            line-height: 1.1;
+        }
+        .sub {
+            display: block;
+            font-family: 'Libre Baskerville', serif;
+            font-style: italic;
+            font-size: clamp(0.72rem, 1.2vw, 0.86rem);
+            letter-spacing: 0.04em;
+            text-transform: none;
+            color: var(--muted);
+            margin-top: 4px;
         }
 
+        /* ---------- Layout ---------- */
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(300px, 1fr);
+            grid-template-areas: "scene side" "quote side";
+            grid-template-rows: auto 1fr;
+            gap: clamp(14px, 2vw, 26px);
+            align-items: start;
+        }
+        .scene-col { grid-area: scene; }
+        .quote { grid-area: quote; }
+        .side { grid-area: side; display: flex; flex-direction: column; gap: clamp(12px, 1.6vw, 18px); }
+
+        /* Deco frame: gold double rule with stepped corners */
+        .frame {
+            position: relative;
+            padding: 7px;
+            border: 1px solid var(--gold);
+            background: var(--bg-2);
+        }
+        .frame::before {
+            content: "";
+            position: absolute; inset: 3px;
+            border: 1px solid var(--gold-dim);
+            pointer-events: none;
+        }
+        .corner {
+            position: absolute; width: 16px; height: 16px;
+            border: 1px solid var(--gold);
+            background: var(--bg);
+            z-index: 2;
+        }
+        .corner::after {
+            content: ""; position: absolute; inset: 4px;
+            background: var(--gold);
+        }
+        .corner.tl { top: -8px; left: -8px; }
+        .corner.tr { top: -8px; right: -8px; }
+        .corner.bl { bottom: -8px; left: -8px; }
+        .corner.br { bottom: -8px; right: -8px; }
+
+        .scene {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            max-height: 62vh;
+            overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        .scene-caption {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 9px 4px 2px;
+            font-size: clamp(0.74rem, 1.1vw, 0.84rem);
+            color: var(--muted);
+        }
+        .scene-caption .place {
+            font-family: 'Limelight', serif;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--gold);
+            font-size: clamp(0.66rem, 1vw, 0.76rem);
+        }
+        .scene-caption .phase { font-style: italic; text-align: right; flex: 1; min-width: 200px; }
+
+        /* ---------- Quote ---------- */
+        .quote {
+            border-left: 2px solid var(--gold-dim);
+            padding: 4px 0 4px clamp(14px, 1.8vw, 20px);
+            min-height: 5.6em;
+            transition: opacity 0.8s ease;
+        }
+        .quote p {
+            font-style: italic;
+            font-size: clamp(0.95rem, 1.45vw, 1.12rem);
+            line-height: 1.6;
+            color: var(--text);
+        }
+        .quote cite {
+            display: block;
+            margin-top: 8px;
+            font-style: normal;
+            font-family: 'Limelight', serif;
+            font-size: clamp(0.66rem, 0.95vw, 0.74rem);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        /* ---------- Readout ---------- */
+        .readout { text-align: center; padding: 14px 12px 12px; }
+        .readout .day {
+            font-family: 'Limelight', serif;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            font-size: clamp(0.7rem, 1vw, 0.8rem);
+            color: var(--gold);
+        }
+        .clock-face {
+            display: inline-flex;
+            align-items: center;
+            gap: clamp(8px, 1.2vw, 14px);
+            margin: 4px 0 2px;
+            transform-origin: 85% 100%;
+        }
+        .clock-face.tilt { animation: tilt 2.6s ease-in-out 1; }
+        @keyframes tilt {
+            0% { transform: rotate(0); }
+            28% { transform: rotate(-7deg); }
+            40% { transform: rotate(-6deg); }
+            62% { transform: rotate(1.2deg); }
+            78% { transform: rotate(-0.5deg); }
+            100% { transform: rotate(0); }
+        }
+        .hm {
+            font-family: 'Limelight', serif;
+            font-size: clamp(3.2rem, 6.4vw, 4.9rem);
+            letter-spacing: 0.02em;
+            line-height: 1;
+            color: var(--gold-bright);
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 18px rgba(217, 182, 92, 0.35);
+            font-weight: 400;
+        }
+        .secs {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+            font-family: 'Limelight', serif;
+            color: var(--gold);
+        }
+        .secs .s { font-size: clamp(1.3rem, 2.2vw, 1.7rem); font-variant-numeric: tabular-nums; line-height: 1; display: flex; align-items: center; gap: 8px; }
+        .secs .ap { font-family: 'Libre Baskerville', serif; font-size: clamp(0.8rem, 1.2vw, 0.95rem); color: var(--muted); }
+        .pip {
+            width: 11px; height: 11px; border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green-glow), 0 0 16px var(--green-glow);
+        }
+        .pip.beat { animation: beat 1s ease-out 1; }
+        @keyframes beat {
+            0% { transform: scale(1.45); box-shadow: 0 0 14px var(--green), 0 0 30px var(--green-glow); }
+            100% { transform: scale(1); }
+        }
+        .aside {
+            min-height: 1.5em;
+            font-size: clamp(0.76rem, 1.05vw, 0.85rem);
+            font-style: italic;
+            color: var(--muted);
+            transition: opacity 0.6s ease;
+        }
+        .aside .who { font-style: normal; color: var(--gold-dim); }
+
+        /* 24-hour strip: schedule blocks in gold, the green light's hours in green */
+        .strip { margin: 10px 4px 0; }
+        .bar {
+            position: relative;
+            height: 22px;
+            border: 1px solid var(--gold-dim);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .bar .blk {
+            position: absolute; top: 3px; height: 9px;
+            background: var(--gold);
+        }
+        .bar .blk.cur { background: var(--gold-bright); box-shadow: 0 0 8px rgba(241, 217, 143, 0.6); }
+        .bar .gl {
+            position: absolute; bottom: 3px; height: 4px;
+            background: var(--green);
+            opacity: 0.85;
+        }
+        .bar .needle {
+            position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px;
+            background: var(--text);
+        }
+        .ticks {
+            position: relative; height: 1.3em; margin-top: 4px;
+            font-size: 0.68rem; color: var(--muted);
+        }
+        .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+        .ticks span:first-child { transform: none; }
+        .ticks span:last-child { transform: translateX(-100%); }
+        .legend {
+            display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+            font-size: 0.7rem; color: var(--muted); margin-top: 2px;
+        }
+        .legend i { display: inline-block; width: 14px; height: 6px; margin-right: 6px; vertical-align: middle; }
+
+        /* ---------- The flyleaf ---------- */
+        .flyleaf {
+            position: relative;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.35), transparent 60%),
+                linear-gradient(180deg, var(--paper), #e6dabb);
+            color: var(--ink);
+            padding: clamp(14px, 1.8vw, 20px) clamp(16px, 2vw, 24px) clamp(12px, 1.6vw, 16px);
+            box-shadow: 0 0 0 1px var(--paper-edge), 0 10px 28px rgba(0, 0, 0, 0.5);
+        }
+        .flyleaf .from {
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            color: var(--ink-soft);
+            text-align: center;
+            font-style: italic;
+        }
+        .flyleaf h2 {
+            font-family: 'Limelight', serif;
+            font-weight: 400;
+            text-align: center;
+            letter-spacing: 0.3em;
+            font-size: clamp(1rem, 1.5vw, 1.2rem);
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+        .flyleaf .date {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--ink-soft);
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(42, 33, 22, 0.25);
+            margin-bottom: 4px;
+        }
+        .sched { list-style: none; }
+        .sched li {
+            display: grid;
+            grid-template-columns: 14px minmax(0, 1fr) auto;
+            align-items: center;
+            column-gap: 10px;
+            padding: 3px 6px;
+            font-family: 'Caveat', cursive;
+            font-size: clamp(1.12rem, 1.6vw, 1.3rem);
+            font-weight: 500;
+            line-height: 1.2;
+            color: #1f2a4a; /* fountain-pen blue-black */
+            position: relative;
+            border-radius: 2px;
+        }
+        .sched li .t { font-weight: 600; white-space: nowrap; text-align: right; }
+        .sched li .dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid rgba(31, 42, 74, 0.35); }
+        .sched li.past { color: rgba(31, 42, 74, 0.55); }
+        .sched li.past .dot { background: rgba(31, 42, 74, 0.35); border-color: transparent; }
+        .sched li.cur { background: rgba(217, 182, 92, 0.32); }
+        .sched li.cur .dot { background: #17a85d; border-color: #0d6b3a; box-shadow: 0 0 6px rgba(23, 168, 93, 0.7); }
+        .sched li .prog {
+            position: absolute; left: 0; bottom: 0; height: 2px; background: #8a6a1e;
+        }
+        .status {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(42, 33, 22, 0.25);
+            font-size: clamp(0.76rem, 1.05vw, 0.84rem);
+            line-height: 1.5;
+            color: var(--ink);
+        }
+        .status b { font-weight: 400; font-family: 'Limelight', serif; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.72rem; color: var(--ink-soft); margin-right: 6px; }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); white-space: nowrap;
+        }
+
+        @media (max-width: 860px) {
+            .layout { display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
+            .side { display: contents; }
+            .readout { order: 0; }
+            .scene-col { order: 1; }
+            .flyleaf { order: 2; }
+            .quote { order: 3; }
+            header .rule { display: none; }
+            .scene { aspect-ratio: 4 / 3; max-height: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .clock-face.tilt { animation: none; }
+            .pip.beat { animation: none; }
+            .quote, .aside { transition: none; }
+        }
     </style>
 </head>
 <body>
+<div class="page">
+    <header>
+        <span class="rule l" aria-hidden="true"></span>
+        <h1>The Great Gatsby<span class="sub">West Egg, looking across the bay, a summer day in 1922</span></h1>
+        <span class="rule r" aria-hidden="true"></span>
+    </header>
 
-    <div class="deco-container">
-        
-        <div class="accent-top">
-            <div class="diamond"></div>
+    <main class="layout">
+        <div class="scene-col">
+            <div class="frame">
+                <span class="corner tl"></span><span class="corner tr"></span>
+                <span class="corner bl"></span><span class="corner br"></span>
+                <div class="scene"><canvas id="bay" aria-hidden="true"></canvas></div>
+            </div>
+            <div class="scene-caption">
+                <span class="place">East Egg &middot; the Buchanans' dock</span>
+                <span class="phase" id="phase"></span>
+            </div>
         </div>
 
-        <div class="title">West Egg</div>
+        <aside class="side">
+            <div class="frame readout">
+                <span class="corner tl"></span><span class="corner tr"></span>
+                <span class="corner bl"></span><span class="corner br"></span>
+                <div class="day" id="day">&nbsp;</div>
+                <div class="clock-face" id="face" role="timer" aria-live="off">
+                    <span class="hm" id="hm">--:--</span>
+                    <span class="secs">
+                        <span class="s"><span class="pip" id="pip" aria-hidden="true"></span><span id="sec">00</span></span>
+                        <span class="ap" id="ap">a.m.</span>
+                    </span>
+                </div>
+                <div class="aside" id="aside"></div>
+                <div class="strip" aria-hidden="true">
+                    <div class="bar" id="bar"><div class="needle" id="needle"></div></div>
+                    <div class="ticks">
+                        <span style="left:0%">12 a.m.</span>
+                        <span style="left:25%">6</span>
+                        <span style="left:50%">noon</span>
+                        <span style="left:75%">6</span>
+                        <span style="left:100%">12 a.m.</span>
+                    </div>
+                    <div class="legend"><span><i style="background:var(--gold)"></i>the schedule</span><span><i style="background:var(--green)"></i>the green light burns</span></div>
+                </div>
+            </div>
 
-        <div class="green-light-container">
-            <div class="green-light" id="greenLight"></div>
-            <div class="dock-line"></div>
-        </div>
+            <section class="flyleaf" aria-labelledby="schedTitle">
+                <div class="from">on the last flyleaf of a boy's copy of Hopalong Cassidy</div>
+                <h2 id="schedTitle">Schedule</h2>
+                <div class="date">September 12, 1906</div>
+                <ol class="sched" id="sched"></ol>
+                <div class="status" id="status"></div>
+            </section>
+            <div class="sr-only" aria-live="polite" id="live"></div>
+        </aside>
 
-        <div class="time-display">
-            <span id="timeText">00:00</span><span class="seconds" id="secText">00</span>
-        </div>
+        <figure class="quote" id="quote">
+            <p id="qText"></p>
+            <cite id="qCite"></cite>
+        </figure>
+    </main>
+</div>
 
-        <div class="quote-box" id="quoteText">
-            "So we beat on, boats against the current, borne back ceaselessly into the past."
-            <span class="quote-author">F. Scott Fitzgerald</span>
-        </div>
+<script>
+(function () {
+    'use strict';
 
-        <div class="accent-bottom">
-            <div class="diamond"></div>
-        </div>
-    </div>
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    <script>
-        const quotes = [
-            "So we beat on, boats against the current, borne back ceaselessly into the past.",
-            "There are only the pursued, the pursuing, the busy and the tired.",
-            "I was within and without, simultaneously enchanted and repelled by the inexhaustible variety of life.",
-            "Can’t repeat the past? He cried incredulously. Why of course you can!",
-            "It takes two to make an accident.",
-            "All the bright precious things fade so fast, and they don't come back.",
-            "Gatsby believed in the green light, the orgastic future that year by year recedes before us."
-        ];
+    /* Jimmy Gatz's schedule, worded exactly as printed in the novel (Chapter IX).
+       Minutes from midnight. "Rise from bed" is a moment, given its quarter hour. */
+    const SCHED = [
+        { s: 360,  e: 375,  label: 'Rise from bed', time: '6:00 a.m.' },
+        { s: 375,  e: 390,  label: 'Dumbell exercise and wall-scaling', time: '6:15-6:30' },
+        { s: 435,  e: 495,  label: 'Study electricity, etc.', time: '7:15-8:15' },
+        { s: 510,  e: 990,  label: 'Work', time: '8:30-4:30 p.m.' },
+        { s: 990,  e: 1020, label: 'Baseball and sports', time: '4:30-5:00' },
+        { s: 1020, e: 1080, label: 'Practise elocution, poise and how to attain it', time: '5:00-6:00' },
+        { s: 1140, e: 1260, label: 'Study needed inventions', time: '7:00-9:00' }
+    ];
 
-        const timeText = document.getElementById('timeText');
-        const secText = document.getElementById('secText');
-        const quoteText = document.getElementById('quoteText');
-        const greenLight = document.getElementById('greenLight');
+    /* The fixed summer day of the scene (Long Island, July, daylight time). */
+    const DAWN = 4.95, SUNRISE = 5.5, SUNSET = 20.4, DUSK = 20.95;
+    const LIGHT_ON = 20.5, LIGHT_OFF = 5.25;   // the green light, dusk to dawn
 
-        let lastMinute = -1;
-        let lastSecond = -1;
+    /* Quotations, verbatim from the 1925 text (Project Gutenberg #64317). */
+    const Q = {
+        washstand: ['A universe of ineffable gaudiness spun itself out in his brain while the clock ticked on the washstand and the moon soaked with wet light his tangled clothes upon the floor.', 'Chapter VI'],
+        arms: ['\u2026he stretched out his arms toward the dark water in a curious way, and, far as I was from him, I could have sworn he was trembling.', 'Chapter I'],
+        arms2: ['Involuntarily I glanced seaward—and distinguished nothing except a single green light, minute and far away, that might have been the end of a dock.', 'Chapter I'],
+        beat: ['So we beat on, boats against the current, borne back ceaselessly into the past.', 'Chapter IX'],
+        bound: ['“Jimmy was bound to get ahead. He always had some resolves like this or something.”', 'Chapter IX, Mr. Gatz'],
+        mind: ['“Do you notice what he’s got about improving his mind? He was always great for that.”', 'Chapter IX, Mr. Gatz'],
+        morning: ['It eluded us then, but that’s no matter—tomorrow we will run faster, stretch out our arms further … And one fine morning—', 'Chapter IX'],
+        aloud: ['He was reluctant to close the book, reading each item aloud and then looking eagerly at me. I think he rather expected me to copy down the list for my own use.', 'Chapter IX'],
+        shows: ['“Look here, this is a book he had when he was a boy. It just shows you.”', 'Chapter IX, Mr. Gatz'],
+        omnibus: ['On weekends his Rolls-Royce became an omnibus, bearing parties to and from the city between nine in the morning and long past midnight, while his station wagon scampered like a brisk yellow bug to meet all trains.', 'Chapter III'],
+        raft: ['At high tide in the afternoon I watched his guests diving from the tower of his raft, or taking the sun on the hot sand of his beach while his two motorboats slit the waters of the Sound, drawing aquaplanes over cataracts of foam.', 'Chapter III'],
+        speech: ['Precisely at that point it vanished\u2014and I was looking at an elegant young roughneck, a year or two over thirty, whose elaborate formality of speech just missed being absurd.', 'Chapter III'],
+        music: ['There was music from my neighbour’s house through the summer nights.', 'Chapter III'],
+        fairy: ['For a while these reveries provided an outlet for his imagination; they were a satisfactory hint of the unreality of reality, a promise that the rock of the world was founded securely on a fairy’s wing.', 'Chapter VI'],
+        orchestra: ['By seven o’clock the orchestra has arrived, no thin five-piece affair, but a whole pitful of oboes and trombones and saxophones and viols and cornets and piccolos, and low and high drums.', 'Chapter III'],
+        moths: ['In his blue gardens men and girls came and went like moths among the whisperings and the champagne and the stars.', 'Chapter III'],
+        dock: ['“You always have a green light that burns all night at the end of your dock.”', 'Chapter V, Gatsby'],
+        believed: ['Gatsby believed in the green light, the orgastic future that year by year recedes before us.', 'Chapter IX'],
+        clock: ['“I’m sorry about the clock,” he said.', 'Chapter V']
+    };
 
-        function updateClock() {
-            const now = new Date();
-            
-            let h = now.getHours();
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            // 12-hour format
-            h = h % 12;
-            h = h ? h : 12; // 0 becomes 12
-            
-            timeText.textContent = `${h}:${m}`;
-            secText.textContent = s;
+    // A party at Gatsby's: Friday and Saturday nights, 6 p.m. until 3 a.m.
+    function isPartyNight(now) {
+        const d = now.getDay(), h = now.getHours();
+        if (h >= 18) return d === 5 || d === 6;
+        if (h < 3) return d === 6 || d === 0;
+        return false;
+    }
 
-            // Pulse the green light exactly on the second change
-            if(lastSecond !== now.getSeconds()) {
-                lastSecond = now.getSeconds();
-                greenLight.classList.add('pulse');
-                setTimeout(() => {
-                    greenLight.classList.remove('pulse');
-                }, 300); // Pulse duration 300ms
+    function pickQuote(now) {
+        const m = now.getHours() * 60 + now.getMinutes();
+        const h = now.getHours();
+        const party = isPartyNight(now);
+        const weekend = now.getDay() === 0 || now.getDay() === 6;
+        if (m < 180) return party ? Q.moths : Q.washstand;
+        if (m < 300) return Q.arms;
+        if (m < 360) return Q.beat;
+        if (m < 375) return Q.shows;
+        if (m < 390) return Q.bound;
+        if (m < 435) return Q.morning;
+        if (m < 495) return Q.mind;
+        if (m < 510) return Q.aloud;
+        if (m < 990) {
+            if (weekend && h >= 9 && h < 13) return Q.omnibus;
+            return [Q.bound, Q.aloud, Q.raft][h % 3];
+        }
+        if (m < 1020) return Q.raft;
+        if (m < 1080) return Q.speech;
+        if (m < 1140) return Q.music;
+        if (m < 1260) return party ? Q.orchestra : Q.fairy;
+        if (m < 1320) return party ? Q.moths : Q.dock;
+        if (m < 1380) return Q.arms2;
+        return Q.believed;
+    }
+
+    function fmtClock(mins) {
+        const h24 = Math.floor(mins / 60) % 24, mm = mins % 60;
+        const h = h24 % 12 || 12;
+        return h + ':' + String(mm).padStart(2, '0') + (h24 < 12 ? ' a.m.' : ' p.m.');
+    }
+    function fmtSpan(mins) {
+        const h = Math.floor(mins / 60), m = mins % 60;
+        if (h === 0) return m + (m === 1 ? ' minute' : ' minutes');
+        return h + ' h ' + String(m).padStart(2, '0') + ' min';
+    }
+
+    /* ---------------- Schedule panel ---------------- */
+    const schedEl = document.getElementById('sched');
+    const rows = SCHED.map(it => {
+        const li = document.createElement('li');
+        li.innerHTML = '<span class="dot" aria-hidden="true"></span><span class="l"></span><span class="t"></span><span class="prog" aria-hidden="true"></span>';
+        li.querySelector('.l').textContent = it.label;
+        li.querySelector('.t').textContent = it.time;
+        schedEl.appendChild(li);
+        return li;
+    });
+
+    // 24-hour strip
+    const bar = document.getElementById('bar');
+    const blks = SCHED.map(it => {
+        const b = document.createElement('div');
+        b.className = 'blk';
+        b.style.left = (it.s / 14.4) + '%';
+        b.style.width = Math.max(0.5, (it.e - it.s) / 14.4) + '%';
+        bar.appendChild(b);
+        return b;
+    });
+    [[LIGHT_ON, 24], [0, LIGHT_OFF]].forEach(([a, b]) => {
+        const g = document.createElement('div');
+        g.className = 'gl';
+        g.style.left = (a / 24 * 100) + '%';
+        g.style.width = ((b - a) / 24 * 100) + '%';
+        bar.appendChild(g);
+    });
+    const needle = document.getElementById('needle');
+
+    const els = {
+        day: document.getElementById('day'),
+        hm: document.getElementById('hm'),
+        sec: document.getElementById('sec'),
+        ap: document.getElementById('ap'),
+        pip: document.getElementById('pip'),
+        face: document.getElementById('face'),
+        aside: document.getElementById('aside'),
+        status: document.getElementById('status'),
+        phase: document.getElementById('phase'),
+        qText: document.getElementById('qText'),
+        qCite: document.getElementById('qCite'),
+        quote: document.getElementById('quote'),
+        live: document.getElementById('live')
+    };
+
+    function phaseText(now) {
+        const h = now.getHours() + now.getMinutes() / 60;
+        const party = isPartyNight(now);
+        let t;
+        if (h >= LIGHT_ON || h < LIGHT_OFF) {
+            const gatsby = (h >= 21 || h < 4);
+            t = gatsby ? 'Night. The green light burns at the end of Daisy’s dock, and Gatsby stands on his lawn, reaching toward it.'
+                       : 'Night. The green light burns at the end of Daisy’s dock.';
+            if (h >= LIGHT_ON && h < 21) t = 'Dusk. The green light has come on across the bay.';
+            if (h >= 4 && h < LIGHT_OFF) t = 'Before dawn. The green light still burns.';
+        } else if (h < SUNRISE + 0.5) {
+            t = 'Dawn over the Sound. The green light has gone out.';
+        } else if (h >= SUNSET - 0.8) {
+            t = 'Sunset over the bay. The green light comes on at dusk.';
+        } else {
+            t = 'Daylight on the Sound. The light on Daisy’s dock waits for dusk.';
+        }
+        if (party) t += ' Next door, one of Gatsby’s parties.';
+        return t;
+    }
+
+    let lastQuoteKey = null;
+    let lastMinute = -1;
+
+    function tick() {
+        const now = new Date();
+        const H = now.getHours(), M = now.getMinutes(), S = now.getSeconds();
+        const mins = H * 60 + M;
+
+        els.hm.textContent = (H % 12 || 12) + ':' + String(M).padStart(2, '0');
+        els.sec.textContent = String(S).padStart(2, '0');
+        els.ap.textContent = H < 12 ? 'a.m.' : 'p.m.';
+        els.day.textContent = DAYS[now.getDay()];
+
+        // The green light pulses on every second
+        els.pip.classList.remove('beat');
+        void els.pip.offsetWidth;
+        els.pip.classList.add('beat');
+
+        // On the hour, the mantelpiece clock tilts and is caught (Chapter V)
+        if (M === 0 && S < 9) {
+            if (S === 0 && !reduceMotion.matches) {
+                els.face.classList.remove('tilt');
+                void els.face.offsetWidth;
+                els.face.classList.add('tilt');
             }
-
-            // Shuffle Quote Every Minute
-            if (lastMinute !== now.getMinutes()) {
-                lastMinute = now.getMinutes();
-                quoteText.style.opacity = 0;
-                setTimeout(() => {
-                    quoteText.innerHTML = `"${quotes[now.getMinutes() % quotes.length]}" <span class="quote-author">F. Scott Fitzgerald</span>`;
-                    quoteText.style.opacity = 0.9;
-                }, 1000);
+            if (!els.aside.dataset.on) {
+                els.aside.innerHTML = '';
+                els.aside.append(Q.clock[0] + ' ');
+                const w = document.createElement('span');
+                w.className = 'who';
+                w.textContent = '(Chapter V)';
+                els.aside.append(w);
+                els.aside.dataset.on = '1';
             }
-
-            requestAnimationFrame(updateClock);
+        } else if (els.aside.dataset.on) {
+            els.aside.textContent = '';
+            delete els.aside.dataset.on;
         }
 
-        updateClock();
-    </script>
+        if (M !== lastMinute) {
+            lastMinute = M;
+            updateMinute(now, mins);
+        }
+    }
+
+    function updateMinute(now, mins) {
+        needle.style.left = (mins / 14.4) + '%';
+
+        let curIdx = -1;
+        SCHED.forEach((it, i) => {
+            const li = rows[i];
+            const cur = mins >= it.s && mins < it.e;
+            if (cur) curIdx = i;
+            li.classList.toggle('cur', cur);
+            li.classList.toggle('past', mins >= it.e);
+            blks[i].classList.toggle('cur', cur);
+            li.querySelector('.prog').style.width = cur ? ((mins - it.s) / (it.e - it.s) * 100) + '%' : '0';
+        });
+
+        let status, live;
+        if (curIdx >= 0) {
+            const it = SCHED[curIdx];
+            const left = it.e - mins;
+            status = '<b>Now</b>' + esc(it.label) + ', ' + fmtSpan(left) + ' to go.';
+            live = 'Schedule: ' + it.label + ', ' + fmtSpan(left) + ' to go.';
+        } else {
+            const next = SCHED.find(it => it.s > mins) || SCHED[0];
+            const wait = (next.s - mins + 1440) % 1440;
+            if (mins >= 1260 || mins < 360) {
+                status = '<b>Off the schedule</b>The day’s resolves are done. Next, ' + esc(next.label.toLowerCase()) + ' at ' + fmtClock(next.s) + ', in ' + fmtSpan(wait) + '.';
+            } else {
+                status = '<b>Between entries</b>Next, ' + esc(next.label) + ' at ' + fmtClock(next.s) + ', in ' + fmtSpan(wait) + '.';
+            }
+            live = 'Unscheduled. Next, ' + next.label + ' at ' + fmtClock(next.s) + '.';
+        }
+        els.status.innerHTML = status;
+        els.live.textContent = fmtClock(mins) + '. ' + live;
+        els.phase.textContent = phaseText(now);
+
+        const q = pickQuote(now);
+        if (q !== lastQuoteKey) {
+            const first = lastQuoteKey === null;
+            lastQuoteKey = q;
+            const apply = () => {
+                els.qText.textContent = q[0];
+                els.qCite.textContent = 'The Great Gatsby, ' + q[1];
+                els.quote.style.opacity = 1;
+            };
+            if (first || reduceMotion.matches) apply();
+            else { els.quote.style.opacity = 0; setTimeout(apply, 800); }
+        }
+    }
+
+    function esc(s) {
+        return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+
+    /* ---------------- The bay (canvas) ---------------- */
+    const canvas = document.getElementById('bay');
+    const ctx = canvas.getContext('2d');
+    let W = 0, Hh = 0;
+
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        const r = canvas.parentElement.getBoundingClientRect();
+        W = Math.max(1, r.width);
+        Hh = Math.max(1, r.height);
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(Hh * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        draw(performance.now());
+    }
+
+    // Sky keyframes: hour, sky top, sky mid, horizon, water, land, darkness
+    const KEYS = [
+        [0,     '#04060d', '#0a0f22', '#141a33', '#070b17', '#05070c', 1],
+        [4.6,   '#05070f', '#0d1226', '#1a1d38', '#090d1a', '#05070c', 1],
+        [5.0,   '#1a2042', '#4a3d5e', '#b47062', '#262636', '#0d0f16', 0.65],
+        [5.5,   '#3a5688', '#c48c6c', '#f0c07a', '#5a5868', '#1d2420', 0.25],
+        [7,     '#4f86c0', '#a6c4da', '#e9dcb8', '#4b7891', '#2d3a2e', 0],
+        [12,    '#3f7ec4', '#8bbadf', '#d9e6e8', '#3c7395', '#2f3d2f', 0],
+        [17.5,  '#4d82bd', '#9bbcd6', '#e7d7af', '#45708b', '#2c382d', 0],
+        [19.6,  '#4b5c92', '#d48a63', '#f4b46a', '#58506a', '#1f2522', 0.1],
+        [20.4,  '#2a3366', '#774868', '#df8858', '#36324a', '#12151a', 0.45],
+        [21.0,  '#111836', '#232849', '#4a3a55', '#10152a', '#07090f', 0.9],
+        [22,    '#05070f', '#0b1024', '#161c36', '#080c18', '#05070c', 1],
+        [24,    '#04060d', '#0a0f22', '#141a33', '#070b17', '#05070c', 1]
+    ];
+    function hex2rgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+    const KEYS_RGB = KEYS.map(k => [k[0], hex2rgb(k[1]), hex2rgb(k[2]), hex2rgb(k[3]), hex2rgb(k[4]), hex2rgb(k[5]), k[6]]);
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function mix(a, b, t) { return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]; }
+    function rgb(c, a) { return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + (a === undefined ? 1 : a) + ')'; }
+    function palette(h) {
+        let i = 0;
+        while (i < KEYS_RGB.length - 2 && h >= KEYS_RGB[i + 1][0]) i++;
+        const a = KEYS_RGB[i], b = KEYS_RGB[i + 1];
+        const t = Math.min(1, Math.max(0, (h - a[0]) / (b[0] - a[0])));
+        return { top: mix(a[1], b[1], t), mid: mix(a[2], b[2], t), hor: mix(a[3], b[3], t), water: mix(a[4], b[4], t), land: mix(a[5], b[5], t), dark: lerp(a[6], b[6], t) };
+    }
+
+    // Seeded stars
+    let seed = 1922;
+    function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    const STARS = Array.from({ length: 110 }, () => ({ x: rnd(), y: rnd() * rnd(), r: 0.4 + rnd() * 1.1, p: rnd() * 6.28 }));
+    const SHIMMER = Array.from({ length: 70 }, () => ({ x: rnd(), y: rnd(), w: 6 + rnd() * 26, p: rnd() * 6.28, s: 0.3 + rnd() * 0.7 }));
+    const TREES = Array.from({ length: 26 }, (_, i) => ({ x: 0.34 + i * 0.026 + rnd() * 0.01, r: 0.012 + rnd() * 0.016 }));
+
+    function moonPhase(now) {
+        const syn = 29.530588853;
+        const ref = Date.UTC(2000, 0, 6, 18, 14);
+        let age = ((now.getTime() - ref) / 86400000) % syn;
+        if (age < 0) age += syn;
+        return age / syn; // 0 new, 0.5 full
+    }
+
+    function drawMoon(x, y, r, phase, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(40,44,60,0.55)';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        const lit = '#f3ecd2';
+        const waxing = phase < 0.5;
+        const k = Math.cos(phase * 2 * Math.PI); // 1 new, -1 full
+        ctx.fillStyle = lit;
+        ctx.shadowColor = 'rgba(243,236,210,0.6)';
+        ctx.shadowBlur = r * 1.2;
+        ctx.beginPath();
+        // lit limb half
+        ctx.arc(x, y, r, -Math.PI / 2, Math.PI / 2, !waxing);
+        // terminator ellipse back
+        ctx.ellipse(x, y, Math.abs(k) * r, r, 0, Math.PI / 2, -Math.PI / 2, (k > 0) === waxing ? true : false);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function draw(tms) {
+        if (!W) return;
+        const now = new Date();
+        const hf = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+        const P = palette(hf);
+        const horizonY = Hh * 0.52;
+        const motion = !reduceMotion.matches;
+        const t = tms / 1000;
+
+        // Sky in stepped Deco bands
+        const BANDS = 10;
+        for (let i = 0; i < BANDS; i++) {
+            const f = (i + 0.5) / BANDS;
+            const c = f < 0.55 ? mix(P.top, P.mid, f / 0.55) : mix(P.mid, P.hor, (f - 0.55) / 0.45);
+            ctx.fillStyle = rgb(c);
+            const y0 = Math.floor(horizonY * i / BANDS), y1 = Math.ceil(horizonY * (i + 1) / BANDS);
+            ctx.fillRect(0, y0, W, y1 - y0 + 1);
+        }
+
+        // Stars
+        if (P.dark > 0.05) {
+            for (const s of STARS) {
+                const tw = motion ? 0.7 + 0.3 * Math.sin(t * 1.3 + s.p) : 0.85;
+                ctx.fillStyle = 'rgba(245,238,215,' + (P.dark * tw * 0.9) + ')';
+                ctx.beginPath(); ctx.arc(s.x * W, s.y * horizonY * 0.95, s.r, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        // Sun: a Deco sunburst on an arc rising over East Egg
+        if (hf > SUNRISE - 0.3 && hf < SUNSET + 0.3) {
+            const f = (hf - SUNRISE) / (SUNSET - SUNRISE);
+            const sx = W * (0.88 - 0.8 * f);
+            const sy = horizonY - Math.sin(Math.PI * Math.min(1, Math.max(0, f))) * horizonY * 0.78 + Hh * 0.02;
+            const low = 1 - Math.sin(Math.PI * Math.min(1, Math.max(0, f)));
+            const core = mix([255, 246, 220], [255, 170, 90], Math.pow(low, 1.5));
+            const R = Math.max(10, Math.min(W, Hh) * 0.045);
+            ctx.save();
+            ctx.beginPath(); ctx.rect(0, 0, W, horizonY); ctx.clip();
+            ctx.translate(sx, sy);
+            ctx.fillStyle = rgb(core, 0.18);
+            const rays = 24;
+            for (let i = 0; i < rays; i++) {
+                const a = i / rays * Math.PI * 2;
+                const len = R * (i % 2 ? 2.4 : 3.4);
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a - 0.05) * R * 1.15, Math.sin(a - 0.05) * R * 1.15);
+                ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+                ctx.lineTo(Math.cos(a + 0.05) * R * 1.15, Math.sin(a + 0.05) * R * 1.15);
+                ctx.fill();
+            }
+            ctx.fillStyle = rgb(core);
+            ctx.shadowColor = rgb(core, 0.8); ctx.shadowBlur = R;
+            ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        // Moon across the night
+        const nightLen = 24 - SUNSET + SUNRISE;
+        const nh = hf >= SUNSET ? hf - SUNSET : (hf < SUNRISE ? hf + 24 - SUNSET : -1);
+        if (nh >= 0) {
+            const f = nh / nightLen;
+            const mx = W * (0.86 - 0.74 * f);
+            const my = horizonY - Math.sin(Math.PI * f) * horizonY * 0.72 + Hh * 0.03;
+            const mr = Math.max(8, Math.min(W, Hh) * 0.032);
+            ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, horizonY); ctx.clip();
+            drawMoon(mx, my, mr, moonPhase(now), Math.min(1, P.dark * 1.2));
+            ctx.restore();
+        }
+
+        // Water in bands
+        const WB = 6;
+        for (let i = 0; i < WB; i++) {
+            const f = i / (WB - 1);
+            const c = mix(mix(P.hor, P.water, 0.7), P.water, f);
+            const shade = mix(c, [0, 0, 0], f * 0.35);
+            ctx.fillStyle = rgb(shade);
+            const y0 = horizonY + (Hh - horizonY) * i / WB;
+            ctx.fillRect(0, Math.floor(y0), W, Math.ceil((Hh - horizonY) / WB) + 1);
+        }
+
+        // Shimmer on the water
+        const shimmerCol = P.dark > 0.5 ? [200, 205, 225] : mix(P.hor, [255, 255, 255], 0.4);
+        for (const s of SHIMMER) {
+            const y = horizonY + 6 + s.y * (Hh - horizonY) * 0.9;
+            const depth = (y - horizonY) / (Hh - horizonY);
+            const dx = motion ? Math.sin(t * s.s + s.p) * 6 : 0;
+            const a = (0.10 + 0.18 * depth) * (motion ? 0.6 + 0.4 * Math.sin(t * 1.7 * s.s + s.p) : 0.8);
+            ctx.fillStyle = rgb(shimmerCol, a * (P.dark > 0.5 ? 0.6 : 1));
+            ctx.fillRect(s.x * W + dx, y, s.w * (0.5 + depth), 1.2);
+        }
+
+        // East Egg across the bay: a low shore with trees, the mansion and the dock
+        const shoreY = horizonY + Hh * 0.03;
+        const landCol = P.land;
+        ctx.fillStyle = rgb(landCol);
+        ctx.beginPath();
+        ctx.moveTo(W * 0.3, horizonY + 1);
+        ctx.bezierCurveTo(W * 0.33, horizonY - Hh * 0.012, W * 0.36, horizonY - Hh * 0.02, W * 0.42, horizonY - Hh * 0.022);
+        ctx.lineTo(W, horizonY - Hh * 0.03);
+        ctx.lineTo(W, shoreY);
+        ctx.lineTo(W * 0.4, shoreY);
+        ctx.bezierCurveTo(W * 0.35, shoreY, W * 0.32, horizonY + Hh * 0.01, W * 0.3, horizonY + 1);
+        ctx.fill();
+        for (const tr of TREES) {
+            if (tr.x > 0.55 && tr.x < 0.7) continue; // clearing for the house
+            const r = tr.r * W * 0.9;
+            ctx.beginPath();
+            ctx.ellipse(tr.x * W, horizonY - Hh * 0.02 - r * 0.6, r, r * 1.25, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // The Buchanans' red-and-white Georgian Colonial mansion
+        const hx = W * 0.565, hw = W * 0.12, hh2 = Hh * 0.075, hb = horizonY - Hh * 0.018;
+        const brick = mix([150, 64, 50], landCol, Math.min(1, P.dark * 1.1));
+        const trim = mix([236, 230, 214], landCol, Math.min(1, P.dark * 1.05));
+        ctx.fillStyle = rgb(brick);
+        ctx.fillRect(hx, hb - hh2, hw, hh2);
+        ctx.fillStyle = rgb(trim);
+        ctx.beginPath();
+        ctx.moveTo(hx - hw * 0.04, hb - hh2);
+        ctx.lineTo(hx + hw * 0.5, hb - hh2 - hh2 * 0.42);
+        ctx.lineTo(hx + hw * 1.04, hb - hh2);
+        ctx.closePath(); ctx.fill();
+        ctx.fillRect(hx - hw * 0.02, hb - hh2 - 1, hw * 1.04, 2);
+        ctx.fillStyle = rgb(brick);
+        ctx.fillRect(hx + hw * 0.16, hb - hh2 - hh2 * 0.48, hw * 0.06, hh2 * 0.3);
+        ctx.fillRect(hx + hw * 0.78, hb - hh2 - hh2 * 0.48, hw * 0.06, hh2 * 0.3);
+        // windows: white by day, lamplit in the evening, dark late at night
+        const lamps = (hf >= 19.5 || hf < 0.5) ? 1 : 0;
+        for (let row = 0; row < 2; row++) {
+            for (let c = 0; c < 6; c++) {
+                const wx = hx + hw * (0.08 + c * 0.145), wy = hb - hh2 * (0.85 - row * 0.45);
+                if (P.dark > 0.4) ctx.fillStyle = lamps && ((c + row) % 3 !== 1) ? 'rgba(255,205,120,0.9)' : 'rgba(30,30,40,0.6)';
+                else ctx.fillStyle = rgb(trim, 0.85);
+                ctx.fillRect(wx, wy, hw * 0.06, hh2 * 0.24);
+            }
+        }
+
+        // The dock, reaching out from the lawn into the bay
+        const dockBase = { x: W * 0.55, y: shoreY - 1 };
+        const dockEnd = { x: W * 0.47, y: horizonY + Hh * 0.085 };
+        ctx.strokeStyle = rgb(mix(landCol, [120, 100, 70], P.dark > 0.5 ? 0.15 : 0.5));
+        ctx.lineWidth = Math.max(2, W * 0.004);
+        ctx.beginPath(); ctx.moveTo(dockBase.x, dockBase.y); ctx.lineTo(dockEnd.x, dockEnd.y); ctx.stroke();
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 6; i++) {
+            const px = lerp(dockBase.x, dockEnd.x, i / 6), py = lerp(dockBase.y, dockEnd.y, i / 6);
+            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + Hh * 0.012); ctx.stroke();
+        }
+        // lamp post at the end
+        const postTop = dockEnd.y - Hh * 0.04;
+        ctx.lineWidth = Math.max(1.5, W * 0.0025);
+        ctx.beginPath(); ctx.moveTo(dockEnd.x, dockEnd.y); ctx.lineTo(dockEnd.x, postTop); ctx.stroke();
+
+        // The green light: on from dusk to dawn, pulsing every second
+        let on = 0;
+        if (hf >= LIGHT_ON || hf < LIGHT_OFF) on = 1;
+        if (hf >= LIGHT_ON && hf < LIGHT_ON + 1 / 60) on = (hf - LIGHT_ON) * 60;
+        if (hf < LIGHT_OFF && hf > LIGHT_OFF - 1 / 60) on = (LIGHT_OFF - hf) * 60;
+        const ms = now.getMilliseconds();
+        const pulse = motion ? 0.6 + 0.4 * Math.exp(-ms / 260) : 0.85;
+        const lr = Math.max(2.6, W * 0.0052);
+        if (on > 0) {
+            const I = on * pulse;
+            // reflection
+            for (let y = dockEnd.y + 4; y < Hh; y += 4) {
+                const d = (y - dockEnd.y) / (Hh - dockEnd.y);
+                const wob = motion ? Math.sin(y * 0.15 + t * 2) * 3 * d : 0;
+                const w = 2 + d * W * 0.02 * (0.5 + 0.5 * Math.sin(y * 0.7));
+                ctx.fillStyle = 'rgba(63,224,138,' + (I * 0.45 * (1 - d * 0.85)) + ')';
+                ctx.fillRect(dockEnd.x - w / 2 + wob, y, w, 1.6);
+            }
+            const g = ctx.createRadialGradient(dockEnd.x, postTop, 0, dockEnd.x, postTop, lr * 12);
+            g.addColorStop(0, 'rgba(120,255,175,' + (0.9 * I) + ')');
+            g.addColorStop(0.25, 'rgba(63,224,138,' + (0.45 * I) + ')');
+            g.addColorStop(1, 'rgba(63,224,138,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(dockEnd.x, postTop, lr * 12, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'rgba(210,255,225,' + (0.6 + 0.4 * I) + ')';
+            ctx.beginPath(); ctx.arc(dockEnd.x, postTop, lr, 0, Math.PI * 2); ctx.fill();
+        } else {
+            ctx.fillStyle = 'rgba(40,70,55,0.9)';
+            ctx.beginPath(); ctx.arc(dockEnd.x, postTop, lr * 0.9, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // West Egg foreground: Gatsby's lawn, sea wall and the corner of his tower
+        const fg = mix(P.land, [0, 0, 0], 0.45);
+        const lawnY = Hh * 0.86;
+        ctx.fillStyle = rgb(fg);
+        ctx.beginPath();
+        ctx.moveTo(0, lawnY - Hh * 0.02);
+        ctx.bezierCurveTo(W * 0.25, lawnY - Hh * 0.04, W * 0.55, lawnY + Hh * 0.01, W, lawnY - Hh * 0.05);
+        ctx.lineTo(W, Hh); ctx.lineTo(0, Hh); ctx.closePath(); ctx.fill();
+        // sea wall rail
+        ctx.strokeStyle = rgb(mix(fg, [217, 182, 92], 0.35));
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, lawnY - Hh * 0.02);
+        ctx.bezierCurveTo(W * 0.25, lawnY - Hh * 0.04, W * 0.55, lawnY + Hh * 0.01, W, lawnY - Hh * 0.05);
+        ctx.stroke();
+        // Gatsby's tower, at the right edge
+        const tx = W * 0.9, tw = W * 0.1, ty = Hh * 0.42;
+        ctx.fillStyle = rgb(fg);
+        ctx.fillRect(tx, ty, tw, Hh - ty);
+        ctx.beginPath(); ctx.moveTo(tx - 3, ty); ctx.lineTo(tx + tw * 0.5, ty - Hh * 0.08); ctx.lineTo(tx + tw + 3, ty); ctx.fill();
+        const party = isPartyNight(now);
+        const gWin = party ? 'rgba(255,214,140,0.95)' : (P.dark > 0.5 && (hf >= 21 || hf < 2) ? 'rgba(255,214,140,0.7)' : 'rgba(0,0,0,0.25)');
+        ctx.fillStyle = gWin;
+        for (let r = 0; r < 4; r++) {
+            ctx.fillRect(tx + tw * 0.25, ty + Hh * (0.05 + r * 0.1), tw * 0.16, Hh * 0.05);
+            ctx.fillRect(tx + tw * 0.6, ty + Hh * (0.05 + r * 0.1), tw * 0.16, Hh * 0.05);
+        }
+
+        // Party nights: strings of coloured lights across the garden
+        if (party && P.dark > 0.2) {
+            const cols = ['#ffcf6b', '#ff7a7a', '#7ad8ff', '#b6ff8a', '#ffa6e0'];
+            const posts = [0.02, 0.24, 0.48, 0.7, 0.89];
+            ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+            for (let i = 0; i < posts.length - 1; i++) {
+                const x0 = posts[i] * W, x1 = posts[i + 1] * W, y0 = Hh * 0.7;
+                ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo((x0 + x1) / 2, y0 + Hh * 0.08, x1, y0); ctx.stroke();
+                for (let k = 1; k < 10; k++) {
+                    const u = k / 10;
+                    const bx = lerp(x0, x1, u), by = y0 + Hh * 0.08 * 2 * u * (1 - u);
+                    const flick = motion ? 0.75 + 0.25 * Math.sin(t * 3 + k * 1.7 + i) : 0.9;
+                    ctx.fillStyle = cols[(k + i) % cols.length];
+                    ctx.globalAlpha = flick * P.dark;
+                    ctx.beginPath(); ctx.arc(bx, by, Math.max(1.6, W * 0.0028), 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+            ctx.fillStyle = rgb(fg);
+            for (const p of posts) ctx.fillRect(p * W - 1.5, Hh * 0.7, 3, Hh * 0.2);
+        }
+
+        // Gatsby on his lawn, arms out toward the water, late at night
+        if (P.dark > 0.6 && (hf >= 21 || hf < 4)) {
+            const gx = W * 0.3, gy = lawnY - Hh * 0.03, s = Hh * 0.075;
+            ctx.fillStyle = '#020306';
+            ctx.strokeStyle = '#020306';
+            ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.arc(gx, gy - s * 0.9, s * 0.11, 0, Math.PI * 2); ctx.fill();
+            ctx.lineWidth = Math.max(2, s * 0.14);
+            ctx.beginPath(); ctx.moveTo(gx, gy - s * 0.78); ctx.lineTo(gx, gy - s * 0.32); ctx.stroke();
+            ctx.lineWidth = Math.max(1.5, s * 0.09);
+            ctx.beginPath(); ctx.moveTo(gx, gy - s * 0.32); ctx.lineTo(gx - s * 0.1, gy); ctx.moveTo(gx, gy - s * 0.32); ctx.lineTo(gx + s * 0.1, gy); ctx.stroke();
+            ctx.lineWidth = Math.max(1.2, s * 0.07);
+            ctx.beginPath(); ctx.moveTo(gx, gy - s * 0.7); ctx.lineTo(gx + s * 0.42, gy - s * 0.8); ctx.moveTo(gx, gy - s * 0.7); ctx.lineTo(gx + s * 0.4, gy - s * 0.66); ctx.stroke();
+            ctx.lineCap = 'butt';
+        }
+    }
+
+    function loop(tms) {
+        draw(tms);
+        if (!reduceMotion.matches) requestAnimationFrame(loop);
+    }
+
+    // Text ticks once a second; the bay animates on rAF, or redraws once a second
+    // when reduced motion is asked for (the green light still keeps time).
+    function startSecondTimer() {
+        tick();
+        setTimeout(() => { tick(); if (reduceMotion.matches) draw(performance.now()); startInterval(); }, 1000 - (Date.now() % 1000) + 5);
+    }
+    function startInterval() {
+        setInterval(() => { tick(); if (reduceMotion.matches) draw(performance.now()); }, 1000);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    if (window.ResizeObserver) new ResizeObserver(resizeCanvas).observe(canvas.parentElement);
+    reduceMotion.addEventListener && reduceMotion.addEventListener('change', () => {
+        if (!reduceMotion.matches) requestAnimationFrame(loop);
+    });
+
+    resizeCanvas();
+    startSecondTimer();
+    if (!reduceMotion.matches) requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>
