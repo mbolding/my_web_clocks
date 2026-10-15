@@ -4,171 +4,378 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Macbeth Clock</title>
+    <meta name="description" content="Blood drips from the digits into a basin of water that turns red from midnight to midnight, while the hour is struck and Macbeth's night speaks its line.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,500&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-night: #050000;
-            --blood: #8a0303;
-            --blood-dark: #4a0101;
-            --ghost: rgba(255, 255, 255, 0.4);
+            --night: #070303;
+            --stone: #1b1412;
+            --bone: #efe3cc;
+            --parchment: #d9cbb4;
+            --muted: #a99383;
+            --blood: #e0402f;
+            --blood-deep: #8f0d0b;
+            --water: #12302b;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
 
         body {
-            background-color: var(--bg-night);
-            color: var(--blood);
-            font-family: 'UnifrakturMaguntia', cursive;
+            background: var(--night);
+            color: var(--parchment);
+            font-family: 'Cormorant Garamond', Georgia, serif;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
+            min-height: 100svh;
+            overflow-x: hidden;
         }
 
-        /* Scotland Fog Overlay */
-        body::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, transparent 30%, #000 100%);
+        /* Candlelight and the Scottish dark, behind everything */
+        .glow {
+            position: fixed;
+            inset: 0;
             pointer-events: none;
-            z-index: 50;
+            background:
+                radial-gradient(ellipse 60% 45% at 50% 40%, rgba(150, 70, 30, 0.16), transparent 70%),
+                radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
+            z-index: 0;
         }
 
-        .clock-container {
+        #blood {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        main {
             position: relative;
-            z-index: 10;
-            text-align: center;
+            z-index: 2;
+            min-height: 100vh;
+            min-height: 100svh;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: clamp(14px, 3vh, 40px) 16px clamp(14px, 2.5vh, 28px);
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: space-between;
+            gap: clamp(8px, 1.8vh, 24px);
+            text-align: center;
         }
 
-        .time-display {
-            font-size: clamp(6rem, 20vw, 12rem);
-            line-height: 1;
-            letter-spacing: 5px;
+        header { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+        .title {
+            font-family: 'UnifrakturMaguntia', serif;
+            font-size: clamp(1.7rem, 4.5vw, 2.6rem);
             color: var(--blood);
-            text-shadow: 0 0 20px var(--blood-dark), 0 5px 15px #000;
-            position: relative;
-            z-index: 20;
+            line-height: 1.1;
+            text-shadow: 0 0 18px rgba(224, 64, 47, 0.25);
         }
 
-        /* SVG filters to make it look wet/gooey */
-        .time-display {
-            filter: drop-shadow(0 0 10px rgba(138, 3, 3, 0.5));
+        .date {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
         }
 
-        /* The canvas over the clock for physically rendering bleeding drips */
-        #dripCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 30;
+        /* The line the play speaks this hour */
+        .scene {
+            max-width: 40rem;
+            min-height: 5.6em;
+            text-wrap: balance;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.4em;
+            font-size: clamp(1.1rem, 2.6vw, 1.55rem);
         }
 
-        .quote-box {
-            position: absolute;
-            bottom: 60px;
-            text-align: center;
-            max-width: 600px;
-            z-index: 60;
-            padding: 0 20px;
-        }
-
-        .quote {
-            font-family: 'Cormorant Garamond', serif;
+        .scene blockquote {
             font-style: italic;
-            font-size: clamp(1.2rem, 4vw, 1.8rem);
-            color: var(--ghost);
-            line-height: 1.5;
-            text-shadow: 0 0 5px #000;
+            font-weight: 500;
+            color: var(--bone);
+            line-height: 1.35;
         }
 
-        /* The slow pulse representing the 'creeping pace' */
-        .pulse-overlay {
+        .scene blockquote .speaker {
+            font-style: normal;
+            font-size: 0.68em;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            display: block;
+            margin-top: 0.3em;
+        }
+
+        .scene cite {
+            font-style: normal;
+            font-size: 0.7em;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        /* The time itself: bone white, the seconds in blood */
+        .time {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 600;
+            font-variant-numeric: lining-nums tabular-nums;
+            font-size: clamp(4.4rem, min(24vw, 19vh), 11rem);
+            line-height: 1;
+            color: var(--bone);
+            white-space: nowrap;
+            text-shadow: 0 0 30px rgba(255, 190, 120, 0.12), 0 4px 18px #000;
+            position: relative;
+        }
+
+        .time .colon { color: var(--muted); padding: 0 0.02em; position: relative; top: -0.06em; }
+
+        .time .sec {
+            font-size: 0.42em;
+            color: var(--blood);
+            margin-left: 0.18em;
+            text-shadow: 0 0 16px rgba(224, 64, 47, 0.35);
+        }
+
+        .time .base { display: inline-block; width: 0; height: 0; }
+
+        /* The basin: a stone trough the drips fall into */
+        .basin-wrap { width: min(100%, 760px); }
+
+        #basin {
+            width: 100%;
+            height: clamp(60px, 10vh, 110px);
+        }
+
+        .scale {
+            position: relative;
+            height: 1.3em;
+            margin-top: 4px;
+            font-size: clamp(0.85rem, 1.8vw, 1rem);
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .scale span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+        .scale span:first-child { transform: none; left: 0; }
+        .scale span:last-child { transform: none; right: 0; }
+
+        .basin-note {
+            text-wrap: balance;
+            margin-top: 6px;
+            font-size: clamp(0.95rem, 2vw, 1.12rem);
+            color: var(--parchment);
+        }
+
+        .basin-note em { color: var(--bone); }
+
+        /* The bell */
+        .strikes {
+            font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+            color: var(--parchment);
+            min-height: 1.6em;
+        }
+
+        .strikes .label {
+            font-size: 0.72em;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-right: 0.6em;
+        }
+
+        .strikes .count { font-style: italic; color: var(--bone); }
+        .strikes .w { transition: color 0.4s, text-shadow 0.4s; }
+        .strikes .w.unstruck { color: #6b5850; }
+        .strikes .w.ring { color: var(--blood); text-shadow: 0 0 12px rgba(224, 64, 47, 0.7); }
+
+        footer {
+            max-width: 36rem;
+            font-style: italic;
+            font-size: clamp(0.98rem, 2.1vw, 1.2rem);
+            line-height: 1.4;
+            color: var(--parchment);
+        }
+
+        footer cite {
+            display: block;
+            font-style: normal;
+            font-size: 0.78em;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            margin-top: 0.3em;
+        }
+
+        .sr-only {
             position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: var(--blood);
-            opacity: 0;
-            z-index: 5;
-            pointer-events: none;
-            transition: opacity 1s ease-out;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
         }
 
-        .pulse-active {
-            opacity: 0.1;
+        @media (max-height: 700px) and (min-width: 600px) {
+            .scene { min-height: 0; }
+            footer { display: none; }
         }
-
     </style>
 </head>
 <body>
+    <div class="glow" aria-hidden="true"></div>
+    <canvas id="blood" aria-hidden="true"></canvas>
 
-    <div class="pulse-overlay" id="pulseOverlay"></div>
+    <main>
+        <header>
+            <h1 class="title">The Tragedie of Macbeth</h1>
+            <p class="date" id="date"></p>
+        </header>
 
-    <canvas aria-hidden="true" id="dripCanvas"></canvas>
+        <section class="scene" aria-live="polite">
+            <blockquote id="quote"></blockquote>
+            <cite id="cite"></cite>
+        </section>
 
-    <div class="clock-container">
-        <div class="time-display" id="timeDisplay">00:00:00</div>
-    </div>
+        <div class="time" aria-hidden="true"><span id="h1">0</span><span id="h2">0</span><span class="colon">:</span><span id="m1">0</span><span id="m2">0</span><span class="sec"><span id="s1">0</span><span id="s2">0</span></span><i class="base" id="baseline"></i></div>
+        <p class="sr-only" id="spoken" aria-live="polite"></p>
 
-    <div class="quote-box">
-        <div class="quote">"Tomorrow, and tomorrow, and tomorrow,<br> creeps in this petty pace from day to day..."</div>
-    </div>
+        <div class="basin-wrap">
+            <div id="basin" aria-hidden="true"></div>
+            <div class="scale" aria-hidden="true"><span>midnight</span><span style="left:25%">6</span><span style="left:50%">noon</span><span style="left:75%">18</span><span>midnight</span></div>
+            <p class="basin-note" id="basinNote"></p>
+        </div>
+
+        <p class="strikes" id="strikes"></p>
+
+        <footer>
+            &ldquo;To-morrow, and to-morrow, and to-morrow,<br>
+            Creeps in this petty pace from day to day,<br>
+            To the last syllable of recorded time&rdquo;
+            <cite>Macbeth, Act V, Scene v</cite>
+        </footer>
+    </main>
 
     <script>
-        // Decorative motion only: with reduced motion requested the scene is drawn
-        // once and then left still; the clock itself keeps updating.
+        // One line from the play for each hour of the day, chosen for what the
+        // play says about that hour: the murder night runs from midnight to the
+        // knocking at dawn, the plotting fills the day, Banquo dies at dusk, and
+        // Lady Macbeth walks in her sleep at the end of the night.
+        // Text from Project Gutenberg #1533; act and scene in modern numbering.
+        const HOURS = [
+            { lines: ['How goes the night, boy?', 'The moon is down; I have not heard the clock.'], speaker: 'Banquo, and Fleance', ref: 'Act II, Scene i' },
+            { lines: ['Is this a dagger which I see before me,', 'The handle toward my hand?'], speaker: 'Macbeth', ref: 'Act II, Scene i' },
+            { lines: ['I go, and it is done; the bell invites me.'], speaker: 'Macbeth, as the bell rings', ref: 'Act II, Scene i' },
+            { lines: ['I heard a voice cry, ‘Sleep no more!', 'Macbeth does murder sleep’'], speaker: 'Macbeth', ref: 'Act II, Scene ii' },
+            { lines: ['What is the night?', 'Almost at odds with morning, which is which.'], speaker: 'Macbeth, and Lady Macbeth', ref: 'Act III, Scene iv' },
+            { lines: ['Wake Duncan with thy knocking! I would thou couldst!'], speaker: 'Macbeth', ref: 'Act II, Scene ii' },
+            { lines: ['Here’s a knocking indeed! … Knock, knock, knock.'], speaker: 'The Porter', ref: 'Act II, Scene iii' },
+            { lines: ['by the clock ’tis day,', 'And yet dark night strangles the travelling lamp'], speaker: 'Ross', ref: 'Act II, Scene iv' },
+            { lines: ['A little water clears us of this deed:', 'How easy is it then!'], speaker: 'Lady Macbeth', ref: 'Act II, Scene ii' },
+            { lines: ['Fair is foul, and foul is fair:', 'Hover through the fog and filthy air.'], speaker: 'The Witches', ref: 'Act I, Scene i' },
+            { lines: ['Come what come may,', 'Time and the hour runs through the roughest day.'], speaker: 'Macbeth', ref: 'Act I, Scene iii' },
+            { lines: ['look like the innocent flower,', 'But be the serpent under’t.'], speaker: 'Lady Macbeth', ref: 'Act I, Scene v' },
+            { lines: ['Will all great Neptune’s ocean wash this blood', 'Clean from my hand?'], speaker: 'Macbeth', ref: 'Act II, Scene ii' },
+            { lines: ['If it were done when ’tis done, then ’twere well', 'It were done quickly.'], speaker: 'Macbeth', ref: 'Act I, Scene vii' },
+            { lines: ['There’s daggers in men’s smiles'], speaker: 'Donalbain', ref: 'Act II, Scene iii' },
+            { lines: ['False face must hide what the false heart doth know.'], speaker: 'Macbeth', ref: 'Act I, Scene vii' },
+            { lines: ['By the pricking of my thumbs,', 'Something wicked this way comes'], speaker: 'Second Witch', ref: 'Act IV, Scene i' },
+            { lines: ['The west yet glimmers with some streaks of day'], speaker: 'First Murderer', ref: 'Act III, Scene iii' },
+            { lines: ['Light thickens; and the crow', 'Makes wing to the rooky wood'], speaker: 'Macbeth', ref: 'Act III, Scene ii' },
+            { lines: ['Come, seeling night,', 'Scarf up the tender eye of pitiful day'], speaker: 'Macbeth', ref: 'Act III, Scene ii' },
+            { lines: ['It will have blood; they say, blood will have blood'], speaker: 'Macbeth', ref: 'Act III, Scene iv' },
+            { lines: ['Stars, hide your fires!', 'Let not light see my black and deep desires'], speaker: 'Macbeth', ref: 'Act I, Scene iv' },
+            { lines: ['Yet here’s a spot.', 'Out, damned spot! out, I say!'], speaker: 'Lady Macbeth, sleepwalking', ref: 'Act V, Scene i' },
+            { lines: ['Here’s the smell of the blood still: all the perfumes', 'of Arabia will not sweeten this little hand.'], speaker: 'Lady Macbeth, sleepwalking', ref: 'Act V, Scene i' }
+        ];
+
+        const NUMBERS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+        const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const $ = id => document.getElementById(id);
+        const digitEls = ['h1', 'h2', 'm1', 'm2', 's1', 's2'].map($);
 
-        // --- Clock Logic & Heartbeat Pulse ---
-        const timeDisplay = document.getElementById('timeDisplay');
-        const pulseOverlay = document.getElementById('pulseOverlay');
-        let lastSecond = -1;
-
-        function updateClock() {
-            const now = new Date();
-            
-            let h = now.getHours().toString().padStart(2, '0');
-            let m = now.getMinutes().toString().padStart(2, '0');
-            let s = now.getSeconds().toString().padStart(2, '0');
-            
-            timeDisplay.textContent = `${h}:${m}:${s}`;
-
-            if(lastSecond !== now.getSeconds()) {
-                lastSecond = now.getSeconds();
-                
-                // Heartbeat pulse effect exactly on the second
-                pulseOverlay.classList.add('pulse-active');
-                setTimeout(() => pulseOverlay.classList.remove('pulse-active'), 200);
-
-                // Spawn a new blood drip randomly along the width of the clock text (approximate bounding box)
-                if (Math.random() > 0.4) {
-                    spawnDrip();
-                }
-            }
-
-            requestAnimationFrame(updateClock);
+        function ordinal(n) {
+            const s = (n % 100 >= 11 && n % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+            return n + s;
         }
 
-        // --- Canvas Drip System ---
-        const canvas = document.getElementById('dripCanvas');
+        function escapeHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ---------- Text layer, once a second ----------
+        let lastHour = -1, lastMinute = -1, strikeStart = 0;
+
+        function hour12(h) { return h % 12 === 0 ? 12 : h % 12; }
+
+        function renderStrikes(now) {
+            const n = hour12(now.getHours());
+            // While the clock is striking (the first seconds of the hour) the
+            // words light one at a time, a stroke every 1.5 s.
+            const sinceHour = now.getMinutes() * 60 + now.getSeconds();
+            const struck = sinceHour < n * 1.5 + 1 ? Math.min(n, Math.floor(sinceHour / 1.5) + 1) : n;
+            const ringing = struck < n || sinceHour < n * 1.5 + 1 ? struck : -1;
+            const words = NUMBERS.slice(0, n).map((w, i) => {
+                const word = (i === 0 ? w[0].toUpperCase() + w.slice(1) : w);
+                let cls = 'w';
+                if (i >= struck) cls += ' unstruck';
+                else if (i === ringing - 1) cls += ' ring';
+                return `<span class="${cls}">${word}</span>`;
+            }).join('; ');
+            const label = 'The clock has struck';
+            let tail = '';
+            if (n === 2) tail = `; <span class="w${struck < 2 ? ' unstruck' : ''}">why, then ’tis time to do’t</span>`;
+            $('strikes').innerHTML = `<span class="label">${label}</span><span class="count">${words}${tail}</span>`;
+        }
+
+        function updateText() {
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const str = String(h).padStart(2, '0') + String(m).padStart(2, '0') + String(s).padStart(2, '0');
+            for (let i = 0; i < 6; i++) {
+                if (digitEls[i].textContent !== str[i]) digitEls[i].textContent = str[i];
+            }
+
+            if (h !== lastHour) {
+                lastHour = h;
+                const q = HOURS[h];
+                $('quote').innerHTML = '“' + q.lines.map(escapeHtml).join('<br>') + '”' +
+                    `<span class="speaker">${escapeHtml(q.speaker)}</span>`;
+                $('cite').textContent = q.ref;
+                $('date').textContent = `${DAYS[now.getDay()]}, the ${ordinal(now.getDate())} of ${MONTHS[now.getMonth()]}`;
+            }
+
+            if (m !== lastMinute) {
+                lastMinute = m;
+                const h12 = hour12(h);
+                $('spoken').textContent = `The time is ${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'a.m.' : 'p.m.'}`;
+                const pct = Math.floor(dayFraction(now) * 100);
+                $('basinNote').innerHTML = h === 0 && m < 15
+                    ? 'Clear water at midnight. <em>“A little water clears us of this deed”</em>'
+                    : `The basin is ${pct}% blood since midnight. <em>“Making the green one red.”</em>`;
+            }
+
+            renderStrikes(now);
+            if (basinRect) relayout();
+            if (reduceMotion.matches) drawFrame(performance.now());
+        }
+
+        function dayFraction(now) {
+            return (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000) / 86400;
+        }
+
+        // ---------- Blood layer ----------
+        const canvas = $('blood');
         const ctx = canvas.getContext('2d');
-        
-        // Ensure canvas exactly matches window size
-        let width, height;
+        let width = 0, height = 0;
+        let basinRect = null, baselineY = 0, fontSize = 100;
+        let inkCols = {};           // digit -> array of x fractions where the glyph meets the baseline
 
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
@@ -179,87 +386,302 @@
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            // Get center position for spawning drips near the text
-            clockRect = timeDisplay.getBoundingClientRect();
+            measure();
+            if (reduceMotion.matches) drawFrame(performance.now());
         }
-        
-        let clockRect = { left: 0, top: 0, width: 0, height: 0, bottom: 0 };
-        window.addEventListener('resize', resizeCanvas);
 
-        const drips = [];
+        // Cheap per-second refresh of the two positions the blood depends on,
+        // in case the quote or the note changed the layout.
+        function relayout() {
+            baselineY = $('baseline').getBoundingClientRect().bottom;
+            const b = $('basin').getBoundingClientRect();
+            basinRect = { x: b.left, y: b.top, w: b.width, h: b.height };
+        }
 
-        class Drip {
-            constructor(x) {
-                this.x = x;
-                this.y = clockRect.bottom - (Math.random() * 20); // Spawn at bottom string of text
-                this.size = Math.random() * 3 + 1; // thickness
-                this.speed = Math.random() * 0.5 + 0.1; // slow, petty pace
-                this.opacity = 1;
-                this.maxLength = Math.random() * window.innerHeight * 0.8; // how far it travels before fading
-                this.distance = 0;
+        // Find where each numeral's strokes touch the baseline, so drips start
+        // from real ink rather than from the gaps between strokes.
+        function measure() {
+            const timeEl = document.querySelector('.time');
+            fontSize = parseFloat(getComputedStyle(timeEl).fontSize);
+            relayout();
+
+            const size = 200;
+            const off = document.createElement('canvas');
+            off.width = size; off.height = size;
+            const o = off.getContext('2d', { willReadFrequently: true });
+            o.font = `600 ${size * 0.8}px "Playfair Display", Georgia, serif`;
+            o.textBaseline = 'alphabetic';
+            inkCols = {};
+            for (let d = 0; d <= 9; d++) {
+                const ch = String(d);
+                o.clearRect(0, 0, size, size);
+                o.fillStyle = '#fff';
+                const base = size * 0.85;
+                o.fillText(ch, 0, base);
+                const adv = o.measureText(ch).width;
+                const band = o.getImageData(0, Math.round(base - size * 0.035), Math.ceil(adv), Math.round(size * 0.03)).data;
+                const bw = Math.ceil(adv), bh = Math.round(size * 0.03);
+                const cols = [];
+                for (let x = 0; x < bw; x++) {
+                    let ink = 0;
+                    for (let y = 0; y < bh; y++) ink += band[(y * bw + x) * 4 + 3];
+                    if (ink > bh * 128) cols.push(x / adv);
+                }
+                inkCols[ch] = cols.length ? cols : [0.5];
             }
+        }
 
-            update() {
-                this.y += this.speed;
-                this.distance += this.speed;
+        const drips = [], falling = [], splashes = [], ripples = [];
 
-                // Leave a trail (drawing happens in `draw()`)
-                
-                if (this.distance > this.maxLength) {
-                    this.opacity -= 0.01; // slow fade when reached length
+        function spawnDrip() {
+            if (drips.length > 14) return;
+            const el = digitEls[Math.floor(Math.random() * digitEls.length)];
+            const r = el.getBoundingClientRect();
+            if (!r.width) return;
+            const cols = inkCols[el.textContent] || [0.5];
+            const fx = cols[Math.floor(Math.random() * cols.length)];
+            const isSec = el.id[0] === 's';
+            const scale = isSec ? fontSize * 0.42 : fontSize;
+            drips.push({
+                x: r.left + fx * r.width,
+                y0: baselineY - scale * 0.012,
+                len: 0,
+                max: scale * (0.08 + Math.random() * 0.32),
+                speed: scale * (0.03 + Math.random() * 0.06),   // a petty pace
+                r: Math.max(3, scale * (0.03 + Math.random() * 0.024)),
+                age: 0
+            });
+        }
+
+        function teardrop(x, y0, len, r, alpha) {
+            const stem = r * 0.45;
+            ctx.fillStyle = `rgba(150, 12, 10, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(x - r * 1.3, y0);
+            ctx.quadraticCurveTo(x - stem, y0 + r * 0.6, x - stem, y0 + Math.max(0, len - r));
+            ctx.lineTo(x + stem, y0 + Math.max(0, len - r));
+            ctx.quadraticCurveTo(x + stem, y0 + r * 0.6, x + r * 1.3, y0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x, y0 + len, r * Math.min(1, 0.4 + len / (r * 4)), 0, Math.PI * 2);
+            ctx.fill();
+            // a wet highlight
+            ctx.fillStyle = `rgba(255, 140, 120, ${alpha * 0.35})`;
+            ctx.beginPath();
+            ctx.arc(x - r * 0.3, y0 + len - r * 0.3, r * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function surfaceY() { return basinRect.y + basinRect.h * 0.24; }
+
+        function drawBasin(t, frac) {
+            const { x, y, w, h } = basinRect;
+            const rim = Math.max(4, h * 0.08);
+            const rad = Math.min(h * 0.5, 40);
+
+            // the stone trough
+            const stone = ctx.createLinearGradient(0, y, 0, y + h);
+            stone.addColorStop(0, '#3a2c27');
+            stone.addColorStop(1, '#130d0b');
+            ctx.fillStyle = stone;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + w, y);
+            ctx.lineTo(x + w, y + h - rad);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+            ctx.lineTo(x + rad, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+            ctx.closePath();
+            ctx.fill();
+
+            // the liquid inside it
+            const ix = x + rim, iw = w - rim * 2, ib = y + h - rim;
+            const ir = Math.max(2, rad - rim);
+            const sy = surfaceY();
+            const wave = xx => sy + Math.sin(xx * 0.035 + t * 1.1) * 1.2 + Math.sin(xx * 0.013 - t * 0.7) * 1.0;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(ix, wave(ix));
+            for (let xx = ix; xx < ix + iw; xx += 6) ctx.lineTo(xx, wave(xx));
+            ctx.lineTo(ix + iw, wave(ix + iw));
+            ctx.lineTo(ix + iw, ib - ir);
+            ctx.quadraticCurveTo(ix + iw, ib, ix + iw - ir, ib);
+            ctx.lineTo(ix + ir, ib);
+            ctx.quadraticCurveTo(ix, ib, ix, ib - ir);
+            ctx.closePath();
+            ctx.clip();
+
+            // water: the green that is turning red
+            const water = ctx.createLinearGradient(0, sy, 0, ib);
+            water.addColorStop(0, '#1f4a42');
+            water.addColorStop(1, '#0a1b18');
+            ctx.fillStyle = water;
+            ctx.fillRect(ix, sy - 4, iw, ib - sy + 4);
+
+            // blood from the left edge to the hour of the day, with a soft
+            // diffusing front that curls into the water
+            const fx = ix + iw * frac;
+            if (frac > 0) {
+                // the front only curls once there is enough blood to curl
+                const soft = Math.min(1, (fx - ix) / 24);
+                const layers = [{ spread: 14 * soft, a: 0.35 }, { spread: 6 * soft, a: 0.55 }, { spread: 0, a: 1 }];
+                for (const L of layers) {
+                    const blood = ctx.createLinearGradient(0, sy, 0, ib);
+                    blood.addColorStop(0, `rgba(178, 22, 16, ${L.a})`);
+                    blood.addColorStop(1, `rgba(70, 4, 4, ${L.a})`);
+                    ctx.fillStyle = blood;
+                    ctx.beginPath();
+                    ctx.moveTo(ix - 2, sy - 6);
+                    for (let yy = sy - 6; yy <= ib + 2; yy += 3) {
+                        const curl = (Math.sin(yy * 0.18 + t * 0.8) * 4 + Math.sin(yy * 0.07 - t * 0.5) * 6) * soft;
+                        ctx.lineTo(Math.min(ix + iw + 2, fx + curl + L.spread), yy);
+                    }
+                    ctx.lineTo(ix - 2, ib + 2);
+                    ctx.closePath();
+                    ctx.fill();
                 }
             }
 
-            draw() {
-                ctx.fillStyle = `rgba(138, 3, 3, ${this.opacity})`;
+            // ripples where drops have landed
+            for (const rp of ripples) {
+                const k = (t - rp.t0) / 1.6;
+                ctx.strokeStyle = `rgba(255, 200, 180, ${0.35 * (1 - k)})`;
+                ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Draw trailing line up slightly to simulate liquid tension
-                ctx.strokeStyle = `rgba(138, 3, 3, ${this.opacity})`;
-                ctx.lineWidth = this.size;
-                ctx.beginPath();
-                ctx.moveTo(this.x, Math.max(clockRect.bottom - 10, this.y - 15));
-                ctx.lineTo(this.x, this.y);
+                ctx.ellipse(rp.x, sy + 1, 4 + k * 26, 1.2 + k * 3, 0, 0, Math.PI * 2);
                 ctx.stroke();
+            }
+
+            // the surface sheen
+            ctx.strokeStyle = 'rgba(255, 220, 200, 0.22)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let xx = ix; xx <= ix + iw; xx += 6) xx === ix ? ctx.moveTo(xx, wave(xx)) : ctx.lineTo(xx, wave(xx));
+            ctx.stroke();
+            ctx.restore();
+
+            // rim highlight and hour ticks along the lip
+            ctx.fillStyle = '#4b3a33';
+            ctx.fillRect(x, y, w, Math.max(2, rim * 0.5));
+            ctx.fillStyle = 'rgba(239, 227, 204, 0.55)';
+            for (let i = 0; i <= 24; i++) {
+                const tx = ix + iw * (i / 24);
+                const th = i % 6 === 0 ? rim * 1.6 : rim * 0.8;
+                ctx.fillRect(tx - 0.5, y, 1, th);
+            }
+            // the present moment: a pale mark on the lip above the front
+            ctx.fillStyle = '#efe3cc';
+            ctx.beginPath();
+            ctx.moveTo(fx, y + rim * 1.9);
+            ctx.lineTo(fx - 5, y - 4);
+            ctx.lineTo(fx + 5, y - 4);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        let lastT = 0, spawnClock = 0;
+
+        function drawFrame(nowMs) {
+            const t = nowMs / 1000;
+            ctx.clearRect(0, 0, width, height);
+            if (!basinRect) return;
+            const frac = dayFraction(new Date());
+            drawBasin(t, frac);
+
+            if (reduceMotion.matches) {
+                // A still frame: a few drips hang from the numerals and stay.
+                const seed = [0.2, 0.55, 0.8];
+                [0, 3, 5].forEach((i, k) => {
+                    const r = digitEls[i].getBoundingClientRect();
+                    if (!r.width) return;
+                    const cols = inkCols[digitEls[i].textContent] || [0.5];
+                    const fx = cols[Math.floor(seed[k] * cols.length)];
+                    const sc = i >= 4 ? fontSize * 0.42 : fontSize;
+                    teardrop(r.left + fx * r.width, baselineY - sc * 0.012, sc * (0.12 + seed[k] * 0.2), Math.max(2.4, sc * 0.035), 1);
+                });
+                return;
+            }
+
+            for (const d of drips) teardrop(d.x, d.y0, d.len, d.r, Math.min(1, 0.3 + d.age));
+            for (const f of falling) {
+                ctx.fillStyle = 'rgba(160, 14, 12, 0.95)';
+                ctx.beginPath();
+                ctx.ellipse(f.x, f.y, f.r * 0.8, f.r * 1.25, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            for (const s of splashes) {
+                ctx.fillStyle = `rgba(170, 18, 14, ${Math.max(0, s.life)})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
 
-        function spawnDrip() {
-            if (clockRect.width === 0) resizeCanvas();
-            // Spawn anywhere along the horizontal width of the clock text
-            const randomX = clockRect.left + (Math.random() * clockRect.width);
-            drips.push(new Drip(randomX));
-        }
+        function step(nowMs) {
+            const t = nowMs / 1000;
+            const dt = Math.min(0.05, lastT ? t - lastT : 0.016);
+            lastT = t;
 
-        // We do not clear the canvas so trails physically build up over time,
-        // bleeding down the screen very slowly! We apply a very slight darkening to simulate drying blood.
-        function animateCanvas() {
-            // Very slow fade to black/dry blood
-            ctx.fillStyle = 'rgba(5, 0, 0, 0.01)';
-            ctx.fillRect(0, 0, width, height);
-            
+            spawnClock -= dt;
+            if (spawnClock <= 0) { spawnDrip(); spawnClock = 0.35 + Math.random() * 0.9; }
+
+            const g = Math.max(900, height * 2.2);
             for (let i = drips.length - 1; i >= 0; i--) {
-                let drip = drips[i];
-                drip.update();
-                if (drip.opacity > 0) {
-                    drip.draw();
-                } else {
+                const d = drips[i];
+                d.age += dt;
+                d.len += d.speed * dt * (1 + d.len / d.max);
+                if (d.len >= d.max) {
+                    falling.push({ x: d.x, y: d.y0 + d.len, vy: 0, r: d.r });
                     drips.splice(i, 1);
                 }
             }
-            if (!reduceMotion.matches) requestAnimationFrame(animateCanvas);
+            const sy = basinRect ? surfaceY() : height;
+            for (let i = falling.length - 1; i >= 0; i--) {
+                const f = falling[i];
+                f.vy += g * dt;
+                f.y += f.vy * dt;
+                if (f.y >= sy) {
+                    ripples.push({ x: f.x, t0: t });
+                    for (let k = 0; k < 5; k++) {
+                        splashes.push({ x: f.x, y: sy, vx: (Math.random() - 0.5) * 120, vy: -(60 + Math.random() * 110), r: Math.max(1, f.r * (0.25 + Math.random() * 0.3)), life: 1 });
+                    }
+                    falling.splice(i, 1);
+                }
+            }
+            for (let i = splashes.length - 1; i >= 0; i--) {
+                const s = splashes[i];
+                s.vy += g * 0.5 * dt;
+                s.x += s.vx * dt; s.y += s.vy * dt;
+                s.life -= dt * 1.8;
+                if (s.life <= 0 || s.y > sy + 4) splashes.splice(i, 1);
+            }
+            for (let i = ripples.length - 1; i >= 0; i--) if (t - ripples[i].t0 > 1.6) ripples.splice(i, 1);
+
+            drawFrame(nowMs);
+            if (!reduceMotion.matches) requestAnimationFrame(step);
         }
 
-        // Init
-        // Slight delay to ensure fonts load before measuring DOM
-        setTimeout(() => {
+        function start() {
+            updateText();
             resizeCanvas();
-            updateClock();
-            animateCanvas();
-        }, 300);
+            if (!reduceMotion.matches) requestAnimationFrame(step);
+            setInterval(updateText, 1000);
+        }
 
+        window.addEventListener('resize', resizeCanvas);
+        reduceMotion.addEventListener('change', () => {
+            drips.length = falling.length = splashes.length = ripples.length = 0;
+            if (!reduceMotion.matches) requestAnimationFrame(step); else drawFrame(performance.now());
+        });
+
+        // Wait for the numerals' font so the ink measurements match the page.
+        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => {
+            document.fonts.load('600 100px "Playfair Display"').catch(() => {}).finally(start);
+        });
+        // re-measure if the numeral font arrives late
+        if (document.fonts) document.fonts.addEventListener('loadingdone', () => measure());
     </script>
 </body>
 </html>
