@@ -5,533 +5,885 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Deodand Clock</title>
+    <meta name="description" content="A traveller crosses a dark forest of the Dying Earth while a deodand keeps pace among the trees, farthest at noon and closest in the small hours.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #0b0710;
+            --panel: rgba(16, 10, 22, 0.92);
+            --rule: rgba(200, 176, 224, 0.2);
+            --ink: #ece2f4;
+            --ink-soft: #c9b8d8;
+            --ink-dim: #a593b6;
+            --sun: #e0614a;
+            --eye: #f2d27a;
+            --danger: #e88a6a;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { background: var(--bg); }
 
         body {
             min-height: 100vh;
-            background: radial-gradient(ellipse at center, #1a0f1f 0%, #0d0612 100%);
-            font-family: 'Cormorant Garamond', serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: #b8a0c8;
+            min-height: 100svh;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            overflow-x: hidden;
+        }
+
+        .page {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) clamp(330px, 32vw, 430px);
+            min-height: 100vh;
+            min-height: 100svh;
+        }
+
+        .scene {
+            position: relative;
+            min-height: 0;
             overflow: hidden;
-            position: relative;
         }
 
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .scene canvas {
+            position: absolute;
+            inset: 0;
+            display: block;
+        }
+
+        .scene-caption {
+            position: absolute;
+            left: clamp(14px, 2.5vw, 32px);
+            top: clamp(12px, 2.2vw, 28px);
+            right: clamp(14px, 2.5vw, 32px);
             pointer-events: none;
+            text-shadow: 0 1px 6px #000, 0 0 2px #000;
         }
 
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #d8c8e8;
-            border-radius: 50%;
-            opacity: 0.6;
-            animation: twinkle 3s ease-in-out infinite;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .summoning-circle {
-            position: relative;
-            max-width: 1000px;
-            width: 100%;
-            aspect-ratio: 1;
-            max-height: 90vh;
-        }
-
-        .circle-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .center-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 10;
-            width: 60%;
-        }
-
-        .title {
-            font-family: 'Cinzel Decorative', serif;
-            font-size: clamp(1.8rem, 4vw, 3rem);
-            color: #d8b8e8;
-            margin-bottom: 1rem;
-            text-shadow: 0 0 20px rgba(216, 184, 232, 0.6);
-            letter-spacing: 0.15em;
-        }
-
-        .current-entity {
-            margin-bottom: 1.5rem;
-        }
-
-        .entity-name {
+        .kicker {
             font-family: 'Cinzel', serif;
-            font-size: clamp(1.3rem, 3vw, 2rem);
-            color: #e8c8f8;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 0 15px rgba(232, 200, 248, 0.8);
-            letter-spacing: 0.1em;
+            font-size: clamp(0.66rem, 0.9vw, 0.78rem);
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--ink-dim);
         }
 
-        .entity-title {
-            font-style: italic;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            color: #a888b8;
-            margin-bottom: 0.75rem;
-        }
-
-        .entity-description {
-            font-size: clamp(0.85rem, 1.8vw, 1rem);
-            color: #8870a0;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        .time-display {
+        h1 {
             font-family: 'Cinzel', serif;
-            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
-            color: #c8a8d8;
+            font-weight: 600;
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            letter-spacing: 0.08em;
+            color: var(--ink);
+            margin-top: 0.2em;
+        }
+
+        .panel {
+            background: var(--panel);
+            border-left: 1px solid var(--rule);
+            padding: clamp(18px, 2.4vw, 32px) clamp(16px, 2vw, 28px);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(14px, 2.2vh, 22px);
+            min-width: 0;
+        }
+
+        .label {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.66rem, 0.85vw, 0.74rem);
             letter-spacing: 0.2em;
-            margin-bottom: 1rem;
+            text-transform: uppercase;
+            color: var(--ink-dim);
+            margin-bottom: 0.35em;
         }
 
-        .date-display {
-            font-size: clamp(0.8rem, 1.8vw, 1rem);
-            color: #8870a0;
-            font-style: italic;
-        }
-
-        .rune-container {
-            position: absolute;
-            transition: all 1s ease;
-        }
-
-        .rune {
-            fill: none;
-            stroke: #a888c8;
-            stroke-width: 2;
-            opacity: 0.4;
-            transition: all 1s ease;
-            filter: drop-shadow(0 0 5px rgba(168, 136, 200, 0.4));
-        }
-
-        .rune-container.active .rune {
-            stroke: #e8c8f8;
-            opacity: 1;
-            filter: drop-shadow(0 0 15px rgba(232, 200, 248, 0.8));
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
-        }
-
-        .hour-marker {
-            position: absolute;
+        .time {
             font-family: 'Cinzel', serif;
-            font-size: 0.85rem;
-            color: #7860a0;
-            text-shadow: 0 0 5px rgba(120, 96, 160, 0.5);
-            transition: all 0.5s ease;
+            font-size: clamp(2.1rem, 4vw, 3.1rem);
+            letter-spacing: 0.06em;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            color: var(--ink);
         }
 
-        .hour-marker.active {
-            color: #e8c8f8;
-            text-shadow: 0 0 15px rgba(232, 200, 248, 0.8);
-            transform: scale(1.2);
-        }
-
-        .arcane-notation {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            font-size: 0.85rem;
-            color: #6850a0;
+        .date {
             font-style: italic;
-            z-index: 1;
-            max-width: 600px;
+            font-size: clamp(1rem, 1.2vw, 1.1rem);
+            color: var(--ink-soft);
+            margin-top: 0.3em;
         }
 
-        .ethereal-glow {
+        .distance {
+            display: flex;
+            align-items: baseline;
+            gap: 0.4em;
+            flex-wrap: wrap;
+        }
+
+        .paces {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+            line-height: 1;
+            color: var(--eye);
+            font-variant-numeric: tabular-nums;
+            transition: color 1s;
+        }
+
+        .paces.near { color: var(--danger); }
+
+        .paces-unit {
+            font-size: clamp(1.1rem, 1.4vw, 1.25rem);
+            color: var(--ink-soft);
+        }
+
+        .bearing {
+            font-size: clamp(1rem, 1.2vw, 1.1rem);
+            color: var(--ink-soft);
+            margin-top: 0.2em;
+        }
+
+        /* gauge: the traveller at the left, the wood at the right */
+        .gauge {
+            position: relative;
+            height: 30px;
+            margin-top: 10px;
+        }
+
+        .gauge-track {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            left: 14px;
+            right: 0;
+            top: 14px;
+            height: 2px;
+            background: linear-gradient(to right, rgba(232, 138, 106, 0.85), rgba(200, 176, 224, 0.25));
+        }
+
+        .gauge-you {
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(168, 136, 200, 0.1), transparent 60%);
-            animation: breathe 4s ease-in-out infinite;
-            pointer-events: none;
+            background: radial-gradient(circle, #ffd9a0 0%, #c47a2c 55%, transparent 72%);
         }
 
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.05); opacity: 0.5; }
+        .gauge-eyes {
+            position: absolute;
+            top: 6px;
+            width: 26px;
+            height: 18px;
+            margin-left: -13px;
+            transition: left 1s linear;
         }
 
-        @media (max-width: 768px) {
-            .center-content {
-                width: 70%;
+        .gauge-eyes::before,
+        .gauge-eyes::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            width: 7px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--eye);
+            box-shadow: 0 0 6px var(--eye);
+        }
+
+        .gauge-eyes::before { left: 4px; }
+        .gauge-eyes::after { right: 4px; }
+
+        .gauge-ends {
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(0.92rem, 1vw, 1rem);
+            font-style: italic;
+            color: var(--ink-dim);
+            margin-top: 2px;
+        }
+
+        .countdown {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+            font-variant-numeric: tabular-nums;
+            color: var(--sun);
+            line-height: 1.1;
+        }
+
+        .countdown-note {
+            font-size: clamp(1rem, 1.15vw, 1.08rem);
+            color: var(--ink-soft);
+            font-style: italic;
+        }
+
+        .watch {
+            border-top: 1px solid var(--rule);
+            padding-top: clamp(12px, 2vh, 18px);
+        }
+
+        .watch-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+            letter-spacing: 0.06em;
+            color: var(--ink);
+            margin-bottom: 0.3em;
+        }
+
+        .watch-text {
+            font-size: clamp(1.05rem, 1.25vw, 1.15rem);
+            line-height: 1.45;
+            color: var(--ink-soft);
+        }
+
+        .voice {
+            font-style: italic;
+            color: var(--ink-dim);
+            margin-top: 0.45em;
+            font-size: clamp(1rem, 1.2vw, 1.1rem);
+            line-height: 1.45;
+        }
+
+        .strip-wrap { position: relative; }
+
+        #strip {
+            display: block;
+            width: 100%;
+            height: 92px;
+        }
+
+        .footnote {
+            font-size: clamp(0.92rem, 1vw, 1rem);
+            line-height: 1.45;
+            color: var(--ink-dim);
+            margin-top: auto;
+            border-top: 1px solid var(--rule);
+            padding-top: 12px;
+        }
+
+        .footnote a { color: var(--ink-soft); }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 860px) {
+            .page {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: auto auto;
             }
-
-            .hour-marker {
-                font-size: 0.7rem;
+            .scene {
+                height: clamp(300px, 52svh, 520px);
+            }
+            .panel {
+                border-left: none;
+                border-top: 1px solid var(--rule);
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="stars" id="stars"></div>
+    <div class="page">
+        <section class="scene" id="scene" aria-label="A traveller on a path through a dark forest under a dim red sun, with a pair of eyes among the trees">
+            <canvas id="forest" aria-hidden="true"></canvas>
+            <div class="scene-caption">
+                <div class="kicker">After Jack Vance &middot; The Dying Earth</div>
+                <h1>The Deodand Clock</h1>
+            </div>
+        </section>
 
-    <div class="summoning-circle">
-        <canvas aria-hidden="true" class="circle-canvas" id="canvas"></canvas>
-        <div class="ethereal-glow"></div>
-
-        <div class="center-content">
-            <h1 class="title">The Deodand Clock</h1>
-
-            <div class="current-entity">
-                <div class="entity-name" id="entityName">Thasdrubal the Ineffable</div>
-                <div class="entity-title" id="entityTitle">Keeper of the Midnight Hour</div>
-                <div class="entity-description" id="entityDesc">
-                    A being of shadows and whispers, dwelling in the spaces between moments
-                </div>
+        <main class="panel">
+            <div>
+                <div class="label">The hour on the forest path</div>
+                <div class="time" id="time" role="timer" aria-label="Current time">00:00:00</div>
+                <div class="date" id="date"></div>
             </div>
 
-            <div class="time-display" id="time">00:00:00</div>
-            <div class="date-display" id="date">The 1st of January, 2026</div>
-        </div>
+            <div>
+                <div class="label">The deodand keeps</div>
+                <div class="distance">
+                    <span class="paces" id="paces">0</span>
+                    <span class="paces-unit" id="pacesUnit">paces off</span>
+                </div>
+                <div class="bearing" id="bearing"></div>
+                <div class="gauge" aria-hidden="true">
+                    <div class="gauge-track"></div>
+                    <div class="gauge-you"></div>
+                    <div class="gauge-eyes" id="gaugeEyes"></div>
+                </div>
+                <div class="gauge-ends" aria-hidden="true"><span>your lantern</span><span>deep in the wood</span></div>
+            </div>
 
-        <div id="runes"></div>
-        <div id="hourMarkers"></div>
-    </div>
+            <div>
+                <div class="label" id="countLabel">Until the red sun returns</div>
+                <div class="countdown" id="countdown">00:00:00</div>
+                <div class="countdown-note" id="countNote"></div>
+            </div>
 
-    <div class="arcane-notation">
-        Each hour is governed by a deodand from the Overworld,<br>
-        entities of power both capricious and inscrutable
+            <div class="watch">
+                <div class="watch-name" id="watchName"></div>
+                <div class="watch-text" id="watchText"></div>
+                <div class="voice" id="voice"></div>
+            </div>
+
+            <div class="strip-wrap">
+                <div class="label">How near it comes through the day</div>
+                <canvas id="strip" aria-hidden="true"></canvas>
+            </div>
+
+            <p class="footnote">
+                In Vance's Dying Earth a deodand is a man-shaped thing with black skin and a taste for human flesh. It haunts the forests and talks smoothly to the travellers it means to eat. The rest is this clock's own reckoning: the red sun rises at six and sets at six, and the creature comes nearest at three in the morning.
+            </p>
+
+            <div class="sr-only" aria-live="polite" id="announce"></div>
+        </main>
     </div>
 
     <script>
-        // 24 deodands, one for each hour
-        const deodands = [
-            { name: "Thasdrubal the Ineffable", title: "Keeper of the Midnight Hour", desc: "A being of shadows and whispers, dwelling in the spaces between moments" },
-            { name: "Nyctophax the Tenebrous", title: "Herald of Deepest Night", desc: "Emerges from darkness absolute, bearing dreams both pleasant and dire" },
-            { name: "Umbraleth", title: "Weaver of Night's Tapestry", desc: "Spins the hours into shadow-cloth, stitching stars into the firmament" },
-            { name: "Crepusculus Minor", title: "Guardian of False Dawn", desc: "A trickster entity, promising light that does not yet come" },
-            { name: "Somnoleth the Drowsy", title: "Bringer of Torpor", desc: "Breathes lethargy into the waking world, heavy-lidded and slow" },
-            { name: "Auroraxis", title: "Herald of the Breaking Day", desc: "First light incarnate, reluctant and weary in its eternal return" },
-            { name: "Luminos the Hesitant", title: "Bearer of Tentative Radiance", desc: "Carries the newborn sun with trembling hands, uncertain of its duty" },
-            { name: "Matutinus Rex", title: "Sovereign of Morning", desc: "Rules the hours of waking with benevolent but distracted governance" },
-            { name: "Viridax", title: "The Verdant Timekeeper", desc: "Tinges the morning with strange green hues, unsettling and fey" },
-            { name: "Splendifex", title: "Architect of Brilliance", desc: "Constructs monuments of light, grandiose and absurd" },
-            { name: "Meridianus", title: "The Apex Attendant", desc: "Stands vigil at the day's zenith, solemn and ceremonious" },
-            { name: "Fulgorax the Resplendent", title: "Master of Noonday Glory", desc: "Blazes with uncomfortable intensity, demanding obeisance" },
-            { name: "Declinatus", title: "The Descending One", desc: "Begins the slow retreat toward evening, already melancholic" },
-            { name: "Ochreseth", title: "Painter of Afternoon", desc: "Applies tawny pigments to the sky with careless artistry" },
-            { name: "Pucedrix", title: "The Mauve Magister", desc: "Presides over the hours of strange purple light, enigmatic and aloof" },
-            { name: "Vesperos", title: "Herald of Evening", desc: "Announces the coming twilight with soft chimes and sighs" },
-            { name: "Crepuscula Major", title: "Queen of Dusk", desc: "Spreads her dusky mantle across the world, tender and inexorable" },
-            { name: "Tenebrix", title: "Summoner of Shadows", desc: "Calls forth the darkness from earth and air, eager and hungry" },
-            { name: "Noctivagus", title: "The Night Wanderer", desc: "Roams the early dark, mischievous and fleet of foot" },
-            { name: "Stygianor", title: "Lord of Deepening Gloom", desc: "Intensifies the darkness, adding layers of obscurity" },
-            { name: "Umbraxis the Elder", title: "Primordial Shadow-Dweller", desc: "Ancient beyond reckoning, patient and utterly alien" },
-            { name: "Nyxarion", title: "The Starry Custodian", desc: "Tends the constellations, rearranging them on whim" },
-            { name: "Somniferus", title: "Dispenser of Slumber", desc: "Distributes sleep like alms, equitable but indifferent" },
-            { name: "Nadirax", title: "Keeper of the Lowest Hour", desc: "Guards the nadir of night, grim and taciturn" }
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+            'August', 'September', 'October', 'November', 'December'];
+
+        const SUNRISE = 6, SUNSET = 18;
+
+        /* Closeness through the day, 0 = far off in the wood, 1 = at your elbow.
+           Keyframes at whole hours, smoothly interpolated, wrapping at midnight. */
+        const KEYS = [
+            [0, 0.80], [3, 1.00], [5, 0.86], [6, 0.62], [8, 0.30], [10, 0.10],
+            [12, 0.00], [14, 0.07], [16, 0.22], [18, 0.46], [20, 0.62], [22, 0.72], [24, 0.80]
         ];
 
-        const canvas = document.getElementById('canvas');
+        function closeness(h) {
+            h = ((h % 24) + 24) % 24;
+            for (let i = 0; i < KEYS.length - 1; i++) {
+                const [h0, v0] = KEYS[i], [h1, v1] = KEYS[i + 1];
+                if (h >= h0 && h <= h1) {
+                    const t = (h - h0) / (h1 - h0);
+                    const s = (1 - Math.cos(Math.PI * t)) / 2;
+                    return v0 + (v1 - v0) * s;
+                }
+            }
+            return KEYS[0][1];
+        }
+
+        function pacesFor(p) {
+            return Math.round(9 + Math.pow(1 - p, 1.5) * 591);
+        }
+
+        const WATCHES = [
+            { from: 0, name: 'The deep night', text: 'It has come up level with you and walks alongside, a few trunks off the path, matching your pace step for step.',
+              voice: 'A voice from the dark, warm and reasonable, asks why anyone would walk so fast on such a fine night.' },
+            { from: 2, name: 'The small hours', text: 'This is its time. It is close enough now that you can hear it breathing between the boles, and the lantern seems very small.',
+              voice: 'The voice offers, most kindly, to carry your pack for you, or to show you a shorter way.' },
+            { from: 4, name: 'Before the dawn', text: 'It lingers at the very edge of the lantern light, unwilling to give up the chase while the dark still holds.',
+              voice: 'The voice grows petulant, and wonders aloud whether you would not rather rest until morning.' },
+            { from: 6, name: 'The red sun rises', text: 'A dull crimson light seeps down through the canopy. The eyes withdraw, and something heavy moves away into the thick of the wood.',
+              voice: 'The voice falls silent. Only the creak of the trees remains.' },
+            { from: 9, name: 'The middle of the day', text: 'The old sun is as high as it climbs. The deodand is far off and sullen, and the path is as safe as it will ever be.',
+              voice: 'No voice. A bird calls somewhere, once, and thinks better of it.' },
+            { from: 15, name: 'The light thins', text: 'Shadows pool under the trees. Somewhere deep among them, the thing rises from wherever it lay up, and begins to follow.',
+              voice: 'Nothing yet, only the sense of being watched from a long way off.' },
+            { from: 18, name: 'Dusk', text: 'The red sun is down. The eyes have found the path again, and they no longer trouble to keep their distance.',
+              voice: 'Far off, someone pleasant calls a greeting, as if to an old friend.' },
+            { from: 21, name: 'Full dark', text: 'It comes on steadily now, gaining a little with every hour, and it has decided to be sociable.',
+              voice: 'The voice asks your name and where you are bound, and says it knows an inn not far from here.' }
+        ];
+
+        function watchFor(h) {
+            let w = WATCHES[0];
+            for (const x of WATCHES) if (h >= x.from) w = x;
+            return w;
+        }
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+
+        function ordinal(n) {
+            const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+
+        /* which side of the path, changing each hour; it crosses behind you */
+        function sideFor(date) {
+            return date.getHours() % 2 === 0 ? -1 : 1;
+        }
+
+        /* ---------- text panel ---------- */
+        const el = id => document.getElementById(id);
+        let lastMinute = -1;
+
+        function updateText() {
+            const now = new Date();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const hf = h + m / 60 + s / 3600;
+            const p = closeness(hf);
+            const paces = pacesFor(p);
+            const side = sideFor(now);
+
+            el('time').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+            el('date').textContent = `${days[now.getDay()]}, the ${ordinal(now.getDate())} of ${months[now.getMonth()]}`;
+
+            el('paces').textContent = paces;
+            el('paces').classList.toggle('near', p > 0.7);
+            el('pacesUnit').textContent = paces === 1 ? 'pace off' : 'paces off';
+            const sideWord = side < 0 ? 'left' : 'right';
+            let bearing;
+            if (p > 0.9) bearing = `Just off the path to your ${sideWord}, behind the nearest trunk.`;
+            else if (p > 0.6) bearing = `Among the trees on your ${sideWord}, easily within a shout.`;
+            else if (p > 0.25) bearing = `Somewhere to the ${sideWord}, well back among the trees.`;
+            else bearing = `Far to the ${sideWord}, deep in the wood, barely a glint.`;
+            el('bearing').textContent = bearing;
+            el('gaugeEyes').style.left = `calc(14px + (100% - 27px) * ${(1 - p).toFixed(4)})`;
+
+            // countdown to the next change of light
+            const isDay = hf >= SUNRISE && hf < SUNSET;
+            const target = new Date(now);
+            target.setMilliseconds(0);
+            target.setSeconds(0);
+            target.setMinutes(0);
+            if (isDay) {
+                target.setHours(SUNSET);
+            } else {
+                target.setHours(SUNRISE);
+                if (hf >= SUNSET) target.setDate(target.getDate() + 1);
+            }
+            let left = Math.max(0, Math.round((target - now) / 1000));
+            const lh = Math.floor(left / 3600), lm = Math.floor((left % 3600) / 60), ls = left % 60;
+            el('countdown').textContent = `${pad(lh)}:${pad(lm)}:${pad(ls)}`;
+            el('countLabel').textContent = isDay ? 'Daylight left on the path' : 'Until the red sun returns';
+            const hrsWord = lh === 1 ? 'hour' : 'hours';
+            el('countNote').textContent = isDay
+                ? (lh >= 6 ? 'The light holds, for now. Keep walking.'
+                    : lh === 0 ? 'Less than an hour of red light left. It is already on its feet.'
+                    : `Under ${lh + 1} hours of red light left, and then it comes back.`)
+                : (lh === 0 ? 'Less than an hour of dark remains. Hold on.' : `Over ${lh} ${hrsWord} of dark yet, and the lantern oil must last them.`);
+
+            const w = watchFor(h);
+            el('watchName').textContent = w.name;
+            el('watchText').textContent = w.text;
+            el('voice').textContent = w.voice;
+
+            if (m !== lastMinute) {
+                lastMinute = m;
+                el('announce').textContent = `${pad(h)}:${pad(m)}. The deodand is ${paces} paces off, to your ${sideWord}. ${isDay ? 'Daylight' : 'Dark'} remains for ${lh} hours ${lm} minutes.`;
+                drawStrip(hf);
+            }
+        }
+
+        /* ---------- 24-hour strip ---------- */
+        const strip = el('strip');
+        const sctx = strip.getContext('2d');
+        let stripW = 0, stripH = 0;
+
+        function resizeStrip() {
+            const dpr = window.devicePixelRatio || 1;
+            stripW = strip.clientWidth;
+            stripH = strip.clientHeight;
+            strip.width = Math.round(stripW * dpr);
+            strip.height = Math.round(stripH * dpr);
+            sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function drawStrip(hf) {
+            if (!stripW) return;
+            const W = stripW, H = stripH;
+            const top = 6, bottom = H - 20, l = 4, r = W - 4;
+            const x = h => l + (r - l) * h / 24;
+            const y = p => bottom - (bottom - top) * p;
+            sctx.clearRect(0, 0, W, H);
+            // night bands
+            sctx.fillStyle = 'rgba(0,0,0,0.45)';
+            sctx.fillRect(x(0), top, x(SUNRISE) - x(0), bottom - top);
+            sctx.fillRect(x(SUNSET), top, x(24) - x(SUNSET), bottom - top);
+            sctx.fillStyle = 'rgba(224,97,74,0.12)';
+            sctx.fillRect(x(SUNRISE), top, x(SUNSET) - x(SUNRISE), bottom - top);
+            // curve
+            sctx.beginPath();
+            for (let i = 0; i <= 240; i++) {
+                const hh = i / 10;
+                const px = x(hh), py = y(closeness(hh));
+                if (i === 0) sctx.moveTo(px, py); else sctx.lineTo(px, py);
+            }
+            sctx.lineTo(x(24), bottom); sctx.lineTo(x(0), bottom); sctx.closePath();
+            const g = sctx.createLinearGradient(0, top, 0, bottom);
+            g.addColorStop(0, 'rgba(232,138,106,0.45)');
+            g.addColorStop(1, 'rgba(232,138,106,0.03)');
+            sctx.fillStyle = g;
+            sctx.fill();
+            sctx.beginPath();
+            for (let i = 0; i <= 240; i++) {
+                const hh = i / 10;
+                const px = x(hh), py = y(closeness(hh));
+                if (i === 0) sctx.moveTo(px, py); else sctx.lineTo(px, py);
+            }
+            sctx.strokeStyle = '#e88a6a';
+            sctx.lineWidth = 1.5;
+            sctx.stroke();
+            // ticks
+            sctx.fillStyle = '#a593b6';
+            sctx.font = '13px "Cormorant Garamond", Georgia, serif';
+            sctx.textBaseline = 'top';
+            [[0, 'midnight'], [6, '6'], [12, 'noon'], [18, '18'], [24, '24']].forEach(([hh, lab]) => {
+                sctx.textAlign = hh === 0 ? 'left' : hh === 24 ? 'right' : 'center';
+                sctx.fillText(hh === 24 ? '' : lab, x(hh), bottom + 4);
+                sctx.fillRect(x(hh) - 0.5, bottom, 1, 3);
+            });
+            // now marker
+            const nx = x(hf), ny = y(closeness(hf));
+            sctx.strokeStyle = 'rgba(236,226,244,0.6)';
+            sctx.lineWidth = 1;
+            sctx.beginPath(); sctx.moveTo(nx, top); sctx.lineTo(nx, bottom); sctx.stroke();
+            sctx.fillStyle = '#f2d27a';
+            sctx.beginPath(); sctx.arc(nx, ny, 3.5, 0, Math.PI * 2); sctx.fill();
+        }
+
+        /* ---------- the forest ---------- */
+        const scene = el('scene');
+        const canvas = el('forest');
         const ctx = canvas.getContext('2d');
-        const timeEl = document.getElementById('time');
-        const dateEl = document.getElementById('date');
-        const entityNameEl = document.getElementById('entityName');
-        const entityTitleEl = document.getElementById('entityTitle');
-        const entityDescEl = document.getElementById('entityDesc');
-        const runesEl = document.getElementById('runes');
-        const hourMarkersEl = document.getElementById('hourMarkers');
-        const starsEl = document.getElementById('stars');
+        let width = 0, height = 0;
+        let trees = [];
 
-        let audioContext = null;
-        let lastHour = -1;
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
 
-        // Canvas setup
-        let width, height;
+        function geom() {
+            const horizon = height * 0.56;
+            return {
+                horizon,
+                cx: width * 0.5,
+                groundY: d => horizon + (height - horizon) * d,
+                halfPath: d => width * (0.012 + 0.2 * d)
+            };
+        }
+
+        function buildTrees() {
+            const rnd = mulberry32(1950);
+            const G = geom();
+            trees = [];
+            const layers = 6;
+            for (let li = 0; li < layers; li++) {
+                const d = li / (layers - 1) * 0.92 + 0.02;   // depth into the picture, 0 far, 1 near
+                const count = Math.round((34 - li * 4) * Math.max(0.6, width / 1100));
+                for (let i = 0; i < count; i++) {
+                    const tx = rnd() * width * 1.1 - width * 0.05;
+                    const jitter = (rnd() - 0.5) * 0.06;
+                    const dd = Math.min(0.98, Math.max(0, d + jitter));
+                    const base = G.groundY(dd);
+                    const w = width * (0.004 + 0.05 * Math.pow(dd, 1.7)) * (0.7 + rnd() * 0.6) + 2;
+                    const keep = Math.abs(tx - G.cx) > G.halfPath(dd) + w * 0.7 + width * 0.01;
+                    if (!keep) continue;
+                    trees.push({ x: tx, d: dd, base, w, lean: (rnd() - 0.5) * 0.04, knot: rnd() });
+                }
+            }
+            trees.sort((a, b) => a.d - b.d);
+        }
 
         function resizeCanvas() {
-            const container = canvas.parentElement;
-            width = container.offsetWidth;
-            height = container.offsetHeight;
             const dpr = window.devicePixelRatio || 1;
+            width = scene.clientWidth;
+            height = scene.clientHeight;
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            buildTrees();
+            resizeStrip();
+            drawStrip(hoursNow());
+            drawScene(performance.now());
         }
-        resizeCanvas();
+
+        function hoursNow() {
+            const n = new Date();
+            return n.getHours() + n.getMinutes() / 60 + n.getSeconds() / 3600;
+        }
+
+        function mix(a, b, t) { return a + (b - a) * t; }
+        function mixRGB(c1, c2, t) {
+            return `rgb(${Math.round(mix(c1[0], c2[0], t))},${Math.round(mix(c1[1], c2[1], t))},${Math.round(mix(c1[2], c2[2], t))})`;
+        }
+
+        function sunAltitude(hf) {
+            // +1 at noon, 0 at six and six, -1 at midnight
+            return Math.sin(Math.PI * (hf - SUNRISE) / 12);
+        }
+
+        function drawScene(t) {
+            if (!width) return;
+            const hf = hoursNow();
+            const now = new Date();
+            const G = geom();
+            const alt = sunAltitude(hf);
+            const light = Math.max(0, Math.min(1, (alt + 0.15) / 1.15));   // 0 night .. 1 noon
+            const p = closeness(hf);
+            const anim = !reduceMotion.matches;
+
+            // sky
+            const sky = ctx.createLinearGradient(0, 0, 0, G.horizon);
+            sky.addColorStop(0, mixRGB([8, 5, 14], [44, 18, 34], light));
+            sky.addColorStop(1, mixRGB([18, 10, 26], [104, 40, 40], light));
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, width, G.horizon + 1);
+
+            // stars at night
+            if (light < 0.5) {
+                const rs = mulberry32(7);
+                ctx.fillStyle = `rgba(220,205,235,${0.5 * (1 - light * 2)})`;
+                for (let i = 0; i < 70; i++) {
+                    const sx = rs() * width, sy = rs() * G.horizon * 0.8, r = rs() * 1.1 + 0.3;
+                    ctx.fillRect(sx, sy, r, r);
+                }
+            }
+
+            // the dim red sun
+            if (alt > -0.2) {
+                const dayFrac = (hf - SUNRISE) / 12;
+                const sx = width * (0.12 + 0.76 * dayFrac);
+                const sy = G.horizon - alt * G.horizon * 0.6;
+                const sr = Math.min(width, height) * 0.075;
+                const glow = ctx.createRadialGradient(sx, sy, sr * 0.6, sx, sy, sr * 4);
+                glow.addColorStop(0, 'rgba(200,70,50,0.35)');
+                glow.addColorStop(1, 'rgba(200,70,50,0)');
+                ctx.fillStyle = glow;
+                ctx.fillRect(0, 0, width, G.horizon);
+                const disc = ctx.createRadialGradient(sx - sr * 0.2, sy - sr * 0.2, sr * 0.1, sx, sy, sr);
+                disc.addColorStop(0, '#d2644c');
+                disc.addColorStop(1, '#8e2a22');
+                ctx.fillStyle = disc;
+                ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // ground
+            const ground = ctx.createLinearGradient(0, G.horizon, 0, height);
+            ground.addColorStop(0, mixRGB([16, 10, 20], [42, 20, 26], light));
+            ground.addColorStop(1, mixRGB([6, 4, 8], [16, 8, 12], light));
+            ctx.fillStyle = ground;
+            ctx.fillRect(0, G.horizon, width, height - G.horizon);
+
+            // path
+            ctx.fillStyle = mixRGB([34, 26, 34], [78, 50, 46], light);
+            ctx.beginPath();
+            ctx.moveTo(G.cx - G.halfPath(0), G.horizon);
+            ctx.lineTo(G.cx + G.halfPath(0), G.horizon);
+            ctx.lineTo(G.cx + G.halfPath(1), height);
+            ctx.lineTo(G.cx - G.halfPath(1), height);
+            ctx.closePath();
+            ctx.fill();
+
+            // where the deodand stands: depth z, and side of path
+            const side = sideFor(now);
+            const z = 0.04 + 0.74 * p;
+            const dBase = G.groundY(z);
+            const figH = height * (0.05 + 0.5 * Math.pow(z, 1.25));
+            const off = G.halfPath(z) + width * (0.03 + 0.05 * (1 - p)) + figH * 0.25;
+            const sway = anim ? Math.sin(t / 2300) * figH * 0.04 : 0;
+            const dx = G.cx + side * off + sway;
+
+            const fog = mixRGB([22, 14, 30], [80, 34, 38], light);
+            let drawn = false;
+            const eyeX = G.cx + side * off;   // keep nearer trunks from hiding the eyes
+            const eyeGap = Math.max(5, figH * 0.045) * 2.5;
+            for (const tr of trees) {
+                if (!drawn && tr.d > z) { drawDeodand(dx, dBase, figH, p, light, t, anim); drawn = true; }
+                if (tr.d > z && Math.abs(tr.x - eyeX) < tr.w * 0.7 + eyeGap) continue;
+                drawTree(tr, fog);
+            }
+            if (!drawn) drawDeodand(dx, dBase, figH, p, light, t, anim);
+
+            drawTraveller(G, light, t, anim);
+
+            // a low mist, thicker at night
+            const mist = ctx.createLinearGradient(0, G.horizon - height * 0.08, 0, G.horizon + height * 0.12);
+            const ma = 0.22 + 0.2 * (1 - light);
+            mist.addColorStop(0, 'rgba(120,96,140,0)');
+            mist.addColorStop(0.5, `rgba(120,96,140,${ma * 0.5})`);
+            mist.addColorStop(1, 'rgba(120,96,140,0)');
+            ctx.fillStyle = mist;
+            ctx.fillRect(0, G.horizon - height * 0.08, width, height * 0.2);
+
+            // vignette, and the gloom under the canopy at the top
+            const top = ctx.createLinearGradient(0, 0, 0, height * 0.35);
+            top.addColorStop(0, 'rgba(4,2,6,0.85)');
+            top.addColorStop(1, 'rgba(4,2,6,0)');
+            ctx.fillStyle = top;
+            ctx.fillRect(0, 0, width, height * 0.35);
+        }
+
+        function drawTree(tr, fog) {
+            // farther trees fade into the fog colour, near ones are nearly black
+            const k = Math.pow(tr.d, 0.7);
+            const m = fog.match(/\d+/g).map(Number);
+            ctx.fillStyle = mixRGB(m, [5, 3, 6], k);
+            const topY = -10;
+            const lean = tr.lean * (tr.base - topY);
+            ctx.beginPath();
+            ctx.moveTo(tr.x - tr.w * 0.62, tr.base);
+            ctx.lineTo(tr.x - tr.w * 0.42 + lean, topY);
+            ctx.lineTo(tr.x + tr.w * 0.42 + lean, topY);
+            ctx.lineTo(tr.x + tr.w * 0.62, tr.base);
+            ctx.closePath();
+            ctx.fill();
+            // a root flare
+            ctx.beginPath();
+            ctx.ellipse(tr.x, tr.base, tr.w * 0.9, tr.w * 0.14, 0, Math.PI, 0);
+            ctx.fill();
+            // a bare branch on some trunks
+            if (tr.knot > 0.55) {
+                const by = tr.base - (tr.base - topY) * (0.45 + tr.knot * 0.3);
+                const dir = tr.knot > 0.78 ? 1 : -1;
+                ctx.strokeStyle = ctx.fillStyle;
+                ctx.lineWidth = Math.max(1, tr.w * 0.18);
+                ctx.beginPath();
+                ctx.moveTo(tr.x + lean * 0.5, by);
+                ctx.quadraticCurveTo(tr.x + dir * tr.w * 1.6, by - tr.w * 1.2, tr.x + dir * tr.w * 3, by - tr.w * 3);
+                ctx.stroke();
+            }
+        }
+
+        function drawDeodand(x, base, h, p, light, t, anim) {
+            // the body only shows when it is close; at a distance only the eyes
+            const bodyA = Math.max(0, (p - 0.45) / 0.55);
+            if (bodyA > 0) {
+                ctx.save();
+                ctx.globalAlpha = 0.92 * bodyA;
+                ctx.fillStyle = '#020103';
+                const sw = h * 0.22;
+                ctx.beginPath();
+                ctx.arc(x, base - h * 0.88, h * 0.075, 0, Math.PI * 2);   // head
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(x - sw * 0.5, base - h * 0.79);
+                ctx.quadraticCurveTo(x - sw * 0.75, base - h * 0.55, x - sw * 0.45, base - h * 0.42);
+                ctx.lineTo(x - sw * 0.35, base);
+                ctx.lineTo(x + sw * 0.35, base);
+                ctx.lineTo(x + sw * 0.45, base - h * 0.42);
+                ctx.quadraticCurveTo(x + sw * 0.75, base - h * 0.55, x + sw * 0.5, base - h * 0.79);
+                ctx.closePath();
+                ctx.fill();
+                // long arms
+                ctx.lineWidth = sw * 0.17;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#020103';
+                ctx.beginPath();
+                ctx.moveTo(x - sw * 0.52, base - h * 0.74);
+                ctx.quadraticCurveTo(x - sw * 0.9, base - h * 0.5, x - sw * 0.75, base - h * 0.3);
+                ctx.moveTo(x + sw * 0.52, base - h * 0.74);
+                ctx.quadraticCurveTo(x + sw * 0.9, base - h * 0.5, x + sw * 0.75, base - h * 0.3);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // eyes
+            const ey = base - h * 0.89;
+            const sep = Math.max(5, h * 0.045);
+            const er = Math.max(2.2, h * 0.014);
+            let open = 1;
+            if (anim) {
+                const cycle = 5200, ph = t % cycle;
+                if (ph < 160) open = Math.abs(ph - 80) / 80;
+            }
+            const a = 0.7 + 0.3 * p;
+            ctx.save();
+            // a faint halo so the far-off eyes still read against the trunks
+            const halo = ctx.createRadialGradient(x, ey, 0, x, ey, sep * 4);
+            halo.addColorStop(0, 'rgba(242,210,122,0.22)');
+            halo.addColorStop(1, 'rgba(242,210,122,0)');
+            ctx.fillStyle = halo;
+            ctx.fillRect(x - sep * 4, ey - sep * 4, sep * 8, sep * 8);
+            ctx.shadowColor = 'rgba(242,210,122,0.9)';
+            ctx.shadowBlur = 6 + 14 * p;
+            ctx.fillStyle = `rgba(242,210,122,${a})`;
+            for (const sx of [-1, 1]) {
+                ctx.beginPath();
+                ctx.ellipse(x + sx * sep, ey, er * 1.4, Math.max(0.3, er * open), sx * -0.18, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawTraveller(G, light, t, anim) {
+            const fh = Math.min(height * 0.15, width * 0.12);
+            const fx = G.cx + width * 0.01;
+            const fy = height - height * 0.06;
+            const flick = anim ? 0.92 + 0.08 * Math.sin(t / 90) * Math.sin(t / 37) : 1;
+            const lampX = fx + fh * 0.2, lampY = fy - fh * 0.45;
+            // lantern pool on the path
+            const pool = ctx.createRadialGradient(lampX, lampY, 0, lampX, lampY, fh * 2.6);
+            const la = (0.35 + 0.35 * (1 - light)) * flick;
+            pool.addColorStop(0, `rgba(255,190,110,${la})`);
+            pool.addColorStop(1, 'rgba(255,190,110,0)');
+            ctx.fillStyle = pool;
+            ctx.fillRect(lampX - fh * 2.6, lampY - fh * 2.6, fh * 5.2, fh * 5.2);
+            // cloaked figure seen from behind
+            ctx.fillStyle = '#060408';
+            ctx.beginPath();
+            ctx.arc(fx, fy - fh * 0.9, fh * 0.09, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(fx - fh * 0.06, fy - fh * 0.97);
+            ctx.quadraticCurveTo(fx - fh * 0.24, fy - fh * 0.5, fx - fh * 0.2, fy);
+            ctx.lineTo(fx + fh * 0.2, fy);
+            ctx.quadraticCurveTo(fx + fh * 0.24, fy - fh * 0.5, fx + fh * 0.06, fy - fh * 0.97);
+            ctx.closePath();
+            ctx.fill();
+            // staff
+            ctx.strokeStyle = '#060408';
+            ctx.lineWidth = Math.max(1.5, fh * 0.025);
+            ctx.beginPath();
+            ctx.moveTo(fx - fh * 0.26, fy + fh * 0.02);
+            ctx.lineTo(fx - fh * 0.3, fy - fh * 1.05);
+            ctx.stroke();
+            // lantern
+            ctx.fillStyle = `rgba(255,214,150,${0.9 * flick})`;
+            ctx.shadowColor = 'rgba(255,190,110,0.9)';
+            ctx.shadowBlur = 12;
+            ctx.fillRect(lampX - fh * 0.03, lampY - fh * 0.04, fh * 0.06, fh * 0.08);
+            ctx.shadowBlur = 0;
+        }
+
+        /* ---------- loop ---------- */
+        let rafId = null, sceneTimer = null;
+
+        function frame(t) {
+            drawScene(t);
+            rafId = reduceMotion.matches ? null : requestAnimationFrame(frame);
+        }
+
+        function startScene() {
+            if (rafId) cancelAnimationFrame(rafId);
+            if (sceneTimer) clearInterval(sceneTimer);
+            rafId = null; sceneTimer = null;
+            if (reduceMotion.matches) {
+                drawScene(0);
+                sceneTimer = setInterval(() => drawScene(0), 1000);   // the eyes still move with the hour
+            } else {
+                rafId = requestAnimationFrame(frame);
+            }
+        }
+
+        if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', startScene);
+
+        if (window.ResizeObserver) new ResizeObserver(resizeCanvas).observe(scene);
         window.addEventListener('resize', resizeCanvas);
 
-        // Create stars
-        function createStars() {
-            for (let i = 0; i < 100; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.animationDelay = Math.random() * 3 + 's';
-                star.style.animationDuration = (2 + Math.random() * 3) + 's';
-                starsEl.appendChild(star);
-            }
-        }
-
-        // Rune symbols (mystical geometric patterns)
-        const runePatterns = [
-            '<svg width="40" height="40" viewBox="0 0 40 40"><path d="M20,5 L20,35 M5,20 L35,20 M10,10 L30,30 M30,10 L10,30"/></svg>',
-            '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="12"/><path d="M20,8 L20,32 M8,20 L32,20"/></svg>',
-            '<svg width="40" height="40" viewBox="0 0 40 40"><polygon points="20,5 32,35 8,35"/><circle cx="20" cy="20" r="5"/></svg>',
-            '<svg width="40" height="40" viewBox="0 0 40 40"><path d="M20,5 L32,20 L20,35 L8,20 Z"/><circle cx="20" cy="20" r="6"/></svg>',
-            '<svg width="40" height="40" viewBox="0 0 40 40"><rect x="8" y="8" width="24" height="24"/><path d="M20,8 L20,32 M8,20 L32,20"/></svg>',
-            '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="15"/><path d="M20,5 L35,20 L20,35 L5,20 Z"/></svg>'
-        ];
-
-        // Create runes around the circle
-        function createRunes() {
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const radius = Math.min(width, height) * 0.4;
-
-            for (let i = 0; i < 24; i++) {
-                const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
-                const x = centerX + Math.cos(angle) * radius - 20;
-                const y = centerY + Math.sin(angle) * radius - 20;
-
-                const runeContainer = document.createElement('div');
-                runeContainer.className = 'rune-container';
-                runeContainer.style.left = x + 'px';
-                runeContainer.style.top = y + 'px';
-                runeContainer.innerHTML = runePatterns[i % runePatterns.length].replace('<svg', '<svg class="rune"');
-                runesEl.appendChild(runeContainer);
-            }
-        }
-
-        // Create hour markers
-        function createHourMarkers() {
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const radius = Math.min(width, height) * 0.45;
-
-            for (let i = 0; i < 24; i++) {
-                const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-
-                const marker = document.createElement('div');
-                marker.className = 'hour-marker';
-                marker.textContent = i;
-                marker.style.left = x + 'px';
-                marker.style.top = y + 'px';
-                marker.style.transform = 'translate(-50%, -50%)';
-                marker.dataset.hour = i;
-                hourMarkersEl.appendChild(marker);
-            }
-        }
-
-        // Draw summoning circle
-        function drawCircle() {
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const maxRadius = Math.min(width, height) * 0.48;
-
-            ctx.clearRect(0, 0, width, height);
-
-            // Outer circles
-            for (let i = 0; i < 3; i++) {
-                const radius = maxRadius - i * 8;
-                ctx.strokeStyle = i === 1 ? '#a888c8' : '#7860a0';
-                ctx.lineWidth = i === 1 ? 3 : 2;
-                ctx.globalAlpha = 0.5;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-
-            // Inner circle
-            ctx.strokeStyle = '#8870a0';
-            ctx.lineWidth = 2;
-            ctx.globalAlpha = 0.4;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.3, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Connecting lines (pentagram-ish)
-            ctx.strokeStyle = '#6850a0';
-            ctx.lineWidth = 1.5;
-            ctx.globalAlpha = 0.3;
-            const points = 24;
-            for (let i = 0; i < points; i++) {
-                const angle1 = (i / points) * Math.PI * 2 - Math.PI / 2;
-                const angle2 = ((i + 7) / points) * Math.PI * 2 - Math.PI / 2;
-
-                const x1 = centerX + Math.cos(angle1) * maxRadius * 0.95;
-                const y1 = centerY + Math.sin(angle1) * maxRadius * 0.95;
-                const x2 = centerX + Math.cos(angle2) * maxRadius * 0.95;
-                const y2 = centerY + Math.sin(angle2) * maxRadius * 0.95;
-
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
-
-            ctx.globalAlpha = 1;
-        }
-
-        // Play summoning sound
-        function playSummoningSound() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const now = audioContext.currentTime;
-
-            // Low ominous drone
-            const drone = audioContext.createOscillator();
-            const droneGain = audioContext.createGain();
-            const droneFilter = audioContext.createBiquadFilter();
-
-            droneFilter.type = 'lowpass';
-            droneFilter.frequency.value = 200;
-
-            drone.connect(droneFilter);
-            droneFilter.connect(droneGain);
-            droneGain.connect(audioContext.destination);
-
-            drone.type = 'sawtooth';
-            drone.frequency.value = 55; // A1
-
-            droneGain.gain.setValueAtTime(0, now);
-            droneGain.gain.linearRampToValueAtTime(0.15, now + 0.5);
-            droneGain.gain.exponentialRampToValueAtTime(0.01, now + 4);
-
-            drone.start(now);
-            drone.stop(now + 4.5);
-
-            // Ethereal overtone
-            setTimeout(() => {
-                const ethereal = audioContext.createOscillator();
-                const etherealGain = audioContext.createGain();
-                const etherealFilter = audioContext.createBiquadFilter();
-
-                etherealFilter.type = 'bandpass';
-                etherealFilter.frequency.value = 1500;
-                etherealFilter.Q.value = 10;
-
-                ethereal.connect(etherealFilter);
-                etherealFilter.connect(etherealGain);
-                etherealGain.connect(audioContext.destination);
-
-                ethereal.type = 'sine';
-                ethereal.frequency.setValueAtTime(880, now + 1);
-                ethereal.frequency.exponentialRampToValueAtTime(1760, now + 1.5);
-                ethereal.frequency.exponentialRampToValueAtTime(440, now + 3.5);
-
-                etherealGain.gain.setValueAtTime(0, now + 1);
-                etherealGain.gain.linearRampToValueAtTime(0.1, now + 1.2);
-                etherealGain.gain.exponentialRampToValueAtTime(0.01, now + 3.5);
-
-                ethereal.start(now + 1);
-                ethereal.stop(now + 4);
-            }, 0);
-        }
-
-        // Update display
-        function updateClock() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
-
-            // Update time
-            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
-
-            // Update date
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const dayName = days[now.getDay()];
-            const monthName = months[now.getMonth()];
-            const date = now.getDate();
-            const year = now.getFullYear();
-
-            const suffix = date === 1 || date === 21 || date === 31 ? 'st' :
-                          date === 2 || date === 22 ? 'nd' :
-                          date === 3 || date === 23 ? 'rd' : 'th';
-
-            dateEl.textContent = `${dayName}, the ${date}${suffix} of ${monthName}, ${year}`;
-
-            // Update entity
-            const deodand = deodands[hour];
-            entityNameEl.textContent = deodand.name;
-            entityTitleEl.textContent = deodand.title;
-            entityDescEl.textContent = deodand.desc;
-
-            // Update active rune and hour marker
-            document.querySelectorAll('.rune-container').forEach((rune, i) => {
-                rune.classList.toggle('active', i === hour);
-            });
-            document.querySelectorAll('.hour-marker').forEach((marker) => {
-                marker.classList.toggle('active', parseInt(marker.dataset.hour) === hour);
-            });
-
-            // Play sound on hour change
-            if (hour !== lastHour && lastHour !== -1) {
-                playSummoningSound();
-            }
-            lastHour = hour;
-        }
-
-        // Initialize
-        createStars();
-        drawCircle();
-        createRunes();
-        createHourMarkers();
-        updateClock();
-        setInterval(updateClock, 1000);
-
-        // Redraw on resize
-        window.addEventListener('resize', () => {
-            drawCircle();
-            runesEl.innerHTML = '';
-            hourMarkersEl.innerHTML = '';
-            createRunes();
-            createHourMarkers();
-            updateClock();
-        });
+        resizeCanvas();
+        updateText();
+        setInterval(updateText, 1000);
+        startScene();
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawStrip(hoursNow()));
     </script>
 </body>
 

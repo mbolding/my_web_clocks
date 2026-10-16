@@ -7,10 +7,10 @@ A collection of literary, creative, and technical concepts for future web clock 
 ### Currently Implemented
 
 #### Vancian Quartet
-- ✅ **The Dying Sun** - Jack Vance's Dying Earth with exotic time periods
-- ✅ **Spell Preparation Clock** - Vancian magic system with spell memorization
-- ✅ **Cutz Chronometer** - Invented time units (Grand Chimes, Lesser Bells, Sestinas, Jiffies)
-- ✅ **The Deodand Clock** - Supernatural entities governing each hour
+- ✅ **The Dying Sun** - Jack Vance's Dying Earth (the old red sun crosses the sky as the hour hand and falters at irregular intervals, with a daily tally)
+- ✅ **Spell Preparation Clock** - Vancian magic (twelve spells ring the dial, the mind holds four, each hour one is learned and the eldest cast and forgotten)
+- ✅ **Cutz Chronometer** - The Eyes of the Overworld (Cugel's road from Cutz back to Iucounu's manse walked once a day, with his patent units kept as a joke)
+- ✅ **The Deodand Clock** - The Dying Earth (a deodand keeps pace with a traveller through a dark forest, farthest at noon, closest at 3am)
 
 #### Modernist Literature
 - ✅ **Bloomsday** - James Joyce's Ulysses (18 episodes at their Gilbert-schema hours, the time retold in each episode's style)

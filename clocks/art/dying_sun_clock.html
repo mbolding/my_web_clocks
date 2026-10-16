@@ -5,410 +5,646 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Dying Sun</title>
+    <meta name="description" content="After Jack Vance's Dying Earth: a huge, dim red sun crosses a dark-blue sky to tell the hour, faltering at intervals, with a tally of today's falterings.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --ground: #05060b;
+            --ink: #f0dccb;
+            --ink-soft: #cdbfb4;
+            --ink-dim: #a6a3b8;
+            --ember: #e0654f;
+            --rule: rgba(224, 101, 79, 0.35);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            background: var(--ground);
         }
 
         body {
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            color: var(--ink);
             overflow: hidden;
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(to bottom, #1a0a0f, #2d1520);
-            transition: background 3s ease;
+            min-height: 100vh;
+            min-height: 100svh;
         }
 
-        .sky-canvas {
+        #sky {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            inset: 0;
+            display: block;
+            z-index: 0;
         }
 
-        .content {
-            position: relative;
-            z-index: 10;
+        .panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            padding: clamp(0.9rem, 2.6vh, 1.8rem) 16px clamp(0.7rem, 2vh, 1.3rem);
+            text-align: center;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
-            color: #f4e4d7;
-            text-align: center;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+            gap: clamp(0.25rem, 1vh, 0.55rem);
         }
 
-        .period-name {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(2rem, 6vw, 4.5rem);
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            margin-bottom: 1rem;
-            color: #f4d9c6;
-            text-transform: uppercase;
-            opacity: 0;
-            animation: fadeIn 2s ease forwards;
-        }
-
-        .period-description {
-            font-size: clamp(1rem, 2.5vw, 1.8rem);
+        .phase {
+            font-size: clamp(1.05rem, 2.4vw, 1.45rem);
             font-style: italic;
-            margin-bottom: 3rem;
-            color: #d4b5a1;
-            opacity: 0;
-            animation: fadeIn 2s ease 0.5s forwards;
-            max-width: 600px;
-            line-height: 1.6;
+            color: var(--ink-soft);
+            min-height: 1.3em;
+            transition: color 0.6s ease;
         }
 
-        .time-display {
+        .phase.faltering { color: var(--ember); }
+
+        .time {
             font-family: 'Cinzel', serif;
-            font-size: clamp(3rem, 10vw, 7rem);
             font-weight: 600;
-            letter-spacing: 0.1em;
-            margin-bottom: 2rem;
-            color: #ffecd1;
-            opacity: 0;
-            animation: fadeIn 2s ease 1s forwards;
+            font-size: clamp(2.6rem, 8vw, 4.8rem);
+            line-height: 1;
+            letter-spacing: 0.06em;
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
         }
 
-        .date-display {
-            font-size: clamp(0.9rem, 2vw, 1.3rem);
-            color: #c4a58a;
-            opacity: 0;
-            animation: fadeIn 2s ease 1.5s forwards;
-            margin-bottom: 2rem;
+        .time .sec {
+            font-size: 0.42em;
+            color: var(--ink-dim);
+            margin-left: 0.25em;
+            letter-spacing: 0.04em;
         }
 
-        .ornament {
-            width: 200px;
+        .date {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.78rem, 1.6vw, 0.95rem);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-dim);
+        }
+
+        .rule {
+            width: min(320px, 70vw);
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--rule), transparent);
+            margin: clamp(0.15rem, 0.8vh, 0.4rem) 0;
+        }
+
+        .count {
+            font-size: clamp(1.05rem, 2.3vw, 1.35rem);
+            color: var(--ink);
+        }
+
+        .count strong {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            color: var(--ember);
+            font-size: 1.15em;
+        }
+
+        .last {
+            font-size: clamp(0.95rem, 2vw, 1.12rem);
+            color: var(--ink-soft);
+            min-height: 1.2em;
+        }
+
+        .tally {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px 12px;
+            max-width: min(720px, 100%);
+            min-height: 18px;
+        }
+
+        .tally .grp {
+            position: relative;
+            display: inline-flex;
+            gap: 3px;
+            height: 16px;
+            align-items: stretch;
+        }
+
+        .tally .m {
+            width: 2px;
+            background: var(--ink-dim);
+            border-radius: 1px;
+        }
+
+        .tally .m.grave { background: var(--ember); }
+
+        .tally .grp.full::after {
+            content: "";
+            position: absolute;
+            left: -3px;
+            right: -3px;
+            top: 50%;
             height: 2px;
-            background: linear-gradient(to right, transparent, #d4a574, transparent);
-            margin: 1rem auto;
-            opacity: 0;
-            animation: fadeIn 2s ease 2s forwards;
+            background: var(--ink-dim);
+            transform: rotate(-28deg);
+            border-radius: 1px;
         }
 
-        .footer {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.9rem;
-            color: #8a7060;
-            opacity: 0;
-            animation: fadeIn 2s ease 2.5s forwards;
-            z-index: 10;
+        .tally .grp.full.grave::after { background: var(--ember); }
+
+        .tally .none {
+            font-style: italic;
+            color: var(--ink-dim);
+            font-size: 0.95rem;
         }
 
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
+        .foot {
+            margin-top: clamp(0.2rem, 1vh, 0.6rem);
+            font-size: clamp(0.85rem, 1.6vw, 0.98rem);
+            color: var(--ink-dim);
+            max-width: 46rem;
+            line-height: 1.35;
         }
 
-        .particle {
-            position: fixed;
-            width: 3px;
-            height: 3px;
-            background: radial-gradient(circle, #ffd4a3, transparent);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 5;
-            opacity: 0.6;
+        .foot em { color: var(--ink-soft); }
+
+        .sr {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-height: 560px) {
+            .foot, .tally { display: none; }
         }
     </style>
 </head>
 
 <body>
-    <canvas aria-hidden="true" class="sky-canvas" id="sky"></canvas>
+    <canvas id="sky" role="img" aria-label="A huge dim red sun crossing a dark blue sky; its place on the arc tells the hour"></canvas>
 
-    <div class="content">
-        <div class="period-name" id="periodName">The Crepuscular Hour</div>
-        <div class="ornament"></div>
-        <div class="period-description" id="periodDesc">When the dying sun first breaches the purple horizon</div>
-        <div class="time-display" id="time">12:00:00</div>
-        <div class="date-display" id="date">The 1st of January, 2026</div>
-    </div>
-
-    <div class="footer">
-        A Chronometer of the Dying Earth
-    </div>
+    <main class="panel" id="panel">
+        <div class="phase" id="phase"></div>
+        <div class="time" id="time" role="timer" aria-label="Current time">--:--<span class="sec">--</span></div>
+        <div class="date" id="date"></div>
+        <div class="rule" aria-hidden="true"></div>
+        <div class="count" id="count"></div>
+        <div class="tally" id="tally" aria-hidden="true"></div>
+        <div class="last" id="last"></div>
+        <p class="foot">After Jack Vance, <em>The Dying Earth</em> and its sequels, where the sun is old and red and everyone wonders whether it will last the day. Here it rises at six and sets at six; its place on the arc is the hour. At irregular intervals it falters, and the clock keeps count.</p>
+        <div class="sr" id="announce" aria-live="polite"></div>
+    </main>
 
     <script>
-        // Time periods with Vancian names
-        const periods = [
-            { hour: 0, name: "The Obsidian Bell", desc: "When darkness holds dominion and the stars gutter low", colors: { sky1: "#0d0510", sky2: "#1a0a1f", sun: "#6b2942" } },
-            { hour: 1, name: "The Penumbral Chime", desc: "The deepest hour, when shadows congeal into substance", colors: { sky1: "#0f0614", sky2: "#1c0d23", sun: "#6f2d45" } },
-            { hour: 2, name: "The Tenebrous Watch", desc: "Night's final grasp before the stellar fade", colors: { sky1: "#120818", sky2: "#1f1028", sun: "#73314a" } },
-            { hour: 3, name: "The Stellar Waning", desc: "When distant suns begin their slow retreat", colors: { sky1: "#150a1e", sky2: "#251530", sun: "#78354f" } },
-            { hour: 4, name: "The Umber Prelude", desc: "First hint of the sun's weary approach", colors: { sky1: "#1a0d24", sky2: "#2d1a38", sun: "#7f3a54" } },
-            { hour: 5, name: "The Crepuscular Hour", desc: "When the dying sun first breaches the purple horizon", colors: { sky1: "#2a1530", sky2: "#4a2545", sun: "#8f4560" } },
-            { hour: 6, name: "The Carmine Dawn", desc: "Crimson light spills across the ancient wastes", colors: { sky1: "#3d1f3a", sky2: "#5f3550", sun: "#a55470" } },
-            { hour: 7, name: "The Vermillion Rising", desc: "The great orb climbs, already exhausted", colors: { sky1: "#502a45", sky2: "#704555", sun: "#b86580" } },
-            { hour: 8, name: "The Sanguine Ascent", desc: "Ruby light illuminates the decaying spires", colors: { sky1: "#5f3550", sky2: "#805560", sun: "#c87890" } },
-            { hour: 9, name: "The Viridian Chime", desc: "Strange green hues tinge the bloated sun", colors: { sky1: "#654548", sky2: "#886658", sun: "#d88ca0" } },
-            { hour: 10, name: "The Fulvous Watch", desc: "Tawny light, thick as ancient honey", colors: { sky1: "#6a5050", sky2: "#907868", sun: "#e5a0b0" } },
-            { hour: 11, name: "The Amber Meridian", desc: "Zenith approaches with golden languor", colors: { sky1: "#6f5a58", sky2: "#988a78", sun: "#f0b5c0" } },
-            { hour: 12, name: "The Coruscant Apex", desc: "The dying sun achieves its brief, weary glory", colors: { sky1: "#746560", sky2: "#a09c88", sun: "#f5cad0" } },
-            { hour: 13, name: "The Ochre Descent", desc: "Already the slow decline begins anew", colors: { sky1: "#706058", sky2: "#989080", sun: "#f0bfc8" } },
-            { hour: 14, name: "The Puce Declension", desc: "Brownish-purple shadows lengthen across the land", colors: { sky1: "#6a5850", sky2: "#908578", sun: "#e8b0c0" } },
-            { hour: 15, name: "The Rufous Hour", desc: "Reddish-brown light grows thick and syrupy", colors: { sky1: "#655048", sky2: "#887a68", sun: "#dfa0b0" } },
-            { hour: 16, name: "The Heliotrope Waning", desc: "Purple hues deepen as the sun weakens", colors: { sky1: "#5f4548", sky2: "#806860", sun: "#d58ca0" } },
-            { hour: 17, name: "The Vespertine Chime", desc: "Evening bells toll across the dimming waste", colors: { sky1: "#583a48", sky2: "#785860", sun: "#ca7890" } },
-            { hour: 18, name: "The Tenebrous Vesper", desc: "Twilight spreads like spilled wine", colors: { sky1: "#4f3045", sky2: "#6f4858", sun: "#be6580" } },
-            { hour: 19, name: "The Murk Descending", desc: "Darkness rises from the earth itself", colors: { sky1: "#442840", sky2: "#5f3850", sun: "#b05470" } },
-            { hour: 20, name: "The Ebon Eventide", desc: "Night claims the world once more", colors: { sky1: "#382035", sky2: "#4f2845", sun: "#a04560" } },
-            { hour: 21, name: "The Stygian Bell", desc: "Deep darkness, relieved only by fading embers", colors: { sky1: "#2d1a30", sky2: "#3f1e3a", sun: "#8f3d55" } },
-            { hour: 22, name: "The Umbral Watch", desc: "Shadows within shadows, darkness profound", colors: { sky1: "#221528", sky2: "#301830", sun: "#7f3550" } },
-            { hour: 23, name: "The Midnight Desolation", desc: "The nadir of light, when hope itself grows dim", colors: { sky1: "#180f20", sky2: "#251028", sun: "#702d4a" } }
-        ];
-
         const canvas = document.getElementById('sky');
         const ctx = canvas.getContext('2d');
+        const panel = document.getElementById('panel');
+        const phaseEl = document.getElementById('phase');
         const timeEl = document.getElementById('time');
         const dateEl = document.getElementById('date');
-        const periodNameEl = document.getElementById('periodName');
-        const periodDescEl = document.getElementById('periodDesc');
+        const countEl = document.getElementById('count');
+        const tallyEl = document.getElementById('tally');
+        const lastEl = document.getElementById('last');
+        const announceEl = document.getElementById('announce');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-        let audioContext = null;
-        let lastHour = -1;
-        let particles = [];
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-        // Canvas setup
-        let width, height;
-
-        function resizeCanvas() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            const dpr = window.devicePixelRatio || 1;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            canvas.width = Math.round(width * dpr);
-            canvas.height = Math.round(height * dpr);
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // Get current period
-        function getCurrentPeriod(hour) {
-            return periods[hour] || periods[0];
+        // ---------- seeded randomness ----------
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                let t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
         }
 
-        // Create floating particles
-        function createParticles() {
-            for (let i = 0; i < 30; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.top = Math.random() * 100 + '%';
-                particle.style.animationDuration = (10 + Math.random() * 20) + 's';
-                particle.style.animationDelay = Math.random() * 5 + 's';
-                particle.style.animation = `float ${10 + Math.random() * 20}s ease-in-out infinite`;
-                document.body.appendChild(particle);
-
-                particles.push({
-                    element: particle,
-                    x: parseFloat(particle.style.left),
-                    y: parseFloat(particle.style.top),
-                    speedX: (Math.random() - 0.5) * 0.02,
-                    speedY: (Math.random() - 0.5) * 0.02
-                });
+        // ---------- the day's falterings ----------
+        // A deterministic schedule per calendar day: gaps of 8 to 36 minutes,
+        // each falter lasting a few seconds, and one long, deep falter per day.
+        let schedule = null;
+        function buildSchedule(d) {
+            const key = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+            const rnd = mulberry32(key * 2654435761);
+            const ev = [];
+            let t = 0;
+            while (true) {
+                t += 480 + rnd() * 1680;
+                if (t >= 86390) break;
+                ev.push({ t: Math.floor(t), dur: 2.5 + rnd() * 4.5, sev: 0.35 + rnd() * 0.5, seed: rnd() * 1000, grave: false });
             }
+            // the long falter always comes by daylight, when it can be seen
+            const lit = ev.map((e, i) => i).filter(i => ev[i].t > 8 * 3600 && ev[i].t < 17 * 3600);
+            const g = lit[Math.floor(rnd() * lit.length)];
+            ev[g].grave = true; ev[g].dur = 14; ev[g].sev = 0.97;
+            return { key, ev };
         }
 
-        // Animate particles
-        function animateParticles() {
-            particles.forEach(p => {
-                p.x += p.speedX;
-                p.y += p.speedY;
+        // ---------- layout ----------
+        let W = 0, H = 0, horizon = 0, R = 0, cx = 0, Ax = 0, Ay = 0, topPad = 0;
+        let skyline = [];
+        let stars = [];
 
-                if (p.x < 0 || p.x > 100) p.speedX *= -1;
-                if (p.y < 0 || p.y > 100) p.speedY *= -1;
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-                p.element.style.left = p.x + '%';
-                p.element.style.top = p.y + '%';
-            });
+            horizon = Math.round(panel.getBoundingClientRect().top);
+            if (horizon < H * 0.4) horizon = Math.round(H * 0.4);
+            const skyH = horizon;
+            R = Math.max(40, Math.min(W * 0.2, skyH * 0.27));
+            topPad = Math.max(34, skyH * 0.1);
+            cx = W / 2;
+            Ax = W / 2 - R * 0.35;
+            Ay = horizon - topPad - R;
+
+            // ruined skyline along the horizon, regenerated for each width
+            const rnd = mulberry32(1950);
+            skyline = [];
+            let x = -10;
+            const base = Math.min(H * 0.03, 26);
+            while (x < W + 20) {
+                const roll = rnd();
+                if (roll < 0.07) {
+                    // a broken tower
+                    const tw = 8 + rnd() * 16, th = base * (1.6 + rnd() * 2.4);
+                    skyline.push([x, horizon - base * 0.3]);
+                    skyline.push([x, horizon - th]);
+                    skyline.push([x + tw * 0.4, horizon - th * (0.85 + rnd() * 0.25)]);
+                    skyline.push([x + tw, horizon - th * (0.7 + rnd() * 0.2)]);
+                    skyline.push([x + tw, horizon - base * 0.3]);
+                    x += tw;
+                } else {
+                    x += 10 + rnd() * 26;
+                    skyline.push([x, horizon - base * (0.1 + rnd() * 0.7)]);
+                }
+            }
+
+            const sr = mulberry32(1966);
+            stars = [];
+            const n = Math.round(W * horizon / 5200);
+            for (let i = 0; i < n; i++) {
+                stars.push({ x: sr() * W, y: sr() * horizon * 0.95, r: 0.4 + sr() * 1.1, a: 0.3 + sr() * 0.7, p: sr() * 6.28 });
+            }
+            draw(performance.now());
         }
 
-        // Draw the dying sun
-        function drawSun(hour, minute, second) {
-            const period = getCurrentPeriod(hour);
-            const totalSeconds = hour * 3600 + minute * 60 + second;
-            const dayProgress = totalSeconds / 86400;
+        // ---------- colour helpers ----------
+        function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+        function rgb(c, al) { return `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${al === undefined ? 1 : al})`; }
+        const clamp01 = v => Math.max(0, Math.min(1, v));
 
-            // Sun position - arc across the sky
-            const sunAngle = Math.PI * dayProgress * 2 - Math.PI / 2;
-            const centerX = width / 2;
-            const centerY = height * 0.7;
-            const radiusX = width * 0.45;
-            const radiusY = height * 0.4;
+        // ---------- state ----------
+        function secondsOfDay(d) {
+            return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
+        }
 
-            const sunX = centerX + Math.cos(sunAngle) * radiusX;
-            const sunY = centerY + Math.sin(sunAngle) * radiusY;
+        function currentFalter(s) {
+            for (const e of schedule.ev) {
+                if (e.t > s) break;
+                if (s < e.t + e.dur) return e;
+            }
+            return null;
+        }
 
-            // Sun size - larger and more bloated
-            const baseSunSize = Math.min(width, height) * 0.15;
-            const sunSize = baseSunSize * (1 + Math.sin(dayProgress * Math.PI) * 0.2);
+        // brightness of the sun right now: 1 is its usual dim self
+        function brightness(s, smooth) {
+            const e = currentFalter(s);
+            if (!e) return { b: 1, e: null };
+            const u = (s - e.t) / e.dur;
+            // drop fast, hang, recover slowly
+            const env = u < 0.12 ? u / 0.12 : u > 0.6 ? (1 - u) / 0.4 : 1;
+            let flick = 1;
+            if (!smooth) {
+                const k = s * 9 + e.seed;
+                flick = 0.55 + 0.45 * Math.abs(Math.sin(k) * Math.sin(k * 2.71 + 1.3) + 0.3 * Math.sin(k * 7.3));
+                flick = clamp01(flick);
+            }
+            return { b: clamp01(1 - e.sev * env * flick), e };
+        }
 
-            // Clear canvas
-            ctx.clearRect(0, 0, width, height);
+        // ---------- drawing ----------
+        function draw(nowMs) {
+            if (!W) return;
+            const d = new Date();
+            if (!schedule || schedule.key !== d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) schedule = buildSchedule(d);
+            const s = secondsOfDay(d);
+            const { b } = brightness(s, reduceMotion.matches);
 
-            // Draw sun glow
-            const gradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunSize * 2);
-            gradient.addColorStop(0, period.colors.sun + '40');
-            gradient.addColorStop(0.5, period.colors.sun + '10');
-            gradient.addColorStop(1, 'transparent');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, width, height);
+            const day = s >= 21600 && s < 64800;
+            let sx, sy, alt, nightMarker = null;
+            const fs = Math.max(11, Math.min(15, W / 70));
+            if (day) {
+                const th = (s - 21600) / 43200 * Math.PI;
+                sx = cx - Math.cos(th) * Ax;
+                sy = horizon - Math.sin(th) * Ay;
+                alt = Math.sin(th);
+            } else {
+                const p = ((s - 64800 + 86400) % 86400) / 43200; // 0 at dusk, 1 at dawn
+                sx = cx + Math.cos(Math.PI * p) * Ax;
+                sy = horizon + R * 1.2;
+                alt = -Math.sin(Math.PI * p);
+            }
+            const lit = clamp01(day ? 0.35 + 0.65 * Math.sqrt(alt) : 0.3 * (1 + alt * 1.0) ** 3) * (0.25 + 0.75 * b);
 
-            // Draw sun body
-            const sunGradient = ctx.createRadialGradient(sunX, sunY, sunSize * 0.3, sunX, sunY, sunSize);
-            sunGradient.addColorStop(0, '#ffe4d0');
-            sunGradient.addColorStop(0.4, period.colors.sun);
-            sunGradient.addColorStop(1, period.colors.sun + 'aa');
-            ctx.fillStyle = sunGradient;
-            ctx.beginPath();
-            ctx.arc(sunX, sunY, sunSize, 0, Math.PI * 2);
-            ctx.fill();
+            // sky
+            const nightTop = [3, 5, 14], dayTop = [14, 26, 64];
+            const nightLow = [7, 10, 26], dayLow = [34, 38, 86];
+            const haze = [92, 26, 34];
+            const lowT = day ? (1 - alt) ** 2 : clamp01(1 + alt * 1.6);
+            const top = mix(nightTop, dayTop, lit);
+            let low = mix(nightLow, dayLow, lit);
+            low = mix(low, haze, lowT * 0.55 * (0.3 + 0.7 * lit));
+            const g = ctx.createLinearGradient(0, 0, 0, horizon);
+            g.addColorStop(0, rgb(top));
+            g.addColorStop(1, rgb(low));
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, horizon + 2);
 
-            // Add texture/spots to sun
-            ctx.globalAlpha = 0.3;
-            for (let i = 0; i < 5; i++) {
-                const angle = (i / 5) * Math.PI * 2 + dayProgress * Math.PI;
-                const dist = sunSize * 0.4;
-                const spotX = sunX + Math.cos(angle) * dist;
-                const spotY = sunY + Math.sin(angle) * dist;
-                const spotSize = sunSize * (0.1 + Math.random() * 0.15);
-
-                ctx.fillStyle = '#00000040';
+            // stars: faint even by day under this sun
+            const starA = clamp01(1 - lit * 1.1) * 0.85 + 0.12;
+            const tw = reduceMotion.matches ? 0 : nowMs / 1000;
+            for (const st of stars) {
+                const dist = Math.hypot(st.x - sx, st.y - sy);
+                const near = day ? clamp01((dist - R * 1.2) / (R * 2)) : 1;
+                const a = st.a * starA * near * (0.75 + 0.25 * Math.sin(tw * 1.3 + st.p)) * (1.15 - 0.15 * b);
+                if (a < 0.02) continue;
+                ctx.fillStyle = `rgba(220,226,255,${a})`;
                 ctx.beginPath();
-                ctx.arc(spotX, spotY, spotSize, 0, Math.PI * 2);
+                ctx.arc(st.x, st.y, st.r, 0, 6.283);
                 ctx.fill();
             }
-            ctx.globalAlpha = 1;
-        }
 
-        // Play atmospheric sound
-        function playChime(hour) {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const now = audioContext.currentTime;
-
-            // Deep, resonant gong
-            const osc1 = audioContext.createOscillator();
-            const osc2 = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            const filter = audioContext.createBiquadFilter();
-
-            filter.type = 'lowpass';
-            filter.frequency.value = 300;
-            filter.Q.value = 5;
-
-            osc1.connect(filter);
-            osc2.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioContext.destination);
-
-            osc1.type = 'sine';
-            osc2.type = 'sine';
-            osc1.frequency.value = 80;
-            osc2.frequency.value = 120;
-
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 4);
-
-            osc1.start(now);
-            osc2.start(now);
-            osc1.stop(now + 4.5);
-            osc2.stop(now + 4.5);
-
-            // Crystalline overtone
-            setTimeout(() => {
-                const crystal = audioContext.createOscillator();
-                const crystalGain = audioContext.createGain();
-                const crystalFilter = audioContext.createBiquadFilter();
-
-                crystalFilter.type = 'bandpass';
-                crystalFilter.frequency.value = 2000;
-                crystalFilter.Q.value = 10;
-
-                crystal.connect(crystalFilter);
-                crystalFilter.connect(crystalGain);
-                crystalGain.connect(audioContext.destination);
-
-                crystal.type = 'sine';
-                crystal.frequency.setValueAtTime(1760, now + 0.5);
-                crystal.frequency.exponentialRampToValueAtTime(880, now + 3);
-
-                crystalGain.gain.setValueAtTime(0, now + 0.5);
-                crystalGain.gain.linearRampToValueAtTime(0.15, now + 0.6);
-                crystalGain.gain.exponentialRampToValueAtTime(0.01, now + 3);
-
-                crystal.start(now + 0.5);
-                crystal.stop(now + 3.5);
-            }, 0);
-        }
-
-        // Update display
-        function updateClock() {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
-
-            // Update time
-            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
-
-            // Update date
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const dayName = days[now.getDay()];
-            const monthName = months[now.getMonth()];
-            const date = now.getDate();
-            const year = now.getFullYear();
-
-            const suffix = date === 1 || date === 21 || date === 31 ? 'st' :
-                          date === 2 || date === 22 ? 'nd' :
-                          date === 3 || date === 23 ? 'rd' : 'th';
-
-            dateEl.textContent = `${dayName}, the ${date}${suffix} of ${monthName}, ${year}`;
-
-            // Update period
-            const period = getCurrentPeriod(hour);
-            periodNameEl.textContent = period.name;
-            periodDescEl.textContent = period.desc;
-
-            // Update background
-            document.body.style.background = `linear-gradient(to bottom, ${period.colors.sky1}, ${period.colors.sky2})`;
-
-            // Draw sun
-            drawSun(hour, minute, second);
-
-            // Animate particles
-            animateParticles();
-
-            // Play chime on hour change
-            if (hour !== lastHour && lastHour !== -1) {
-                playChime(hour);
+            // the sun's path, with a dot for every hour
+            ctx.save();
+            ctx.setLineDash([2, 7]);
+            ctx.strokeStyle = 'rgba(170,180,220,0.22)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(cx, horizon, Ax, Ay, 0, Math.PI, 2 * Math.PI);
+            ctx.stroke();
+            ctx.restore();
+            for (let h = 6; h <= 18; h++) {
+                const th = (h - 6) / 12 * Math.PI;
+                const px = cx - Math.cos(th) * Ax, py = horizon - Math.sin(th) * Ay;
+                const major = h % 3 === 0;
+                ctx.fillStyle = major ? 'rgba(190,198,232,0.55)' : 'rgba(170,180,220,0.3)';
+                ctx.beginPath();
+                ctx.arc(px, py, major ? 2.2 : 1.4, 0, 6.283);
+                ctx.fill();
             }
-            lastHour = hour;
+
+            if (day) {
+                // light of the sun on the sky
+                const glowR = R * 4.2;
+                const gl = ctx.createRadialGradient(sx, sy, R * 0.8, sx, sy, glowR);
+                gl.addColorStop(0, `rgba(170,40,40,${0.42 * b})`);
+                gl.addColorStop(0.35, `rgba(120,28,44,${0.18 * b})`);
+                gl.addColorStop(1, 'rgba(60,20,50,0)');
+                ctx.fillStyle = gl;
+                ctx.fillRect(0, 0, W, horizon);
+                drawSun(sx, sy, R, b, s);
+            } else {
+                // under the earth, the sun's glow shows where it lies
+                const strength = clamp01((1 + alt) ** 2.2);
+                const gx = sx;
+                const eg = ctx.createRadialGradient(gx, horizon, 0, gx, horizon, R * 4);
+                eg.addColorStop(0, `rgba(150,36,36,${(0.08 + 0.5 * strength) * (0.3 + 0.7 * b)})`);
+                eg.addColorStop(1, 'rgba(60,15,30,0)');
+                ctx.fillStyle = eg;
+                ctx.fillRect(0, 0, W, horizon);
+                nightMarker = gx;
+                if (strength > 0.85) drawSun(sx, horizon + R * (1 - (strength - 0.85) / 0.15 * 0.25), R, b, s);
+            }
+
+            // ground and ruins, lit along their edge by the sun
+            ctx.fillStyle = '#05060b';
+            ctx.beginPath();
+            ctx.moveTo(-10, H + 10);
+            ctx.lineTo(-10, horizon);
+            for (const [x, y] of skyline) ctx.lineTo(x, y);
+            ctx.lineTo(W + 20, horizon);
+            ctx.lineTo(W + 20, H + 10);
+            ctx.closePath();
+            ctx.fill();
+            const rim = 0.08 + 0.35 * lit;
+            const rg = ctx.createLinearGradient(0, horizon - 4, 0, horizon + 60);
+            rg.addColorStop(0, `rgba(120,30,34,${rim * 0.5})`);
+            rg.addColorStop(1, 'rgba(5,6,11,0)');
+            ctx.fillStyle = rg;
+            ctx.fillRect(0, horizon, W, 60);
+            ctx.strokeStyle = `rgba(200,70,60,${rim})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-10, horizon);
+            for (const [x, y] of skyline) ctx.lineTo(x, y);
+            ctx.lineTo(W + 20, horizon);
+            ctx.stroke();
+
+            // hour labels last, with a dark halo, so the disc never hides them
+            ctx.font = `600 ${fs}px Cinzel, serif`;
+            ctx.textBaseline = 'middle';
+            ctx.lineJoin = 'round';
+            for (let h = 6; h <= 18; h += 3) {
+                const th = (h - 6) / 12 * Math.PI;
+                const label = String(h).padStart(2, '0') + ':00';
+                let lx, ly;
+                if (h === 6 || h === 18) {
+                    ly = horizon - fs * 2.2;
+                    ctx.textAlign = h === 6 ? 'left' : 'right';
+                    lx = h === 6 ? 10 : W - 10;
+                } else {
+                    // set outside the sun's track
+                    const ox = -Math.cos(th) * (Ax + R + fs * 1.4), oy = -Math.sin(th) * (Ay + R + fs * 1.1);
+                    lx = Math.max(30, Math.min(W - 30, cx + ox));
+                    ly = Math.max(fs, horizon + oy);
+                    ctx.textAlign = 'center';
+                }
+                ctx.strokeStyle = 'rgba(4,6,16,0.75)';
+                ctx.lineWidth = 4;
+                ctx.strokeText(label, lx, ly);
+                ctx.fillStyle = 'rgba(200,208,238,0.85)';
+                ctx.fillText(label, lx, ly);
+            }
+
+            if (nightMarker !== null) {
+                const gx = nightMarker;
+                // a marker on the rim: the sun's place beneath the earth
+                ctx.fillStyle = `rgba(224,101,79,${0.55 + 0.35 * b})`;
+                ctx.beginPath();
+                ctx.moveTo(gx, horizon - 3);
+                ctx.lineTo(gx - 6, horizon - 13);
+                ctx.lineTo(gx + 6, horizon - 13);
+                ctx.closePath();
+                ctx.fill();
+                ctx.font = `italic 500 ${fs + 2}px 'Cormorant Garamond', serif`;
+                ctx.textAlign = gx < 90 ? 'left' : gx > W - 90 ? 'right' : 'center';
+                ctx.fillStyle = 'rgba(224,170,150,0.85)';
+                ctx.fillText('the sun, beneath', Math.max(8, Math.min(W - 8, gx)), horizon - 13 - fs * 3.8);
+            }
+
+            // the whole world dims a little with the sun
+            if (b < 1) {
+                ctx.fillStyle = `rgba(0,0,6,${(1 - b) * 0.35})`;
+                ctx.fillRect(0, 0, W, horizon);
+            }
         }
 
-        // Initialize
-        createParticles();
-        updateClock();
-        setInterval(updateClock, 1000);
+        function drawSun(x, y, r, b, s) {
+            ctx.save();
+            // corona
+            const co = ctx.createRadialGradient(x, y, r * 0.9, x, y, r * 1.6);
+            co.addColorStop(0, `rgba(190,50,40,${0.35 * b})`);
+            co.addColorStop(1, 'rgba(120,20,30,0)');
+            ctx.fillStyle = co;
+            ctx.beginPath();
+            ctx.arc(x, y, r * 1.6, 0, 6.283);
+            ctx.fill();
+
+            // disc, limb-darkened, never bright
+            const core = mix([60, 10, 16], [178, 48, 36], b);
+            const mid = mix([40, 6, 12], [138, 26, 30], b);
+            const limb = mix([22, 4, 10], [78, 12, 22], b);
+            const dg = ctx.createRadialGradient(x - r * 0.15, y - r * 0.15, r * 0.05, x, y, r);
+            dg.addColorStop(0, rgb(core));
+            dg.addColorStop(0.6, rgb(mid));
+            dg.addColorStop(1, rgb(limb));
+            ctx.fillStyle = dg;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 6.283);
+            ctx.fill();
+
+            // spots, turning slowly with the day
+            ctx.clip();
+            const rot = s / 86400 * 6.283 * 2;
+            const rnd = mulberry32(42);
+            for (let i = 0; i < 9; i++) {
+                const a0 = rnd() * 6.283 + rot * (0.6 + rnd() * 0.4);
+                const lat = (rnd() - 0.5) * 1.2;
+                const px = x + Math.cos(a0) * r * 0.85;
+                const py = y + lat * r;
+                const vis = Math.sin(a0 + 1.57);
+                const sr = r * (0.05 + rnd() * 0.11);
+                const sg = ctx.createRadialGradient(px, py, 0, px, py, sr);
+                sg.addColorStop(0, `rgba(24,3,8,${0.5 + 0.2 * Math.abs(vis)})`);
+                sg.addColorStop(0.55, 'rgba(40,6,12,0.35)');
+                sg.addColorStop(1, 'rgba(40,6,12,0)');
+                ctx.fillStyle = sg;
+                ctx.beginPath();
+                ctx.ellipse(px, py, sr * (0.45 + 0.55 * Math.abs(Math.sin(a0))), sr, 0, 0, 6.283);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // ---------- text, once a second ----------
+        let lastFalterKey = null;
+        function hm(t) {
+            const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60);
+            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+
+        function phaseText(s) {
+            const h = s / 3600;
+            if (h >= 6 && h < 6.5) return 'The sun drags itself over the eastern rim';
+            if (h >= 6.5 && h < 9) return 'The sun hangs low in the east';
+            if (h >= 9 && h < 11.5) return 'The sun climbs, slowly, as if it were tired';
+            if (h >= 11.5 && h < 12.5) return 'The sun is at its height, such as it is';
+            if (h >= 12.5 && h < 15) return 'The sun begins its long decline';
+            if (h >= 15 && h < 17.5) return 'The sun leans toward the west';
+            if (h >= 17.5 && h < 18) return 'The sun sinks into the western ruins';
+            if (h >= 18 && h < 21) return 'The sun is down; its glow lingers in the west';
+            if (h >= 21 || h < 3) return 'The sun is under the earth. Will it come back?';
+            return 'A first glow in the east, so the sun still lives';
+        }
+
+        function updateText() {
+            const d = new Date();
+            if (!schedule || schedule.key !== d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) schedule = buildSchedule(d);
+            const s = secondsOfDay(d);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            const ss = String(d.getSeconds()).padStart(2, '0');
+            timeEl.innerHTML = `${hh}:${mm}<span class="sec">${ss}</span>`;
+            dateEl.textContent = `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+
+            const past = schedule.ev.filter(e => e.t <= s);
+            const n = past.length;
+            const cur = currentFalter(s);
+
+            if (cur) {
+                phaseEl.textContent = cur.grave ? 'The sun gutters almost to nothing…' : 'The sun falters…';
+                phaseEl.classList.add('faltering');
+                if (lastFalterKey !== cur.t) {
+                    lastFalterKey = cur.t;
+                    announceEl.textContent = cur.grave ? 'The sun has nearly gone out.' : 'The sun is faltering.';
+                }
+            } else {
+                phaseEl.textContent = phaseText(s);
+                phaseEl.classList.remove('faltering');
+            }
+
+            countEl.innerHTML = n === 0
+                ? 'The sun has not yet faltered today'
+                : `The sun has faltered <strong>${n}</strong> ${n === 1 ? 'time' : 'times'} since midnight`;
+
+            // tally marks, in fives
+            const graveIdx = past.findIndex(e => e.grave);
+            const key = n + ':' + graveIdx;
+            if (tallyEl.dataset.key !== key) {
+                tallyEl.dataset.key = key;
+                let html = '';
+                for (let i = 0; i < n; i += 5) {
+                    const k = Math.min(5, n - i);
+                    let marks = '';
+                    for (let j = 0; j < Math.min(k, 4); j++) marks += `<span class="m${graveIdx === i + j ? ' grave' : ''}"></span>`;
+                    html += `<span class="grp${k === 5 ? ' full' : ''}${k === 5 && graveIdx === i + 4 ? ' grave' : ''}">${marks}</span>`;
+                }
+                tallyEl.innerHTML = html;
+            }
+
+            if (n === 0) {
+                lastEl.textContent = 'It may come at any moment.';
+            } else {
+                const last = past[n - 1];
+                const ago = Math.floor((s - last.t) / 60);
+                let txt = cur ? `Faltering now, since ${hm(last.t)}.` : `Last at ${hm(last.t)}, ${ago < 1 ? 'moments' : ago === 1 ? 'a minute' : ago + ' minutes'} ago.`;
+                const grave = past.find(e => e.grave);
+                if (grave && !(cur && cur.grave)) txt += ` It all but went out at ${hm(grave.t)}.`;
+                lastEl.textContent = txt;
+            }
+
+            const prevTop = horizon;
+            const top = Math.round(panel.getBoundingClientRect().top);
+            if (Math.abs(top - prevTop) > 1 && top >= H * 0.4) resize();
+            if (reduceMotion.matches) draw(performance.now());
+        }
+
+        function loop(t) {
+            draw(t);
+            if (!reduceMotion.matches) requestAnimationFrame(loop);
+        }
+
+        reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(loop); });
+        window.addEventListener('resize', resize);
+        updateText();
+        resize();
+        setInterval(updateText, 1000);
+        requestAnimationFrame(loop);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
     </script>
 </body>
 

@@ -1,556 +1,689 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Cutz Chronometer</title>
+    <meta name="description" content="After Jack Vance's The Eyes of the Overworld: Cugel, sent north to Cutz by Iucounu with Firx clamped to his liver, walks the long road back south once a day.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Della+Respira&family=Metamorphous&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-1: #3d2f2f;
+            --bg-2: #1f1616;
+            --panel: #3f3434;
+            --panel-2: #342a2a;
+            --well: #241b1b;
+            --brass: #d4a574;
+            --brass-hi: #ecc796;
+            --brass-dim: #8b7355;
+            --ink: #e6d6b8;
+            --ink-soft: #c9b896;
+            --ink-faint: #a8977a;
+            --rule: #5a4a3a;
+            --puce: #9a6a86;
+            --sea: #3a4650;
+            --sea-line: #6f8796;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { background: var(--bg-2); }
 
         body {
             min-height: 100vh;
-            background: linear-gradient(135deg, #3d2f2f 0%, #2a1f1f 50%, #1f1616 100%);
-            font-family: 'Della Respira', serif;
+            min-height: 100dvh;
+            background: linear-gradient(160deg, var(--bg-1) 0%, #2a1f1f 50%, var(--bg-2) 100%);
+            background-color: var(--bg-2);
+            font-family: 'Della Respira', Georgia, serif;
+            color: var(--ink-soft);
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
-            color: #c9b896;
-            overflow: hidden;
-            position: relative;
+            padding: clamp(14px, 3vw, 40px);
+            overflow-x: hidden;
         }
 
         body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background:
-                radial-gradient(ellipse at 20% 30%, rgba(138, 90, 123, 0.1), transparent 50%),
+                radial-gradient(ellipse at 20% 30%, rgba(154, 106, 134, 0.12), transparent 50%),
                 radial-gradient(ellipse at 80% 70%, rgba(166, 124, 82, 0.1), transparent 50%);
             pointer-events: none;
         }
 
-        .chronometer-frame {
+        .frame {
             position: relative;
-            max-width: 1000px;
-            width: 100%;
-            background: linear-gradient(135deg, #4a3f3f 0%, #3d3333 100%);
-            border: 4px solid #8b7355;
-            border-radius: 20px;
-            padding: 3rem 2rem;
+            width: min(100%, 1120px);
+            background: linear-gradient(135deg, #4a3f3f 0%, var(--panel-2) 100%);
+            border: 3px solid var(--brass-dim);
+            border-radius: clamp(10px, 2vw, 18px);
+            padding: clamp(18px, 3.2vw, 40px);
             box-shadow:
-                0 30px 80px rgba(0, 0, 0, 0.9),
-                inset 0 0 60px rgba(0, 0, 0, 0.5),
-                0 0 0 12px #2a2222,
-                0 0 0 14px #6b5a45;
+                0 30px 80px rgba(0, 0, 0, 0.85),
+                inset 0 0 60px rgba(0, 0, 0, 0.45),
+                0 0 0 clamp(5px, 1vw, 10px) #2a2222,
+                0 0 0 clamp(6px, 1.15vw, 12px) #6b5a45;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+            gap: clamp(18px, 3vw, 40px);
+            align-items: stretch;
         }
 
-        .brass-ornament {
+        .rivet {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            background: radial-gradient(circle, #d4a574, #8b6f47);
+            width: clamp(11px, 1.5vw, 18px);
+            height: clamp(11px, 1.5vw, 18px);
+            background: radial-gradient(circle at 35% 35%, #e8bd8a, #8b6f47 70%);
             border-radius: 50%;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.6);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.6);
+        }
+        .rivet.tl { top: 5px; left: 5px; }
+        .rivet.tr { top: 5px; right: 5px; }
+        .rivet.bl { bottom: 5px; left: 5px; }
+        .rivet.br { bottom: 5px; right: 5px; }
+
+        /* ---------- left column: the reading ---------- */
+        .reading {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 1.6vh, 18px);
+            min-width: 0;
+            padding: clamp(4px, 1vw, 10px) 0 0 clamp(4px, 1vw, 12px);
         }
 
-        .brass-ornament.top-left { top: -20px; left: -20px; }
-        .brass-ornament.top-right { top: -20px; right: -20px; }
-        .brass-ornament.bottom-left { bottom: -20px; left: -20px; }
-        .brass-ornament.bottom-right { bottom: -20px; right: -20px; }
-
-        .brass-ornament::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
-            background: #2a2222;
-            border-radius: 50%;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
-        }
-
-        .title {
+        h1 {
             font-family: 'Metamorphous', serif;
-            font-size: clamp(2rem, 5vw, 3rem);
-            text-align: center;
-            color: #d4a574;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 10px rgba(212, 165, 116, 0.5);
-            letter-spacing: 0.15em;
+            font-weight: 400;
+            font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+            line-height: 1.1;
+            color: var(--brass);
+            letter-spacing: 0.06em;
+            text-shadow: 0 2px 10px rgba(212, 165, 116, 0.35);
         }
 
         .subtitle {
-            text-align: center;
             font-style: italic;
-            color: #a68b6a;
-            margin-bottom: 2rem;
-            font-size: clamp(0.85rem, 2vw, 1rem);
+            color: var(--ink-soft);
+            font-size: clamp(0.92rem, 1.6vw, 1.05rem);
+            line-height: 1.5;
+            margin-top: 0.35rem;
         }
 
-        .main-display {
+        .time-row {
             display: flex;
-            flex-direction: column;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.2rem 1rem;
+            border-top: 1px solid var(--rule);
+            border-bottom: 1px solid var(--rule);
+            padding: clamp(8px, 1.5vh, 14px) 0;
         }
 
-        .dials-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .dial {
-            background: radial-gradient(circle, #2a2222 0%, #1a1414 100%);
-            border: 3px solid #6b5a45;
-            border-radius: 50%;
-            aspect-ratio: 1;
-            position: relative;
-            padding: 1.5rem;
-            box-shadow:
-                inset 0 0 30px rgba(0, 0, 0, 0.8),
-                0 5px 20px rgba(0, 0, 0, 0.6);
-        }
-
-        .dial::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            height: 90%;
-            border: 2px solid #4a3d2f;
-            border-radius: 50%;
-            opacity: 0.3;
-        }
-
-        .dial-label {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(0.75rem, 1.5vw, 0.9rem);
-            text-align: center;
-            color: #8b7355;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.5rem;
-        }
-
-        .dial-value {
+        .time {
             font-family: 'Metamorphous', serif;
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            text-align: center;
-            color: #d4a574;
-            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
-            position: relative;
-            z-index: 10;
+            font-size: clamp(2.6rem, 6vw, 3.8rem);
+            line-height: 1;
+            color: var(--brass-hi);
+            text-shadow: 0 0 16px rgba(212, 165, 116, 0.35);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+        }
+        .time .sec {
+            font-size: 0.45em;
+            color: var(--brass);
+            margin-left: 0.15em;
         }
 
-        .dial-hand {
-            position: absolute;
-            bottom: 50%;
-            left: 50%;
-            width: 3px;
-            height: 35%;
-            background: linear-gradient(to bottom, #d4a574, #8b6f47);
-            transform-origin: bottom center;
-            border-radius: 2px 2px 0 0;
-            box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
-            transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
-        }
-
-        .dial-hand::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 12px;
-            height: 12px;
-            background: radial-gradient(circle, #d4a574, #8b6f47);
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(212, 165, 116, 0.6);
-        }
-
-        .gears-container {
-            position: relative;
-            height: 200px;
-            margin: 2rem 0;
-            overflow: hidden;
-            border-top: 2px solid #4a3d2f;
-            border-bottom: 2px solid #4a3d2f;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .gear {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            opacity: 0.3;
-        }
-
-        .gear svg {
-            fill: none;
-            stroke: #8b7355;
-            stroke-width: 2;
-            filter: drop-shadow(0 0 5px rgba(139, 115, 85, 0.5));
-        }
-
-        .nomenclature {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 2px solid #4a3d2f;
-        }
-
-        .nomenclature-item {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 1rem;
-            border-left: 3px solid #6b5a45;
-            border-radius: 4px;
-        }
-
-        .nomenclature-term {
+        .leagues {
             font-family: 'Cinzel', serif;
-            color: #d4a574;
-            font-size: 0.95rem;
-            margin-bottom: 0.25rem;
-            letter-spacing: 0.05em;
-        }
-
-        .nomenclature-definition {
-            font-size: 0.85rem;
-            color: #8b7355;
-            font-style: italic;
+            font-size: clamp(0.8rem, 1.4vw, 0.95rem);
+            color: var(--ink-soft);
+            letter-spacing: 0.06em;
             line-height: 1.5;
         }
+        .leagues b { color: var(--brass); font-weight: 600; }
 
-        .current-moment {
-            text-align: center;
+        .stage-kicker {
             font-family: 'Cinzel', serif;
-            font-size: clamp(1rem, 2vw, 1.3rem);
-            color: #a68b6a;
-            margin: 1.5rem 0;
-            padding: 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #4a3d2f;
+            font-size: clamp(0.72rem, 1.2vw, 0.8rem);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+        }
+
+        .stage-name {
+            font-family: 'Metamorphous', serif;
+            font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+            color: var(--brass);
+            line-height: 1.2;
+            margin-top: 0.2rem;
+        }
+
+        .stage-text {
+            font-size: clamp(0.98rem, 1.6vw, 1.08rem);
+            line-height: 1.6;
+            color: var(--ink);
+            margin-top: 0.5rem;
+            max-width: 38em;
+        }
+
+        .firx {
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-start;
+            background: rgba(0, 0, 0, 0.25);
+            border-left: 3px solid var(--puce);
+            border-radius: 4px;
+            padding: 0.6rem 0.8rem;
+            font-size: clamp(0.9rem, 1.4vw, 0.98rem);
+            line-height: 1.5;
+            color: var(--ink-soft);
+        }
+        .firx .tag {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            color: #c99bb7;
+            letter-spacing: 0.1em;
+            font-size: 0.82em;
+            padding-top: 0.12em;
+            flex: 0 0 auto;
+        }
+
+        /* the patent dials, kept as the vendor's sales pitch */
+        .patent {
+            border: 1px solid var(--rule);
             border-radius: 8px;
+            background: rgba(0, 0, 0, 0.22);
+            padding: 0.7rem 0.8rem 0.75rem;
+        }
+        .patent-head {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.72rem, 1.2vw, 0.8rem);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 0.5rem;
+        }
+        .units {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.45rem;
+        }
+        .unit {
+            text-align: center;
+            background: radial-gradient(circle at 50% 35%, #2e2424, var(--well));
+            border: 2px solid #6b5a45;
+            border-radius: 14px;
+            padding: 0.3rem 0.2rem 0.35rem;
+            box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.7);
+        }
+        .unit .n {
+            font-family: 'Metamorphous', serif;
+            font-size: clamp(1.1rem, 2.2vw, 1.45rem);
+            color: var(--brass-hi);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.1;
+        }
+        .unit .l {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.6rem, 1vw, 0.7rem);
+            color: var(--ink-faint);
+            letter-spacing: 0.04em;
+            line-height: 1.15;
+        }
+        .patent-note {
+            font-style: italic;
+            font-size: clamp(0.8rem, 1.2vw, 0.88rem);
+            color: var(--ink-faint);
+            margin-top: 0.5rem;
+            line-height: 1.45;
         }
 
-        @keyframes rotate-cw {
-            from { transform: translateY(-50%) rotate(0deg); }
-            to { transform: translateY(-50%) rotate(360deg); }
+        .colophon {
+            margin-top: auto;
+            font-size: 0.8rem;
+            color: var(--ink-faint);
+            line-height: 1.5;
+        }
+        .colophon i { color: var(--ink-soft); }
+
+        /* ---------- right column: the map ---------- */
+        .map-wrap {
+            position: relative;
+            min-width: 0;
+            background:
+                radial-gradient(ellipse at 50% 40%, rgba(212, 165, 116, 0.07), transparent 70%),
+                linear-gradient(180deg, #2b2222, #221a1a);
+            border: 2px solid #6b5a45;
+            border-radius: 10px;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(6px, 1vw, 12px);
         }
 
-        @keyframes rotate-ccw {
-            from { transform: translateY(-50%) rotate(0deg); }
-            to { transform: translateY(-50%) rotate(-360deg); }
+        #map {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: calc(100vh - 110px);
+            max-height: calc(100dvh - 110px);
+            min-height: 420px;
         }
 
-        .gear.cw { animation: rotate-cw 20s linear infinite; }
-        .gear.ccw { animation: rotate-ccw 30s linear infinite; }
+        #map text { font-family: 'Cinzel', serif; }
+        .place { fill: var(--brass); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+        .region { fill: var(--ink-faint); font-size: 7.6px; letter-spacing: 0.12em; }
+        .region.here { fill: var(--brass-hi); }
+        .hour { fill: var(--ink-faint); font-size: 7.5px; }
+        .glyph { fill: none; stroke: #8f7a5e; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        .glyph.here { stroke: var(--brass); }
+        .road-ahead { fill: none; stroke: #6b5a45; stroke-width: 1.6; stroke-dasharray: 2 4; stroke-linecap: round; }
+        .road-done { fill: none; stroke: var(--brass); stroke-width: 2.2; stroke-linecap: round; }
+        .tick { stroke: #8f7a5e; stroke-width: 1; }
+        .tick.major { stroke: var(--brass); stroke-width: 1.4; }
 
-        @media (max-width: 768px) {
-            .chronometer-frame {
-                padding: 2rem 1.5rem;
-            }
+        .halo { fill: var(--brass); opacity: 0.25; transform-box: fill-box; transform-origin: center; animation: breathe 3.2s ease-in-out infinite; }
+        @keyframes breathe {
+            0%, 100% { transform: scale(0.8); opacity: 0.32; }
+            50% { transform: scale(1.35); opacity: 0.1; }
+        }
 
-            .gears-container {
-                height: 150px;
-            }
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .halo { animation: none; }
+        }
+
+        /* ---------- phone / narrow ---------- */
+        @media (max-width: 760px) {
+            body { align-items: flex-start; }
+            .frame { grid-template-columns: 1fr; }
+            .map-wrap { order: -1; }
+            .reading { padding: 0; }
+            #map { min-height: 0; max-height: 62vh; max-height: 62dvh; }
+            .time-row { padding: 8px 0; }
+        }
+        /* short desktop screens: keep the whole instrument on one screen */
+        @media (min-width: 761px) and (max-height: 920px) {
+            body { padding: 16px 20px; }
+            .frame { padding: 22px 26px; gap: 28px; }
+            .reading { gap: 10px; padding-top: 0; }
+            h1 { font-size: 2.1rem; }
+            .subtitle { font-size: 0.92rem; line-height: 1.4; }
+            .time { font-size: 3.2rem; }
+            .time-row { padding: 6px 0; }
+            .stage-name { font-size: 1.3rem; }
+            .stage-text { font-size: 0.98rem; line-height: 1.5; margin-top: 0.3rem; }
+            .firx { padding: 0.45rem 0.7rem; font-size: 0.9rem; }
+            .patent { padding: 0.5rem 0.7rem 0.55rem; }
+            .patent-head { margin-bottom: 0.35rem; }
+            .patent-note { margin-top: 0.35rem; font-size: 0.82rem; }
+            .colophon { font-size: 0.76rem; }
+            #map { max-height: calc(100vh - 116px); max-height: calc(100dvh - 116px); min-height: 0; }
         }
     </style>
 </head>
-
 <body>
-    <div class="chronometer-frame">
-        <div class="brass-ornament top-left"></div>
-        <div class="brass-ornament top-right"></div>
-        <div class="brass-ornament bottom-left"></div>
-        <div class="brass-ornament bottom-right"></div>
+    <main class="frame">
+        <span class="rivet tl" aria-hidden="true"></span>
+        <span class="rivet tr" aria-hidden="true"></span>
+        <span class="rivet bl" aria-hidden="true"></span>
+        <span class="rivet br" aria-hidden="true"></span>
 
-        <h1 class="title">The Cutz Chronometer</h1>
-        <div class="subtitle">A Horological Device of Uncommon Peculiarity</div>
+        <section class="reading">
+            <header>
+                <h1>The Cutz Chronometer</h1>
+                <p class="subtitle">Sent north to Cutz by Iucounu the Laughing Magician, with Firx clamped to his liver, Cugel the Clever walks the long road back south. This chronometer has him walk it once a day.</p>
+            </header>
 
-        <div class="current-moment" id="currentMoment">
-            <!-- Current time in Cutz units -->
-        </div>
+            <div class="time-row">
+                <div class="time" id="time" role="timer" aria-live="off"><span id="hm">--:--</span><span class="sec" id="sec">:--</span></div>
+                <div class="leagues" id="leagues">League <b>0</b> of 1,440</div>
+            </div>
+            <div class="sr-only" aria-live="polite" id="live"></div>
 
-        <div class="dials-container">
-            <div class="dial">
-                <div class="dial-label">Grand Chimes</div>
-                <div class="dial-value" id="chimes">0</div>
-                <div class="dial-hand" id="chimeHand"></div>
+            <div>
+                <div class="stage-kicker" id="kicker">Stage 1 of 9</div>
+                <div class="stage-name" id="stageName">&nbsp;</div>
+                <p class="stage-text" id="stageText">&nbsp;</p>
             </div>
 
-            <div class="dial">
-                <div class="dial-label">Lesser Bells</div>
-                <div class="dial-value" id="bells">0</div>
-                <div class="dial-hand" id="bellHand"></div>
+            <div class="firx">
+                <span class="tag">FIRX</span>
+                <span id="firxText">&nbsp;</span>
             </div>
 
-            <div class="dial">
-                <div class="dial-label">Sestinas</div>
-                <div class="dial-value" id="sestinas">0</div>
-                <div class="dial-hand" id="sestinaHand"></div>
-            </div>
-
-            <div class="dial">
-                <div class="dial-label">Jiffies</div>
-                <div class="dial-value" id="jiffies">0</div>
-                <div class="dial-hand" id="jiffyHand"></div>
-            </div>
-        </div>
-
-        <div class="gears-container">
-            <div class="gear cw" style="left: 10%; animation-duration: 25s;">
-                <svg width="120" height="120" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="45"/>
-                    <path d="M60,10 L65,20 L55,20 Z M110,60 L100,65 L100,55 Z M60,110 L55,100 L65,100 Z M10,60 L20,55 L20,65 Z"/>
-                    <path d="M85,25 L90,35 L80,32 Z M95,75 L88,80 L90,70 Z M35,95 L30,85 L40,88 Z M25,45 L32,40 L30,50 Z"/>
-                    <circle cx="60" cy="60" r="15"/>
-                </svg>
-            </div>
-            <div class="gear ccw" style="left: 35%; animation-duration: 18s;">
-                <svg width="80" height="80" viewBox="0 0 80 80">
-                    <circle cx="40" cy="40" r="30"/>
-                    <path d="M40,5 L44,13 L36,13 Z M75,40 L67,44 L67,36 Z M40,75 L36,67 L44,67 Z M5,40 L13,36 L13,44 Z"/>
-                    <circle cx="40" cy="40" r="10"/>
-                </svg>
-            </div>
-            <div class="gear cw" style="left: 55%; animation-duration: 35s;">
-                <svg width="100" height="100" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="38"/>
-                    <path d="M50,8 L54,16 L46,16 Z M92,50 L84,54 L84,46 Z M50,92 L46,84 L54,84 Z M8,50 L16,46 L16,54 Z"/>
-                    <path d="M73,20 L77,28 L69,26 Z M80,73 L74,77 L76,69 Z M27,80 L23,72 L31,74 Z M20,27 L26,23 L24,31 Z"/>
-                    <circle cx="50" cy="50" r="12"/>
-                </svg>
-            </div>
-            <div class="gear ccw" style="left: 75%; animation-duration: 22s;">
-                <svg width="90" height="90" viewBox="0 0 90 90">
-                    <circle cx="45" cy="45" r="33"/>
-                    <path d="M45,7 L49,15 L41,15 Z M83,45 L75,49 L75,41 Z M45,83 L41,75 L49,75 Z M7,45 L15,41 L15,49 Z"/>
-                    <circle cx="45" cy="45" r="11"/>
-                </svg>
-            </div>
-        </div>
-
-        <div class="nomenclature">
-            <div class="nomenclature-item">
-                <div class="nomenclature-term">Grand Chime</div>
-                <div class="nomenclature-definition">
-                    One twelfth of a diurnal rotation; equivalent to two conventional hours
+            <div class="patent">
+                <div class="patent-head">By Cugel's patent reckoning</div>
+                <div class="units" aria-label="The same time in the chronometer's invented units">
+                    <div class="unit"><div class="n" id="uChime">0</div><div class="l">Grand Chimes</div></div>
+                    <div class="unit"><div class="n" id="uBell">0</div><div class="l">Lesser Bells</div></div>
+                    <div class="unit"><div class="n" id="uSest">0</div><div class="l">Sestinas</div></div>
+                    <div class="unit"><div class="n" id="uJiffy">0</div><div class="l">Jiffies</div></div>
                 </div>
+                <p class="patent-note" id="pitch">&nbsp;</p>
             </div>
-            <div class="nomenclature-item">
-                <div class="nomenclature-term">Lesser Bell</div>
-                <div class="nomenclature-definition">
-                    One eighth of a Grand Chime; precisely fifteen conventional minutes
-                </div>
-            </div>
-            <div class="nomenclature-item">
-                <div class="nomenclature-term">Sestina</div>
-                <div class="nomenclature-definition">
-                    One sixth of a Lesser Bell; two and one-half minutes of vulgar reckoning
-                </div>
-            </div>
-            <div class="nomenclature-item">
-                <div class="nomenclature-term">Jiffy</div>
-                <div class="nomenclature-definition">
-                    One tenth of a Sestina; fifteen seconds by common measurement
-                </div>
-            </div>
+
+            <p class="colophon">After <i>The Eyes of the Overworld</i> (1966) by Jack Vance. The stages, the leagues and the patent units are this chronometer's own inventions; the book's road is longer and stranger.</p>
+        </section>
+
+        <div class="map-wrap">
+            <svg id="map" viewBox="0 0 300 460" role="img" aria-label="Map of the road from Cutz in the north to Almery in the south, with Cugel's position for the current time">
+                <defs>
+                    <pattern id="waves" width="18" height="8" patternUnits="userSpaceOnUse">
+                        <path d="M0 5 q4.5 -4 9 0 t9 0" fill="none" stroke="#6f8796" stroke-width="0.8" opacity="0.55"/>
+                    </pattern>
+                </defs>
+                <!-- northern sea -->
+                <path d="M0 0 H300 V30 C270 40 250 26 220 36 C190 46 170 30 140 38 C110 46 90 32 60 40 C35 46 15 36 0 42 Z" fill="#2f3a42"/>
+                <path d="M0 0 H300 V30 C270 40 250 26 220 36 C190 46 170 30 140 38 C110 46 90 32 60 40 C35 46 15 36 0 42 Z" fill="url(#waves)"/>
+                <path d="M300 30 C270 40 250 26 220 36 C190 46 170 30 140 38 C110 46 90 32 60 40 C35 46 15 36 0 42" fill="none" stroke="#8f7a5e" stroke-width="1"/>
+                <text x="150" y="20" text-anchor="middle" class="region" style="fill:#9fb3c0">THE NORTHERN SEA</text>
+
+                <g id="terrain"></g>
+                <g id="ticks"></g>
+                <path id="roadAhead" class="road-ahead"/>
+                <path id="roadDone" class="road-done"/>
+                <g id="places"></g>
+
+                <!-- compass -->
+                <g transform="translate(272 92)" aria-hidden="true">
+                    <circle r="11" fill="none" stroke="#6b5a45" stroke-width="0.8"/>
+                    <path d="M0 -14 L3 0 L0 4 L-3 0 Z" fill="#d4a574"/>
+                    <path d="M0 14 L3 0 L0 -4 L-3 0 Z" fill="#6b5a45"/>
+                    <text y="-17" text-anchor="middle" class="hour" style="fill:#d4a574">N</text>
+                </g>
+
+                <g id="cugel">
+                    <circle class="halo" r="9"/>
+                    <circle r="4.6" fill="#ecc796" stroke="#2a1f1f" stroke-width="1.4"/>
+                    <!-- a jaunty hat, for Cugel -->
+                    <path d="M-4 -5.5 L0 -15 L5 -6 Z" fill="#9a6a86" stroke="#2a1f1f" stroke-width="0.8"/>
+                </g>
+                <text id="cugelLabel" class="place" style="font-size:9.5px">CUGEL</text>
+            </svg>
         </div>
-    </div>
+    </main>
 
     <script>
-        // Cutz time system:
-        // 1 day = 12 Grand Chimes (2 hours each)
-        // 1 Grand Chime = 8 Lesser Bells (15 minutes each)
-        // 1 Lesser Bell = 6 Sestinas (2.5 minutes each)
-        // 1 Sestina = 10 Jiffies (15 seconds each)
+        (function () {
+            const SVGNS = 'http://www.w3.org/2000/svg';
+            const DAY = 86400;
 
-        const chimeEl = document.getElementById('chimes');
-        const bellEl = document.getElementById('bells');
-        const sestinaEl = document.getElementById('sestinas');
-        const jiffyEl = document.getElementById('jiffies');
-        const currentMomentEl = document.getElementById('currentMoment');
+            // The road from Cutz (north, top) to Almery (south, bottom).
+            // Hand-placed waypoints, smoothed into one path.
+            const WAY = [
+                [150, 58], [112, 78], [78, 104], [92, 132], [150, 146], [206, 162],
+                [222, 192], [190, 216], [122, 228], [74, 252], [72, 284], [118, 302],
+                [186, 310], [226, 330], [214, 358], [160, 372], [100, 384], [92, 408], [148, 428]
+            ];
 
-        const chimeHandEl = document.getElementById('chimeHand');
-        const bellHandEl = document.getElementById('bellHand');
-        const sestinaHandEl = document.getElementById('sestinaHand');
-        const jiffyHandEl = document.getElementById('jiffyHand');
+            function smoothPath(pts) {
+                let d = `M${pts[0][0]} ${pts[0][1]}`;
+                for (let i = 0; i < pts.length - 1; i++) {
+                    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+                    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+                    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+                    d += ` C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0]} ${p2[1]}`;
+                }
+                return d;
+            }
 
-        let audioContext = null;
-        let lastChime = -1;
+            const roadD = smoothPath(WAY);
+            const roadAhead = document.getElementById('roadAhead');
+            const roadDone = document.getElementById('roadDone');
+            roadAhead.setAttribute('d', roadD);
+            roadDone.setAttribute('d', roadD);
+            const LEN = roadAhead.getTotalLength();
 
-        // Convert standard time to Cutz time
-        function getCutzTime() {
-            const now = new Date();
-            const totalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            function at(f) {
+                const p = roadAhead.getPointAtLength(Math.max(0, Math.min(1, f)) * LEN);
+                return [p.x, p.y];
+            }
+            function normalAt(f) {
+                const a = at(Math.max(0, f - 0.004)), b = at(Math.min(1, f + 0.004));
+                const dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1;
+                return [-dy / m, dx / m];
+            }
 
-            // Calculate Cutz units
-            const secondsPerChime = 7200; // 2 hours
-            const secondsPerBell = 900; // 15 minutes
-            const secondsPerSestina = 150; // 2.5 minutes
-            const secondsPerJiffy = 15; // 15 seconds
+            // Nine stages of the day's walk. Start and end hours are local clock hours.
+            // Text is this clock's own prose, not Vance's.
+            const STAGES = [
+                { from: 0, to: 2, name: 'The shore at Cutz', region: '', glyph: 'shore', pos: [58, 64],
+                  text: 'Midnight finds Cugel set down in the cold north, where Iucounu\'s spell has deposited him, with nothing but his wits, his cloak and a grievance. The book ends with him on that same northern shore, so every day here begins there too.',
+                  firx: 'Firx, a creature out of the star Achernar, has newly settled on Cugel\'s liver and is already restless.' },
+                { from: 2, to: 5, name: 'Smolod and the violet cusps', region: 'SMOLOD', glyph: 'huts', pos: [166, 102],
+                  text: 'In a village of hovels the folk wear violet cusps over their eyes and see themselves living in palaces. Iucounu owns one such cusp and wants its mate. Cugel does not intend to leave without it.',
+                  firx: 'Each moment of dawdling is answered by a sharp reminder from within.' },
+                { from: 5, to: 7, name: 'The northern wastes', region: 'THE WASTES', glyph: 'moor', pos: [246, 126], lab: 18,
+                  text: 'Cusp in hand, Cugel turns his face south. The country is bleak and the red sun climbs late; he walks briskly, partly from zeal and partly because he has no choice.',
+                  firx: 'Southward, Firx is quiet. Any other direction, and it is not.' },
+                { from: 7, to: 10, name: 'Over the mountains', region: 'THE PASSES', glyph: 'mountains', pos: [128, 186], lab: 20,
+                  text: 'The road climbs into hard country. Cugel considers every stranger he meets as either an obstacle or an opportunity, and usually as both.',
+                  firx: 'A rest on a mountain ledge earns Cugel a twinge that hurries him down the far side.' },
+                { from: 10, to: 13, name: 'Forest roads', region: 'THE FORESTS', glyph: 'forest', pos: [126, 260], lab: 22,
+                  text: 'Around noon the road runs under old trees, where the Dying Earth keeps many hungry things. Cugel keeps to the path, his sword loose, and congratulates himself on his own prudence.',
+                  firx: 'Firx disapproves of detours, however wise.' },
+                { from: 13, to: 16, name: 'The desert crossing', region: 'THE DESERT', glyph: 'desert', pos: [46, 326],
+                  text: 'Through the afternoon the land empties out into sand and glare. Cugel falls in with whatever company is going his way, and studies their purses with friendly interest.',
+                  firx: 'Thirst Cugel can bear. The creature on his liver he cannot reason with.' },
+                { from: 16, to: 18, name: 'Across the water', region: 'THE SEA', glyph: 'water', pos: [168, 341], lab: 2.5,
+                  text: 'A stretch of sea lies between Cugel and the south. He finds a way over it, at some cost, most of it to other people.',
+                  firx: 'Firx is indifferent to boats, so long as they point the right way.' },
+                { from: 18, to: 22, name: 'The southern lands', region: 'THE SOUTH', glyph: 'hills', pos: [222, 394], lab: 18,
+                  text: 'In the evening the country softens and the names start to sound familiar. Cugel begins to rehearse what he will say to Iucounu, and, more pleasantly, what he will do to him.',
+                  firx: 'Sensing the end of the road, Firx grows almost gentle.' },
+                { from: 22, to: 24, name: 'Almery, and the manse of Iucounu', region: 'ALMERY', glyph: 'manse', pos: [44, 412],
+                  text: 'Late at night Cugel stands at last before the Laughing Magician\'s manse, the violet cusp safe in his pouch, and a scheme for revenge fully formed. At midnight the road begins again in the north.',
+                  firx: 'Firx can feel its errand nearly done.' }
+            ];
 
-            const chimes = Math.floor(totalSeconds / secondsPerChime);
-            const remainingAfterChimes = totalSeconds % secondsPerChime;
+            // Patent units: the vendor's own reckoning (Cugel's conceit, not the book's).
+            // 1 day = 12 Grand Chimes; 1 Chime = 8 Lesser Bells; 1 Bell = 6 Sestinas; 1 Sestina = 10 Jiffies.
+            const PITCHES = [
+                'Offered to the discerning traveller at forty terces, a price the vendor calls ruinous to himself.',
+                'Guaranteed by the vendor, who will be well beyond the next hill should it ever fail.',
+                'Reckoned to the Jiffy, which the vendor swears is the unit used in the finest courts of Almery.',
+                'Brass throughout, the vendor insists, all the way to the core.',
+                'A previous owner, the vendor admits, parted with it most reluctantly, and in some haste.',
+                'Accepts no responsibility for curses, liver complaints, or magicians.'
+            ];
 
-            const bells = Math.floor(remainingAfterChimes / secondsPerBell);
-            const remainingAfterBells = remainingAfterChimes % secondsPerBell;
+            // ---------- build the static map ----------
+            const terrain = document.getElementById('terrain');
+            const ticks = document.getElementById('ticks');
+            const places = document.getElementById('places');
 
-            const sestinas = Math.floor(remainingAfterBells / secondsPerSestina);
-            const remainingAfterSestinas = remainingAfterBells % secondsPerSestina;
+            function el(name, attrs, parent) {
+                const n = document.createElementNS(SVGNS, name);
+                for (const k in attrs) n.setAttribute(k, attrs[k]);
+                if (parent) parent.appendChild(n);
+                return n;
+            }
 
-            const jiffies = Math.floor(remainingAfterSestinas / secondsPerJiffy);
-
-            // Calculate dial hand angles
-            const chimeAngle = (totalSeconds % secondsPerChime) / secondsPerChime * 360;
-            const bellAngle = (remainingAfterChimes % secondsPerBell) / secondsPerBell * 360;
-            const sestinaAngle = (remainingAfterBells % secondsPerSestina) / secondsPerSestina * 360;
-            const jiffyAngle = (remainingAfterSestinas % secondsPerJiffy) / secondsPerJiffy * 360;
-
-            return {
-                chimes,
-                bells,
-                sestinas,
-                jiffies,
-                chimeAngle,
-                bellAngle,
-                sestinaAngle,
-                jiffyAngle
+            const GLYPH = {
+                shore: (g) => {
+                    el('path', { d: 'M-14 4 q4 -3 8 0 t8 0 t8 0', class: 'glyph' }, g);
+                    el('path', { d: 'M-10 10 q4 -3 8 0 t8 0', class: 'glyph' }, g);
+                },
+                huts: (g) => {
+                    for (const [x, y] of [[-12, 0], [0, -6], [11, 2]]) {
+                        el('path', { d: `M${x - 5} ${y + 5} V${y} L${x} ${y - 5} L${x + 5} ${y} V${y + 5} Z`, class: 'glyph' }, g);
+                    }
+                },
+                moor: (g) => {
+                    for (const [x, y] of [[-14, 0], [-2, 6], [10, -2], [4, -9]]) {
+                        el('path', { d: `M${x - 3} ${y} l3 -3 M${x} ${y} v-4 M${x + 3} ${y} l-3 -3`, class: 'glyph' }, g);
+                    }
+                },
+                mountains: (g) => {
+                    el('path', { d: 'M-24 10 L-12 -8 L-4 2 L6 -14 L20 10', class: 'glyph' }, g);
+                    el('path', { d: 'M6 -14 L2 -8 L6 -6 L9 -9', class: 'glyph' }, g);
+                    el('path', { d: 'M-12 -8 L-14 -4 L-11 -3', class: 'glyph' }, g);
+                },
+                forest: (g) => {
+                    for (const [x, y] of [[-16, 2], [-6, -6], [4, 3], [14, -4], [-2, 10]]) {
+                        el('path', { d: `M${x} ${y - 8} L${x - 4} ${y} H${x + 4} Z M${x} ${y} v3`, class: 'glyph' }, g);
+                    }
+                },
+                desert: (g) => {
+                    el('path', { d: 'M-22 6 q8 -8 16 0 M-4 0 q8 -8 16 0 M8 10 q6 -6 12 0', class: 'glyph' }, g);
+                    for (const [x, y] of [[-14, 12], [-2, 9], [4, 14], [16, 2], [-18, -2]]) el('circle', { cx: x, cy: y, r: 0.7, fill: '#8f7a5e' }, g);
+                },
+                water: (g) => {
+                    el('ellipse', { cx: 0, cy: 0, rx: 30, ry: 12, fill: '#2f3a42', stroke: '#6f8796', 'stroke-width': 0.8 }, g);
+                    el('ellipse', { cx: 0, cy: 0, rx: 30, ry: 12, fill: 'url(#waves)' }, g);
+                },
+                hills: (g) => {
+                    el('path', { d: 'M-22 6 q10 -14 20 0 q8 -10 16 0 q6 -7 12 0', class: 'glyph' }, g);
+                },
+                manse: (g) => {
+                    el('path', { d: 'M-8 8 V-4 H-4 V-12 L0 -18 L4 -12 V-4 H8 V8 Z M-2 8 V3 H2 V8', class: 'glyph' }, g);
+                }
             };
-        }
 
-        // Period names for Grand Chimes
-        const chimePeriods = [
-            "The Puce Matutinal",
-            "The Fulvous Emergence",
-            "The Heliotrope Ascension",
-            "The Vermillion Culmination",
-            "The Saffron Zenith",
-            "The Amber Preponderance",
-            "The Ochre Declination",
-            "The Russet Subsidence",
-            "The Mauve Vespertine",
-            "The Umber Crepuscule",
-            "The Indigo Nocturne",
-            "The Obsidian Nadir"
-        ];
-
-        function playChimeTone() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const now = audioContext.currentTime;
-
-            // Mechanical clock chime - multiple harmonics
-            const frequencies = [261.63, 329.63, 392.00]; // C, E, G
-
-            frequencies.forEach((freq, i) => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                const filter = audioContext.createBiquadFilter();
-
-                filter.type = 'bandpass';
-                filter.frequency.value = freq * 2;
-                filter.Q.value = 3;
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioContext.destination);
-
-                osc.type = 'triangle';
-                osc.frequency.value = freq;
-
-                const startTime = now + i * 0.15;
-                gain.gain.setValueAtTime(0, startTime);
-                gain.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 1.5);
-
-                osc.start(startTime);
-                osc.stop(startTime + 2);
+            const stageEls = [];
+            STAGES.forEach((s, i) => {
+                // hand-placed in the clear ground beside that stretch of road
+                const g = el('g', { transform: `translate(${s.pos[0]} ${s.pos[1]})` }, terrain);
+                const glyphG = el('g', {}, g);
+                GLYPH[s.glyph](glyphG);
+                const label = el('text', { x: 0, y: s.lab != null ? s.lab : 22, 'text-anchor': 'middle', class: 'region' }, g);
+                label.textContent = s.region;
+                stageEls.push({ glyphG, label });
             });
 
-            // Add metallic resonance
-            setTimeout(() => {
-                const resonance = audioContext.createOscillator();
-                const resGain = audioContext.createGain();
-                const resFilter = audioContext.createBiquadFilter();
-
-                resFilter.type = 'highpass';
-                resFilter.frequency.value = 1000;
-
-                resonance.connect(resFilter);
-                resFilter.connect(resGain);
-                resGain.connect(audioContext.destination);
-
-                resonance.type = 'square';
-                resonance.frequency.setValueAtTime(1046.5, now + 0.5);
-                resonance.frequency.exponentialRampToValueAtTime(523.25, now + 2);
-
-                resGain.gain.setValueAtTime(0.05, now + 0.5);
-                resGain.gain.exponentialRampToValueAtTime(0.01, now + 2);
-
-                resonance.start(now + 0.5);
-                resonance.stop(now + 2.5);
-            }, 0);
-        }
-
-        function updateChronometer() {
-            const cutzTime = getCutzTime();
-
-            // Update dial values
-            chimeEl.textContent = cutzTime.chimes;
-            bellEl.textContent = cutzTime.bells;
-            sestinaEl.textContent = cutzTime.sestinas;
-            jiffyEl.textContent = cutzTime.jiffies;
-
-            // Update dial hands
-            chimeHandEl.style.transform = `rotate(${cutzTime.chimeAngle}deg)`;
-            bellHandEl.style.transform = `rotate(${cutzTime.bellAngle}deg)`;
-            sestinaHandEl.style.transform = `rotate(${cutzTime.sestinaAngle}deg)`;
-            jiffyHandEl.style.transform = `rotate(${cutzTime.jiffyAngle}deg)`;
-
-            // Update current moment description
-            const periodName = chimePeriods[cutzTime.chimes];
-            currentMomentEl.innerHTML = `
-                <strong>${periodName}</strong><br>
-                <span style="font-size: 0.85em; opacity: 0.8;">
-                    ${cutzTime.chimes} Chimes, ${cutzTime.bells} Bells, ${cutzTime.sestinas} Sestinas, ${cutzTime.jiffies} Jiffies
-                </span>
-            `;
-
-            // Update page title
-            document.title = `${cutzTime.chimes}:${cutzTime.bells}:${cutzTime.sestinas}:${cutzTime.jiffies} - Cutz Chronometer`;
-
-            // Play chime when Grand Chime changes
-            if (cutzTime.chimes !== lastChime && lastChime !== -1) {
-                playChimeTone();
+            // hour ticks along the road, numbered every three hours
+            for (let h = 0; h <= 24; h++) {
+                const f = h / 24;
+                const [x, y] = at(f);
+                const [nx, ny] = normalAt(f);
+                const major = h % 3 === 0;
+                const r = major ? 5 : 3;
+                el('line', { x1: x - nx * r, y1: y - ny * r, x2: x + nx * r, y2: y + ny * r, class: major ? 'tick major' : 'tick' }, ticks);
+                if (major && h > 0 && h < 24) {
+                    const t = el('text', { x: (x + nx * 12).toFixed(1), y: (y + ny * 12 + 2.6).toFixed(1), 'text-anchor': 'middle', class: 'hour' }, ticks);
+                    t.textContent = String(h).padStart(2, '0');
+                }
             }
-            lastChime = cutzTime.chimes;
-        }
 
-        // Initialize
-        updateChronometer();
-        setInterval(updateChronometer, 1000);
+            // endpoints
+            {
+                const [x0, y0] = at(0);
+                el('circle', { cx: x0, cy: y0, r: 3, fill: '#d4a574' }, places);
+                const t0 = el('text', { x: x0 + 8, y: y0 + 4, class: 'place' }, places);
+                t0.textContent = 'CUTZ';
+                const [x1, y1] = at(1);
+                el('circle', { cx: x1, cy: y1, r: 3, fill: '#d4a574' }, places);
+                const t1 = el('text', { x: x1 + 8, y: y1 + 4, class: 'place' }, places);
+                t1.textContent = 'IUCOUNU\'S MANSE';
+                const sub = el('text', { x: 150, y: 452, 'text-anchor': 'middle', class: 'region' }, places);
+                sub.textContent = '00 AT CUTZ · 24 AT THE MANSE';
+            }
+
+            // ---------- live ----------
+            const $ = (id) => document.getElementById(id);
+            const hmEl = $('hm'), secEl = $('sec'), leaguesEl = $('leagues'), liveEl = $('live');
+            const kickerEl = $('kicker'), nameEl = $('stageName'), textEl = $('stageText'), firxEl = $('firxText');
+            const pitchEl = $('pitch');
+            const cugel = $('cugel'), cugelLabel = $('cugelLabel');
+            const uChime = $('uChime'), uBell = $('uBell'), uSest = $('uSest'), uJiffy = $('uJiffy');
+
+            // rough boxes around each terrain glyph and its caption, plus the two place names
+            const OBSTACLES = STAGES.map(s => [s.pos[0] - 34, s.pos[1] - 18, s.pos[0] + 34, s.pos[1] + 26]);
+            {
+                const [x0, y0] = at(0), [x1, y1] = at(1);
+                OBSTACLES.push([x0 + 4, y0 - 8, x0 + 48, y0 + 6], [x1 + 4, y1 - 8, x1 + 120, y1 + 6]);
+            }
+            function overlap(b) {
+                let a = 0;
+                if (b[0] < 2 || b[2] > 298) a += 1e4;
+                for (const o of OBSTACLES) {
+                    const w = Math.min(b[2], o[2]) - Math.max(b[0], o[0]);
+                    const h = Math.min(b[3], o[3]) - Math.max(b[1], o[1]);
+                    if (w > 0 && h > 0) a += w * h;
+                }
+                return a;
+            }
+            function labelSide(x, y) {
+                const right = overlap([x + 9, y - 6, x + 46, y + 5]);
+                const left = overlap([x - 46, y - 6, x - 9, y + 5]);
+                return left < right;
+            }
+
+            let lastStage = -1, lastMinute = -1;
+            const pad = (n) => String(n).padStart(2, '0');
+
+            function stageFor(h) {
+                for (let i = 0; i < STAGES.length; i++) if (h >= STAGES[i].from && h < STAGES[i].to) return i;
+                return STAGES.length - 1;
+            }
+
+            function tick() {
+                const now = new Date();
+                const H = now.getHours(), M = now.getMinutes(), S = now.getSeconds();
+                const secs = H * 3600 + M * 60 + S;
+                const f = secs / DAY;                       // 0 at midnight, just under 1 at 23:59:59
+                const minuteOfDay = H * 60 + M;             // 0..1439
+
+                hmEl.textContent = `${pad(H)}:${pad(M)}`;
+                secEl.textContent = `:${pad(S)}`;
+
+                // Cugel's place on the road (this is the hand of the clock)
+                const [x, y] = at(f);
+                cugel.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+                // put the label on whichever side is clear of terrain and place names
+                const labelLeft = labelSide(x, y, f);
+                cugelLabel.setAttribute('x', (labelLeft ? x - 10 : x + 10).toFixed(1));
+                cugelLabel.setAttribute('y', (y + 3.5).toFixed(1));
+                cugelLabel.setAttribute('text-anchor', labelLeft ? 'end' : 'start');
+                roadDone.setAttribute('stroke-dasharray', `${(f * LEN).toFixed(2)} ${(LEN + 10).toFixed(0)}`);
+
+                // patent units
+                uChime.textContent = Math.floor(secs / 7200);
+                uBell.textContent = Math.floor((secs % 7200) / 900);
+                uSest.textContent = Math.floor((secs % 900) / 150);
+                uJiffy.textContent = Math.floor((secs % 150) / 15);
+
+                if (minuteOfDay !== lastMinute) {
+                    lastMinute = minuteOfDay;
+                    const done = minuteOfDay;              // one league per minute, conceit of the clock
+                    const left = 1440 - done;
+                    leaguesEl.innerHTML = `League <b>${done.toLocaleString('en-US')}</b> of 1,440 · <b>${left.toLocaleString('en-US')}</b> to the manse`;
+                    pitchEl.textContent = PITCHES[Math.floor(minuteOfDay / 5) % PITCHES.length];
+                    const si = stageFor(H);
+                    if (si !== lastStage) {
+                        if (lastStage >= 0) {
+                            stageEls[lastStage].glyphG.querySelectorAll('.glyph').forEach(n => n.classList.remove('here'));
+                            stageEls[lastStage].label.classList.remove('here');
+                        }
+                        lastStage = si;
+                        const s = STAGES[si];
+                        kickerEl.textContent = `Stage ${si + 1} of ${STAGES.length} · ${pad(s.from)}:00 to ${pad(s.to % 24)}:00`;
+                        nameEl.textContent = s.name;
+                        textEl.textContent = s.text;
+                        firxEl.textContent = s.firx;
+                        stageEls[si].glyphG.querySelectorAll('.glyph').forEach(n => n.classList.add('here'));
+                        stageEls[si].label.classList.add('here');
+                    }
+                    liveEl.textContent = `${pad(H)}:${pad(M)}. Cugel is at ${STAGES[si].name}, ${left} leagues from the manse.`;
+                    document.title = `${pad(H)}:${pad(M)} · The Cutz Chronometer`;
+                }
+            }
+
+            tick();
+            // align to the second boundary, then tick at 1Hz
+            setTimeout(() => { tick(); setInterval(tick, 1000); }, 1000 - (Date.now() % 1000));
+        })();
     </script>
 </body>
-
 </html>
