@@ -5,641 +5,580 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spell Preparation Clock</title>
+    <meta name="description" content="A Vancian grimoire of twelve spells around the dial: each hour the magician commits the next to memory, and the eldest held spell is cast and forgotten.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #1a1410;
+            --bg-deep: #100c09;
+            --vellum: #2a2117;
+            --rule: rgba(184, 149, 111, 0.28);
+            --ink: #f0e2c8;
+            --ink-soft: #d4bf9c;
+            --ink-dim: #a99273;
+            --gold: #e2b06e;
+            --gold-hot: #ffd89a;
+            --ghost: #5e4f3d;
+            --ash: #7b6f63;
+            --ember: #e0703e;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { background: var(--bg-deep); }
 
         body {
             min-height: 100vh;
-            background: #1a1410;
-            background-image:
-                radial-gradient(ellipse at top, rgba(60, 45, 30, 0.3), transparent),
-                radial-gradient(ellipse at bottom, rgba(40, 30, 20, 0.2), transparent);
-            font-family: 'IM Fell English', serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: #d4b896;
+            min-height: 100svh;
+            background:
+                radial-gradient(ellipse at 30% 45%, rgba(110, 80, 45, 0.28), transparent 60%),
+                radial-gradient(ellipse at 85% 100%, rgba(60, 40, 25, 0.35), transparent 60%),
+                linear-gradient(to bottom, var(--bg), var(--bg-deep));
+            background-color: var(--bg);
+            font-family: 'IM Fell English', Georgia, serif;
+            color: var(--ink);
             overflow-x: hidden;
         }
 
-        .grimoire {
-            max-width: 900px;
-            width: 100%;
-            background: linear-gradient(135deg, #2d2418 0%, #231c14 100%);
-            border: 3px solid #8b7355;
-            border-radius: 8px;
-            padding: 3rem 2.5rem;
-            box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.8),
-                inset 0 0 100px rgba(0, 0, 0, 0.3),
-                inset 0 0 30px rgba(139, 115, 85, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .grimoire::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 2px,
-                    rgba(0, 0, 0, 0.03) 2px,
-                    rgba(0, 0, 0, 0.03) 4px
-                );
-            pointer-events: none;
-            opacity: 0.3;
-        }
-
-        .parchment-texture {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence baseFrequency="0.9" numOctaves="4" /></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.05"/></svg>');
-            pointer-events: none;
-            opacity: 0.4;
-        }
-
-        .border-decoration {
-            position: absolute;
-            top: 1.5rem;
-            left: 1.5rem;
-            right: 1.5rem;
-            bottom: 1.5rem;
-            border: 2px solid #8b7355;
-            border-radius: 4px;
-            pointer-events: none;
-            opacity: 0.3;
-        }
-
-        .corner-ornament {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border: 2px solid #b8956f;
-            opacity: 0.4;
-        }
-
-        .corner-ornament.top-left {
-            top: 1rem;
-            left: 1rem;
-            border-right: none;
-            border-bottom: none;
-        }
-
-        .corner-ornament.top-right {
-            top: 1rem;
-            right: 1rem;
-            border-left: none;
-            border-bottom: none;
-        }
-
-        .corner-ornament.bottom-left {
-            bottom: 1rem;
-            left: 1rem;
-            border-right: none;
-            border-top: none;
-        }
-
-        .corner-ornament.bottom-right {
-            bottom: 1rem;
-            right: 1rem;
-            border-left: none;
-            border-top: none;
-        }
-
-        .content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .title {
-            font-family: 'Cinzel Decorative', serif;
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            text-align: center;
-            color: #d4a574;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 10px rgba(212, 165, 116, 0.5);
-            letter-spacing: 0.1em;
-        }
-
-        .subtitle {
-            text-align: center;
-            font-style: italic;
-            color: #a68b6a;
-            margin-bottom: 2rem;
-            font-size: clamp(0.9rem, 2vw, 1.1rem);
-        }
-
-        .time-display {
-            text-align: center;
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            color: #e8d4b8;
-            margin-bottom: 3rem;
-            letter-spacing: 0.2em;
-        }
-
-        .spell-slots {
+        .page {
+            min-height: 100vh;
+            min-height: 100svh;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: clamp(16px, 3vh, 36px) clamp(16px, 3vw, 44px);
             display: grid;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: auto minmax(300px, 460px);
+            justify-content: center;
+            align-items: center;
+            gap: clamp(20px, 4vw, 64px);
         }
 
-        .spell-slot {
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid #6b5a45;
-            border-radius: 4px;
-            padding: 1.25rem;
+        /* ---------- the dial: grimoire around, mind as a lit arc ---------- */
+        .dial {
             position: relative;
-            overflow: hidden;
-            transition: border-color 0.5s ease;
+            width: min(calc(100vh - 2 * clamp(16px, 3vh, 36px)), 54vw, 760px);
+            width: min(calc(100svh - 2 * clamp(16px, 3vh, 36px)), 54vw, 760px);
+            aspect-ratio: 1;
+            container-type: inline-size;
         }
 
-        .spell-slot.prepared {
-            border-color: #d4a574;
-            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        .dial svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
         }
 
-        .spell-header {
+        .numeral {
+            font-family: 'Cinzel', serif;
+            font-size: 19px;
+            fill: var(--ink-dim);
+            text-anchor: middle;
+            dominant-baseline: central;
+            letter-spacing: 0.06em;
+        }
+
+        .numeral.now { fill: var(--gold-hot); font-weight: 700; }
+
+        .sig .ghost {
+            fill: none;
+            stroke: var(--ghost);
+            stroke-width: 1.4;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+
+        .sig .ink {
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 2.6;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            stroke-dasharray: 100 100;
+            stroke-dashoffset: 100;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .sig.held .ink { stroke-dashoffset: 0; filter: url(#glow); }
+        .sig.held .ghost { stroke: transparent; }
+        .sig.learning .ink { stroke: var(--gold-hot); filter: url(#glow); }
+        .sig.learning .ghost { stroke: #7d6a50; stroke-dasharray: 2 3; }
+        .sig.forgotten .ghost { stroke: var(--ash); stroke-dasharray: 1 4; }
+        .sig.forgotten .ink { transition: none; }
+
+        .sig.flare .ink {
+            stroke: var(--ember);
+            stroke-dashoffset: 0;
+            animation: flare 2.6s ease-out forwards;
+        }
+
+        @keyframes flare {
+            0% { opacity: 1; stroke-width: 2.6; }
+            25% { opacity: 1; stroke-width: 7; stroke: var(--gold-hot); }
+            100% { opacity: 0; stroke-width: 1; }
+        }
+
+        .mind-arc {
+            fill: none;
+            stroke: rgba(226, 176, 110, 0.13);
+            stroke-linecap: butt;
+        }
+
+        .mind-edge { stroke: var(--gold-hot); stroke-width: 2; stroke-linecap: round; }
+
+        .rim { fill: none; stroke: var(--rule); }
+
+        .centre {
+            position: absolute;
+            inset: 26%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .reading {
+            font-family: 'Cinzel', serif;
+            font-size: max(10px, 2.8cqw);
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--ink-dim);
+        }
+
+        .time {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: 15.5cqw;
+            line-height: 1;
+            margin: 0.06em 0 0.04em;
+            color: var(--ink);
+            font-variant-numeric: tabular-nums lining-nums;
+            text-shadow: 0 0 0.35em rgba(226, 176, 110, 0.35);
+            white-space: nowrap;
+        }
+
+        .time .sec {
+            font-size: 0.32em;
+            color: var(--ink-dim);
+            font-weight: 400;
+            margin-left: 0.12em;
+            vertical-align: 0.15em;
+        }
+
+        .learning-line {
+            font-size: max(12.5px, 3.2cqw);
+            line-height: 1.3;
+            color: var(--ink-soft);
+            font-style: italic;
+            max-width: 46cqw;
+        }
+
+        .learning-line b {
+            font-style: normal;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: 0.92em;
+            color: var(--gold-hot);
+        }
+
+        /* ---------- the commentary ---------- */
+        .side {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 2.2vh, 22px);
+            min-width: 0;
+        }
+
+        header h1 {
+            font-family: 'Cinzel Decorative', serif;
+            font-weight: 700;
+            font-size: clamp(1.5rem, 2.4vw, 2.3rem);
+            line-height: 1.1;
+            color: var(--gold);
+            letter-spacing: 0.04em;
+        }
+
+        header .sub {
+            margin-top: 0.3rem;
+            font-style: italic;
+            font-size: clamp(0.95rem, 1.2vw, 1.08rem);
+            color: var(--ink-soft);
+        }
+
+        .gloss {
+            font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+            line-height: 1.5;
+            color: var(--ink-soft);
+        }
+
+        .label {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(0.7rem, 0.85vw, 0.8rem);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--ink-dim);
+            margin-bottom: 0.45rem;
             display: flex;
             justify-content: space-between;
+            gap: 1em;
+        }
+
+        .mind {
+            list-style: none;
+            border-top: 1px solid var(--rule);
+        }
+
+        .mind li {
+            display: grid;
+            grid-template-columns: 2.2em 1fr auto;
             align-items: baseline;
-            margin-bottom: 0.75rem;
-            position: relative;
-            z-index: 2;
+            gap: 0.6em;
+            padding: clamp(6px, 1.1vh, 10px) 0;
+            border-bottom: 1px solid var(--rule);
         }
 
-        .spell-name {
+        .mind .n {
             font-family: 'Cinzel', serif;
-            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-            color: #d4a574;
+            font-size: 0.85rem;
+            color: var(--ink-dim);
+        }
+
+        .mind .name {
+            font-family: 'Cinzel', serif;
             font-weight: 600;
-            letter-spacing: 0.05em;
+            font-size: clamp(0.92rem, 1.1vw, 1.04rem);
+            color: var(--gold);
+            line-height: 1.25;
         }
 
-        .spell-level {
-            font-size: 0.85rem;
-            color: #8b7355;
+        .mind .when {
             font-style: italic;
-        }
-
-        .spell-description {
             font-size: 0.9rem;
-            color: #a68b6a;
-            line-height: 1.6;
-            margin-bottom: 0.75rem;
+            color: var(--ink-dim);
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mind li.learning .name { color: var(--gold-hot); }
+
+        .bar {
+            grid-column: 2 / 4;
+            height: 3px;
+            background: rgba(184, 149, 111, 0.2);
+            margin-top: 0.4rem;
             position: relative;
-            z-index: 2;
         }
 
-        .preparation-bar-container {
-            height: 8px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid #4a3d2f;
-        }
-
-        .preparation-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #8b6f47, #d4a574, #8b6f47);
-            background-size: 200% 100%;
-            border-radius: 4px;
-            transition: width 1s linear;
-            position: relative;
-            animation: shimmer 3s linear infinite;
-            box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 200% center; }
-            100% { background-position: -200% center; }
-        }
-
-        .sigil-container {
+        .bar span {
             position: absolute;
-            top: 50%;
-            right: 1rem;
-            transform: translateY(-50%);
-            opacity: 0.1;
-            transition: opacity 1s ease;
-            z-index: 1;
+            inset: 0 auto 0 0;
+            background: var(--gold-hot);
+            width: 0;
+            transition: width 1s linear;
         }
 
-        .spell-slot.prepared .sigil-container {
-            opacity: 0.3;
+        .spent {
+            font-size: clamp(0.95rem, 1.1vw, 1.03rem);
+            line-height: 1.45;
+            color: var(--ink-soft);
         }
 
-        .sigil {
-            width: 80px;
-            height: 80px;
-            stroke: #d4a574;
-            fill: none;
-            stroke-width: 1.5;
-            animation: rotate 20s linear infinite;
+        .spent b {
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: 0.95em;
+            color: var(--ash);
+            color: #b3a493;
+            text-decoration: line-through;
+            text-decoration-color: rgba(224, 112, 62, 0.7);
         }
 
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .tally {
+            display: flex;
+            align-items: center;
+            gap: 0.6em;
+            flex-wrap: wrap;
+            font-size: 0.95rem;
+            color: var(--ink-dim);
         }
 
-        .preparation-status {
-            text-align: center;
-            font-size: 0.85rem;
-            color: #8b7355;
-            margin-top: 0.5rem;
-            font-style: italic;
-        }
+        .pips { display: flex; gap: 3px; flex-wrap: wrap; }
 
-        .arcane-notation {
-            text-align: center;
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid #4a3d2f;
-            font-size: 0.85rem;
-            color: #6b5a45;
-            font-style: italic;
-        }
-
-        .candle-glow {
-            position: fixed;
-            width: 200px;
-            height: 200px;
+        .pips i {
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(212, 165, 116, 0.15), transparent 70%);
-            pointer-events: none;
-            animation: flicker 3s ease-in-out infinite;
-            z-index: 0;
+            border: 1px solid var(--ghost);
         }
 
-        .candle-glow.left {
-            top: 10%;
-            left: 5%;
+        .pips i.cast { background: var(--ember); border-color: var(--ember); opacity: 0.85; }
+
+        .note {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--ink-dim);
+            line-height: 1.45;
         }
 
-        .candle-glow.right {
-            bottom: 10%;
-            right: 5%;
+        .sr {
+            position: absolute;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
         }
 
-        @keyframes flicker {
-            0%, 100% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
-        }
-
-        @media (max-width: 600px) {
-            .grimoire {
-                padding: 2rem 1.5rem;
+        @media (max-width: 860px) {
+            .page {
+                grid-template-columns: minmax(0, 1fr);
+                align-items: start;
+                gap: 18px;
             }
+            .dial { width: min(100%, 560px); justify-self: center; order: 2; }
+            header { order: 1; }
+            .side { display: contents; }
+            .gloss, .mindbox, .spent, .tally, .note { order: 3; }
+            .page > * { min-width: 0; }
+        }
 
-            .spell-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.25rem;
-            }
+        @media (prefers-reduced-motion: reduce) {
+            .sig .ink, .bar span { transition: none; }
+            .sig.flare .ink { animation: none; opacity: 0; }
         }
     </style>
 </head>
 
 <body>
-    <div class="candle-glow left"></div>
-    <div class="candle-glow right"></div>
-
-    <div class="grimoire">
-        <div class="parchment-texture"></div>
-        <div class="border-decoration"></div>
-        <div class="corner-ornament top-left"></div>
-        <div class="corner-ornament top-right"></div>
-        <div class="corner-ornament bottom-left"></div>
-        <div class="corner-ornament bottom-right"></div>
-
-        <div class="content">
-            <h1 class="title">Grimoire Horologique</h1>
-            <div class="subtitle">The Chronometric Incantations of Phandaal</div>
-
-            <div class="time-display" id="time">00:00:00</div>
-
-            <div class="spell-slots" id="spell-slots">
-                <!-- Spell slots will be generated here -->
-            </div>
-
-            <div class="arcane-notation">
-                <em>As the hours turn, so too do the spells commit themselves to memory,<br>
-                each incantation ripening in its appointed time.</em>
+    <main class="page">
+        <div class="dial">
+            <svg id="dial" viewBox="0 0 640 640" role="img" aria-label="A ring of twelve spell sigils, one for each hour. The lit arc is the magician's mind: three spells held and one being learned.">
+                <defs>
+                    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="2.2" result="b" />
+                        <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                </defs>
+                <circle class="rim" cx="320" cy="320" r="292" stroke-width="1" />
+                <circle class="rim" cx="320" cy="320" r="178" stroke-width="1" />
+                <path id="mindArc" class="mind-arc" stroke-width="112" d="" />
+                <path id="mindEdge" class="mind-edge" d="" />
+                <g id="numerals"></g>
+                <g id="sigils"></g>
+            </svg>
+            <div class="centre">
+                <div class="reading" id="reading">First reading</div>
+                <div class="time" role="timer" aria-hidden="true"><span id="hm">00:00</span><span class="sec" id="sec">00</span></div>
+                <div class="learning-line" id="learningLine">committing <b>the next spell</b></div>
             </div>
         </div>
-    </div>
+
+        <aside class="side">
+            <header>
+                <h1>Grimoire Horologique</h1>
+                <p class="sub">a spell preparation clock, after Jack Vance's Dying Earth</p>
+            </header>
+
+            <p class="gloss">
+                In Vance's Dying Earth a spell is learned from a book, held in the mind only by effort,
+                and gone from memory the instant it is spoken. This clock's magician can hold four.
+                Its grimoire keeps twelve spells, one to each hour of the dial. Through every hour the next
+                is committed to memory, and as the hour turns the eldest is cast to make room.
+            </p>
+
+            <div class="mindbox">
+                <div class="label"><span>Held in mind</span><span>cast at</span></div>
+                <ol class="mind" id="mind"></ol>
+            </div>
+
+            <p class="spent" id="spent"></p>
+
+            <div class="tally">
+                <span id="tallyText">Cast today</span>
+                <span class="pips" id="pips" aria-hidden="true"></span>
+            </div>
+
+            <p class="note">The spell names are Vance's. Their order in the book, the four-spell mind and the hourly casting are this clock's own conceit.</p>
+            <p class="sr" aria-live="polite" id="live"></p>
+        </aside>
+    </main>
 
     <script>
-        // Vancian spell names with exotic flair
-        const spells = [
-            {
-                name: "The Excellent Prismatic Spray",
-                level: "First Circle",
-                description: "Seven scintillating beams of chromatic puissance, each possessed of unique and terrible efficacy",
-                hour: 0
-            },
-            {
-                name: "Phandaal's Gyrator",
-                level: "Second Circle",
-                description: "Whereupon the target is subjected to involuntary circumrotation at velocities most distressing",
-                hour: 1
-            },
-            {
-                name: "The Spell of Forlorn Encystment",
-                level: "Third Circle",
-                description: "Imprisons the malefactor within a vitreous sphere of lamentable confinement",
-                hour: 2
-            },
-            {
-                name: "Felojun's Second Hypnotic Spell",
-                level: "Fourth Circle",
-                description: "Induces a stupor of remarkable profundity, immune to common perturbations",
-                hour: 3
-            },
-            {
-                name: "The Charm of Untiring Nourishment",
-                level: "First Circle",
-                description: "Sustains the corpus through prolonged exertions without recourse to vulgar victuals",
-                hour: 4
-            },
-            {
-                name: "Lugwiler's Dismal Itch",
-                level: "Second Circle",
-                description: "Afflicts the victim with pruritus of such severity as to preclude all rational thought",
-                hour: 5
-            },
-            {
-                name: "The Spell of the Macroid Toe",
-                level: "Fifth Circle",
-                description: "Causes the pedal extremity to swell to dimensions both grotesque and inconvenient",
-                hour: 6
-            },
-            {
-                name: "Arnhoult's Sequestrious Digitalia",
-                level: "Third Circle",
-                description: "Renders the fingers invisible whilst retaining their corporeal substance",
-                hour: 7
-            },
-            {
-                name: "Khulip's Nasal Polymer",
-                level: "First Circle",
-                description: "Elongates the proboscis to extraordinary and ridiculous proportions",
-                hour: 8
-            },
-            {
-                name: "The Spell of the Omnipotent Sphere",
-                level: "Seventh Circle",
-                description: "Summons a globe of absolute dominion, terrible in its perfection",
-                hour: 9
-            },
-            {
-                name: "Tinkler's Old-Fashioned Froust",
-                level: "Second Circle",
-                description: "Generates an effluvium of such pungency as to repel even the most persistent aggressor",
-                hour: 10
-            },
-            {
-                name: "The Indicating Odor",
-                level: "First Circle",
-                description: "Causes the malefactor to emit a distinctive and persistent redolence",
-                hour: 11
-            },
-            {
-                name: "Phandaal's Critique of the Chill",
-                level: "Fourth Circle",
-                description: "Extracts all caloric essence from the designated volume, inducing thermal privation",
-                hour: 12
-            },
-            {
-                name: "The Temporal Immurement",
-                level: "Sixth Circle",
-                description: "Suspends the subject in a stasis most profound, immune to temporal progression",
-                hour: 13
-            },
-            {
-                name: "Lugwiler's Dismal Itch (Variant)",
-                level: "Second Circle",
-                description: "An enhanced formulation of the aforementioned affliction, with doubled severity",
-                hour: 14
-            },
-            {
-                name: "The Spell of Forlorn Encystment",
-                level: "Third Circle",
-                description: "Imprisons the malefactor within a vitreous sphere of lamentable confinement",
-                hour: 15
-            },
-            {
-                name: "Radl's Excavation",
-                level: "Fifth Circle",
-                description: "Removes earth and stone with admirable expedition, leaving a void most commodious",
-                hour: 16
-            },
-            {
-                name: "The Charm of Untiring Nourishment",
-                level: "First Circle",
-                description: "Sustains the corpus through prolonged exertions without recourse to vulgar victuals",
-                hour: 17
-            },
-            {
-                name: "Felojun's Second Hypnotic Spell",
-                level: "Fourth Circle",
-                description: "Induces a stupor of remarkable profundity, immune to common perturbations",
-                hour: 18
-            },
-            {
-                name: "The Green and Purple Postponement",
-                level: "Eighth Circle",
-                description: "Defers catastrophe through chromatic manipulation of the causal flux",
-                hour: 19
-            },
-            {
-                name: "Phandaal's Mantle of Stealth",
-                level: "Second Circle",
-                description: "Renders the practitioner imperceptible to conventional observation",
-                hour: 20
-            },
-            {
-                name: "The Spell of the Macroid Toe",
-                level: "Fifth Circle",
-                description: "Causes the pedal extremity to swell to dimensions both grotesque and inconvenient",
-                hour: 21
-            },
-            {
-                name: "Lugwiler's Dismal Itch",
-                level: "Second Circle",
-                description: "Afflicts the victim with pruritus of such severity as to preclude all rational thought",
-                hour: 22
-            },
-            {
-                name: "The Excellent Prismatic Spray",
-                level: "First Circle",
-                description: "Seven scintillating beams of chromatic puissance, each possessed of unique and terrible efficacy",
-                hour: 23
+        // The grimoire: twelve spell names from the Dying Earth books, in the clock's own order.
+        const SPELLS = [
+            "The Excellent Prismatic Spray",
+            "Phandaal's Gyrator",
+            "The Spell of the Slow Hour",
+            "Felojun's Second Hypnotic Spell",
+            "Phandaal's Mantle of Stealth",
+            "The Call to the Violent Cloud",
+            "The Charm of Untiring Nourishment",
+            "The Spell of Forlorn Encystment",
+            "Lugwiler's Dismal Itch",
+            "The Spell of the Omnipotent Sphere",
+            "The Spell of Impenetrable Seeming",
+            "The Spell of Temporal Stasis"
+        ];
+        const CAPACITY = 4; // three firmly held plus the one being learned
+        const ROMAN = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+        const STARS = [[5, 2], [7, 2], [7, 3], [8, 3], [9, 2], [9, 4], [10, 3], [11, 3], [11, 4], [12, 5], [11, 2], [13, 5]];
+
+        const C = 320, R_SIG = 235, R_NUM = 270, SIG_R = 34;
+        const NS = 'http://www.w3.org/2000/svg';
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        const pad = n => String(n).padStart(2, '0');
+        const mod = (a, n) => ((a % n) + n) % n;
+        const hhmm = h => pad(mod(h, 24)) + ':00';
+
+        function polar(angleDeg, r) {
+            const a = (angleDeg - 90) * Math.PI / 180;
+            return [C + r * Math.cos(a), C + r * Math.sin(a)];
+        }
+
+        // Each spell gets a sigil: a star polygon, an inner ring and a short stroke, as one path
+        function sigilPath(i, cx, cy) {
+            const [n, step] = STARS[i];
+            const rot = i * 23 * Math.PI / 180;
+            const pt = (k, r) => {
+                const a = rot + k * 2 * Math.PI / n - Math.PI / 2;
+                return (cx + r * Math.cos(a)).toFixed(1) + ' ' + (cy + r * Math.sin(a)).toFixed(1);
+            };
+            let d = 'M' + pt(0, SIG_R);
+            for (let j = 1; j <= n; j++) d += ' L' + pt((j * step) % n, SIG_R);
+            const m = 3 + (i % 3);
+            const inner = SIG_R * 0.32;
+            d += ' M' + pt(0, inner);
+            for (let j = 1; j <= m; j++) {
+                const a = rot + j * 2 * Math.PI / m - Math.PI / 2;
+                d += ' L' + (cx + inner * Math.cos(a)).toFixed(1) + ' ' + (cy + inner * Math.sin(a)).toFixed(1);
             }
-        ];
+            d += ' M' + pt(i % n, SIG_R * 0.32) + ' L' + pt(i % n, SIG_R * 1.12);
+            return d;
+        }
 
-        // Sigil patterns (simple geometric shapes for mystical effect)
-        const sigils = [
-            '<svg class="sigil" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M50,10 L50,90 M10,50 L90,50"/><circle cx="50" cy="50" r="20"/></svg>',
-            '<svg class="sigil" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90"/><circle cx="50" cy="50" r="15"/><path d="M50,30 L50,70"/></svg>',
-            '<svg class="sigil" viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="15"/></svg>',
-            '<svg class="sigil" viewBox="0 0 100 100"><path d="M50,10 L90,50 L50,90 L10,50 Z"/><circle cx="50" cy="50" r="20"/><path d="M50,30 L70,50 L50,70 L30,50 Z"/></svg>',
-            '<svg class="sigil" viewBox="0 0 100 100"><polygon points="50,5 80,35 95,70 70,95 30,95 5,70 20,35"/><circle cx="50" cy="50" r="15"/></svg>',
-            '<svg class="sigil" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M50,10 L90,50 L50,90 L10,50 Z"/></svg>'
-        ];
+        const sigEls = [];
+        const numEls = [];
+        (function build() {
+            const gN = document.getElementById('numerals');
+            const gS = document.getElementById('sigils');
+            for (let k = 0; k < 12; k++) {
+                const [nx, ny] = polar(k * 30, R_NUM);
+                const t = document.createElementNS(NS, 'text');
+                t.setAttribute('class', 'numeral');
+                t.setAttribute('x', nx.toFixed(1));
+                t.setAttribute('y', ny.toFixed(1));
+                t.textContent = ROMAN[k];
+                gN.appendChild(t);
+                numEls.push(t);
+                // tick between numeral and inner rim
+                const [x1, y1] = polar(k * 30, 182), [x2, y2] = polar(k * 30, 196);
+                const tick = document.createElementNS(NS, 'line');
+                tick.setAttribute('x1', x1); tick.setAttribute('y1', y1);
+                tick.setAttribute('x2', x2); tick.setAttribute('y2', y2);
+                tick.setAttribute('stroke', 'rgba(184,149,111,0.35)');
+                gN.appendChild(tick);
 
-        const timeEl = document.getElementById('time');
-        const spellSlotsEl = document.getElementById('spell-slots');
-        let audioContext = null;
-        let lastMinute = -1;
-
-        function renderSpellSlots() {
-            const now = new Date();
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
-
-            spellSlotsEl.innerHTML = '';
-
-            // Show current hour and next 5 hours
-            for (let i = 0; i < 6; i++) {
-                const hour = (currentHour + i) % 24;
-                const spell = spells[hour];
-
-                let preparationPercent = 0;
-                let status = '';
-                let isPrepared = false;
-
-                if (i === 0) {
-                    // Current hour - show progress
-                    preparationPercent = (currentMinute / 60) * 100;
-                    status = `Memorizing... ${Math.floor(preparationPercent)}% complete`;
-                    isPrepared = preparationPercent === 100;
-                } else if (i > 0) {
-                    // Future hours - not yet memorizing
-                    preparationPercent = 0;
-                    status = `Awaiting preparation in ${i} hour${i > 1 ? 's' : ''}`;
+                // spell k sits in the sector the hour hand sweeps from k o'clock to k+1
+                const [sx, sy] = polar(k * 30 + 15, R_SIG);
+                const g = document.createElementNS(NS, 'g');
+                g.setAttribute('class', 'sig');
+                const title = document.createElementNS(NS, 'title');
+                title.textContent = SPELLS[k];
+                g.appendChild(title);
+                const d = sigilPath(k, sx, sy);
+                for (const cls of ['ghost', 'ink']) {
+                    const p = document.createElementNS(NS, 'path');
+                    p.setAttribute('class', cls);
+                    p.setAttribute('d', d);
+                    p.setAttribute('pathLength', '100');
+                    g.appendChild(p);
                 }
-
-                const slotDiv = document.createElement('div');
-                slotDiv.className = `spell-slot ${isPrepared ? 'prepared' : ''}`;
-                slotDiv.innerHTML = `
-                    <div class="sigil-container">
-                        ${sigils[hour % sigils.length]}
-                    </div>
-                    <div class="spell-header">
-                        <div class="spell-name">${spell.name}</div>
-                        <div class="spell-level">${spell.level}</div>
-                    </div>
-                    <div class="spell-description">${spell.description}</div>
-                    <div class="preparation-bar-container">
-                        <div class="preparation-bar" style="width: ${preparationPercent}%"></div>
-                    </div>
-                    <div class="preparation-status">${status}</div>
-                `;
-                spellSlotsEl.appendChild(slotDiv);
+                gS.appendChild(g);
+                sigEls.push(g);
             }
+        })();
+
+        function arcPath(a0, a1, r) {
+            const [x0, y0] = polar(a0, r), [x1, y1] = polar(a1, r);
+            const large = (a1 - a0) > 180 ? 1 : 0;
+            return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
         }
 
-        function playMysticalChime() {
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const now = audioContext.currentTime;
+        const el = id => document.getElementById(id);
+        const pips = el('pips');
+        for (let i = 0; i < 24; i++) pips.appendChild(document.createElement('i'));
 
-            // Ethereal bell sound
-            const osc1 = audioContext.createOscillator();
-            const osc2 = audioContext.createOscillator();
-            const osc3 = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            const filter = audioContext.createBiquadFilter();
+        let lastHour = null;
+        let lastMinute = null;
 
-            filter.type = 'lowpass';
-            filter.frequency.value = 2000;
-            filter.Q.value = 5;
-
-            osc1.connect(filter);
-            osc2.connect(filter);
-            osc3.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioContext.destination);
-
-            osc1.type = 'sine';
-            osc2.type = 'sine';
-            osc3.type = 'triangle';
-
-            // Perfect fifth + octave
-            osc1.frequency.value = 523.25; // C5
-            osc2.frequency.value = 783.99; // G5
-            osc3.frequency.value = 1046.5; // C6
-
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 3);
-
-            osc1.start(now);
-            osc2.start(now);
-            osc3.start(now);
-            osc1.stop(now + 3.5);
-            osc2.stop(now + 3.5);
-            osc3.stop(now + 3.5);
-
-            // Add shimmer
-            setTimeout(() => {
-                const shimmer = audioContext.createOscillator();
-                const shimmerGain = audioContext.createGain();
-
-                shimmer.connect(shimmerGain);
-                shimmerGain.connect(audioContext.destination);
-
-                shimmer.type = 'sine';
-                shimmer.frequency.setValueAtTime(2093, now + 1);
-                shimmer.frequency.exponentialRampToValueAtTime(1046.5, now + 2.5);
-
-                shimmerGain.gain.setValueAtTime(0.1, now + 1);
-                shimmerGain.gain.exponentialRampToValueAtTime(0.01, now + 2.5);
-
-                shimmer.start(now + 1);
-                shimmer.stop(now + 3);
-            }, 0);
-        }
-
-        function updateClock() {
+        function update() {
             const now = new Date();
-            const minute = now.getMinutes();
+            const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+            const k = h % 12;                       // spell being committed this hour
+            const p = (m * 60 + s) / 3600;          // how much of it is learned
+            const held = [k - 3, k - 2, k - 1].map(x => mod(x, 12));
+            const forgotten = mod(k - 4, 12);
 
-            // Update time display
-            timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+            el('hm').textContent = pad(h) + ':' + pad(m);
+            el('sec').textContent = pad(s);
+            el('reading').textContent = h < 12 ? 'First reading' : 'Second reading';
+            el('learningLine').innerHTML = 'committing <b>' + SPELLS[k] + '</b>';
 
-            // Render spell slots
-            renderSpellSlots();
-
-            // Play chime when a new spell is prepared (at the top of each hour)
-            if (minute === 0 && minute !== lastMinute) {
-                playMysticalChime();
+            // the dial
+            const hourChanged = lastHour !== null && lastHour !== h;
+            sigEls.forEach((g, i) => {
+                const ink = g.querySelector('.ink');
+                let state = 'blank';
+                if (i === k) state = 'learning';
+                else if (held.includes(i)) state = 'held';
+                else if (i === forgotten) state = 'forgotten';
+                const flaring = g.classList.contains('flare');
+                g.setAttribute('class', 'sig ' + state + (flaring ? ' flare' : ''));
+                if (state === 'learning') ink.style.strokeDashoffset = (100 - p * 100).toFixed(2);
+                else ink.style.strokeDashoffset = '';
+            });
+            if (hourChanged && !reduceMotion.matches) {
+                const g = sigEls[forgotten];
+                g.classList.add('flare');
+                setTimeout(() => g.classList.remove('flare'), 2700);
             }
-            lastMinute = minute;
+            numEls.forEach((t, i) => t.setAttribute('class', 'numeral' + (i === k || i === (k + 1) % 12 ? ' now' : '')));
+
+            const lead = (k + p) * 30;
+            const start = (k - 3) * 30;
+            el('mindArc').setAttribute('d', arcPath(start, lead + 0.001, R_SIG));
+            // the leading edge is the hour hand; it is drawn either side of the sigils, not across them
+            const seg = (r0, r1) => { const [a, b] = polar(lead, r0), [c, d] = polar(lead, r1); return `M${a.toFixed(2)} ${b.toFixed(2)} L${c.toFixed(2)} ${d.toFixed(2)}`; };
+            el('mindEdge').setAttribute('d', seg(170, 192) + ' ' + seg(287, 304));
+
+            // the list of what is held, eldest first
+            if (m !== lastMinute || hourChanged || lastHour === null) {
+                const rows = held.map((idx, j) =>
+                    `<li><span class="n">${ROMAN[idx]}</span><span class="name">${SPELLS[idx]}</span><span class="when">${hhmm(h + 1 + j)}</span></li>`
+                ).join('');
+                el('mind').innerHTML = rows +
+                    `<li class="learning"><span class="n">${ROMAN[k]}</span><span class="name">${SPELLS[k]}</span><span class="when">${hhmm(h + 4)}</span><span class="bar"><span id="barFill" style="width:${(p * 100).toFixed(2)}%"></span></span></li>`;
+                el('spent').innerHTML = `<b>${SPELLS[forgotten]}</b> was cast at ${hhmm(h)} and is gone from memory. ` +
+                    `${SPELLS[k]} will be held by ${hhmm(h + 1)}, when ${SPELLS[held[0]]} must be spoken to make room.`;
+                const castToday = h + 1;
+                el('tallyText').textContent = `Cast today: ${castToday} of 24`;
+                [...pips.children].forEach((pip, i) => pip.className = i < castToday ? 'cast' : '');
+                el('live').textContent = `${pad(h)}:${pad(m)}. Committing ${SPELLS[k]}, ${Math.floor(p * 100)} percent learned. Holding ${held.map(i => SPELLS[i]).join(', ')}.`;
+            }
+            const fill = el('barFill');
+            if (fill) fill.style.width = (p * 100).toFixed(2) + '%';
+
+            lastHour = h;
+            lastMinute = m;
         }
 
-        // Initialize
-        updateClock();
-        setInterval(updateClock, 1000);
+        update();
+        setInterval(update, 1000);
     </script>
 </body>
 
