@@ -21,6 +21,7 @@ CLOCKS=(
   Analog  ClockWidget  com.mbolding.clockwidget  "Clock Widget"
   Word    WordClock    com.mbolding.wordclock    "Word Clock"
   Command CommandBar   com.mbolding.commandbar   "Command Bar"
+  Soma    SomaPlayer   com.mbolding.somaplayer   "Soma Player"
 )
 
 build_clock() {
