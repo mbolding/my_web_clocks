@@ -5,7 +5,7 @@ import SwiftUI
 @main
 enum AnalogClockApp {
     @MainActor static func main() {
-        DesktopClock.run(size: 170) {
+        DesktopClock.run(size: CGSize(width: 170, height: 170)) {
             AnalogClockView()
         } options: {
             SecondsOption()

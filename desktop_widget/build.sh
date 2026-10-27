@@ -20,6 +20,7 @@ IDENTITY=$(security find-identity -v -p codesigning | grep -m1 -o '"Apple Develo
 CLOCKS=(
   Analog  ClockWidget  com.mbolding.clockwidget  "Clock Widget"
   Word    WordClock    com.mbolding.wordclock    "Word Clock"
+  Command CommandBar   com.mbolding.commandbar   "Command Bar"
 )
 
 build_clock() {

@@ -2,6 +2,8 @@
 // Borderless, translucent, just above the desktop icons (or above every window with
 // Float on Top), on every Space. Drag to move (position is remembered). Right-click
 // for the clock's own options, Float on Top, and Quit.
+// An interactive window (the command bar) also takes typing, resizes from its edges,
+// and floats on top unless turned off.
 
 import SwiftUI
 import AppKit
@@ -10,29 +12,38 @@ import AppKit
 enum DesktopClock {
     /// Runs the app; never returns. `defaultTop` is the gap above the window on first
     /// launch, so clocks that share the top-right corner don't start out stacked.
-    static func run<Face: View, Options: View>(size: CGFloat, defaultTop: CGFloat = 24,
+    static func run<Face: View, Options: View>(size: CGSize, defaultTop: CGFloat = 24,
+                                               interactive: Bool = false,
                                                @ViewBuilder face: @escaping () -> Face,
                                                @ViewBuilder options: @escaping () -> Options) {
         let app = NSApplication.shared
-        let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop) { setFloatOnTop in
-            AnyView(ClockMenu(setFloatOnTop: setFloatOnTop, face: face(), options: options()))
+        let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, interactive: interactive) { setFloatOnTop in
+            AnyView(ClockMenu(floatsByDefault: interactive, setFloatOnTop: setFloatOnTop,
+                              face: face(), options: options()))
         }
         app.delegate = delegate
         app.setActivationPolicy(.accessory) // no Dock icon, no menu bar
         app.run()
     }
 
-    static func run<Face: View>(size: CGFloat, defaultTop: CGFloat = 24,
+    static func run<Face: View>(size: CGSize, defaultTop: CGFloat = 24, interactive: Bool = false,
                                 @ViewBuilder face: @escaping () -> Face) {
-        run(size: size, defaultTop: defaultTop, face: face) { EmptyView() }
+        run(size: size, defaultTop: defaultTop, interactive: interactive, face: face) { EmptyView() }
     }
 }
 
 struct ClockMenu<Face: View, Options: View>: View {
-    @AppStorage("floatOnTop") private var floatOnTop = false
+    @AppStorage private var floatOnTop: Bool
     var setFloatOnTop: (Bool) -> Void
     var face: Face
     var options: Options
+
+    init(floatsByDefault: Bool, setFloatOnTop: @escaping (Bool) -> Void, face: Face, options: Options) {
+        _floatOnTop = AppStorage(wrappedValue: floatsByDefault, "floatOnTop")
+        self.setFloatOnTop = setFloatOnTop
+        self.face = face
+        self.options = options
+    }
 
     var body: some View {
         face
@@ -53,28 +64,36 @@ struct ClockMenu<Face: View, Options: View>: View {
 // MARK: - Desktop window
 
 final class DesktopPanel: NSPanel {
-    override var canBecomeKey: Bool { false }
+    var acceptsKeyboard = false
+    override var canBecomeKey: Bool { acceptsKeyboard }
     override var canBecomeMain: Bool { false }
 }
 
 final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
-    private let size: CGFloat
+    private let size: CGSize
     private let defaultTop: CGFloat
+    private let interactive: Bool
     private let makeContent: (@escaping (Bool) -> Void) -> AnyView
     private var panel: DesktopPanel!
 
-    init(size: CGFloat, defaultTop: CGFloat, makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
+    init(size: CGSize, defaultTop: CGFloat, interactive: Bool,
+         makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
         self.size = size
         self.defaultTop = defaultTop
+        self.interactive = interactive
         self.makeContent = makeContent
     }
 
     func applicationDidFinishLaunching(_ note: Notification) {
         let corner: CGFloat = 24
 
-        panel = DesktopPanel(contentRect: NSRect(x: 0, y: 0, width: size, height: size),
-                             styleMask: [.borderless, .nonactivatingPanel],
-                             backing: .buffered, defer: false)
+        // Non-activating, so typing into it doesn't pull focus from the app you were in.
+        var style: NSWindow.StyleMask = [.borderless, .nonactivatingPanel]
+        if interactive { style.insert(.resizable) }
+        panel = DesktopPanel(contentRect: NSRect(origin: .zero, size: size),
+                             styleMask: style, backing: .buffered, defer: false)
+        panel.acceptsKeyboard = interactive
+        panel.contentMinSize = interactive ? NSSize(width: 260, height: 140) : size
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -109,7 +128,7 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         let autosaveName = Bundle.main.object(forInfoDictionaryKey: "CFBundleExecutable") as? String ?? "Clock"
         if !panel.setFrameUsingName(autosaveName), let screen = NSScreen.main {
             let v = screen.visibleFrame
-            panel.setFrameOrigin(NSPoint(x: v.maxX - size - 24, y: v.maxY - size - defaultTop))
+            panel.setFrameOrigin(NSPoint(x: v.maxX - size.width - 24, y: v.maxY - size.height - defaultTop))
         }
         panel.setFrameAutosaveName(autosaveName)
         panel.orderFrontRegardless()
