@@ -1,0 +1,115 @@
+# Desktop widgets for macOS
+
+Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
+
+| App | What it is |
+| --- | --- |
+| **Clock Widget** (`Analog/`) | An analog clock with the weekday and date; second hand optional |
+| **Word Clock** (`Word/`) | The time spelled out on an 11×11 letter grid, a native port of [`clocks/art/word_clock.html`](../clocks/art/word_clock.html) |
+| **Command Bar** (`Command/`) | A floating zsh you can type into and drop folders onto, with history, Tab completion and the current git branch |
+| **Soma Player** (`Soma/`) | A small [SomaFM](https://somafm.com) radio with a channel menu and what's playing |
+
+## Requirements
+
+- A Mac with Apple Silicon, running macOS 14 (Sonoma) or newer
+- Apple's command-line tools, for the Swift compiler. If `swiftc --version` doesn't print a version, run:
+
+  ```bash
+  xcode-select --install
+  ```
+
+## Install
+
+Clone the repo and run the build script with `--install`:
+
+```bash
+git clone https://github.com/mbolding/my_web_clocks.git ~/repos/my_web_clocks
+cd ~/repos/my_web_clocks
+desktop_widget/build.sh --install
+```
+
+This builds every app, copies each to `~/Applications`, registers it with macOS (for Command Bar's Finder action), and launches it. To install only some, name their folders, in any case:
+
+```bash
+desktop_widget/build.sh command soma --install
+```
+
+Other forms:
+
+| Command | Does |
+| --- | --- |
+| `desktop_widget/build.sh` | Builds every app into `desktop_widget/build/` without installing |
+| `desktop_widget/build.sh word --run` | Builds one and launches it from `build/` |
+| `desktop_widget/build.sh --install` | Builds, installs to `~/Applications` and launches |
+
+### Update
+
+```bash
+cd ~/repos/my_web_clocks && git pull && desktop_widget/build.sh --install
+```
+
+Installing quits the running copy first and starts the new one. Window positions and settings are kept.
+
+### Start at login
+
+The apps don't add themselves to login. Add the ones you want under **Open at Login** in **System Settings → General → Login Items** (**Login Items & Extensions** on newer macOS), choosing them from the Applications folder in your home folder.
+
+### Copying a built app to another Mac
+
+Building on each Mac is simplest. If you'd rather copy `~/Applications/<App>.app` across (AirDrop, iCloud Drive, a USB stick), macOS will first refuse to open it, because it's signed only for the Mac that built it. Either click **Open Anyway** in **System Settings → Privacy & Security**, or clear the download flag before opening it:
+
+```bash
+xattr -dr com.apple.quarantine ~/Applications/CommandBar.app
+```
+
+## Using them
+
+All of them:
+
+- **Drag** the window to move it (on Command Bar, by its folder bar); the position is remembered.
+- **Right-click** for the app's options, **Float on Top**, and **Quit**.
+- Windows with a **pin** (Command Bar, Soma Player) show whether they float on top; click it to switch.
+- They follow the system's light or dark appearance.
+
+**Command Bar**
+
+- Type a command and press Return. It runs in your login zsh, with `.zshrc` sourced, so `cd`, variables and aliases carry over between commands.
+- Send it a folder by dropping the folder (or a file inside it) on the window, by right-clicking it in Finder and choosing **Open in Command Bar**, or from a terminal with `open -a "Command Bar" .`
+- **↑ / ↓** history, **Tab** completes commands and file names, **⌃C** stops a command (twice replaces the shell), **⌘K** clears.
+- It isn't a full terminal: full-screen and interactive programs (`vim`, `top`, `less`, password prompts) won't work, and colours are stripped.
+- Floats on top by default; the window resizes from its edges.
+
+**Soma Player**
+
+- Pick a channel from the menu on its name and press play. It shows up in Control Center and answers the keyboard's play/pause key.
+- It never starts playing on its own. SomaFM is listener-supported; the right-click menu has a link to [support it](https://somafm.com/support/).
+
+**Clock Widget** has a **Show Seconds** option in its right-click menu.
+
+## Uninstall
+
+Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
+
+```bash
+defaults delete com.mbolding.commandbar
+```
+
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar` and `com.mbolding.somaplayer`.
+
+## How it's put together
+
+```
+desktop_widget/
+├── build.sh        the build script; lists every app in its CLOCKS table
+├── Shared/         the floating window, right-click menu, FloatPin, and the icon renderer
+├── Analog/         App.swift, Icon.swift, ClockFace.swift; Widget/ is a parked WidgetKit version
+├── Word/           App.swift, Icon.swift, WordFace.swift
+├── Command/        App.swift, Icon.swift, the view and shell session, InfoPlistExtras.xml
+└── Soma/           App.swift, Icon.swift, the view and player
+```
+
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action.
+
+To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name).
+
+The WidgetKit version of the analog clock in `Analog/Widget/` is only built when an Apple Development signing certificate is present, because macOS ignores widgets that aren't signed by one.
