@@ -50,13 +50,28 @@ struct CommandBar: View {
         .onAppear { focused = true }
     }
 
-    // The folder; drag here to move the window.
+    // The folder and, in a git repository, its branch (with a dot when there are
+    // uncommitted changes); drag here to move the window.
     private var header: some View {
         HStack(spacing: 6) {
             Image(systemName: "folder")
             Text(abbreviated(session.folder))
                 .lineLimit(1)
                 .truncationMode(.head)
+            if let branch = session.branch {
+                HStack(spacing: 3) {
+                    Image(systemName: "arrow.triangle.branch")
+                    Text(branch)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    if session.hasChanges {
+                        Circle().fill(Color.orange).frame(width: 6, height: 6)
+                            .help("Uncommitted changes")
+                    }
+                }
+                .padding(.leading, 6)
+                .layoutPriority(1) // the folder truncates first
+            }
             Spacer(minLength: 4)
             if session.isRunning {
                 ProgressView().controlSize(.mini)

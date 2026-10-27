@@ -21,6 +21,8 @@ final class CommandSession: ObservableObject {
 
     @Published private(set) var blocks: [Block] = []
     @Published private(set) var folder: URL
+    @Published private(set) var branch: String? // nil outside a git repository
+    @Published private(set) var hasChanges = false
     @Published private(set) var isRunning = false
     @Published var line = ""
     @Published var hint = ""
@@ -95,12 +97,18 @@ final class CommandSession: ObservableObject {
             if blocks.count > Self.maxBlocks { blocks.removeFirst(blocks.count - Self.maxBlocks) }
         }
         // base64 keeps the command's quotes and newlines away from the shell's own parsing;
-        // eval then runs it in this shell, so cd and friends stick.
+        // eval then runs it in this shell, so cd and friends stick. The marker line also
+        // carries the git branch (short hash when detached, - outside a repo) and whether
+        // there are uncommitted changes; branch names can't contain spaces.
         let encoded = Data(command.utf8).base64EncodedString()
         let script = """
             __commandbar=$(print -r -- \(encoded) | base64 --decode)
             { eval "$__commandbar" } < /dev/null
-            printf '%s %d %s\\n' \(token) $? "$PWD"
+            __commandbar_status=$?
+            __commandbar_branch=$(git symbolic-ref --short -q HEAD 2>/dev/null </dev/null || git rev-parse --short HEAD 2>/dev/null </dev/null)
+            __commandbar_dirty=0
+            [[ -n $__commandbar_branch && -n $(git status --porcelain 2>/dev/null </dev/null | head -1) ]] && __commandbar_dirty=1
+            printf '%s %d %s %d %s\\n' \(token) $__commandbar_status "${__commandbar_branch:--}" $__commandbar_dirty "$PWD"
 
             """
         input.write(Data(script.utf8))
@@ -119,12 +127,15 @@ final class CommandSession: ObservableObject {
             }
             // Output without a trailing newline runs straight into the marker.
             if marker.lowerBound > text.startIndex { append(String(text[..<marker.lowerBound]), to: &current) }
-            let fields = text[marker.upperBound...].split(separator: " ", maxSplits: 1)
+            // status, branch, dirty flag, folder
+            let fields = text[marker.upperBound...].split(separator: " ", maxSplits: 3)
             if !hidden, !current.isEmpty, let status = fields.first.flatMap({ Int32($0) }) {
                 current[current.count - 1].status = status
             }
-            if fields.count == 2 {
-                folder = URL(fileURLWithPath: String(fields[1]))
+            if fields.count == 4 {
+                branch = fields[1] == "-" ? nil : String(fields[1])
+                hasChanges = fields[2] == "1"
+                folder = URL(fileURLWithPath: String(fields[3]))
                 UserDefaults.standard.set(folder.path, forKey: "folder")
             }
             hidden = false
