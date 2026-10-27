@@ -26,8 +26,10 @@ final class CommandSession: ObservableObject {
     @Published private(set) var isRunning = false
     @Published var line = ""
     @Published var hint = ""
+    @Published private(set) var focusRequests = 0 // bumped when a folder arrives, to focus the input
 
     private var process: Process?
+    private var queuedFolder: URL? // arrived while a command was running
     private var input: FileHandle?
     private let token = "__commandbar_\(UUID().uuidString)__"
     private var pending = Data()
@@ -143,6 +145,11 @@ final class CommandSession: ObservableObject {
             ready = true
         }
         blocks = current
+        // Only now, since send adds a block and the loop above worked on a copy.
+        if !isRunning, let dir = queuedFolder {
+            queuedFolder = nil
+            send(Self.cd(dir))
+        }
     }
 
     private func append(_ text: String, to blocks: inout [Block]) {
@@ -194,11 +201,22 @@ final class CommandSession: ObservableObject {
         send(command)
     }
 
-    /// cd to a dropped folder, or to the folder holding a dropped file.
+    /// cd to a folder, or to the folder holding a file: dropped on the window, opened
+    /// with the app, or sent from Finder. If a command is running, go there once it ends.
     func go(to url: URL) {
-        guard !isRunning, input != nil else { NSSound.beep(); return }
+        guard input != nil else { NSSound.beep(); return }
         let dir = Self.isDirectory(url) ? url : url.deletingLastPathComponent()
-        send("cd -- '\(dir.path.replacingOccurrences(of: "'", with: "'\\''"))'")
+        focusRequests += 1
+        if isRunning {
+            queuedFolder = dir
+            if !hidden { hint = "cd to \(dir.lastPathComponent) when this finishes" }
+        } else {
+            send(Self.cd(dir))
+        }
+    }
+
+    private static func cd(_ dir: URL) -> String {
+        "cd -- '\(dir.path.replacingOccurrences(of: "'", with: "'\\''"))'"
     }
 
     /// ⌃C: interrupt whatever the shell started. If that doesn't stop it (a loop in the

@@ -48,6 +48,7 @@ struct CommandBar: View {
             return true
         } isTargeted: { dropTargeted = $0 }
         .onAppear { focused = true }
+        .onChange(of: session.focusRequests) { focused = true }
     }
 
     // The folder and, in a git repository, its branch (with a dot when there are

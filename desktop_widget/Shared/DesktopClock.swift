@@ -3,7 +3,9 @@
 // Float on Top), on every Space. Drag to move (position is remembered). Right-click
 // for the clock's own options, Float on Top, and Quit.
 // An interactive window (the command bar) also takes typing, resizes from its edges,
-// and floats on top unless turned off.
+// and floats on top unless turned off. An app given `onOpen` receives files and folders
+// opened with it (open -a, Open With) or sent from its Finder service, if its
+// Info.plist declares them.
 
 import SwiftUI
 import AppKit
@@ -14,21 +16,25 @@ enum DesktopClock {
     /// launch, so clocks that share the top-right corner don't start out stacked.
     static func run<Face: View, Options: View>(size: CGSize, defaultTop: CGFloat = 24,
                                                interactive: Bool = false,
+                                               onOpen: (([URL]) -> Void)? = nil,
                                                @ViewBuilder face: @escaping () -> Face,
                                                @ViewBuilder options: @escaping () -> Options) {
         let app = NSApplication.shared
-        let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, interactive: interactive) { setFloatOnTop in
+        let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, interactive: interactive,
+                                            onOpen: onOpen) { setFloatOnTop in
             AnyView(ClockMenu(floatsByDefault: interactive, setFloatOnTop: setFloatOnTop,
                               face: face(), options: options()))
         }
         app.delegate = delegate
+        app.servicesProvider = delegate
         app.setActivationPolicy(.accessory) // no Dock icon, no menu bar
         app.run()
     }
 
     static func run<Face: View>(size: CGSize, defaultTop: CGFloat = 24, interactive: Bool = false,
+                                onOpen: (([URL]) -> Void)? = nil,
                                 @ViewBuilder face: @escaping () -> Face) {
-        run(size: size, defaultTop: defaultTop, interactive: interactive, face: face) { EmptyView() }
+        run(size: size, defaultTop: defaultTop, interactive: interactive, onOpen: onOpen, face: face) { EmptyView() }
     }
 }
 
@@ -73,15 +79,35 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     private let size: CGSize
     private let defaultTop: CGFloat
     private let interactive: Bool
+    private let onOpen: (([URL]) -> Void)?
     private let makeContent: (@escaping (Bool) -> Void) -> AnyView
     private var panel: DesktopPanel!
 
-    init(size: CGSize, defaultTop: CGFloat, interactive: Bool,
+    init(size: CGSize, defaultTop: CGFloat, interactive: Bool, onOpen: (([URL]) -> Void)?,
          makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
         self.size = size
         self.defaultTop = defaultTop
         self.interactive = interactive
+        self.onOpen = onOpen
         self.makeContent = makeContent
+    }
+
+    // open -a, Open With, or dropping onto the app's icon. At launch this can arrive
+    // before applicationDidFinishLaunching, so there may be no panel yet.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        open(urls)
+    }
+
+    /// The Finder service: NSServices in Info.plist names this method (NSMessage openURLs).
+    @objc func openURLs(_ pboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
+        open(pboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? [])
+    }
+
+    private func open(_ urls: [URL]) {
+        guard let onOpen, !urls.isEmpty else { return }
+        onOpen(urls)
+        panel?.orderFrontRegardless()
+        panel?.makeKey()
     }
 
     func applicationDidFinishLaunching(_ note: Notification) {

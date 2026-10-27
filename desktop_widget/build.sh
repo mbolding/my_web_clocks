@@ -55,9 +55,11 @@ build_clock() {
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
+$([[ -f $dir/InfoPlistExtras.xml ]] && cat $dir/InfoPlistExtras.xml)
 </dict>
 </plist>
 PLIST
+  plutil -lint -s $app/Contents/Info.plist
 
   if [[ -d $dir/Widget && -n "$IDENTITY" ]]; then
     local ext=$app/Contents/PlugIns/${exe}Extension.appex
@@ -126,6 +128,10 @@ for dir exe id name in $CLOCKS; do
       rm -rf ~/Applications/$exe.app
       mkdir -p ~/Applications
       cp -R build/$exe.app ~/Applications/
+      # Tell Launch Services and the Services menu about it now, for Open With and
+      # any Finder service the app declares.
+      /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f ~/Applications/$exe.app
+      /System/Library/CoreServices/pbs -update
       open ~/Applications/$exe.app
       echo "Installed to ~/Applications/$exe.app" ;;
   esac

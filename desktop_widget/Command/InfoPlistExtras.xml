@@ -1,0 +1,30 @@
+    <!-- Spliced into Command Bar's Info.plist by build.sh. -->
+    <!-- Folders list Command Bar under Open With; any item can still be opened with it
+         (open -a, or dropped on its icon), which goes to the item's folder. -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key><string>Folder</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>Alternate</string>
+            <key>LSItemContentTypes</key><array><string>public.folder</string></array>
+        </dict>
+        <dict>
+            <key>CFBundleTypeName</key><string>Any Item</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>None</string>
+            <key>LSItemContentTypes</key><array><string>public.item</string></array>
+        </dict>
+    </array>
+    <!-- Finder's right-click "Open in Command Bar". NSRequiredContext makes it show
+         without first being switched on in Keyboard settings. -->
+    <key>NSServices</key>
+    <array>
+        <dict>
+            <key>NSMenuItem</key><dict><key>default</key><string>Open in Command Bar</string></dict>
+            <key>NSMessage</key><string>openURLs</string>
+            <key>NSPortName</key><string>Command Bar</string>
+            <key>NSRequiredContext</key><dict/>
+            <key>NSSendFileTypes</key><array><string>public.item</string></array>
+        </dict>
+    </array>
