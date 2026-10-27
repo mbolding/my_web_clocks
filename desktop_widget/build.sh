@@ -1,66 +1,81 @@
 #!/bin/zsh
-# Builds ClockWidget.app (the floating desktop clock) with the Swift command-line
-# tools; no Xcode needed.
-#   ./build.sh          build into ./build
-#   ./build.sh --run    build, then (re)launch it
-#   ./build.sh --install  build, copy to ~/Applications, and launch
+# Builds the floating desktop clocks with the Swift command-line tools; no Xcode needed.
+# Each clock is a folder holding App.swift (the @main entry), Icon.swift (its app icon)
+# and its face; Shared/ has the window, menu and icon code they all use.
+#   ./build.sh                  build every clock into ./build
+#   ./build.sh word             build just one (folder name, any case)
+#   ./build.sh analog --run     build, then (re)launch it
+#   ./build.sh --install        build, copy to ~/Applications, and launch
 #
-# WidgetKit widget (parked): ClockWidgetExtension.swift is only built and embedded
-# when an Apple Development certificate exists (Xcode → Settings → Accounts →
-# Manage Certificates), because the widget system ignores ad-hoc signatures.
+# WidgetKit widget (parked): Analog/Widget is only built and embedded when an Apple
+# Development certificate exists (Xcode → Settings → Accounts → Manage Certificates),
+# because the widget system ignores ad-hoc signatures.
 set -e
 cd "$(dirname "$0")"
 
 TARGET=arm64-apple-macos14.0
-APP=build/ClockWidget.app
-EXT="$APP/Contents/PlugIns/ClockWidgetExtension.appex"
 IDENTITY=$(security find-identity -v -p codesigning | grep -m1 -o '"Apple Development[^"]*"' | tr -d '"' || true)
 
-rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+# folder  executable  bundle id  name
+CLOCKS=(
+  Analog  ClockWidget  com.mbolding.clockwidget  "Clock Widget"
+  Word    WordClock    com.mbolding.wordclock    "Word Clock"
+  Command CommandBar   com.mbolding.commandbar   "Command Bar"
+)
 
-swiftc -O -parse-as-library -target $TARGET ClockFace.swift ClockWidget.swift \
-    -o "$APP/Contents/MacOS/ClockWidget"
+build_clock() {
+  local dir=$1 exe=$2 id=$3 name=$4
+  local app=build/$exe.app
+  local sources=($dir/*.swift)
 
-# App icon: draw the real dial at 10:09, then pack the sizes into an .icns.
-mkdir -p "$APP/Contents/Resources"
-swiftc -O -parse-as-library -target $TARGET ClockFace.swift MakeIcon.swift -o build/MakeIcon
-rm -rf build/AppIcon.iconset
-build/MakeIcon build/AppIcon.iconset
-iconutil -c icns build/AppIcon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
+  rm -rf $app
+  mkdir -p $app/Contents/MacOS $app/Contents/Resources
 
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+  swiftc -O -parse-as-library -target $TARGET Shared/DesktopClock.swift ${sources:#*/Icon.swift} \
+      -o $app/Contents/MacOS/$exe
+
+  # App icon: draw the clock's own face, then pack the sizes into an .icns.
+  swiftc -O -parse-as-library -target $TARGET Shared/MakeIcon.swift ${sources:#*/App.swift} \
+      -o build/MakeIcon-$exe
+  rm -rf build/$exe.iconset
+  build/MakeIcon-$exe build/$exe.iconset
+  iconutil -c icns build/$exe.iconset -o $app/Contents/Resources/AppIcon.icns
+
+  cat > $app/Contents/Info.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>Clock Widget</string>
-    <key>CFBundleIdentifier</key><string>com.mbolding.clockwidget</string>
-    <key>CFBundleExecutable</key><string>ClockWidget</string>
+    <key>CFBundleName</key><string>$name</string>
+    <key>CFBundleIdentifier</key><string>$id</string>
+    <key>CFBundleExecutable</key><string>$exe</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>1.0</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
+$([[ -f $dir/InfoPlistExtras.xml ]] && cat $dir/InfoPlistExtras.xml)
 </dict>
 </plist>
 PLIST
+  plutil -lint -s $app/Contents/Info.plist
 
-if [[ -n "$IDENTITY" ]]; then
-  mkdir -p "$EXT/Contents/MacOS"
-  swiftc -O -parse-as-library -application-extension -target $TARGET ClockFace.swift ClockWidgetExtension.swift \
-      -o "$EXT/Contents/MacOS/ClockWidgetExtension"
+  if [[ -d $dir/Widget && -n "$IDENTITY" ]]; then
+    local ext=$app/Contents/PlugIns/${exe}Extension.appex
+    mkdir -p $ext/Contents/MacOS
+    swiftc -O -parse-as-library -application-extension -target $TARGET \
+        ${sources:#*/(App|Icon).swift} $dir/Widget/*.swift -o $ext/Contents/MacOS/${exe}Extension
 
-  cat > "$EXT/Contents/Info.plist" <<'PLIST'
+    cat > $ext/Contents/Info.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>Clock Widget</string>
-    <key>CFBundleDisplayName</key><string>Clock Widget</string>
-    <key>CFBundleIdentifier</key><string>com.mbolding.clockwidget.widget</string>
-    <key>CFBundleExecutable</key><string>ClockWidgetExtension</string>
+    <key>CFBundleName</key><string>$name</string>
+    <key>CFBundleDisplayName</key><string>$name</string>
+    <key>CFBundleIdentifier</key><string>$id.widget</string>
+    <key>CFBundleExecutable</key><string>${exe}Extension</string>
     <key>CFBundlePackageType</key><string>XPC!</string>
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
     <key>CFBundleShortVersionString</key><string>1.0</string>
@@ -77,22 +92,52 @@ if [[ -n "$IDENTITY" ]]; then
 </plist>
 PLIST
 
-  # Sign inside-out; the widget must be sandboxed or macOS won't load it.
-  codesign --force --sign "$IDENTITY" --entitlements ClockWidgetExtension.entitlements "$EXT" >/dev/null
+    # Sign inside-out; the widget must be sandboxed or macOS won't load it.
+    codesign --force --sign "$IDENTITY" --entitlements $dir/Widget/*.entitlements $ext >/dev/null
+  fi
+
+  codesign --force --sign "${IDENTITY:--}" $app >/dev/null
+  echo "Built $app${IDENTITY:+ (with WidgetKit widget)}"
+}
+
+wanted=() action=
+for arg in "$@"; do
+  case $arg in
+    --run|--install) action=$arg ;;
+    *) wanted+=(${(L)arg}) ;;
+  esac
+done
+
+built=0 known=()
+for dir exe id name in $CLOCKS; do
+  known+=(${(L)dir})
+  (( ${#wanted} )) && (( ! ${wanted[(Ie)${(L)dir}]} )) && continue
+  build_clock $dir $exe $id $name
+  (( ++built ))
+
+  # Quit any running copy and wait for it to go, or open can race the exit and fail.
+  if [[ -n $action ]]; then
+    pkill -x $exe || true
+    while pgrep -qx $exe; do sleep 0.1; done
+  fi
+
+  case $action in
+    --run)
+      open build/$exe.app ;;
+    --install)
+      rm -rf ~/Applications/$exe.app
+      mkdir -p ~/Applications
+      cp -R build/$exe.app ~/Applications/
+      # Tell Launch Services and the Services menu about it now, for Open With and
+      # any Finder service the app declares.
+      /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f ~/Applications/$exe.app
+      /System/Library/CoreServices/pbs -update
+      open ~/Applications/$exe.app
+      echo "Installed to ~/Applications/$exe.app" ;;
+  esac
+done
+
+if (( ! built )); then
+  echo "No clock named: ${wanted[*]}. Choose from: ${known[*]}" >&2
+  exit 1
 fi
-
-codesign --force --sign "${IDENTITY:--}" "$APP" >/dev/null
-echo "Built $APP${IDENTITY:+ (with WidgetKit widget)}"
-
-case "$1" in
-  --run)
-    pkill -x ClockWidget || true
-    open "$APP" ;;
-  --install)
-    pkill -x ClockWidget || true
-    rm -rf ~/Applications/ClockWidget.app
-    mkdir -p ~/Applications
-    cp -R "$APP" ~/Applications/
-    open ~/Applications/ClockWidget.app
-    echo "Installed to ~/Applications/ClockWidget.app" ;;
-esac
