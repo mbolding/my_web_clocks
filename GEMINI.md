@@ -23,6 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -70,6 +71,20 @@ of display colour maps sits beside the window controls. Files are read locally a
 The "Demo" button writes a synthetic phantom series as real DICOM bytes in
 memory, so it goes through the same parser. Don't apply the clock-file
 conventions to it.
+
+`desktop_widget/` holds native macOS apps rather than web pages: small floating
+SwiftUI windows, currently an analog clock, a word clock ported from
+`clocks/art/word_clock.html`, Command Bar (a floating zsh you can drop folders
+onto) and Soma Player (a SomaFM radio). Each app is a folder with `App.swift`
+(the `@main` entry, which calls `DesktopClock.run`), `Icon.swift` (an `IconFace`
+view the build renders into the app icon) and its own views; `Shared/` has the
+floating window, right-click menu, `FloatPin` and the icon renderer.
+`desktop_widget/build.sh [name…] [--run|--install]` builds them with `swiftc`
+(no Xcode project; Apple Silicon, macOS 14+), and a new app needs a line in its
+`CLOCKS` table. `desktop_widget/build/` is gitignored. Install steps and usage
+are in `desktop_widget/README.md`. Unlike the rest of the repo this does have a
+build step: verify changes by building and running the app, not in a browser.
+Don't apply the clock-file conventions to it.
 
 `plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and isn't part of `index.html`'s gallery. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
 
