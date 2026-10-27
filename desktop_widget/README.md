@@ -9,6 +9,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Command Bar** (`Command/`) | A floating zsh you can type into and drop folders onto, with history, Tab completion and the current git branch |
 | **Soma Player** (`Soma/`) | A small [SomaFM](https://somafm.com) radio with a channel menu and what's playing |
 | **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and an orange wedge shows the time left |
+| **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
 
@@ -69,7 +70,8 @@ All of them:
 
 - **Drag** the window to move it (on Command Bar, by its folder bar; on Dial Timer, by its rim); the position is remembered.
 - **Right-click** for the app's options, **Float on Top**, and **Quit**.
-- Windows with a **pin** (Command Bar, Soma Player, Dial Timer) show whether they float on top; click it to switch.
+- Windows with a **pin** (Command Bar, Soma Player, Dial Timer, Widget Bar) show whether they float on top; click it to switch.
+- Opening a widget that's already running (from Widget Bar's Show, Finder, or `open -a`) brings its window up above everything for a few seconds, so you can find it.
 - They follow the system's light or dark appearance.
 
 **Command Bar**
@@ -92,6 +94,13 @@ All of them:
 - The right-click menu has preset times, Reset, and **Chime When Done**. While idle, the middle shows the time of day.
 - A running timer carries on if the app quits or the Mac restarts.
 
+**Widget Bar**
+
+- Shows every installed widget, found when it starts; restart it to pick up a newly installed one. It floats on top by default and starts at the bottom right.
+- The dot under an icon is grey while that widget runs on the desktop and orange while it floats on top; no dot means it isn't running.
+- Click a widget that isn't running to open it. Click a running one to flip its Float on Top.
+- Right-click an icon to float it or put it on the desktop, **Show** it for a few seconds, or quit it.
+
 **Clock Widget** has a **Show Seconds** option in its right-click menu.
 
 ## Uninstall
@@ -102,7 +111,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer` and `com.mbolding.dialtimer`.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer` and `com.mbolding.widgetbar`.
 
 ## How it's put together
 
@@ -114,11 +123,12 @@ desktop_widget/
 ├── Word/           App.swift, Icon.swift, WordFace.swift
 ├── Command/        App.swift, Icon.swift, the view and shell session, InfoPlistExtras.xml
 ├── Soma/           App.swift, Icon.swift, the view and player
-└── Timer/          App.swift, Icon.swift, the dial, its view, the timer and its chime
+├── Timer/          App.swift, Icon.swift, the dial, its view, the timer and its chime
+└── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 
 Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
-To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name).
+To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 
 The WidgetKit version of the analog clock in `Analog/Widget/` is only built when an Apple Development signing certificate is present, because macOS ignores widgets that aren't signed by one.

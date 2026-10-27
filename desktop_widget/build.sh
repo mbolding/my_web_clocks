@@ -23,6 +23,7 @@ CLOCKS=(
   Command CommandBar   com.mbolding.commandbar   "Command Bar"
   Soma    SomaPlayer   com.mbolding.somaplayer   "Soma Player"
   Timer   DialTimer    com.mbolding.dialtimer    "Dial Timer"
+  Launcher WidgetBar   com.mbolding.widgetbar    "Widget Bar"
 )
 
 build_clock() {
