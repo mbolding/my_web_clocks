@@ -34,9 +34,10 @@ build_clock() {
   swiftc -O -parse-as-library -target $TARGET Shared/DesktopClock.swift ${sources:#*/Icon.swift} \
       -o $app/Contents/MacOS/$exe
 
-  # App icon: draw the clock's own face, then pack the sizes into an .icns.
-  swiftc -O -parse-as-library -target $TARGET Shared/MakeIcon.swift ${sources:#*/App.swift} \
-      -o build/MakeIcon-$exe
+  # App icon: draw the clock's own face, then pack the sizes into an .icns. The shared
+  # window code comes along for views that use its pieces, like FloatPin.
+  swiftc -O -parse-as-library -target $TARGET Shared/MakeIcon.swift Shared/DesktopClock.swift \
+      ${sources:#*/App.swift} -o build/MakeIcon-$exe
   rm -rf build/$exe.iconset
   build/MakeIcon-$exe build/$exe.iconset
   iconutil -c icns build/$exe.iconset -o $app/Contents/Resources/AppIcon.icns

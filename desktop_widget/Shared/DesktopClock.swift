@@ -19,11 +19,12 @@ enum DesktopClock {
                                                onOpen: (([URL]) -> Void)? = nil,
                                                @ViewBuilder face: @escaping () -> Face,
                                                @ViewBuilder options: @escaping () -> Options) {
+        // Registered once here, so the menu and any FloatPin agree on the default.
+        UserDefaults.standard.register(defaults: ["floatOnTop": interactive])
         let app = NSApplication.shared
         let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, interactive: interactive,
                                             onOpen: onOpen) { setFloatOnTop in
-            AnyView(ClockMenu(floatsByDefault: interactive, setFloatOnTop: setFloatOnTop,
-                              face: face(), options: options()))
+            AnyView(ClockMenu(setFloatOnTop: setFloatOnTop, face: face(), options: options()))
         }
         app.delegate = delegate
         app.servicesProvider = delegate
@@ -39,17 +40,10 @@ enum DesktopClock {
 }
 
 struct ClockMenu<Face: View, Options: View>: View {
-    @AppStorage private var floatOnTop: Bool
+    @AppStorage("floatOnTop") private var floatOnTop = false // default registered in run
     var setFloatOnTop: (Bool) -> Void
     var face: Face
     var options: Options
-
-    init(floatsByDefault: Bool, setFloatOnTop: @escaping (Bool) -> Void, face: Face, options: Options) {
-        _floatOnTop = AppStorage(wrappedValue: floatsByDefault, "floatOnTop")
-        self.setFloatOnTop = setFloatOnTop
-        self.face = face
-        self.options = options
-    }
 
     var body: some View {
         face
@@ -64,6 +58,26 @@ struct ClockMenu<Face: View, Options: View>: View {
                     NSApp.terminate(nil)
                 }
             }
+    }
+}
+
+/// A small pin a window can show: filled orange while it floats on top, a faint
+/// crossed-out pin while it sits on the desktop. Click to toggle; it shares the menu's
+/// Float on Top setting.
+struct FloatPin: View {
+    @AppStorage("floatOnTop") private var floatOnTop = false // default registered in run
+
+    var body: some View {
+        Button { floatOnTop.toggle() } label: {
+            Image(systemName: floatOnTop ? "pin.fill" : "pin.slash")
+                .font(.system(size: 9))
+                .foregroundStyle(floatOnTop ? AnyShapeStyle(Color.orange.opacity(0.7)) : AnyShapeStyle(.tertiary))
+                .frame(width: 14, height: 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(floatOnTop ? "Floating on top of other windows. Click to stop."
+                         : "Sitting on the desktop, behind other windows. Click to float on top.")
     }
 }
 

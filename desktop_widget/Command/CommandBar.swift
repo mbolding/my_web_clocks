@@ -6,8 +6,6 @@ import SwiftUI
 
 struct CommandBar: View {
     @ObservedObject var session = CommandSession.shared
-    // The same setting as the menu's Float on Top, which defaults on for this window.
-    @AppStorage("floatOnTop") private var floatOnTop = true
     @State private var dropTargeted = false
     @FocusState private var focused: Bool
 
@@ -80,16 +78,7 @@ struct CommandBar: View {
             if session.isRunning {
                 ProgressView().controlSize(.mini)
             }
-            Button { floatOnTop.toggle() } label: {
-                Image(systemName: floatOnTop ? "pin.fill" : "pin.slash")
-                    .font(.system(size: 9))
-                    .foregroundStyle(floatOnTop ? AnyShapeStyle(Color.orange.opacity(0.7)) : AnyShapeStyle(.tertiary))
-                    .frame(width: 14, height: 14)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(floatOnTop ? "Floating on top of other windows. Click to stop."
-                             : "Sitting on the desktop, behind other windows. Click to float on top.")
+            FloatPin()
         }
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(.secondary)
