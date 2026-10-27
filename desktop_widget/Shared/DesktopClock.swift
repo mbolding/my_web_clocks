@@ -20,11 +20,12 @@ enum DesktopClock {
                                                interactive: Bool = false,
                                                round: Bool = false,
                                                movableByBackground: Bool = true,
+                                               floatsByDefault: Bool? = nil, // nil: only if interactive
                                                onOpen: (([URL]) -> Void)? = nil,
                                                @ViewBuilder face: @escaping () -> Face,
                                                @ViewBuilder options: @escaping () -> Options) {
         // Registered once here, so the menu and any FloatPin agree on the default.
-        UserDefaults.standard.register(defaults: ["floatOnTop": interactive])
+        UserDefaults.standard.register(defaults: ["floatOnTop": floatsByDefault ?? interactive])
         let app = NSApplication.shared
         let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, interactive: interactive,
                                             round: round, movableByBackground: movableByBackground,
@@ -39,10 +40,11 @@ enum DesktopClock {
 
     static func run<Face: View>(size: CGSize, defaultTop: CGFloat = 24, interactive: Bool = false,
                                 round: Bool = false, movableByBackground: Bool = true,
-                                onOpen: (([URL]) -> Void)? = nil,
+                                floatsByDefault: Bool? = nil, onOpen: (([URL]) -> Void)? = nil,
                                 @ViewBuilder face: @escaping () -> Face) {
         run(size: size, defaultTop: defaultTop, interactive: interactive, round: round,
-            movableByBackground: movableByBackground, onOpen: onOpen, face: face) { EmptyView() }
+            movableByBackground: movableByBackground, floatsByDefault: floatsByDefault,
+            onOpen: onOpen, face: face) { EmptyView() }
     }
 }
 
@@ -157,6 +159,22 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         panel?.makeKey()
     }
 
+    /// Opened again while running (Widget Bar, Finder, open -a): a window on the desktop
+    /// comes up above the other windows for a few seconds so it can be found.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        guard let panel else { return false }
+        panel.orderFrontRegardless()
+        if panel.level != .floating {
+            panel.level = .floating
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                self?.panel.level = UserDefaults.standard.bool(forKey: "floatOnTop") ? .floating : Self.desktopLevel
+            }
+        }
+        return false
+    }
+
+    static let desktopLevel = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
+
     func applicationDidFinishLaunching(_ note: Notification) {
         let corner: CGFloat = 24
 
@@ -191,9 +209,12 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Just above the desktop icons, or above every normal window when floating.
+        // The setting is also written out explicitly, even when it's only the registered
+        // default, so Widget Bar (another process, which can't see this app's registered
+        // defaults) reads the real value; it toggles it by writing to this app's domain.
         let host = NSHostingView(rootView: makeContent { [weak self] onTop in
-            self?.panel.level = onTop ? .floating
-                : NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
+            self?.panel.level = onTop ? .floating : Self.desktopLevel
+            UserDefaults.standard.set(onTop, forKey: "floatOnTop")
         })
         host.translatesAutoresizingMaskIntoConstraints = false
         blur.addSubview(host)
@@ -205,11 +226,13 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         ])
         panel.contentView = blur
 
-        // Default to the top-right corner; afterwards restore wherever it was dragged.
+        // Default to the top-right corner, stepped down by defaultTop but never off the
+        // bottom of a smaller screen; afterwards restore wherever it was dragged.
         let autosaveName = Bundle.main.object(forInfoDictionaryKey: "CFBundleExecutable") as? String ?? "Clock"
         if !panel.setFrameUsingName(autosaveName), let screen = NSScreen.main {
             let v = screen.visibleFrame
-            panel.setFrameOrigin(NSPoint(x: v.maxX - size.width - 24, y: v.maxY - size.height - defaultTop))
+            panel.setFrameOrigin(NSPoint(x: v.maxX - size.width - 24,
+                                         y: max(v.minY + 24, v.maxY - size.height - defaultTop)))
         }
         panel.setFrameAutosaveName(autosaveName)
         panel.orderFrontRegardless()

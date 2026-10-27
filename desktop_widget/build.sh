@@ -58,6 +58,8 @@ build_clock() {
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
+    <!-- Marks it as one of these widgets, for Widget Bar to find. -->
+    <key>DesktopWidget</key><true/>
 $([[ -f $dir/InfoPlistExtras.xml ]] && cat $dir/InfoPlistExtras.xml)
 </dict>
 </plist>
