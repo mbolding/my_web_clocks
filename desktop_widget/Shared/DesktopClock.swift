@@ -5,7 +5,9 @@
 // An interactive window (the command bar) also takes typing, resizes from its edges,
 // and floats on top unless turned off. An app given `onOpen` receives files and folders
 // opened with it (open -a, Open With) or sent from its Finder service, if its
-// Info.plist declares them.
+// Info.plist declares them. A round window is cut to a circle; one whose face has
+// gestures of its own turns off dragging by the background and uses MovesWindow on the
+// parts that should move it instead.
 
 import SwiftUI
 import AppKit
@@ -16,6 +18,8 @@ enum DesktopClock {
     /// launch, so clocks that share the top-right corner don't start out stacked.
     static func run<Face: View, Options: View>(size: CGSize, defaultTop: CGFloat = 24,
                                                interactive: Bool = false,
+                                               round: Bool = false,
+                                               movableByBackground: Bool = true,
                                                onOpen: (([URL]) -> Void)? = nil,
                                                @ViewBuilder face: @escaping () -> Face,
                                                @ViewBuilder options: @escaping () -> Options) {
@@ -23,8 +27,9 @@ enum DesktopClock {
         UserDefaults.standard.register(defaults: ["floatOnTop": interactive])
         let app = NSApplication.shared
         let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, interactive: interactive,
+                                            round: round, movableByBackground: movableByBackground,
                                             onOpen: onOpen) { setFloatOnTop in
-            AnyView(ClockMenu(setFloatOnTop: setFloatOnTop, face: face(), options: options()))
+            AnyView(ClockMenu(round: round, setFloatOnTop: setFloatOnTop, face: face(), options: options()))
         }
         app.delegate = delegate
         app.servicesProvider = delegate
@@ -33,14 +38,17 @@ enum DesktopClock {
     }
 
     static func run<Face: View>(size: CGSize, defaultTop: CGFloat = 24, interactive: Bool = false,
+                                round: Bool = false, movableByBackground: Bool = true,
                                 onOpen: (([URL]) -> Void)? = nil,
                                 @ViewBuilder face: @escaping () -> Face) {
-        run(size: size, defaultTop: defaultTop, interactive: interactive, onOpen: onOpen, face: face) { EmptyView() }
+        run(size: size, defaultTop: defaultTop, interactive: interactive, round: round,
+            movableByBackground: movableByBackground, onOpen: onOpen, face: face) { EmptyView() }
     }
 }
 
 struct ClockMenu<Face: View, Options: View>: View {
     @AppStorage("floatOnTop") private var floatOnTop = false // default registered in run
+    var round: Bool
     var setFloatOnTop: (Bool) -> Void
     var face: Face
     var options: Options
@@ -48,7 +56,8 @@ struct ClockMenu<Face: View, Options: View>: View {
     var body: some View {
         face
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle()) // right-click anywhere, not just on the drawn marks
+            // Right-click anywhere on the window, not just on the drawn marks.
+            .contentShape(round ? AnyShape(Circle()) : AnyShape(Rectangle()))
             .onChange(of: floatOnTop, initial: true) { setFloatOnTop(floatOnTop) }
             .contextMenu {
                 options
@@ -81,6 +90,26 @@ struct FloatPin: View {
     }
 }
 
+/// Drags the window by hand, following the mouse in screen coordinates, for windows run
+/// with movableByBackground: false. Put it on the parts that should move the window.
+struct MovesWindow: ViewModifier {
+    @State private var grab: CGPoint? // mouse position within the window when the drag began
+
+    func body(content: Content) -> some View {
+        content.gesture(
+            DragGesture(minimumDistance: 1)
+                .onChanged { _ in
+                    guard let window = NSApp.windows.first(where: { $0 is DesktopPanel }) else { return }
+                    let mouse = NSEvent.mouseLocation
+                    let grab = grab ?? CGPoint(x: mouse.x - window.frame.minX, y: mouse.y - window.frame.minY)
+                    self.grab = grab
+                    window.setFrameOrigin(NSPoint(x: mouse.x - grab.x, y: mouse.y - grab.y))
+                }
+                .onEnded { _ in grab = nil }
+        )
+    }
+}
+
 // MARK: - Desktop window
 
 final class DesktopPanel: NSPanel {
@@ -93,15 +122,19 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     private let size: CGSize
     private let defaultTop: CGFloat
     private let interactive: Bool
+    private let round: Bool
+    private let movableByBackground: Bool
     private let onOpen: (([URL]) -> Void)?
     private let makeContent: (@escaping (Bool) -> Void) -> AnyView
     private var panel: DesktopPanel!
 
-    init(size: CGSize, defaultTop: CGFloat, interactive: Bool, onOpen: (([URL]) -> Void)?,
-         makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
+    init(size: CGSize, defaultTop: CGFloat, interactive: Bool, round: Bool, movableByBackground: Bool,
+         onOpen: (([URL]) -> Void)?, makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
         self.size = size
         self.defaultTop = defaultTop
         self.interactive = interactive
+        self.round = round
+        self.movableByBackground = movableByBackground
         self.onOpen = onOpen
         self.makeContent = makeContent
     }
@@ -138,16 +171,24 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.isMovableByWindowBackground = true
+        panel.isMovableByWindowBackground = movableByBackground
 
         let blur = NSVisualEffectView()
         blur.material = .popover
         blur.blendingMode = .behindWindow
         blur.state = .active
-        blur.maskImage = NSImage(size: NSSize(width: corner * 2 + 1, height: corner * 2 + 1), flipped: false) { rect in
-            NSBezierPath(roundedRect: rect, xRadius: corner, yRadius: corner).fill()
-            return true
-        }.with { $0.capInsets = NSEdgeInsets(top: corner, left: corner, bottom: corner, right: corner) }
+        if round {
+            // Drawn at the window's own size; round windows don't resize.
+            blur.maskImage = NSImage(size: size, flipped: false) { rect in
+                NSBezierPath(ovalIn: rect).fill()
+                return true
+            }
+        } else {
+            blur.maskImage = NSImage(size: NSSize(width: corner * 2 + 1, height: corner * 2 + 1), flipped: false) { rect in
+                NSBezierPath(roundedRect: rect, xRadius: corner, yRadius: corner).fill()
+                return true
+            }.with { $0.capInsets = NSEdgeInsets(top: corner, left: corner, bottom: corner, right: corner) }
+        }
 
         // Just above the desktop icons, or above every normal window when floating.
         let host = NSHostingView(rootView: makeContent { [weak self] onTop in
@@ -172,6 +213,8 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         }
         panel.setFrameAutosaveName(autosaveName)
         panel.orderFrontRegardless()
+        // The shadow follows the drawn shape, which only exists once the content has drawn.
+        DispatchQueue.main.async { [panel] in panel?.invalidateShadow() }
     }
 }
 
