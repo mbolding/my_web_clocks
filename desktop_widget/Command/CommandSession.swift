@@ -30,6 +30,8 @@ final class CommandSession: ObservableObject {
 
     private var process: Process?
     private var queuedFolder: URL? // arrived while a command was running
+    private var commandNames: Set<String> = [] // for Tab on a command name, refreshed after each command
+    private var collectedNames: Set<String>? // being read from the shell
     private var input: FileHandle?
     private let token = "__commandbar_\(UUID().uuidString)__"
     private var pending = Data()
@@ -99,7 +101,9 @@ final class CommandSession: ObservableObject {
             if blocks.count > Self.maxBlocks { blocks.removeFirst(blocks.count - Self.maxBlocks) }
         }
         // base64 keeps the command's quotes and newlines away from the shell's own parsing;
-        // eval then runs it in this shell, so cd and friends stick. The marker line also
+        // eval then runs it in this shell, so cd and friends stick. Afterwards the shell
+        // lists every command name it knows (PATH, aliases, functions, builtins; rehash
+        // picks up anything just installed) for Tab, then the marker line, which also
         // carries the git branch (short hash when detached, - outside a repo) and whether
         // there are uncommitted changes; branch names can't contain spaces.
         let encoded = Data(command.utf8).base64EncodedString()
@@ -107,6 +111,9 @@ final class CommandSession: ObservableObject {
             __commandbar=$(print -r -- \(encoded) | base64 --decode)
             { eval "$__commandbar" } < /dev/null
             __commandbar_status=$?
+            rehash 2>/dev/null
+            print -r -- \(token):names
+            print -rl -- ${(k)commands} ${(k)aliases} ${(k)functions} ${(k)builtins} ${(k)reswords}
             __commandbar_branch=$(git symbolic-ref --short -q HEAD 2>/dev/null </dev/null || git rev-parse --short HEAD 2>/dev/null </dev/null)
             __commandbar_dirty=0
             [[ -n $__commandbar_branch && -n $(git status --porcelain 2>/dev/null </dev/null | head -1) ]] && __commandbar_dirty=1
@@ -123,12 +130,25 @@ final class CommandSession: ObservableObject {
             let text = String(decoding: pending[pending.startIndex..<newline], as: UTF8.self)
             pending.removeSubrange(...newline)
 
-            guard let marker = text.range(of: token) else {
-                append(text, to: &current)
+            // Output without a trailing newline runs straight into the names line.
+            if let names = text.range(of: token + ":names") {
+                if names.lowerBound > text.startIndex { append(String(text[..<names.lowerBound]), to: &current) }
+                collectedNames = []
                 continue
             }
-            // Output without a trailing newline runs straight into the marker.
+            guard let marker = text.range(of: token) else {
+                if collectedNames != nil {
+                    collectedNames!.insert(text)
+                } else {
+                    append(text, to: &current)
+                }
+                continue
+            }
             if marker.lowerBound > text.startIndex { append(String(text[..<marker.lowerBound]), to: &current) }
+            if let collected = collectedNames {
+                commandNames = collected
+                collectedNames = nil
+            }
             // status, branch, dirty flag, folder
             let fields = text[marker.upperBound...].split(separator: " ", maxSplits: 3)
             if !hidden, !current.isEmpty, let status = fields.first.flatMap({ Int32($0) }) {
@@ -171,6 +191,7 @@ final class CommandSession: ObservableObject {
         process = nil
         input = nil
         pending = Data()
+        collectedNames = nil
         if isRunning, !hidden, !blocks.isEmpty {
             blocks[blocks.count - 1].status = status
             blocks[blocks.count - 1].output += "(shell exited; started a new one)\n"
@@ -257,8 +278,9 @@ final class CommandSession: ObservableObject {
         }
     }
 
-    /// Completes the last word of the line against file names, like zsh's Tab. Several
-    /// matches extend to what they share and list the rest in the hint line.
+    /// Completes the last word of the line, like zsh's Tab: a command name where a command
+    /// goes (start of the line, after | ; & ( or sudo and the like), otherwise a file name.
+    /// Several matches extend to what they share and list the rest in the hint line.
     func complete() {
         var start = line.endIndex
         while start > line.startIndex {
@@ -266,24 +288,40 @@ final class CommandSession: ObservableObject {
             if line[prev] == " ", prev == line.startIndex || line[line.index(before: prev)] != "\\" { break }
             start = prev
         }
-        let word = line[start...].replacingOccurrences(of: "\\ ", with: " ")
+        // A command can start inside the word too, as in x=$(pbp or ls;pbp; keep what's
+        // before it as typed.
+        var raw = String(line[start...]), lead = ""
+        if let sep = raw.lastIndex(where: { "|;&(`".contains($0) }) {
+            lead = String(raw[...sep])
+            raw = String(raw[raw.index(after: sep)...])
+        }
+        let word = raw.replacingOccurrences(of: "\\ ", with: " ")
         let slash = word.lastIndex(of: "/")
         let dirPart = slash.map { String(word[...$0]) } ?? ""
         let namePart = slash.map { String(word[word.index(after: $0)...]) } ?? word
 
-        let expanded = (dirPart as NSString).expandingTildeInPath
-        let base = dirPart.isEmpty ? folder
-            : expanded.hasPrefix("/") ? URL(fileURLWithPath: expanded) : folder.appendingPathComponent(expanded)
-        let names = (try? FileManager.default.contentsOfDirectory(atPath: base.path)) ?? []
-        let matches = names
-            .filter { (namePart.hasPrefix(".") || !$0.hasPrefix(".")) && $0.lowercased().hasPrefix(namePart.lowercased()) }
-            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        var matches: [String] = []
+        var isDirectory: (String) -> Bool = { _ in false }
+        if dirPart.isEmpty, !word.hasPrefix("~"), !lead.isEmpty || Self.isCommandPosition(line[..<start]) {
+            // Leading-underscore names are completion internals unless asked for.
+            matches = commandNames.filter { $0.hasPrefix(word) && (word.hasPrefix("_") || !$0.hasPrefix("_")) }.sorted()
+        }
+        if matches.isEmpty {
+            let expanded = (dirPart as NSString).expandingTildeInPath
+            let base = dirPart.isEmpty ? folder
+                : expanded.hasPrefix("/") ? URL(fileURLWithPath: expanded) : folder.appendingPathComponent(expanded)
+            let names = (try? FileManager.default.contentsOfDirectory(atPath: base.path)) ?? []
+            matches = names
+                .filter { (namePart.hasPrefix(".") || !$0.hasPrefix(".")) && $0.lowercased().hasPrefix(namePart.lowercased()) }
+                .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+            isDirectory = { Self.isDirectory(base.appendingPathComponent($0)) }
+        }
         guard let first = matches.first else { NSSound.beep(); return }
 
         var name: String, suffix = ""
         if matches.count == 1 {
             name = first
-            suffix = Self.isDirectory(base.appendingPathComponent(first)) ? "/" : " "
+            suffix = isDirectory(first) ? "/" : " "
         } else {
             let lowered = matches.map { Array($0.lowercased()) }
             var shared = lowered[0].count
@@ -291,10 +329,20 @@ final class CommandSession: ObservableObject {
                 shared = min(shared, zip(lowered[0], other).prefix { $0 == $1 }.count)
             }
             name = shared > namePart.count ? String(first.prefix(shared)) : namePart
-            let listed = matches.prefix(60).map { Self.isDirectory(base.appendingPathComponent($0)) ? $0 + "/" : $0 }
+            let listed = matches.prefix(60).map { isDirectory($0) ? $0 + "/" : $0 }
             hint = listed.joined(separator: "  ") + (matches.count > 60 ? "  …" : "")
         }
-        line = String(line[..<start]) + (dirPart + name).replacingOccurrences(of: " ", with: "\\ ") + suffix
+        line = String(line[..<start]) + lead + (dirPart + name).replacingOccurrences(of: " ", with: "\\ ") + suffix
+    }
+
+    private static let commandPrefixes: Set = ["sudo", "time", "nohup", "xargs", "exec", "command", "builtin",
+                                               "which", "type", "whence", "where", "man", "env", "watch"]
+
+    /// Whether a command name goes after `before`: nothing, a separator, or a word like sudo.
+    private static func isCommandPosition(_ before: Substring) -> Bool {
+        let trimmed = before.trimmingCharacters(in: .whitespaces)
+        guard let last = trimmed.last else { return true }
+        return "|;&({`".contains(last) || commandPrefixes.contains(String(trimmed.split(separator: " ").last ?? ""))
     }
 
     // MARK: - Keys
