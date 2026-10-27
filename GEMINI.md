@@ -23,7 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -75,7 +75,7 @@ conventions to it.
 `desktop_widget/` holds native macOS apps rather than web pages: small floating
 SwiftUI windows, currently an analog clock, a word clock ported from
 `clocks/art/word_clock.html`, Command Bar (a floating zsh you can drop folders
-onto) and Soma Player (a SomaFM radio). Each app is a folder with `App.swift`
+onto), Soma Player (a SomaFM radio) and Dial Timer (a round timer). Each app is a folder with `App.swift`
 (the `@main` entry, which calls `DesktopClock.run`), `Icon.swift` (an `IconFace`
 view the build renders into the app icon) and its own views; `Shared/` has the
 floating window, right-click menu, `FloatPin` and the icon renderer.

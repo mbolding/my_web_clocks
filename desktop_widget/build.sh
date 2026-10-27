@@ -22,6 +22,7 @@ CLOCKS=(
   Word    WordClock    com.mbolding.wordclock    "Word Clock"
   Command CommandBar   com.mbolding.commandbar   "Command Bar"
   Soma    SomaPlayer   com.mbolding.somaplayer   "Soma Player"
+  Timer   DialTimer    com.mbolding.dialtimer    "Dial Timer"
 )
 
 build_clock() {
