@@ -36,6 +36,8 @@ struct ClockMenu<Face: View, Options: View>: View {
 
     var body: some View {
         face
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle()) // right-click anywhere, not just on the drawn marks
             .onChange(of: floatOnTop, initial: true) { setFloatOnTop(floatOnTop) }
             .contextMenu {
                 options

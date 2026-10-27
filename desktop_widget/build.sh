@@ -112,12 +112,16 @@ for dir exe id name in $CLOCKS; do
   build_clock $dir $exe $id $name
   (( ++built ))
 
+  # Quit any running copy and wait for it to go, or open can race the exit and fail.
+  if [[ -n $action ]]; then
+    pkill -x $exe || true
+    while pgrep -qx $exe; do sleep 0.1; done
+  fi
+
   case $action in
     --run)
-      pkill -x $exe || true
       open build/$exe.app ;;
     --install)
-      pkill -x $exe || true
       rm -rf ~/Applications/$exe.app
       mkdir -p ~/Applications
       cp -R build/$exe.app ~/Applications/
