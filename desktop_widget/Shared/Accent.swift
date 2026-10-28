@@ -43,8 +43,17 @@ enum Accent: String, CaseIterable, Identifiable {
     }
 }
 
+// Written out rather than with @Entry, whose macro plugin comes with Xcode but not with
+// the command-line tools alone.
+private struct AccentKey: EnvironmentKey {
+    static let defaultValue = Color.orange
+}
+
 extension EnvironmentValues {
-    @Entry var accent: Color = .orange
+    var accent: Color {
+        get { self[AccentKey.self] }
+        set { self[AccentKey.self] = newValue }
+    }
 }
 
 extension Color {
