@@ -33,7 +33,10 @@ final class CommandSession: ObservableObject {
     private var commandNames: Set<String> = [] // for Tab on a command name, refreshed after each command
     private var collectedNames: Set<String>? // being read from the shell
     private var input: FileHandle?
-    private let token = "__commandbar_\(UUID().uuidString)__"
+    // The script writes the marker with printf from these two halves, so a shell that
+    // echoes what it runs (a title hook, set -x) never prints the marker itself.
+    private let tokenID = UUID().uuidString
+    private var token: String { "__commandbar_\(tokenID)__" }
     private var pending = Data()
     private var hidden = false // the running command is setup, not something you typed
     private var interrupts = 0
@@ -43,7 +46,10 @@ final class CommandSession: ObservableObject {
     private var keyMonitor: Any?
 
     private static let maxBlocks = 200, maxLines = 2000
-    private static let escapes = try! NSRegularExpression(pattern: "\u{1B}\\[[0-9;?]*[ -/]*[@-~]|.\u{08}")
+    // Colour and cursor codes, title and folder codes (OSC, ended by BEL or ESC \),
+    // character set switches, and backspace overstrikes.
+    private static let escapes = try! NSRegularExpression(
+        pattern: #"\x1B\[[0-9;?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)?|\x1B[()][0-9A-Za-z]|\x1B[=>78]|.\x08"#)
 
     private init() {
         let saved = UserDefaults.standard.string(forKey: "folder").map { URL(fileURLWithPath: $0) }
@@ -63,6 +69,12 @@ final class CommandSession: ObservableObject {
         var env = ProcessInfo.processInfo.environment
         // No terminal here, so keep tools from paging or colouring their output.
         env.merge(["TERM": "dumb", "PAGER": "cat", "GIT_PAGER": "cat", "MANPAGER": "cat", "NO_COLOR": "1"]) { $1 }
+        // Opened from a terminal, the app inherits that terminal's name, and tools that see
+        // it (Oh My Zsh's window title hook) write escape codes meant for it.
+        for key in ["TERM_PROGRAM", "TERM_PROGRAM_VERSION", "TERM_SESSION_ID", "ITERM_SESSION_ID",
+                    "ITERM_PROFILE", "LC_TERMINAL", "LC_TERMINAL_VERSION", "COLORTERM"] {
+            env[key] = nil
+        }
         p.environment = env
 
         let stdin = Pipe(), stdout = Pipe()
@@ -112,12 +124,12 @@ final class CommandSession: ObservableObject {
             { eval "$__commandbar" } < /dev/null
             __commandbar_status=$?
             rehash 2>/dev/null
-            print -r -- \(token):names
+            printf '__commandbar_%s__:names\\n' \(tokenID)
             print -rl -- ${(k)commands} ${(k)aliases} ${(k)functions} ${(k)builtins} ${(k)reswords}
             __commandbar_branch=$(git symbolic-ref --short -q HEAD 2>/dev/null </dev/null || git rev-parse --short HEAD 2>/dev/null </dev/null)
             __commandbar_dirty=0
             [[ -n $__commandbar_branch && -n $(git status --porcelain 2>/dev/null </dev/null | head -1) ]] && __commandbar_dirty=1
-            printf '%s %d %s %d %s\\n' \(token) $__commandbar_status "${__commandbar_branch:--}" $__commandbar_dirty "$PWD"
+            printf '__commandbar_%s__ %d %s %d %s\\n' \(tokenID) $__commandbar_status "${__commandbar_branch:--}" $__commandbar_dirty "$PWD"
 
             """
         input.write(Data(script.utf8))
@@ -127,7 +139,10 @@ final class CommandSession: ObservableObject {
         pending.append(data)
         var current = blocks
         while let newline = pending.firstIndex(of: 0x0A) {
-            let text = String(decoding: pending[pending.startIndex..<newline], as: UTF8.self)
+            // Cleaned before looking for the marker, which may follow a stray escape code.
+            let raw = String(decoding: pending[pending.startIndex..<newline], as: UTF8.self)
+            let text = Self.escapes.stringByReplacingMatches(in: raw, range: NSRange(raw.startIndex..., in: raw),
+                                                             withTemplate: "")
             pending.removeSubrange(...newline)
 
             // Output without a trailing newline runs straight into the names line.
@@ -174,10 +189,8 @@ final class CommandSession: ObservableObject {
 
     private func append(_ text: String, to blocks: inout [Block]) {
         guard !hidden, !blocks.isEmpty else { return }
-        let clean = Self.escapes.stringByReplacingMatches(in: text, range: NSRange(text.startIndex..., in: text),
-                                                          withTemplate: "")
         let i = blocks.count - 1
-        blocks[i].output += clean + "\n"
+        blocks[i].output += text + "\n"
         blocks[i].lines += 1
         // Keep long output to its last few thousand lines.
         if blocks[i].lines > Self.maxLines + 500 {
