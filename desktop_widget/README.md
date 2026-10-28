@@ -8,7 +8,8 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Word Clock** (`Word/`) | The time spelled out on an 11×11 letter grid, a native port of [`clocks/art/word_clock.html`](../clocks/art/word_clock.html) |
 | **Command Bar** (`Command/`) | A floating zsh you can type into and drop folders onto, with history, Tab completion and the current git branch |
 | **Soma Player** (`Soma/`) | A small [SomaFM](https://somafm.com) radio with a channel menu and what's playing |
-| **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and an orange wedge shows the time left |
+| **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left |
+| **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -104,6 +105,8 @@ All of them:
 
 **Clock Widget** has a **Show Seconds** option in its right-click menu.
 
+**Month Calendar** shows the current month, its weeks starting on the first day of the week set in System Settings, with weekends greyed and today on a circle of the accent colour. It moves on to the next day, and month, by itself. It starts just left of Clock Widget.
+
 ## Uninstall
 
 Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
@@ -112,7 +115,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
 
 ## How it's put together
 
@@ -125,6 +128,7 @@ desktop_widget/
 ├── Command/        App.swift, Icon.swift, the view and shell session, InfoPlistExtras.xml
 ├── Soma/           App.swift, Icon.swift, the view and player
 ├── Timer/          App.swift, Icon.swift, the dial, its view, the timer and its chime
+├── Calendar/       App.swift, Icon.swift, CalendarFace.swift
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 

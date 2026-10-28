@@ -15,9 +15,11 @@ import AppKit
 
 @MainActor
 enum DesktopClock {
-    /// Runs the app; never returns. `defaultTop` is the gap above the window on first
-    /// launch, so clocks that share the top-right corner don't start out stacked.
+    /// Runs the app; never returns. `defaultTop` and `defaultRight` are the gaps above and
+    /// to the right of the window on first launch, so clocks that share the top-right
+    /// corner don't start out stacked.
     static func run<Face: View, Options: View>(size: CGSize, defaultTop: CGFloat = 24,
+                                               defaultRight: CGFloat = 24,
                                                interactive: Bool = false,
                                                round: Bool = false,
                                                movableByBackground: Bool = true,
@@ -28,7 +30,8 @@ enum DesktopClock {
         // Registered once here, so the menu and any FloatPin agree on the default.
         UserDefaults.standard.register(defaults: ["floatOnTop": floatsByDefault ?? interactive])
         let app = NSApplication.shared
-        let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, interactive: interactive,
+        let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, defaultRight: defaultRight,
+                                            interactive: interactive,
                                             round: round, movableByBackground: movableByBackground,
                                             onOpen: onOpen) { setFloatOnTop in
             AnyView(ClockMenu(round: round, setFloatOnTop: setFloatOnTop, face: face(), options: options()))
@@ -39,11 +42,12 @@ enum DesktopClock {
         app.run()
     }
 
-    static func run<Face: View>(size: CGSize, defaultTop: CGFloat = 24, interactive: Bool = false,
+    static func run<Face: View>(size: CGSize, defaultTop: CGFloat = 24, defaultRight: CGFloat = 24,
+                                interactive: Bool = false,
                                 round: Bool = false, movableByBackground: Bool = true,
                                 floatsByDefault: Bool? = nil, onOpen: (([URL]) -> Void)? = nil,
                                 @ViewBuilder face: @escaping () -> Face) {
-        run(size: size, defaultTop: defaultTop, interactive: interactive, round: round,
+        run(size: size, defaultTop: defaultTop, defaultRight: defaultRight, interactive: interactive, round: round,
             movableByBackground: movableByBackground, floatsByDefault: floatsByDefault,
             onOpen: onOpen, face: face) { EmptyView() }
     }
@@ -133,6 +137,7 @@ final class DesktopPanel: NSPanel {
 final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     private let size: CGSize
     private let defaultTop: CGFloat
+    private let defaultRight: CGFloat
     private let interactive: Bool
     private let round: Bool
     private let movableByBackground: Bool
@@ -140,10 +145,12 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     private let makeContent: (@escaping (Bool) -> Void) -> AnyView
     private var panel: DesktopPanel!
 
-    init(size: CGSize, defaultTop: CGFloat, interactive: Bool, round: Bool, movableByBackground: Bool,
-         onOpen: (([URL]) -> Void)?, makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
+    init(size: CGSize, defaultTop: CGFloat, defaultRight: CGFloat, interactive: Bool, round: Bool,
+         movableByBackground: Bool, onOpen: (([URL]) -> Void)?,
+         makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
         self.size = size
         self.defaultTop = defaultTop
+        self.defaultRight = defaultRight
         self.interactive = interactive
         self.round = round
         self.movableByBackground = movableByBackground
@@ -236,12 +243,12 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         ])
         panel.contentView = blur
 
-        // Default to the top-right corner, stepped down by defaultTop but never off the
-        // bottom of a smaller screen; afterwards restore wherever it was dragged.
+        // Default to the top-right corner, stepped in by defaultRight and down by defaultTop
+        // but never off a smaller screen; afterwards restore wherever it was dragged.
         let autosaveName = Bundle.main.object(forInfoDictionaryKey: "CFBundleExecutable") as? String ?? "Clock"
         if !panel.setFrameUsingName(autosaveName), let screen = NSScreen.main {
             let v = screen.visibleFrame
-            panel.setFrameOrigin(NSPoint(x: v.maxX - size.width - 24,
+            panel.setFrameOrigin(NSPoint(x: max(v.minX + 24, v.maxX - size.width - defaultRight),
                                          y: max(v.minY + 24, v.maxY - size.height - defaultTop)))
         }
         panel.setFrameAutosaveName(autosaveName)

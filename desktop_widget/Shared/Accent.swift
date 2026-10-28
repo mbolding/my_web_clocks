@@ -46,3 +46,13 @@ enum Accent: String, CaseIterable, Identifiable {
 extension EnvironmentValues {
     @Entry var accent: Color = .orange
 }
+
+extension Color {
+    /// White for text drawn on this colour, or black where white would be hard to read,
+    /// as on yellow.
+    var readableText: Color {
+        guard let c = NSColor(self).usingColorSpace(.sRGB) else { return .white }
+        let light = 0.2126 * c.redComponent + 0.7152 * c.greenComponent + 0.0722 * c.blueComponent > 0.7
+        return light ? .black : .white
+    }
+}

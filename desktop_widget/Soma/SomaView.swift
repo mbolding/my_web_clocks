@@ -71,19 +71,13 @@ struct SomaView: View {
         return Button { player.toggle() } label: {
             Image(systemName: on ? "stop.fill" : "play.fill")
                 .font(.system(size: 11))
-                .foregroundStyle(Self.isLight(accent) ? .black : .white)
+                .foregroundStyle(accent.readableText)
                 .frame(width: 26, height: 26)
                 .background(Circle().fill(accent))
         }
         .buttonStyle(.plain)
         .disabled(player.channel == nil)
         .help(on ? "Stop" : "Play")
-    }
-
-    /// Whether white would be hard to read on `color`, as on yellow.
-    private static func isLight(_ color: Color) -> Bool {
-        guard let c = NSColor(color).usingColorSpace(.sRGB) else { return false }
-        return 0.2126 * c.redComponent + 0.7152 * c.greenComponent + 0.0722 * c.blueComponent > 0.7
     }
 
     @ViewBuilder private var status: some View {

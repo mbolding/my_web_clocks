@@ -24,6 +24,7 @@ CLOCKS=(
   Soma    SomaPlayer   com.mbolding.somaplayer   "Soma Player"
   Timer   DialTimer    com.mbolding.dialtimer    "Dial Timer"
   Launcher WidgetBar   com.mbolding.widgetbar    "Widget Bar"
+  Calendar MonthCalendar com.mbolding.monthcalendar "Month Calendar"
 )
 
 build_clock() {
