@@ -99,7 +99,7 @@ All of them:
 **Widget Bar**
 
 - Shows every installed widget, found when it starts; restart it to pick up a newly installed one. It floats on top by default and starts at the bottom right.
-- The dot under an icon is grey while that widget runs on the desktop and orange while it floats on top; no dot means it isn't running.
+- The dot under an icon is grey while that widget runs on the desktop and in the accent colour while it floats on top; no dot means it isn't running.
 - Click a widget that isn't running to open it. Click a running one to flip its Float on Top.
 - Right-click an icon to float it or put it on the desktop, **Show** it for a few seconds, or quit it.
 - The **›** at the right end folds the bar into a small square at its right edge, to get it out of the way; click the square to open the bar again. It stays folded or open across restarts.
