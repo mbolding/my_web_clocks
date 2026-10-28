@@ -6,13 +6,13 @@ struct ClockFace: View {
     var date: Date
     var showSeconds: Bool
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accent) private var accent
 
     var body: some View {
         Canvas { ctx, size in
             let r = min(size.width, size.height) / 2
             let c = CGPoint(x: size.width / 2, y: size.height / 2)
             let ink: Color = scheme == .dark ? .white : .black
-            let accent = Color.orange
 
             func point(_ turns: Double, _ len: Double) -> CGPoint {
                 let a = turns * 2 * .pi

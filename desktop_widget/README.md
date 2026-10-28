@@ -69,7 +69,8 @@ xattr -dr com.apple.quarantine ~/Applications/CommandBar.app
 All of them:
 
 - **Drag** the window to move it (on Command Bar, by its folder bar; on Dial Timer, by its rim); the position is remembered.
-- **Right-click** for the app's options, **Float on Top**, and **Quit**.
+- **Right-click** for the app's options, **Accent Color**, **Float on Top**, and **Quit**.
+- **Accent Color** sets the highlight colour (the second hand, the timer's wedge, the pins and so on) for all of them at once. It starts as orange; **Match System** follows the accent colour in System Settings → Appearance.
 - Windows with a **pin** (Command Bar, Soma Player, Dial Timer, Widget Bar) show whether they float on top; click it to switch.
 - Opening a widget that's already running (from Widget Bar's Show, Finder, or `open -a`) brings its window up above everything for a few seconds, so you can find it.
 - They follow the system's light or dark appearance.
@@ -111,14 +112,14 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer` and `com.mbolding.widgetbar`.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
 
 ## How it's put together
 
 ```
 desktop_widget/
 ├── build.sh        the build script; lists every app in its CLOCKS table
-├── Shared/         the floating window, right-click menu, FloatPin, and the icon renderer
+├── Shared/         the floating window, right-click menu, FloatPin, the accent colour, and the icon renderer
 ├── Analog/         App.swift, Icon.swift, ClockFace.swift; Widget/ is a parked WidgetKit version
 ├── Word/           App.swift, Icon.swift, WordFace.swift
 ├── Command/        App.swift, Icon.swift, the view and shell session, InfoPlistExtras.xml
@@ -127,7 +128,7 @@ desktop_widget/
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 
-Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
 To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 

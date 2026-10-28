@@ -80,7 +80,9 @@ onto), Soma Player (a SomaFM radio), Dial Timer (a round timer) and Widget Bar
 the `DesktopWidget` key build.sh adds to every Info.plist). Each app is a folder with `App.swift`
 (the `@main` entry, which calls `DesktopClock.run`), `Icon.swift` (an `IconFace`
 view the build renders into the app icon) and its own views; `Shared/` has the
-floating window, right-click menu, `FloatPin` and the icon renderer.
+floating window, right-click menu, `FloatPin`, the shared accent colour (draw
+highlights with the `accent` environment value, not a fixed colour) and the icon
+renderer.
 `desktop_widget/build.sh [name…] [--run|--install]` builds them with `swiftc`
 (no Xcode project; Apple Silicon, macOS 14+), and a new app needs a line in its
 `CLOCKS` table. `desktop_widget/build/` is gitignored. Install steps and usage

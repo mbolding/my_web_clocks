@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Builds the floating desktop clocks with the Swift command-line tools; no Xcode needed.
 # Each clock is a folder holding App.swift (the @main entry), Icon.swift (its app icon)
-# and its face; Shared/ has the window, menu and icon code they all use.
+# and its face; Shared/ has the window, menu, accent colour and icon code they all use.
 #   ./build.sh                  build every clock into ./build
 #   ./build.sh word             build just one (folder name, any case)
 #   ./build.sh analog --run     build, then (re)launch it
@@ -34,12 +34,12 @@ build_clock() {
   rm -rf $app
   mkdir -p $app/Contents/MacOS $app/Contents/Resources
 
-  swiftc -O -parse-as-library -target $TARGET Shared/DesktopClock.swift ${sources:#*/Icon.swift} \
+  swiftc -O -parse-as-library -target $TARGET Shared/DesktopClock.swift Shared/Accent.swift ${sources:#*/Icon.swift} \
       -o $app/Contents/MacOS/$exe
 
   # App icon: draw the clock's own face, then pack the sizes into an .icns. The shared
   # window code comes along for views that use its pieces, like FloatPin.
-  swiftc -O -parse-as-library -target $TARGET Shared/MakeIcon.swift Shared/DesktopClock.swift \
+  swiftc -O -parse-as-library -target $TARGET Shared/MakeIcon.swift Shared/DesktopClock.swift Shared/Accent.swift \
       ${sources:#*/App.swift} -o build/MakeIcon-$exe
   rm -rf build/$exe.iconset
   build/MakeIcon-$exe build/$exe.iconset
@@ -71,7 +71,7 @@ PLIST
     local ext=$app/Contents/PlugIns/${exe}Extension.appex
     mkdir -p $ext/Contents/MacOS
     swiftc -O -parse-as-library -application-extension -target $TARGET \
-        ${sources:#*/(App|Icon).swift} $dir/Widget/*.swift -o $ext/Contents/MacOS/${exe}Extension
+        Shared/Accent.swift ${sources:#*/(App|Icon).swift} $dir/Widget/*.swift -o $ext/Contents/MacOS/${exe}Extension
 
     cat > $ext/Contents/Info.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

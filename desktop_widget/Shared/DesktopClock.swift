@@ -1,7 +1,8 @@
 // DesktopClock — the floating window every clock here shares.
 // Borderless, translucent, just above the desktop icons (or above every window with
 // Float on Top), on every Space. Drag to move (position is remembered). Right-click
-// for the clock's own options, Float on Top, and Quit.
+// for the clock's own options, the accent colour all the widgets share, Float on Top,
+// and Quit.
 // An interactive window (the command bar) also takes typing, resizes from its edges,
 // and floats on top unless turned off. An app given `onOpen` receives files and folders
 // opened with it (open -a, Open With) or sent from its Finder service, if its
@@ -50,6 +51,7 @@ enum DesktopClock {
 
 struct ClockMenu<Face: View, Options: View>: View {
     @AppStorage("floatOnTop") private var floatOnTop = false // default registered in run
+    @AppStorage("accent", store: Accent.defaults) private var accent = Accent.orange
     var round: Bool
     var setFloatOnTop: (Bool) -> Void
     var face: Face
@@ -57,12 +59,19 @@ struct ClockMenu<Face: View, Options: View>: View {
 
     var body: some View {
         face
+            .environment(\.accent, accent.color)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // Right-click anywhere on the window, not just on the drawn marks.
             .contentShape(round ? AnyShape(Circle()) : AnyShape(Rectangle()))
             .onChange(of: floatOnTop, initial: true) { setFloatOnTop(floatOnTop) }
             .contextMenu {
                 options
+                Picker("Accent Color", selection: $accent) {
+                    ForEach(Accent.allCases) { accent in
+                        Label { Text(accent.name) } icon: { Image(nsImage: accent.swatch) }
+                            .tag(accent)
+                    }
+                }
                 Toggle("Float on Top", isOn: $floatOnTop)
                 Divider()
                 Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Clock")") {
@@ -72,17 +81,18 @@ struct ClockMenu<Face: View, Options: View>: View {
     }
 }
 
-/// A small pin a window can show: filled orange while it floats on top, a faint
-/// crossed-out pin while it sits on the desktop. Click to toggle; it shares the menu's
-/// Float on Top setting.
+/// A small pin a window can show: filled in the accent colour while it floats on top, a
+/// faint crossed-out pin while it sits on the desktop. Click to toggle; it shares the
+/// menu's Float on Top setting.
 struct FloatPin: View {
     @AppStorage("floatOnTop") private var floatOnTop = false // default registered in run
+    @Environment(\.accent) private var accent
 
     var body: some View {
         Button { floatOnTop.toggle() } label: {
             Image(systemName: floatOnTop ? "pin.fill" : "pin.slash")
                 .font(.system(size: 9))
-                .foregroundStyle(floatOnTop ? AnyShapeStyle(Color.orange.opacity(0.7)) : AnyShapeStyle(.tertiary))
+                .foregroundStyle(floatOnTop ? AnyShapeStyle(accent.opacity(0.7)) : AnyShapeStyle(.tertiary))
                 .frame(width: 14, height: 14)
                 .contentShape(Rectangle())
         }

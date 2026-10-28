@@ -1,5 +1,5 @@
 // LauncherBar — Widget Bar's window: a row of widget icons with a dot under each one
-// that's running, orange if it floats on top. Click to open a widget, or to flip a
+// that's running, in the accent colour if it floats on top. Click to open a widget, or to flip a
 // running one's Float on Top; right-click an icon to show it for a moment or quit it.
 
 import SwiftUI
@@ -15,6 +15,7 @@ struct LauncherBar: View {
     }
 
     @ObservedObject var launcher = WidgetLauncher.shared
+    @Environment(\.accent) private var accent
 
     var body: some View {
         HStack(spacing: Self.spacing) {
@@ -34,7 +35,7 @@ struct LauncherBar: View {
                             .resizable()
                             .frame(width: Self.iconSize, height: Self.iconSize)
                         Circle()
-                            .fill(isFloating ? AnyShapeStyle(Color.orange)
+                            .fill(isFloating ? AnyShapeStyle(accent)
                                   : isRunning ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.clear))
                             .frame(width: isFloating ? 5 : 4, height: isFloating ? 5 : 4)
                     }

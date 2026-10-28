@@ -71,6 +71,7 @@ enum WordGrid {
 struct WordFace: View {
     var date: Date
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accent) private var accentColor
 
     var body: some View {
         let (lit, accent) = WordGrid.cells(at: date)
@@ -84,7 +85,7 @@ struct WordFace: View {
                         ForEach(0..<11, id: \.self) { col in
                             let i = row * 11 + col
                             let letter = Text(String(WordGrid.rows[row][col]))
-                            let color = accent.contains(i) ? Color.orange : ink
+                            let color = accent.contains(i) ? accentColor : ink
                             ZStack {
                                 letter.foregroundStyle(ink.opacity(scheme == .dark ? 0.16 : 0.12))
                                 letter.foregroundStyle(color)

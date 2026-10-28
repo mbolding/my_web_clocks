@@ -8,6 +8,7 @@ struct CommandBar: View {
     @ObservedObject var session = CommandSession.shared
     @State private var dropTargeted = false
     @FocusState private var focused: Bool
+    @Environment(\.accent) private var accent
 
     var body: some View {
         VStack(spacing: 0) {
@@ -24,7 +25,7 @@ struct CommandBar: View {
             }
             Divider()
             HStack(spacing: 6) {
-                Text("›").foregroundStyle(.orange)
+                Text("›").foregroundStyle(accent)
                 TextField("", text: $session.line,
                           prompt: Text(session.isRunning ? "running…  ⌃C to stop" : "type a command, or drop a folder"))
                     .textFieldStyle(.plain)
@@ -37,7 +38,7 @@ struct CommandBar: View {
         .font(.system(size: 12, design: .monospaced))
         .overlay {
             if dropTargeted {
-                RoundedRectangle(cornerRadius: 20).strokeBorder(Color.orange, lineWidth: 3).padding(3)
+                RoundedRectangle(cornerRadius: 20).strokeBorder(accent, lineWidth: 3).padding(3)
             }
         }
         .dropDestination(for: URL.self) { urls, _ in
@@ -67,7 +68,7 @@ struct CommandBar: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     if session.hasChanges {
-                        Circle().fill(Color.orange).frame(width: 6, height: 6)
+                        Circle().fill(accent).frame(width: 6, height: 6)
                             .help("Uncommitted changes")
                     }
                 }
@@ -113,11 +114,12 @@ struct CommandBar: View {
 
 struct BlockView: View {
     var block: Block
+    @Environment(\.accent) private var accent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("$ " + block.command)
-                .foregroundStyle(.orange)
+                .foregroundStyle(accent)
             if !block.output.isEmpty {
                 Text(block.output.hasSuffix("\n") ? String(block.output.dropLast()) : block.output)
             }
