@@ -73,7 +73,7 @@ All of them:
 - **Drag** the window to move it (on Command Bar, by its folder bar; on Dial Timer, by its rim, or anywhere as a stopwatch); the position is remembered.
 - **Right-click** for the app's options, **Accent Color**, **Float on Top**, and **Quit**.
 - **Accent Color** sets the highlight colour (the second hand, the timer's wedge, the pins and so on) for all of them at once. It starts as orange; **Match System** follows the accent colour in System Settings → Appearance.
-- Windows with a **pin** (Command Bar, Widget Bar) show whether they float on top; click it to switch.
+- Widget Bar has a **pin** at its right end showing whether it floats on top; click it to switch.
 - **⌘-click** anywhere on a widget to flip its Float on Top. A label shows for a moment saying which it is now; it also shows when the setting is changed from the menu, a pin or Widget Bar.
 - Opening a widget that's already running (from Widget Bar's Show, Finder, or `open -a`) brings its window up above everything for a few seconds, so you can find it.
 - They follow the system's light or dark appearance.

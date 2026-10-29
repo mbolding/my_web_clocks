@@ -53,8 +53,7 @@ struct CommandBar: View {
     }
 
     // The folder and, in a git repository, its branch (with a dot when there are
-    // uncommitted changes); drag here to move the window. A pin on the right shows
-    // whether it floats on top, and toggles it.
+    // uncommitted changes); drag here to move the window.
     private var header: some View {
         HStack(spacing: 6) {
             Image(systemName: "folder")
@@ -79,7 +78,6 @@ struct CommandBar: View {
             if session.isRunning {
                 ProgressView().controlSize(.mini)
             }
-            FloatPin()
         }
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(.secondary)
