@@ -40,7 +40,7 @@ final class ScratchPad: ObservableObject {
         var n = 1
         while FileManager.default.fileExists(atPath: url.path) {
             n += 1
-            url = desktop.appendingPathComponent("\(name) \(n).md")
+            url = desktop.appendingPathComponent("\(name)_\(n).md")
         }
         do {
             try (text.hasSuffix("\n") ? text : text + "\n").write(to: url, atomically: true, encoding: .utf8)
@@ -51,15 +51,17 @@ final class ScratchPad: ObservableObject {
         }
     }
 
-    /// The first line, with only letters, digits, spaces, hyphens and underscores kept
-    /// and cut to a few words, or "Scratch" and the date and time if that leaves nothing.
+    /// The first line's words joined by underscores, with only letters, digits and
+    /// underscores kept and cut to a few words, or "Scratch" and the date and time if that
+    /// leaves nothing. Spaces, dashes and other punctuation go, since they can mean
+    /// something to the shell (a leading dash reads as an option); underscores are safe.
     static func fileName(for text: String, at date: Date = .now) -> String {
         let firstLine = text.prefix(while: { !$0.isNewline }).filter { $0 != "'" && $0 != "’" } // don't → dont
-        let kept = String(firstLine.map { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" ? $0 : " " })
+        let kept = String(firstLine.map { $0.isLetter || $0.isNumber || $0 == "_" ? $0 : " " })
         var name = ""
         for word in kept.split(separator: " ") {
             guard name.count + word.count < 60 else { break }
-            name += (name.isEmpty ? "" : " ") + word
+            name += (name.isEmpty ? "" : "_") + word
         }
         if name.isEmpty, let word = kept.split(separator: " ").first {
             name = String(word.prefix(60)) // one very long word
@@ -67,8 +69,8 @@ final class ScratchPad: ObservableObject {
         if !name.isEmpty { return name }
         let format = DateFormatter()
         format.locale = Locale(identifier: "en_US_POSIX")
-        format.dateFormat = "yyyy-MM-dd HH.mm.ss" // no colons, which Finder shows as slashes
-        return "Scratch \(format.string(from: date))"
+        format.dateFormat = "yyyyMMdd_HHmmss" // no punctuation, as above, so it still sorts by date
+        return "Scratch_\(format.string(from: date))"
     }
 
     func revealLastSaved() {

@@ -117,7 +117,7 @@ All of them:
 **Scratch Pad**
 
 - Type or paste anything; it's kept as you type, across quits and restarts. The header shows the word count.
-- The two buttons at the top right copy everything to the clipboard, and save it as a new Markdown file on the Desktop. The file is named after the first line, with only letters, digits, spaces, hyphens and underscores kept (`# Ideas for the weekend!` saves as `Ideas for the weekend.md`), or by the date and time (`Scratch 2026-10-28 19.45.12.md`) if the first line is empty. A number is added rather than overwrite a file of the same name. **⌘S** saves too. The first save asks for access to the Desktop folder.
+- The two buttons at the top right copy everything to the clipboard, and save it as a new Markdown file on the Desktop. The file is named after the first line, with its words joined by underscores and only letters, digits and underscores kept, so nothing in it means anything to the shell (`# Ideas for the weekend!` saves as `Ideas_for_the_weekend.md`, and `well-known` as `well_known`), or by the date and time (`Scratch_20261028_194512.md`) if the first line is empty. A number is added (`_2`, `_3`) rather than overwrite a file of the same name. **⌘S** saves too. The first save asks for access to the Desktop folder.
 - The right-click menu (on the header; the text has its own) also has **Show Saved File in Finder** and **Clear**.
 - Floats on top by default; the window resizes from its edges.
 
