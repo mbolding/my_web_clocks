@@ -2,7 +2,7 @@
 // Borderless, translucent, just above the desktop icons (or above every window with
 // Float on Top), on every Space. Drag to move (position is remembered). Right-click
 // for the clock's own options, the accent colour all the widgets share, Float on Top,
-// and Quit.
+// and Quit. ⌘-click anywhere flips Float on Top, and a brief label says which it is now.
 // An interactive window (the command bar) also takes typing, resizes from its edges,
 // and floats on top unless turned off. An app given `onOpen` receives files and folders
 // opened with it (open -a, Open With) or sent from its Finder service, if its
@@ -60,14 +60,38 @@ struct ClockMenu<Face: View, Options: View>: View {
     var setFloatOnTop: (Bool) -> Void
     var face: Face
     var options: Options
+    // A brief label after Float on Top changes, however it was changed, since most of the
+    // windows have no pin to show it. Each change gets a new number, so only the latest
+    // one's timer hides it.
+    @State private var levelNote: (onTop: Bool, number: Int)?
 
     var body: some View {
         face
             .environment(\.accent, accent.color)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay {
+                if let levelNote {
+                    Label(levelNote.onTop ? "Floating on top" : "On the desktop",
+                          systemImage: levelNote.onTop ? "pin.fill" : "pin.slash")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.thickMaterial, in: Capsule())
+                        .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                }
+            }
             // Right-click anywhere on the window, not just on the drawn marks.
             .contentShape(round ? AnyShape(Circle()) : AnyShape(Rectangle()))
             .onChange(of: floatOnTop, initial: true) { setFloatOnTop(floatOnTop) }
+            .onChange(of: floatOnTop) {
+                let number = (levelNote?.number ?? 0) + 1
+                withAnimation(.easeOut(duration: 0.15)) { levelNote = (floatOnTop, number) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                    if levelNote?.number == number { withAnimation(.easeIn(duration: 0.3)) { levelNote = nil } }
+                }
+            }
             .contextMenu {
                 options
                 Picker("Accent Color", selection: $accent) {
@@ -144,6 +168,7 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     private let onOpen: (([URL]) -> Void)?
     private let makeContent: (@escaping (Bool) -> Void) -> AnyView
     private var panel: DesktopPanel!
+    private var clickMonitor: Any?
 
     init(size: CGSize, defaultTop: CGFloat, defaultRight: CGFloat, interactive: Bool, round: Bool,
          movableByBackground: Bool, onOpen: (([URL]) -> Void)?,
@@ -255,6 +280,17 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         panel.orderFrontRegardless()
         // The shadow follows the drawn shape, which only exists once the content has drawn.
         DispatchQueue.main.async { [panel] in panel?.invalidateShadow() }
+
+        // ⌘-click anywhere on the window flips Float on Top, before the face sees the
+        // click. The menu and any pin follow the setting, and set the window's level.
+        clickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            guard let panel = self?.panel, event.window === panel,
+                  event.modifierFlags.intersection([.command, .shift, .option, .control]) == .command
+            else { return event }
+            let defaults = UserDefaults.standard
+            defaults.set(!defaults.bool(forKey: "floatOnTop"), forKey: "floatOnTop")
+            return nil
+        }
     }
 }
 
