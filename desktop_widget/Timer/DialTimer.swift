@@ -1,7 +1,8 @@
 // DialTimer — the dial timer's state: up to an hour, running, paused, or finished and
 // waiting to be dismissed. The end time is saved, so a running timer carries on across
 // a quit or restart; one that ran out while the app was closed shows as finished
-// without ringing late.
+// without ringing late. The dial shows either this or the Stopwatch, by its mode; the
+// one not shown keeps going.
 
 import AppKit
 
@@ -17,9 +18,16 @@ final class DialTimer: ObservableObject {
         case finished
     }
 
+    enum Mode: String {
+        case timer, stopwatch
+    }
+
     @Published private(set) var state = State.idle
     @Published var sound = UserDefaults.standard.object(forKey: "sound") as? Bool ?? true {
         didSet { UserDefaults.standard.set(sound, forKey: "sound") }
+    }
+    @Published var mode = Mode(rawValue: UserDefaults.standard.string(forKey: "mode") ?? "") ?? .timer {
+        didSet { UserDefaults.standard.set(mode.rawValue, forKey: "mode") }
     }
 
     private var alarm: Timer?
@@ -91,6 +99,7 @@ final class DialTimer: ObservableObject {
 
     private func finish() {
         state = .finished
+        mode = .timer // so it can be seen, and dismissed
         save()
         guard sound else { return }
         // Ring every two seconds until dismissed, for up to a minute.

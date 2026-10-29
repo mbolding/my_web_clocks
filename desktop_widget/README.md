@@ -8,7 +8,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Word Clock** (`Word/`) | The time spelled out on an 11×11 letter grid, a native port of [`clocks/art/word_clock.html`](../clocks/art/word_clock.html) |
 | **Command Bar** (`Command/`) | A floating zsh you can type into and drop folders onto, with history, Tab completion and the current git branch |
 | **Soma Player** (`Soma/`) | A small [SomaFM](https://somafm.com) radio with a channel menu and what's playing |
-| **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left |
+| **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left. Also a stopwatch |
 | **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
@@ -69,10 +69,10 @@ xattr -dr com.apple.quarantine ~/Applications/CommandBar.app
 
 All of them:
 
-- **Drag** the window to move it (on Command Bar, by its folder bar; on Dial Timer, by its rim); the position is remembered.
+- **Drag** the window to move it (on Command Bar, by its folder bar; on Dial Timer, by its rim, or anywhere as a stopwatch); the position is remembered.
 - **Right-click** for the app's options, **Accent Color**, **Float on Top**, and **Quit**.
 - **Accent Color** sets the highlight colour (the second hand, the timer's wedge, the pins and so on) for all of them at once. It starts as orange; **Match System** follows the accent colour in System Settings → Appearance.
-- Windows with a **pin** (Command Bar, Soma Player, Dial Timer, Widget Bar) show whether they float on top; click it to switch.
+- Windows with a **pin** (Command Bar, Soma Player, Widget Bar) show whether they float on top; click it to switch.
 - Opening a widget that's already running (from Widget Bar's Show, Finder, or `open -a`) brings its window up above everything for a few seconds, so you can find it.
 - They follow the system's light or dark appearance.
 
@@ -95,6 +95,7 @@ All of them:
 - Tap the middle to pause or resume. When it's done it rings a bell every two seconds, for up to a minute, until you tap to dismiss it.
 - The right-click menu has preset times, Reset, and **Chime When Done**. While idle, the middle shows the time of day.
 - A running timer carries on if the app quits or the Mac restarts.
+- Click the stopwatch symbol below the middle, or choose **Stopwatch** in the right-click menu, to count up instead; the hourglass in its place switches back. Tap the middle to start, pause and resume; the arrow above the middle resets a paused one. A hand sweeps the seconds and a faint wedge fills with the minutes. A timer left running keeps going, and switches the dial back when it rings; a running stopwatch likewise carries on behind the timer, and across a quit or restart.
 
 **Widget Bar**
 
@@ -128,7 +129,7 @@ desktop_widget/
 ├── Word/           App.swift, Icon.swift, WordFace.swift
 ├── Command/        App.swift, Icon.swift, the view and shell session, InfoPlistExtras.xml
 ├── Soma/           App.swift, Icon.swift, the view and player
-├── Timer/          App.swift, Icon.swift, the dial, its view, the timer and its chime
+├── Timer/          App.swift, Icon.swift, the dial, its view, the timer, the stopwatch and the chime
 ├── Calendar/       App.swift, Icon.swift, CalendarFace.swift
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```

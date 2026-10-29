@@ -1,6 +1,8 @@
 // DialFace — the timer's dial, drawn to fill a circle: minute ticks with 0–55 round the
 // edge, a wedge in the accent colour from 12 o'clock clockwise for the minutes left, and
-// a cap in the middle for the readout. A finished timer pulses a ring instead.
+// a cap in the middle for the readout. A finished timer pulses a ring instead. As a
+// stopwatch it adds a sweeping seconds hand, and the wedge, now the minutes gone, fades
+// back behind it.
 
 import SwiftUI
 
@@ -8,6 +10,7 @@ struct DialFace: View {
     var minutes: Double // 0...60, the wedge
     var finished = false
     var pulse = 0.0 // 0...1, for the finished ring
+    var seconds: Double? // 0..<60, the stopwatch's hand
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accent) private var accent
 
@@ -44,7 +47,14 @@ struct DialFace: View {
                 wedge.addArc(center: c, radius: r * 0.58, startAngle: .degrees(-90),
                              endAngle: .degrees(-90 + 360 * min(minutes, 60) / 60), clockwise: false)
                 wedge.closeSubpath()
-                ctx.fill(wedge, with: .color(accent.opacity(scheme == .dark ? 0.85 : 0.8)))
+                ctx.fill(wedge, with: .color(accent.opacity(seconds != nil ? 0.3 : scheme == .dark ? 0.85 : 0.8)))
+            }
+
+            if let seconds {
+                var hand = Path()
+                hand.move(to: c)
+                hand.addLine(to: point(seconds, r * 0.88))
+                ctx.stroke(hand, with: .color(accent), style: StrokeStyle(lineWidth: r * 0.025, lineCap: .round))
             }
 
             if finished {
