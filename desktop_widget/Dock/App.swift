@@ -29,6 +29,7 @@ final class DockClock: NSObject, NSApplicationDelegate {
 
     private let host = NSHostingView(rootView: AnyView(EmptyView()))
     private var timer: Timer?
+    private var accentWatch: NSKeyValueObservation?
 
     func applicationDidFinishLaunching(_ note: Notification) {
         NSApp.mainMenu = mainMenu()
@@ -36,11 +37,11 @@ final class DockClock: NSObject, NSApplicationDelegate {
         host.frame = NSRect(origin: .zero, size: tile.size)
         tile.contentView = host
         schedule()
-        // Another widget changing the accent shows on the next tick anyway; this makes it
-        // immediate.
-        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification,
-                                               object: Accent.defaults, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.draw() }
+        // Watch the shared accent by key-value observing, as @AppStorage does in the
+        // widgets: that's what hears another process change it, where reading the
+        // defaults on each tick only sees this process's cached value.
+        accentWatch = Accent.defaults.observe(\.accent, options: [.new]) { [weak self] _, _ in
+            DispatchQueue.main.async { self?.draw() }
         }
     }
 
@@ -115,4 +116,9 @@ final class DockClock: NSObject, NSApplicationDelegate {
         Accent.defaults.set(item.representedObject as? String, forKey: "accent")
         draw()
     }
+}
+
+extension UserDefaults {
+    /// The shared accent's key, exposed for key-value observing.
+    @objc dynamic var accent: String? { string(forKey: "accent") }
 }
