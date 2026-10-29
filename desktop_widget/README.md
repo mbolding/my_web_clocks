@@ -11,6 +11,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left. Also a stopwatch |
 | **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
 | **Scratch Pad** (`Scratch/`) | A text pad that keeps what you type, with buttons to copy it all or save it to the Desktop |
+| **Server List** (`Servers/`) | A list of your Macs and servers: click one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -118,6 +119,19 @@ All of them:
 - The right-click menu (on the header; the text has its own) also has **Show Saved File in Finder** and **Clear**.
 - Floats on top by default; the window resizes from its edges.
 
+**Server List**
+
+- Click a server to connect. Its address is handed to macOS, as Finder's **Go → Connect to Server** does: `vnc://` opens Screen Sharing, `ssh://` opens Terminal, and `smb://` or `afp://` mounts the share in Finder.
+- Each row shows the host (or `user@host` for SSH) beside a display for Screen Sharing or a terminal for SSH.
+- Right-click and choose **Add Server…** to add one, typing its full address, such as `vnc://hostname` or `ssh://user@hostname`; the list grows to fit. **Remove** lists them by address to take one off.
+- It starts empty. The list is kept in its settings, so you can also set it in one go from a terminal:
+
+  ```bash
+  defaults write com.mbolding.serverlist servers -array vnc://my-mac ssh://me@my-mac
+  ```
+
+  A running Server List picks that up straight away.
+
 ## Uninstall
 
 Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
@@ -126,7 +140,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
 
 ## How it's put together
 
@@ -141,6 +155,7 @@ desktop_widget/
 ├── Timer/          App.swift, Icon.swift, the dial, its view, the timer, the stopwatch and the chime
 ├── Calendar/       App.swift, Icon.swift, CalendarFace.swift
 ├── Scratch/        App.swift, Icon.swift, the view and the pad
+├── Servers/        App.swift, Icon.swift, the view and the saved server list
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 

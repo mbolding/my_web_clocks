@@ -26,6 +26,7 @@ CLOCKS=(
   Launcher WidgetBar   com.mbolding.widgetbar    "Widget Bar"
   Calendar MonthCalendar com.mbolding.monthcalendar "Month Calendar"
   Scratch ScratchPad    com.mbolding.scratchpad   "Scratch Pad"
+  Servers ServerList    com.mbolding.serverlist   "Server List"
 )
 
 build_clock() {
