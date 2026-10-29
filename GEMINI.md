@@ -23,7 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Widget Bar — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Dock Clock, Map Browser, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -77,7 +77,10 @@ SwiftUI windows, currently an analog clock, a word clock ported from
 `clocks/art/word_clock.html`, Command Bar (a floating zsh you can drop folders
 onto), Soma Player (a SomaFM radio), Dial Timer (a round timer), Month Calendar
 (this month's calendar), Scratch Pad (a text pad you can copy or save to the Desktop),
-Server List (a list of servers that opens Screen Sharing or SSH on click)
+Server List (a list of servers that opens Screen Sharing or SSH on click),
+Dock Clock (an analog clock drawn into its Dock icon, with no window),
+Map Browser (an OpenStreetMap browser built as an ordinary windowed app, with a
+menu bar, Dock icon and Settings, rather than a floating widget)
 and Widget Bar
 (a toolbar that opens the others and flips their Float on Top; it finds them by
 the `DesktopWidget` key build.sh adds to every Info.plist). Each app is a folder with `App.swift`

@@ -1,6 +1,6 @@
 # Desktop widgets for macOS
 
-Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
+Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. Two are different: Dock Clock lives in its Dock icon, and Map Browser is an ordinary app with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
 
 | App | What it is |
 | --- | --- |
@@ -13,6 +13,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Scratch Pad** (`Scratch/`) | A text pad that keeps what you type, with buttons to copy it all or save it to the Desktop |
 | **Server List** (`Servers/`) | A list of your Macs and servers: click one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
 | **Dock Clock** (`Dock/`) | An analog clock with no window: its live Dock icon is the whole app |
+| **Map Browser** (`Maps/`) | An [OpenStreetMap](https://www.openstreetmap.org) browser, and an ordinary Mac app with windows, a menu bar and a Dock icon: search for places, save them, and switch between map styles |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -139,6 +140,16 @@ All of them:
 - Right-click the Dock icon for **Show Seconds** (the dial redraws once a minute without it) and **Accent Color**, the same shared colour as the widgets.
 - It has no window, so it isn't `LSUIElement` like the others, and Widget Bar doesn't list it. Quit it from the Dock icon or with **⌘Q** while it's active.
 
+**Map Browser**
+
+- Drag to move the map; pinch, scroll or double-click to zoom, or use the **−** and **+** buttons (**⌘−** and **⌘=**). **⌘N** opens another window, and each new window starts where you last looked.
+- Type a name in the search field and press Return. Results come from OpenStreetMap's Nominatim, nearest to the map first, and are listed in the sidebar. The first is shown straight away; click another to go there. You can also type coordinates (`33.5, -86.8`), a `geo:` address, or paste an openstreetmap.org link.
+- Right-click the map for **What's Here?** (names the spot under the pointer), **Drop Pin**, **Save as a Place…**, **Copy Coordinates** and **Report a Problem Here…**, which opens openstreetmap.org's note form.
+- **⌘D** or the star saves the pin, or the middle of the map, under **Places** in the sidebar and in the Places menu. Right-click a place to rename or delete it, or drag places to reorder them.
+- **View** has the map styles (**⌘1**–**⌘4**: Standard, Humanitarian, CyclOSM and OpenTopoMap), **Show My Location** (**⌘L**) and **Open in Web Browser**. **Edit** has **Copy Link to This View**.
+- **Settings** (**⌘,**) picks the style new windows start with. It also has **Sharper map, with smaller text**, which draws tiles at half size so they're crisp on a Retina screen, and a button to clear the saved tiles.
+- Map tiles are cached in `~/Library/Caches/com.mbolding.mapbrowser`. Every request names the app in its User-Agent, as the OpenStreetMap tile and search policies ask, and searches go one at a time, at most once a second.
+
 ## Uninstall
 
 Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
@@ -147,7 +158,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.mapbrowser` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`.
 
 ## How it's put together
 
@@ -164,10 +175,11 @@ desktop_widget/
 ├── Scratch/        App.swift, Icon.swift, the view and the pad
 ├── Servers/        App.swift, Icon.swift, the view and the saved server list
 ├── Dock/           App.swift, Icon.swift, DockTile.swift, InfoPlistExtras.xml; ClockFace.swift links to Analog's
+├── Maps/           App.swift (with the menus and Settings), Icon.swift, the window, map view and model, tiles, search and places, InfoPlistExtras.xml
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 
-Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock does to show its Dock icon and stay out of Widget Bar. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock and Map Browser do to show their Dock icons and stay out of Widget Bar. Map Browser doesn't use `DesktopClock.run` at all: its `App.swift` is an ordinary SwiftUI `App` with a `WindowGroup` and `Settings`. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
 To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 

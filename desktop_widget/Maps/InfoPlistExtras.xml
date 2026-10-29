@@ -1,0 +1,10 @@
+    <!-- An ordinary app with windows, a menu bar and a Dock icon, so it isn't LSUIElement,
+         nor one of the widgets for Widget Bar. -->
+    <key>LSUIElement</key><false/>
+    <key>DesktopWidget</key><false/>
+    <key>NSLocationUsageDescription</key>
+    <string>Map Browser uses your location to show where you are on the map. It isn't saved or sent anywhere.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Map Browser uses your location to show where you are on the map. It isn't saved or sent anywhere.</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Map data © OpenStreetMap contributors</string>
