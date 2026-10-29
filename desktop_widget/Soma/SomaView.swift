@@ -21,8 +21,6 @@ struct SomaView: View {
                 HStack(spacing: 8) {
                     playButton
                     status
-                    Spacer(minLength: 4)
-                    FloatPin()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
