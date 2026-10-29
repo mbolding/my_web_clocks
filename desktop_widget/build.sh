@@ -25,6 +25,7 @@ CLOCKS=(
   Timer   DialTimer    com.mbolding.dialtimer    "Dial Timer"
   Launcher WidgetBar   com.mbolding.widgetbar    "Widget Bar"
   Calendar MonthCalendar com.mbolding.monthcalendar "Month Calendar"
+  Scratch ScratchPad    com.mbolding.scratchpad   "Scratch Pad"
 )
 
 build_clock() {

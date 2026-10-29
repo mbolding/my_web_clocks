@@ -10,6 +10,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Soma Player** (`Soma/`) | A small [SomaFM](https://somafm.com) radio with a channel menu and what's playing |
 | **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left. Also a stopwatch |
 | **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
+| **Scratch Pad** (`Scratch/`) | A text pad that keeps what you type, with buttons to copy it all or save it to the Desktop |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -109,6 +110,13 @@ All of them:
 
 **Month Calendar** shows the current month, its weeks starting on the first day of the week set in System Settings, with weekends greyed and today on a circle of the accent colour. It moves on to the next day, and month, by itself. Click a day to open that week in Google Calendar, in Chrome (or your default browser if Chrome isn't installed). It starts just left of Clock Widget.
 
+**Scratch Pad**
+
+- Type or paste anything; it's kept as you type, across quits and restarts. The header shows the word count.
+- The two buttons at the top right copy everything to the clipboard, and save it as a new Markdown file on the Desktop. The file is named after the first line, with only letters, digits, spaces, hyphens and underscores kept (`# Ideas for the weekend!` saves as `Ideas for the weekend.md`), or by the date and time (`Scratch 2026-10-28 19.45.12.md`) if the first line is empty. A number is added rather than overwrite a file of the same name. **⌘S** saves too. The first save asks for access to the Desktop folder.
+- The right-click menu (on the header; the text has its own) also has **Show Saved File in Finder** and **Clear**.
+- Floats on top by default; the window resizes from its edges.
+
 ## Uninstall
 
 Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
@@ -117,7 +125,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share.
 
 ## How it's put together
 
@@ -131,6 +139,7 @@ desktop_widget/
 ├── Soma/           App.swift, Icon.swift, the view and player
 ├── Timer/          App.swift, Icon.swift, the dial, its view, the timer, the stopwatch and the chime
 ├── Calendar/       App.swift, Icon.swift, CalendarFace.swift
+├── Scratch/        App.swift, Icon.swift, the view and the pad
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 
