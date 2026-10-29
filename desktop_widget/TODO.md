@@ -4,9 +4,15 @@
 
 Common desktop widgets that would sit well beside the ones here. Each would be a new folder and a line in `build.sh`'s `CLOCKS` table. Draw highlights with the shared `accent`, and avoid Swift macros (`@Observable`, `@Entry`, `#Preview`), since the command-line tools can't build them.
 
-- **Sun and Moon.** Sunrise, sunset and day length, plus the moon's phase, worked out locally like `clocks/nature/sun_moon_clock.html` does with SunCalc (here, a small Swift port).
 - **System Stats.** CPU, memory, battery and network speed as small rings or sparklines, from `host_statistics`, IOKit and `getifaddrs`. No permissions needed.
-- **Countdown.** Days, hours and minutes to a date you set, such as a deadline or a trip, with a short label.
+
+## Little app ideas
+
+Small apps that are a bit more than widgets: ordinary windowed apps with a menu bar and Dock icon, built like Map Browser (an ordinary SwiftUI `App`, with `LSUIElement` and `DesktopWidget` set to false in its `InfoPlistExtras.xml`), and each a line in `build.sh`'s `CLOCKS` table. The same rule on Swift macros applies.
+
+- **DICOM Viewer.** A simple native viewer for DICOM files you open or drop on it: the image with window and level, scrolling through a series, and the tags. macOS has no DICOM decoder, so port the parser from `dicom/index.html`, starting with uncompressed and baseline JPEG (which ImageIO can decode).
+- **Markdown Editor.** A plain text editor for `.md` files with a live preview beside it, opening and saving ordinary files through the standard Open and Save panels.
+- **Text Extractor.** Drop a Word document or PDF on it and it shows just the text, ready to select, copy or save as plain text. PDFKit's `PDFDocument.string` reads PDFs, and `NSAttributedString` reads `.docx`, `.doc` and `.rtf`, so it needs no other libraries.
 
 ## Improvements
 
