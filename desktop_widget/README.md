@@ -106,7 +106,7 @@ All of them:
 
 **Clock Widget** has a **Show Seconds** option in its right-click menu.
 
-**Month Calendar** shows the current month, its weeks starting on the first day of the week set in System Settings, with weekends greyed and today on a circle of the accent colour. It moves on to the next day, and month, by itself. It starts just left of Clock Widget.
+**Month Calendar** shows the current month, its weeks starting on the first day of the week set in System Settings, with weekends greyed and today on a circle of the accent colour. It moves on to the next day, and month, by itself. Click a day to open that week in Google Calendar, in Chrome (or your default browser if Chrome isn't installed). It starts just left of Clock Widget.
 
 ## Uninstall
 

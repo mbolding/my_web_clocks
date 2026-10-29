@@ -1,9 +1,11 @@
 // CalendarFace — the month at a glance: its name, the weekday initials, and the days in
 // a grid, with weekends greyed and today on a circle of the accent colour. The week
 // starts on the system's first weekday, and the rows stretch to fill the window, so a
-// four-, five- or six-week month all fill it.
+// four-, five- or six-week month all fill it. Clicking a day opens its week in Google
+// Calendar, in Chrome if it's installed.
 
 import SwiftUI
+import AppKit
 
 struct CalendarFace: View {
     var date: Date
@@ -61,11 +63,32 @@ struct CalendarFace: View {
                                 }
                             }
                             .frame(width: w, height: h)
+                            .contentShape(Rectangle())
+                            // A click opens the day's week; a drag still moves the window,
+                            // which the tap would otherwise stop the background doing.
+                            .modifier(MovesWindow())
+                            .onTapGesture {
+                                if (1...days).contains(day) {
+                                    Self.openWeek(of: cal.date(byAdding: .day, value: day - 1, to: first)!)
+                                }
+                            }
                         }
                     }
                 }
                 .font(.system(size: font))
             }
+        }
+    }
+
+    /// Google Calendar's week view around `day`, in Chrome, or the default browser
+    /// without it.
+    static func openWeek(of day: Date) {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: day)
+        let url = URL(string: "https://calendar.google.com/calendar/r/week/\(c.year!)/\(c.month!)/\(c.day!)")!
+        if let chrome = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.google.Chrome") {
+            NSWorkspace.shared.open([url], withApplicationAt: chrome, configuration: NSWorkspace.OpenConfiguration())
+        } else {
+            NSWorkspace.shared.open(url)
         }
     }
 }
