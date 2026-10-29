@@ -27,6 +27,7 @@ CLOCKS=(
   Calendar MonthCalendar com.mbolding.monthcalendar "Month Calendar"
   Scratch ScratchPad    com.mbolding.scratchpad   "Scratch Pad"
   Servers ServerList    com.mbolding.serverlist   "Server List"
+  Dock    DockClock     com.mbolding.dockclock    "Dock Clock"
 )
 
 build_clock() {
@@ -61,9 +62,9 @@ build_clock() {
     <key>CFBundleShortVersionString</key><string>1.0</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
-    <key>LSUIElement</key><true/>
-    <!-- Marks it as one of these widgets, for Widget Bar to find. -->
-    <key>DesktopWidget</key><true/>
+$(grep -qs "<key>LSUIElement</key>" $dir/InfoPlistExtras.xml || echo '    <key>LSUIElement</key><true/>')
+$(grep -qs "<key>DesktopWidget</key>" $dir/InfoPlistExtras.xml || echo '    <!-- Marks it as one of these widgets, for Widget Bar to find. -->
+    <key>DesktopWidget</key><true/>')
 $([[ -f $dir/InfoPlistExtras.xml ]] && cat $dir/InfoPlistExtras.xml)
 </dict>
 </plist>
