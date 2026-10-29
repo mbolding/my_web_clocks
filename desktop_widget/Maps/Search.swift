@@ -3,7 +3,7 @@
 // one request a second and no search-as-you-type, so searches go when you press Return
 // and wait their turn.
 
-import Foundation
+import SwiftUI // for moving places, with move(fromOffsets:toOffset:)
 import CoreLocation
 
 struct SearchResult: Decodable, Identifiable, Hashable {
@@ -35,14 +35,24 @@ struct SearchResult: Decodable, Identifiable, Hashable {
 
     private var parts: [String] { displayName.components(separatedBy: ", ") }
 
+    /// How many parts of the address the title takes: two for a house number and its
+    /// street ("1754, 1st Avenue South" reads as "1754 1st Avenue South"), else one.
+    private var titleParts: Int {
+        let first = parts[0] // a house number is one word starting with a digit, unlike "1st Avenue"
+        return parts.count > 1 && first.first?.isNumber == true && !first.contains(" ") ? 2 : 1
+    }
+
     var title: String {
         if let name, !name.isEmpty { return name }
-        return parts.first ?? displayName
+        return parts.prefix(titleParts).joined(separator: " ")
     }
 
     /// The rest of the address after the title.
     var detail: String {
-        (parts.first == title ? parts.dropFirst() : parts[...]).joined(separator: ", ")
+        if let name, !name.isEmpty {
+            return (parts.first == name ? parts.dropFirst() : parts[...]).joined(separator: ", ")
+        }
+        return parts.dropFirst(titleParts).joined(separator: ", ")
     }
 
     /// What sort of place it is: "City", "Bus stop".

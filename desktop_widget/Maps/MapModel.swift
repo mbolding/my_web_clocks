@@ -61,6 +61,9 @@ final class MapModel: ObservableObject {
     private let locator = CLLocationManager()
     private var wantsLocation = false
     private var restored = false
+    /// Where the last setView headed, and where the map went for the sidebar selection.
+    private var target: (center: CLLocationCoordinate2D, zoom: Double)?
+    private var selectionTarget: (center: CLLocationCoordinate2D, zoom: Double, at: Date)?
     private var noticeTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
 
@@ -94,11 +97,13 @@ final class MapModel: ObservableObject {
         readout.zoom = 20 - log2(map.visibleMapRect.width / map.bounds.width)
         if settled && restored {
             UserDefaults.standard.set([center.latitude, center.longitude, zoom], forKey: "lastView")
+            deselectIfMovedAway()
         }
     }
 
     func setView(_ center: CLLocationCoordinate2D, zoom: Double, animated: Bool = true) {
         guard let map, map.bounds.width > 0 else { return }
+        target = (center, min(max(zoom, 1), 21))
         let scale = pow(2, 20 - min(max(zoom, 1), 21))
         let w = map.bounds.width * scale, h = map.bounds.height * scale
         let p = MKMapPoint(center)
@@ -131,10 +136,28 @@ final class MapModel: ObservableObject {
         case .place(let id): if let p = Places.shared.all.first(where: { $0.id == id }) { go(to: p) }
         case nil: break
         }
+        selectionTarget = item == nil ? nil : target.map { ($0.center, $0.zoom, .now) }
+    }
+
+    /// Once the map has moved off the selected place or result, drops the selection, so
+    /// clicking that row again counts as a change and goes back there. A list only
+    /// reports a click that changes its selection.
+    private func deselectIfMovedAway() {
+        // Skip the first moments, while the map is still flying there.
+        guard let goal = selectionTarget, Date.now.timeIntervalSince(goal.at) > 1.5 else { return }
+        let a = MKMapPoint(center), b = MKMapPoint(goal.center)
+        let points = hypot(a.x - b.x, a.y - b.y) / pow(2, 20 - zoom)
+        if points > 30 || abs(zoom - goal.zoom) > 0.3 {
+            selectionTarget = nil
+            selection = nil
+        }
     }
 
     // MARK: The pin
 
+    /// Places the pin, with its title under it. It isn't selected from here: a click on
+    /// the map makes MapKit deselect it a moment later, so the pin would grow, shrink
+    /// and grow again as its name arrived. Clicking the pin selects it.
     func setPin(_ c: CLLocationCoordinate2D, title: String, subtitle: String? = nil) {
         pin = Pin(coordinate: c, title: title, subtitle: subtitle)
         marker.coordinate = c
@@ -142,7 +165,6 @@ final class MapModel: ObservableObject {
         marker.subtitle = subtitle
         guard let map else { return }
         if !map.annotations.contains(where: { $0 === marker }) { map.addAnnotation(marker) }
-        map.selectAnnotation(marker, animated: true)
     }
 
     func clearPin() {

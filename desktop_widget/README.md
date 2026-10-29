@@ -144,6 +144,7 @@ All of them:
 
 - Drag to move the map; pinch, scroll or double-click to zoom, or use the **−** and **+** buttons (**⌘−** and **⌘=**). **⌘N** opens another window, and each new window starts where you last looked.
 - Type a name in the search field and press Return. Results come from OpenStreetMap's Nominatim, nearest to the map first, and are listed in the sidebar. The first is shown straight away; click another to go there. You can also type coordinates (`33.5, -86.8`), a `geo:` address, or paste an openstreetmap.org link.
+- Click the map to pin that spot and name it from OpenStreetMap: the shop, building or street address there. Click elsewhere to move the pin.
 - Right-click the map for **What's Here?** (names the spot under the pointer), **Drop Pin**, **Save as a Place…**, **Copy Coordinates** and **Report a Problem Here…**, which opens openstreetmap.org's note form.
 - **⌘D** or the star saves the pin, or the middle of the map, under **Places** in the sidebar and in the Places menu. Right-click a place to rename or delete it, or drag places to reorder them.
 - **View** has the map styles (**⌘1**–**⌘4**: Standard, Humanitarian, CyclOSM and OpenTopoMap), **Show My Location** (**⌘L**) and **Open in Web Browser**. **Edit** has **Copy Link to This View**.

@@ -1,6 +1,7 @@
 // MapView — MapKit's map view wrapped for SwiftUI, showing the model's tile overlay in
 // place of Apple's map. MapKit brings the dragging, pinch and scroll zoom, double-click
-// zoom and the scale; this adds the right-click menu and the pin's colour.
+// zoom and the scale; this adds clicking to pin a spot, the right-click menu and the
+// pin's colour.
 
 import SwiftUI
 import MapKit
@@ -20,6 +21,7 @@ struct MapView: NSViewRepresentable {
         map.showsScale = true
         map.pointOfInterestFilter = .excludingAll
         map.onMenu = { [weak model] c in model?.menu(at: c) }
+        map.onClick = { [weak model] c in model?.whatsHere(c) }
         map.onFirstLayout = { [weak model] in model?.restoreView() }
         model.sharp = sharp
         model.attach(map)
@@ -28,6 +30,8 @@ struct MapView: NSViewRepresentable {
 
     func updateNSView(_ map: MapCanvas, context: Context) {
         model.sharp = sharp
+        // Only on a change of accent: this runs whenever the window redraws.
+        guard tint != context.coordinator.tint else { return }
         context.coordinator.tint = tint
         for annotation in map.annotations {
             (map.view(for: annotation) as? MKMarkerAnnotationView)?.markerTintColor = tint
@@ -64,9 +68,35 @@ struct MapView: NSViewRepresentable {
     }
 }
 
-final class MapCanvas: MKMapView {
+final class MapCanvas: MKMapView, NSGestureRecognizerDelegate {
     var onMenu: ((CLLocationCoordinate2D) -> NSMenu?)?
+    var onClick: ((CLLocationCoordinate2D) -> Void)?
     var onFirstLayout: (() -> Void)?
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        let click = NSClickGestureRecognizer(target: self, action: #selector(clicked(_:)))
+        click.delegate = self
+        addGestureRecognizer(click)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    /// A single click on the map itself, not on a pin, which MapKit selects. It fires
+    /// only once a drag or a double-click (MapKit's zoom) has been ruled out.
+    @objc private func clicked(_ click: NSClickGestureRecognizer) {
+        let point = click.location(in: self)
+        var hit = hitTest(convert(point, to: superview))
+        while let view = hit, view !== self {
+            if view is MKAnnotationView { return }
+            hit = view.superview
+        }
+        onClick?(convert(point, toCoordinateFrom: self))
+    }
+
+    func gestureRecognizer(_ gesture: NSGestureRecognizer, shouldRequireFailureOf other: NSGestureRecognizer) -> Bool {
+        (other as? NSClickGestureRecognizer)?.numberOfClicksRequired == 2
+    }
 
     /// Runs once the map has a size, on the next turn of the run loop, after MapKit has
     /// set its own starting region.
