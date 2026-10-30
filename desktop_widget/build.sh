@@ -38,6 +38,7 @@ CLOCKS=(
   Dicom   DicomViewer   com.mbolding.dicomviewer   "DICOM Viewer"
   Stipple Stipple       com.mbolding.stipple       "Stipple"
   Polyhedra Polyhedra   com.mbolding.polyhedra     "Polyhedra"
+  Gopher  GopherBrowser com.mbolding.gopherbrowser "Gopher Browser"
 )
 
 build_clock() {

@@ -455,7 +455,20 @@ The backlog lists Space Invaders, Windows 95 and NeXTSTEP. Not listed:
   collection has deep time (`prehistoric_clock`), a lifetime (`life_clock`) and
   cyclical time (`one_hundred_years_clock`), but nothing on relative time.
 
-### 3.6 Two notes on the existing backlog
+### 3.6 One clock off the web
+
+- **Gopher Clock.** A gopher page on the SDF account that shows the time,
+  perhaps with a literary-clock quote for the minute, as the collection's first
+  clock outside the browser. Best if SDF's gopher server runs executable
+  gophermaps, so the page is written fresh on each visit and is always right;
+  otherwise a job on SDF rewrites it every minute, if the membership level
+  allows cron. Plain text only, in a 70-column menu, so the craft is in the
+  typography: a big ASCII readout like `ascii_clock`, the date spelled out,
+  and links to the web gallery. The script would live in this repo and be
+  copied over by `scp`, like Publish to SDF in `desktop_widget/TODO.md`, and
+  Gopher Browser (`desktop_widget/Gopher/`) is there to look at it.
+
+### 3.7 Two notes on the existing backlog
 
 - **The Hobbit** entry lists "second breakfast; elevenses" as its hook, which
   `nature/mealtime_clock.html` already implements ("Tells time by Second

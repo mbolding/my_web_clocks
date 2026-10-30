@@ -1,0 +1,13 @@
+    <!-- An ordinary app with windows, a menu bar and a Dock icon, so it isn't LSUIElement,
+         nor one of the widgets for Widget Bar. -->
+    <key>LSUIElement</key><false/>
+    <key>DesktopWidget</key><false/>
+    <!-- Opens gopher:// links clicked anywhere on the Mac. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key><string>Gopher Address</string>
+            <key>CFBundleURLSchemes</key>
+            <array><string>gopher</string></array>
+        </dict>
+    </array>
