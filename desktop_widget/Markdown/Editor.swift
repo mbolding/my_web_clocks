@@ -25,8 +25,19 @@ struct MarkdownTextView: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let scroll = NSTextView.scrollableTextView()
-        let text = scroll.documentView as! NSTextView
+        // TextKit 1: with TextKit 2, the Find bar finds matches in the coloured text but
+        // never highlights them or scrolls to them.
+        let text = EditorTextView(usingTextLayoutManager: false)
+        text.layoutManager?.allowsNonContiguousLayout = true
+        text.minSize = .zero
+        text.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+        text.isVerticallyResizable = true
+        text.isHorizontallyResizable = false
+        text.autoresizingMask = [.width]
+        text.textContainer?.widthTracksTextView = true
+        let scroll = NSScrollView()
+        scroll.hasVerticalScroller = true
+        scroll.documentView = text
         text.isRichText = false
         text.allowsUndo = true
         text.usesFindBar = true
@@ -44,7 +55,6 @@ struct MarkdownTextView: NSViewRepresentable {
         text.textStorage?.delegate = context.coordinator.highlighter
         context.coordinator.textView = text
         update(context.coordinator)
-        DispatchQueue.main.async { text.window?.makeFirstResponder(text) }
         return scroll
     }
 
@@ -85,5 +95,14 @@ struct MarkdownTextView: NSViewRepresentable {
 
         // Typing goes on the document's own undo stack, which is how it knows it's edited.
         func undoManager(for view: NSTextView) -> UndoManager? { undoManager }
+    }
+}
+
+/// Takes the focus as it comes into its window, so Find works without a click first, even
+/// in a window or tab that opens in the background.
+final class EditorTextView: NSTextView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.makeFirstResponder(self)
     }
 }
