@@ -29,6 +29,7 @@ CLOCKS=(
   Servers ServerList    com.mbolding.serverlist   "Server List"
   Dock    DockClock     com.mbolding.dockclock    "Dock Clock"
   Maps    MapBrowser    com.mbolding.mapbrowser   "Map Browser"
+  Markdown MarkdownEditor com.mbolding.markdowneditor "Markdown Editor"
 )
 
 build_clock() {
