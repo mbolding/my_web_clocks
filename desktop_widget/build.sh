@@ -30,6 +30,7 @@ CLOCKS=(
   Dock    DockClock     com.mbolding.dockclock    "Dock Clock"
   Maps    MapBrowser    com.mbolding.mapbrowser   "Map Browser"
   Extractor TextExtractor com.mbolding.textextractor "Text Extractor"
+  Markdown MarkdownEditor com.mbolding.markdowneditor "Markdown Editor"
 )
 
 build_clock() {

@@ -1,6 +1,6 @@
 # Desktop widgets for macOS
 
-Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. Four are different: Dock Clock lives in its Dock icon, Server List lives in the menu bar, and Map Browser and Text Extractor are ordinary apps with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
+Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. Five are different: Dock Clock lives in its Dock icon, Server List lives in the menu bar, and Map Browser, Text Extractor and Markdown Editor are ordinary apps with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
 
 | App | What it is |
 | --- | --- |
@@ -15,6 +15,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Dock Clock** (`Dock/`) | An analog clock with no window: its live Dock icon is the whole app |
 | **Map Browser** (`Maps/`) | An [OpenStreetMap](https://www.openstreetmap.org) browser, and an ordinary Mac app with windows, a menu bar and a Dock icon: search for places, save them, and switch between map styles |
 | **Text Extractor** (`Extractor/`) | Another ordinary app: drop a PDF or Word document on it and it shows just the text, to select, copy or save as plain text |
+| **Markdown Editor** (`Markdown/`) | A plain text editor for Markdown files, with light syntax colouring and no preview; an ordinary document app with New, Open, Save and window tabs |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -160,6 +161,14 @@ All of them:
 - **Copy All Text** (**⇧⌘C**) puts it all on the clipboard, and **Save as Text…** (**⌘S**) saves it as a `.txt` file, offering the original's name and folder. Both are also in the toolbar.
 - A scanned PDF has pictures of its pages rather than text, so there's nothing to show; it says so, as it does for a password-protected PDF or a kind of file it can't read. It reads PDFs with PDFKit and the rest with `NSAttributedString`, so nothing is sent anywhere.
 
+**Markdown Editor**
+
+- An ordinary document app: **⌘N** for a new document, **⌘O** to open one, **⌘S** to save, and **File → Revert To** to go back to the last save. Open Recent, window tabs and version history work as in TextEdit. Drop files on its Dock icon or use Finder's **Open With**. It opens Markdown (`.md`, `.markdown`) and plain text files.
+- There's no preview; the Markdown is coloured as you type. Headings are bold and larger, `*emphasis*`, `**strong**` and `~~strike~~` show as such, code spans and fenced code blocks are monospaced on a faint background, and link text, list markers, task boxes and quote markers take the accent colour. The markup itself stays visible, dimmed.
+- Smart quotes, smart dashes and text replacement are off, since they change Markdown's own punctuation (**Edit → Substitutions** turns them back on for a window). A file is saved back in the encoding it was opened in.
+- **View** has **Make Text Bigger** (**⌘=**), **Make Text Smaller** (**⌘−**) and **Make Text Normal Size** (**⌘0**). **Settings** (**⌘,**) picks a monospaced or system font, the size, and the accent colour the widgets share.
+- It never makes itself the default app for Markdown files. To have them open in it, select one in Finder, choose **Get Info → Open with**, pick Markdown Editor and click **Change All**.
+
 ## Uninstall
 
 Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
@@ -168,7 +177,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor`, `com.mbolding.markdowneditor` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`.
 
 ## How it's put together
 
@@ -187,10 +196,11 @@ desktop_widget/
 ├── Dock/           App.swift, Icon.swift, DockTile.swift, InfoPlistExtras.xml; ClockFace.swift links to Analog's
 ├── Maps/           App.swift (with the menus and Settings), Icon.swift, the window, map view and model, tiles, search and places, InfoPlistExtras.xml
 ├── Extractor/      App.swift (with the menus), Icon.swift, the window, the model and the text extraction, InfoPlistExtras.xml (with its document types)
+├── Markdown/       App.swift (with the menus and Settings), Icon.swift, the document, the editor and its highlighter, InfoPlistExtras.xml (with the document types)
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 
-Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser and Text Extractor do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` (and `Settings`, for Map Browser) for the windowed apps and a `MenuBarExtra` for Server List. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser, Text Extractor and Markdown Editor do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor, Markdown Editor and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` for Map Browser (with `Settings`) and Text Extractor, a `DocumentGroup` and `Settings` for Markdown Editor, and a `MenuBarExtra` for Server List. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
 To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 

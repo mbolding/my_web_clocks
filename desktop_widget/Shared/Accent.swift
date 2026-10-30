@@ -16,7 +16,7 @@ enum Accent: String, CaseIterable, Identifiable {
     var name: String { self == .system ? "Match System" : rawValue.capitalized }
     var color: Color { Color(nsColor: nsColor) }
 
-    private var nsColor: NSColor {
+    var nsColor: NSColor {
         switch self {
         case .orange: .systemOrange
         case .red: .systemRed

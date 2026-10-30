@@ -11,7 +11,6 @@ Common desktop widgets that would sit well beside the ones here. Each would be a
 Small apps that are a bit more than widgets: ordinary windowed apps with a menu bar and Dock icon, built like Map Browser (an ordinary SwiftUI `App`, with `LSUIElement` and `DesktopWidget` set to false in its `InfoPlistExtras.xml`), and each a line in `build.sh`'s `CLOCKS` table. The same rule on Swift macros applies.
 
 - **DICOM Viewer.** A simple native viewer for DICOM files you open or drop on it: the image with window and level, scrolling through a series, and the tags. macOS has no DICOM decoder, so port the parser from `dicom/index.html`, starting with uncompressed and baseline JPEG (which ImageIO can decode).
-- **Markdown Editor.** A plain text editor for `.md` files with light syntax highlighting (headings, emphasis, code, links and list markers), with no preview, opening and saving ordinary files through the standard Open and Save panels.
 
 ## Future ideas
 
