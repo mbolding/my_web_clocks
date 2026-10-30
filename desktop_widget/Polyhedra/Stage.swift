@@ -12,6 +12,10 @@ struct Look {
     var corners = false
     /// Edges and corners round the back, dashed.
     var hidden = false
+    /// The centre, with a line out to each corner, seen through the faces.
+    var spokes = false
+    /// Each distinct angle labelled once, where it's easiest to see.
+    var angles = false
 }
 
 enum Stage {
@@ -21,7 +25,8 @@ enum Stage {
     /// Draws the shape filling `size`, turned by `orientation`. `size` fits the shape's
     /// farthest corner to `fill` of the shorter side, times `zoom`.
     static func draw(_ shape: Polyhedron, in context: GraphicsContext, size: CGSize, orientation: simd_quatd,
-                     look: Look, accent: Color, ink: Color, zoom: Double = 1, fill: Double = 0.4) {
+                     look: Look, accent: Color, ink: Color, paper: Color = .white,
+                     zoom: Double = 1, fill: Double = 0.4) {
         let scale = min(size.width, size.height) * fill * zoom
         let centre = CGPoint(x: size.width / 2, y: size.height / 2)
         let turn = simd_matrix3x3(orientation)
@@ -47,6 +52,8 @@ enum Stage {
 
         let edgeWidth = max(1, scale * 0.008)
         let back = look.hidden || !look.faces
+        // Faces let the inside show through while there's something in there to see.
+        let opacity = look.spokes ? 0.6 : look.hidden ? 0.82 : 1
 
         // Round the back first, so the front covers it.
         if back {
@@ -60,6 +67,19 @@ enum Stage {
             }
         }
 
+        if look.spokes {
+            for point in screen {
+                var path = Path()
+                path.move(to: centre)
+                path.addLine(to: point)
+                context.stroke(path, with: .color(ink.opacity(0.55)),
+                               style: StrokeStyle(lineWidth: edgeWidth * 0.7, lineCap: .round))
+            }
+            let r = max(3, scale * 0.022)
+            context.fill(Path(ellipseIn: CGRect(x: centre.x - r, y: centre.y - r, width: r * 2, height: r * 2)),
+                         with: .color(ink))
+        }
+
         if look.faces {
             for (f, face) in shape.faces.enumerated() where facing[f] {
                 let path = outline(face)
@@ -68,7 +88,6 @@ enum Stage {
                 let reflect = 2 * dot(n, light) * n - light
                 let shine = pow(max(0, reflect.z), 24)
                 let base = face.kind == .face ? accent : Color(white: 0.93)
-                let opacity = look.hidden ? 0.82 : 1
                 context.fill(path, with: .color(base.opacity(opacity)))
                 context.fill(path, with: .color(.black.opacity((1 - lambert) * 0.6 * opacity)))
                 context.fill(path, with: .color(.white.opacity(shine * 0.4)))
@@ -95,6 +114,115 @@ enum Stage {
                 context.fill(dot, with: .color(front ? ink : ink.opacity(0.35)))
             }
         }
+
+        if look.angles {
+            drawAngles(shape, in: context, screen: screen, centre: centre, normals: normals, facing: facing,
+                       turned: turned, look: look, ink: ink, paper: paper, edgeWidth: edgeWidth, scale: scale)
+        }
+    }
+
+    /// Labels each distinct angle once, on the face, edge or spoke pair that faces the
+    /// viewer most squarely: the angles inside the faces with an arc at each corner, the
+    /// dihedral angles at an edge's midpoint, and with the spokes, the angle at the centre.
+    private static func drawAngles(_ shape: Polyhedron, in context: GraphicsContext, screen: [CGPoint], centre: CGPoint,
+                                   normals: [Vec], facing: [Bool], turned: [Vec], look: Look, ink: Color,
+                                   paper: Color, edgeWidth: CGFloat, scale: CGFloat) {
+        let fontSize = min(max(scale * 0.032, 10), 14)
+
+        func text(_ degrees: Double) -> String { String(format: "%.1f°", degrees) }
+
+        func label(_ string: String, at point: CGPoint) {
+            let resolved = context.resolve(Text(string).font(.system(size: fontSize, weight: .semibold))
+                .foregroundStyle(ink))
+            let size = resolved.measure(in: CGSize(width: 400, height: 100))
+            let box = CGRect(x: point.x - size.width / 2 - 5, y: point.y - size.height / 2 - 2,
+                             width: size.width + 10, height: size.height + 4)
+            context.fill(Path(roundedRect: box, cornerRadius: box.height / 2), with: .color(paper.opacity(0.9)))
+            context.stroke(Path(roundedRect: box, cornerRadius: box.height / 2), with: .color(ink.opacity(0.25)),
+                           lineWidth: 0.5)
+            context.draw(resolved, at: point)
+        }
+
+        /// An arc at `p` sweeping the short way from the direction of `a` to that of `b`;
+        /// returns the direction halfway round, to put the label on.
+        func arc(at p: CGPoint, from a: CGPoint, to b: CGPoint, radius: CGFloat) -> CGVector {
+            let a0 = atan2(a.y - p.y, a.x - p.x)
+            let sweep = remainder(atan2(b.y - p.y, b.x - p.x) - a0, 2 * .pi)
+            var path = Path()
+            for step in 0...16 {
+                let t = a0 + sweep * Double(step) / 16
+                let q = CGPoint(x: p.x + radius * cos(t), y: p.y + radius * sin(t))
+                step == 0 ? path.move(to: q) : path.addLine(to: q)
+            }
+            context.stroke(path, with: .color(ink.opacity(0.85)), lineWidth: max(1, edgeWidth * 0.8))
+            let mid = a0 + sweep / 2
+            return CGVector(dx: cos(mid), dy: sin(mid))
+        }
+
+        func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat { hypot(a.x - b.x, a.y - b.y) }
+
+        // Inside the faces: one face of each kind, the one most squarely facing the viewer.
+        var used = Set<Int>()
+        var kinds: [String: Int] = [:]
+        for f in shape.faces.indices where facing[f] {
+            let key = shape.cornerAngles(of: shape.faces[f]).map { String(format: "%.1f", $0) }.sorted().joined(separator: ",")
+            if let best = kinds[key], normals[best].z >= normals[f].z { continue }
+            kinds[key] = f
+        }
+        for f in kinds.values {
+            used.insert(f)
+            let face = shape.faces[f]
+            let n = face.corners.count
+            let angles = shape.cornerAngles(of: face)
+            var labelled: [Double] = []
+            for i in 0..<n {
+                let p = screen[face.corners[i]]
+                let a = screen[face.corners[(i + n - 1) % n]], b = screen[face.corners[(i + 1) % n]]
+                let radius = min(distance(p, a), distance(p, b)) * 0.24
+                let toward = arc(at: p, from: a, to: b, radius: radius)
+                guard !labelled.contains(where: { abs($0 - angles[i]) < 0.05 }) else { continue }
+                labelled.append(angles[i])
+                let reach = radius + fontSize * 1.6
+                label(text(angles[i]), at: CGPoint(x: p.x + toward.dx * reach, y: p.y + toward.dy * reach))
+            }
+        }
+
+        // Between the faces: one edge for each dihedral angle, the longest on screen with both
+        // its faces in view, preferring one away from the faces already labelled.
+        var dihedrals: [String: (edge: Int, score: Double)] = [:]
+        for (e, edge) in shape.edges.enumerated() where facing[edge.faces.0] && facing[edge.faces.1] {
+            let key = text(shape.dihedralAngle(of: edge))
+            let crowded = used.contains(edge.faces.0) || used.contains(edge.faces.1)
+            let score = Double(distance(screen[edge.a], screen[edge.b])) * (crowded ? 0.6 : 1)
+            if let best = dihedrals[key], best.score >= score { continue }
+            dihedrals[key] = (e, score)
+        }
+        for (key, best) in dihedrals {
+            let edge = shape.edges[best.edge]
+            var path = Path()
+            path.move(to: screen[edge.a])
+            path.addLine(to: screen[edge.b])
+            context.stroke(path, with: .color(ink), style: StrokeStyle(lineWidth: edgeWidth * 2.4, lineCap: .round))
+            label(key, at: CGPoint(x: (screen[edge.a].x + screen[edge.b].x) / 2,
+                                   y: (screen[edge.a].y + screen[edge.b].y) / 2))
+        }
+
+        // At the centre: one pair of neighbouring corners for each angle, nearest the viewer.
+        guard look.spokes else { return }
+        var centrals: [String: Int] = [:]
+        for (e, edge) in shape.edges.enumerated() {
+            let key = text(shape.centralAngle(of: edge))
+            let z = turned[edge.a].z + turned[edge.b].z
+            if let best = centrals[key], turned[shape.edges[best].a].z + turned[shape.edges[best].b].z >= z { continue }
+            centrals[key] = e
+        }
+        for (i, (key, e)) in centrals.sorted(by: { $0.key < $1.key }).enumerated() {
+            let edge = shape.edges[e]
+            let radius = min(distance(centre, screen[edge.a]), distance(centre, screen[edge.b])) * (0.28 + 0.12 * Double(i))
+            let toward = arc(at: centre, from: screen[edge.a], to: screen[edge.b], radius: radius)
+            let reach = radius + fontSize * 1.6
+            label(key, at: CGPoint(x: centre.x + toward.dx * reach, y: centre.y + toward.dy * reach))
+        }
     }
 }
 
@@ -110,8 +238,9 @@ struct StageView: View {
         Canvas { context, size in
             Stage.draw(model.shape, in: context, size: size, orientation: turntable.orientation,
                        look: Look(faces: model.showFaces, edges: model.showEdges, corners: model.showCorners,
-                                  hidden: model.showHidden),
-                       accent: accent, ink: .primary, zoom: turntable.zoom)
+                                  hidden: model.showHidden, spokes: model.showSpokes, angles: model.showAngles),
+                       accent: accent, ink: .primary, paper: Color(nsColor: .windowBackgroundColor),
+                       zoom: turntable.zoom)
         }
         .background(
             RadialGradient(colors: [Color(nsColor: .controlBackgroundColor), Color(nsColor: .underPageBackgroundColor)],

@@ -133,13 +133,49 @@ struct Polyhedron {
 
     /// The distinct angles between neighbouring faces, in degrees, smallest first.
     var dihedralAngles: [Double] {
-        var angles: [Double] = []
-        for edge in edges {
-            let n1 = faces[edge.faces.0].normal, n2 = faces[edge.faces.1].normal
-            let angle = 180 - acos(min(1, max(-1, dot(n1, n2)))) * 180 / .pi
-            if !angles.contains(where: { abs($0 - angle) < 0.01 }) { angles.append(angle) }
+        Self.distinct(edges.map { dihedralAngle(of: $0) })
+    }
+
+    /// The angle between the two faces that meet along an edge, inside the solid.
+    func dihedralAngle(of edge: Edge) -> Double {
+        180 - Self.degrees(between: faces[edge.faces.0].normal, faces[edge.faces.1].normal)
+    }
+
+    /// The angle inside a face at each of its corners, in degrees, in the face's order.
+    func cornerAngles(of face: Face) -> [Double] {
+        let n = face.corners.count
+        return face.corners.indices.map { i in
+            let p = vertices[face.corners[i]]
+            let a = vertices[face.corners[(i + n - 1) % n]] - p
+            let b = vertices[face.corners[(i + 1) % n]] - p
+            return Self.degrees(between: a, b)
         }
-        return angles.sorted()
+    }
+
+    /// The distinct angles inside the faces, smallest first.
+    var faceAngles: [Double] {
+        Self.distinct(faces.flatMap { cornerAngles(of: $0) })
+    }
+
+    /// The angle at the centre between the two ends of an edge.
+    func centralAngle(of edge: Edge) -> Double {
+        Self.degrees(between: vertices[edge.a], vertices[edge.b])
+    }
+
+    /// The distinct angles at the centre between neighbouring corners, smallest first.
+    var centralAngles: [Double] {
+        Self.distinct(edges.map { centralAngle(of: $0) })
+    }
+
+    static func degrees(between a: Vec, _ b: Vec) -> Double {
+        acos(min(1, max(-1, dot(simd_normalize(a), simd_normalize(b))))) * 180 / .pi
+    }
+
+    /// Values with near repeats dropped, to a hundredth of a degree, sorted.
+    static func distinct(_ values: [Double]) -> [Double] {
+        var out: [Double] = []
+        for v in values where !out.contains(where: { abs($0 - v) < 0.01 }) { out.append(v) }
+        return out.sorted()
     }
 
     /// The faces round one corner, by their number of sides, in order: "3.8.8" for the

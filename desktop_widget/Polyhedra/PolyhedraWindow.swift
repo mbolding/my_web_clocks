@@ -110,6 +110,10 @@ struct Facts: View {
                 Toggle("Corners", isOn: $model.showCorners)
                 Toggle("The hidden side", isOn: $model.showHidden)
                     .help("Edges and corners round the back, dashed")
+                Toggle("Centre and spokes", isOn: $model.showSpokes)
+                    .help("The centre, with a line out to each corner, seen through the faces")
+                Toggle("Angles", isOn: $model.showAngles)
+                    .help("Each different angle labelled once: inside a face, between two faces, and with the spokes, at the centre")
             }
 
             Section("Counts") {
@@ -128,8 +132,12 @@ struct Facts: View {
                 }
                 Row("At each corner", configuration.map { $0.map(String.init).joined(separator: ".") } ?? "Varies")
                     .help("The faces round a corner by their number of sides, in order")
+                Row("Face angles", shape.faceAngles.map { degrees($0) }.joined(separator: ", "))
+                    .help("The angles inside the faces, at their corners")
                 Row("Dihedral angles", shape.dihedralAngles.map { degrees($0) }.joined(separator: ", "))
                     .help("The angles between neighbouring faces")
+                Row("Angles at the centre", shape.centralAngles.map { degrees($0) }.joined(separator: ", "))
+                    .help("The angles between the spokes to the two ends of an edge")
                 Row("Edges", shape.uniform ? "All the same length" : "Two lengths")
             }
 

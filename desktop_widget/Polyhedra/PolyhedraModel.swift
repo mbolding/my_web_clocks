@@ -23,6 +23,8 @@ final class PolyhedraModel: ObservableObject {
     @Published var showEdges = PolyhedraModel.flag("showEdges", true) { didSet { save("showEdges", showEdges) } }
     @Published var showCorners = PolyhedraModel.flag("showCorners", false) { didSet { save("showCorners", showCorners) } }
     @Published var showHidden = PolyhedraModel.flag("showHidden", false) { didSet { save("showHidden", showHidden) } }
+    @Published var showSpokes = PolyhedraModel.flag("showSpokes", false) { didSet { save("showSpokes", showSpokes) } }
+    @Published var showAngles = PolyhedraModel.flag("showAngles", false) { didSet { save("showAngles", showAngles) } }
 
     /// Morphing to the dual and back by itself.
     @Published var playing = false
