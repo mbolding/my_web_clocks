@@ -31,6 +31,7 @@ CLOCKS=(
   Maps    MapBrowser    com.mbolding.mapbrowser   "Map Browser"
   Extractor TextExtractor com.mbolding.textextractor "Text Extractor"
   Markdown MarkdownEditor com.mbolding.markdowneditor "Markdown Editor"
+  Dicom   DicomViewer   com.mbolding.dicomviewer   "DICOM Viewer"
 )
 
 build_clock() {

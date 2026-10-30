@@ -1,0 +1,54 @@
+    <!-- An ordinary app with windows, a menu bar and a Dock icon, so it isn't LSUIElement,
+         nor one of the widgets for Widget Bar. -->
+    <key>LSUIElement</key><false/>
+    <key>DesktopWidget</key><false/>
+    <!-- Lists it under Open With for .dcm files, without making it their default app. DICOM
+         files often have no extension at all, so any file or folder can also be dropped on
+         its Dock icon (rank None: accepted, but never offered as the app to open them). -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key><string>DICOM Image</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>org.nema.dicom</string>
+            </array>
+        </dict>
+        <dict>
+            <key>CFBundleTypeName</key><string>File or Folder</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>None</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.data</string>
+                <string>public.folder</string>
+            </array>
+        </dict>
+    </array>
+    <key>UTImportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key><string>org.nema.dicom</string>
+            <key>UTTypeDescription</key><string>DICOM Image</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+                <string>public.image</string>
+            </array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>dcm</string>
+                    <string>dicom</string>
+                    <string>dic</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>application/dicom</string>
+                </array>
+            </dict>
+        </dict>
+    </array>

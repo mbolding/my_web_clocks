@@ -10,8 +10,6 @@ Common desktop widgets that would sit well beside the ones here. Each would be a
 
 Small apps that are a bit more than widgets: ordinary windowed apps with a menu bar and Dock icon, built like Map Browser (an ordinary SwiftUI `App`, with `LSUIElement` and `DesktopWidget` set to false in its `InfoPlistExtras.xml`), and each a line in `build.sh`'s `CLOCKS` table. The same rule on Swift macros applies.
 
-- **DICOM Viewer.** A simple native viewer for DICOM files you open or drop on it: the image with window and level, scrolling through a series, and the tags. macOS has no DICOM decoder, so port the parser from `dicom/index.html`, starting with uncompressed and baseline JPEG (which ImageIO can decode).
-
 ## Future ideas
 
 - **Replicants, after BeOS.** Drag part of a widget (Soma Player's now-playing line, the stopwatch readout) out onto the desktop to make it a small live window of its own, perhaps by a hand-like grip shown on hover; drop one on Widget Bar to dock it there, like the Deskbar's tray. Each piece would be another `DesktopPanel` in the same app, opened when a drag ends outside the window and restored at launch. Unlike Be's, a piece closes when its app quits, since macOS apps can't host each other's views.
