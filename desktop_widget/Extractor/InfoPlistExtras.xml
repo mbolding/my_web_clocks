@@ -1,0 +1,24 @@
+    <!-- An ordinary app with windows, a menu bar and a Dock icon, so it isn't LSUIElement,
+         nor one of the widgets for Widget Bar. -->
+    <key>LSUIElement</key><false/>
+    <key>DesktopWidget</key><false/>
+    <!-- Lists it under Open With for the files it reads, and lets them be dropped on its
+         Dock icon, without making it their default app. -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key><string>Document</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.adobe.pdf</string>
+                <string>org.openxmlformats.wordprocessingml.document</string>
+                <string>com.microsoft.word.doc</string>
+                <string>org.oasis-open.opendocument.text</string>
+                <string>public.rtf</string>
+                <string>com.apple.rtfd</string>
+                <string>public.plain-text</string>
+            </array>
+        </dict>
+    </array>

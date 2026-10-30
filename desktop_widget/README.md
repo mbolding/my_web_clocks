@@ -1,6 +1,6 @@
 # Desktop widgets for macOS
 
-Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. Two are different: Dock Clock lives in its Dock icon, and Map Browser is an ordinary app with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
+Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. A few are different: Dock Clock lives in its Dock icon, and Map Browser and Text Extractor are ordinary apps with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
 
 | App | What it is |
 | --- | --- |
@@ -14,6 +14,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Server List** (`Servers/`) | A list of your Macs and servers: click one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
 | **Dock Clock** (`Dock/`) | An analog clock with no window: its live Dock icon is the whole app |
 | **Map Browser** (`Maps/`) | An [OpenStreetMap](https://www.openstreetmap.org) browser, and an ordinary Mac app with windows, a menu bar and a Dock icon: search for places, save them, and switch between map styles |
+| **Text Extractor** (`Extractor/`) | Another ordinary app: drop a PDF or Word document on it and it shows just the text, to select, copy or save as plain text |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -151,6 +152,13 @@ All of them:
 - **Settings** (**⌘,**) picks the style new windows start with. It also has **Sharper map, with smaller text**, which draws tiles at half size so they're crisp on a Retina screen, and a button to clear the saved tiles.
 - Map tiles are cached in `~/Library/Caches/com.mbolding.mapbrowser`. Every request names the app in its User-Agent, as the OpenStreetMap tile and search policies ask, and searches go one at a time, at most once a second.
 
+**Text Extractor**
+
+- Drop a PDF or Word document (`.docx` or `.doc`) on the window or the Dock icon, choose **File → Open…** (**⌘O**), or right-click the file in Finder and choose **Open With → Text Extractor**. RTF, OpenDocument and plain text files work too. A file dropped on the window replaces what it shows; files opened another way go to the front window if it's empty, and otherwise each get a window of their own (or a tab, if macOS is set to prefer tabs).
+- The text is plain and can be selected, searched (**⌘F**) and edited before saving. The title shows the file's name, with its word and character counts below.
+- **Copy All Text** (**⇧⌘C**) puts it all on the clipboard, and **Save as Text…** (**⌘S**) saves it as a `.txt` file, offering the original's name and folder. Both are also in the toolbar.
+- A scanned PDF has pictures of its pages rather than text, so there's nothing to show; it says so, as it does for a password-protected PDF or a kind of file it can't read. It reads PDFs with PDFKit and the rest with `NSAttributedString`, so nothing is sent anywhere.
+
 ## Uninstall
 
 Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
@@ -159,7 +167,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.mapbrowser` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`.
 
 ## How it's put together
 
@@ -177,10 +185,11 @@ desktop_widget/
 ├── Servers/        App.swift, Icon.swift, the view and the saved server list
 ├── Dock/           App.swift, Icon.swift, DockTile.swift, InfoPlistExtras.xml; ClockFace.swift links to Analog's
 ├── Maps/           App.swift (with the menus and Settings), Icon.swift, the window, map view and model, tiles, search and places, InfoPlistExtras.xml
+├── Extractor/      App.swift (with the menus), Icon.swift, the window, the model and the text extraction, InfoPlistExtras.xml (with its document types)
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 
-Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock and Map Browser do to show their Dock icons and stay out of Widget Bar. Map Browser doesn't use `DesktopClock.run` at all: its `App.swift` is an ordinary SwiftUI `App` with a `WindowGroup` and `Settings`. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser and Text Extractor do to show their Dock icons and stay out of Widget Bar. Map Browser and Text Extractor don't use `DesktopClock.run` at all: each `App.swift` is an ordinary SwiftUI `App` with a `WindowGroup` (and, for Map Browser, `Settings`). A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
 To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 
