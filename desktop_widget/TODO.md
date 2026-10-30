@@ -25,5 +25,5 @@ Small apps that are a bit more than widgets: ordinary windowed apps with a menu 
   - Moon Phase and Dock Timer are the easiest next ones.
 - **Menu bar items.** SwiftUI's `MenuBarExtra` scene (macOS 13+, not a macro) shows a symbol or short label that opens a menu, or a small window with `.menuBarExtraStyle(.window)`; set `LSUIElement` for a menu-bar-only app, or add one to an existing widget. Keep each item narrow, since items that don't fit on a notched MacBook are hidden, and keep to text and symbols, since the bar is about 22 points tall and drawn in one colour. Candidates:
   - *Readouts:* Dial Timer's time left (or the stopwatch) with presets in its menu, a second time zone ("LON 18:42"), a countdown ("Trip 12d"), a CPU sparkline or memory percentage, and the moon phase from the `moonphase.*` SF Symbols.
-  - *Widgets as menus:* Soma Player with play and pause and a station list, Server List opening Screen Sharing or SSH from a menu, Scratch Pad as a drop-down window, and Widget Bar showing and hiding the widgets and flipping Float on Top.
-  - Dial Timer's readout, and Server List and Soma Player as menus, are the best first tries.
+  - *Widgets as menus:* Soma Player with play and pause and a station list, Scratch Pad as a drop-down window, and Widget Bar showing and hiding the widgets and flipping Float on Top.
+  - Server List was the first, and is now only a menu bar item (`Servers/`). Dial Timer's readout and Soma Player as a menu are the best next tries.

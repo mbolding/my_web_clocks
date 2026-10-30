@@ -1,0 +1,3 @@
+    <!-- A menu bar item, so it stays LSUIElement, but it isn't one of the widgets for
+         Widget Bar: there's no window to open or float on top. -->
+    <key>DesktopWidget</key><false/>

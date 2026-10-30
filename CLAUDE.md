@@ -77,7 +77,7 @@ SwiftUI windows, currently an analog clock, a word clock ported from
 `clocks/art/word_clock.html`, Command Bar (a floating zsh you can drop folders
 onto), Soma Player (a SomaFM radio), Dial Timer (a round timer), Month Calendar
 (this month's calendar), Scratch Pad (a text pad you can copy or save to the Desktop),
-Server List (a list of servers that opens Screen Sharing or SSH on click),
+Server List (a menu bar item listing servers that opens Screen Sharing or SSH),
 Dock Clock (an analog clock drawn into its Dock icon, with no window),
 Map Browser (an OpenStreetMap browser built as an ordinary windowed app, with a
 menu bar, Dock icon and Settings, rather than a floating widget),

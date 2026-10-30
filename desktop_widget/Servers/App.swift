@@ -1,26 +1,29 @@
-// Server List — a small floating list of servers that opens a remote session on click,
-// like Finder's Go → Connect to Server.
+// Server List — a menu bar item listing your servers, like Finder's Go → Connect to
+// Server: choose one to open a remote session. It has no window, Dock icon or place in
+// Widget Bar; the menu also adds and removes servers.
 
 import SwiftUI
 
 @main
-enum ServerListApp {
-    @MainActor static func main() {
-        // Sized for the saved servers, and grows or shrinks as they change; starts just
-        // left of Word Clock.
-        DesktopClock.run(size: ServerListView.size(for: ServerList.shared.servers.count),
-                         defaultTop: 24 + 170 + 20, defaultRight: 24 + 250 + 20) {
-            ServerListView()
-        } options: {
-            ServerOptions()
+struct ServerListApp: App {
+    var body: some Scene {
+        MenuBarExtra("Server List", systemImage: "server.rack") {
+            ServerMenu()
         }
     }
 }
 
-struct ServerOptions: View {
+struct ServerMenu: View {
     @ObservedObject var list = ServerList.shared
 
     var body: some View {
+        if list.servers.isEmpty {
+            Text("No Servers")
+        }
+        ForEach(list.servers) { server in
+            Button { list.open(server) } label: { Label(server.label, systemImage: server.symbol) }
+        }
+        Divider()
         Button("Add Server…") { list.promptToAdd() }
         // By the full address, since two servers on one host share a label.
         Menu("Remove") {
@@ -30,5 +33,7 @@ struct ServerOptions: View {
         }
         .disabled(list.servers.isEmpty)
         Divider()
+        Button("Quit Server List") { NSApp.terminate(nil) }
+            .keyboardShortcut("q")
     }
 }

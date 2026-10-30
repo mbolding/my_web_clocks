@@ -1,6 +1,6 @@
 # Desktop widgets for macOS
 
-Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. A few are different: Dock Clock lives in its Dock icon, and Map Browser and Text Extractor are ordinary apps with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
+Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. Four are different: Dock Clock lives in its Dock icon, Server List lives in the menu bar, and Map Browser and Text Extractor are ordinary apps with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
 
 | App | What it is |
 | --- | --- |
@@ -11,7 +11,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left. Also a stopwatch |
 | **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
 | **Scratch Pad** (`Scratch/`) | A text pad that keeps what you type, with buttons to copy it all or save it to the Desktop |
-| **Server List** (`Servers/`) | A list of your Macs and servers: click one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
+| **Server List** (`Servers/`) | A menu bar item listing your Macs and servers: choose one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
 | **Dock Clock** (`Dock/`) | An analog clock with no window: its live Dock icon is the whole app |
 | **Map Browser** (`Maps/`) | An [OpenStreetMap](https://www.openstreetmap.org) browser, and an ordinary Mac app with windows, a menu bar and a Dock icon: search for places, save them, and switch between map styles |
 | **Text Extractor** (`Extractor/`) | Another ordinary app: drop a PDF or Word document on it and it shows just the text, to select, copy or save as plain text |
@@ -124,9 +124,10 @@ All of them:
 
 **Server List**
 
-- Click a server to connect. Its address is handed to macOS, as Finder's **Go → Connect to Server** does: `vnc://` opens Screen Sharing, `ssh://` opens Terminal, and `smb://` or `afp://` mounts the share in Finder.
-- Each row shows the host (or `user@host` for SSH) beside a display for Screen Sharing or a terminal for SSH.
-- Right-click and choose **Add Server…** to add one, typing its full address, such as `vnc://hostname` or `ssh://user@hostname`; the list grows to fit. **Remove** lists them by address to take one off.
+- It lives in the menu bar, as a server rack, with no window or Dock icon, and isn't on Widget Bar. Click it for the list.
+- Choose a server to connect. Its address is handed to macOS, as Finder's **Go → Connect to Server** does: `vnc://` opens Screen Sharing, `ssh://` opens Terminal, and `smb://` or `afp://` mounts the share in Finder.
+- Each item shows the host (or `user@host` for SSH) beside a display for Screen Sharing or a terminal for SSH.
+- **Add Server…** adds one, typing its full address, such as `vnc://hostname` or `ssh://user@hostname`. **Remove** lists them by address to take one off. **Quit Server List** is at the bottom.
 - It starts empty. The list is kept in its settings, so you can also set it in one go from a terminal:
 
   ```bash
@@ -182,14 +183,14 @@ desktop_widget/
 ├── Timer/          App.swift, Icon.swift, the dial, its view, the timer, the stopwatch and the chime
 ├── Calendar/       App.swift, Icon.swift, CalendarFace.swift
 ├── Scratch/        App.swift, Icon.swift, the view and the pad
-├── Servers/        App.swift, Icon.swift, the view and the saved server list
+├── Servers/        App.swift (the menu bar item), Icon.swift, the saved server list, InfoPlistExtras.xml
 ├── Dock/           App.swift, Icon.swift, DockTile.swift, InfoPlistExtras.xml; ClockFace.swift links to Analog's
 ├── Maps/           App.swift (with the menus and Settings), Icon.swift, the window, map view and model, tiles, search and places, InfoPlistExtras.xml
 ├── Extractor/      App.swift (with the menus), Icon.swift, the window, the model and the text extraction, InfoPlistExtras.xml (with its document types)
 └── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
 ```
 
-Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser and Text Extractor do to show their Dock icons and stay out of Widget Bar. Map Browser and Text Extractor don't use `DesktopClock.run` at all: each `App.swift` is an ordinary SwiftUI `App` with a `WindowGroup` (and, for Map Browser, `Settings`). A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser and Text Extractor do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` (and `Settings`, for Map Browser) for the windowed apps and a `MenuBarExtra` for Server List. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
 To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 
