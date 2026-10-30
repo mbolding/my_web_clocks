@@ -74,7 +74,7 @@ xattr -dr com.apple.quarantine ~/Applications/CommandBar.app
 All of them:
 
 - **Drag** the window to move it (on Command Bar, by its folder bar; on Dial Timer, by its rim, or anywhere as a stopwatch); the position is remembered.
-- **Right-click** for the app's options, **Accent Color**, **Float on Top**, and **Quit**.
+- **Right-click** for the app's options, **Accent Color**, **Float on Top**, and **Quit**. Clock Widget and Month Calendar also have **Behind Desktop Icons**, which tucks the widget under the icons with its frosted background faded almost away, so it sits on the desktop picture. Clicks there go to the desktop, so to bring it back, open the widget again (from Widget Bar or Finder): it comes to the front for a few seconds, long enough to right-click it. Widget Bar's float button brings it straight back too.
 - **Accent Color** sets the highlight colour (the second hand, the timer's wedge, the pins and so on) for all of them at once. It starts as orange; **Match System** follows the accent colour in System Settings → Appearance.
 - Widget Bar has a **pin** at its right end showing whether it floats on top; click it to switch.
 - **⌘-click**, or **force click** on a trackpad, anywhere on a widget to flip its Float on Top. A force click doesn't also press what it lands on. While a widget floats on top, a thin edge in the accent colour runs around it, however the setting was changed: the menu, a click, a pin or Widget Bar.

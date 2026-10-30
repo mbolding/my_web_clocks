@@ -24,6 +24,7 @@ enum DesktopClock {
                                                round: Bool = false,
                                                movableByBackground: Bool = true,
                                                floatsByDefault: Bool? = nil, // nil: only if interactive
+                                               canSitBehindIcons: Bool = false,
                                                onOpen: (([URL]) -> Void)? = nil,
                                                @ViewBuilder face: @escaping () -> Face,
                                                @ViewBuilder options: @escaping () -> Options) {
@@ -33,8 +34,9 @@ enum DesktopClock {
         let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, defaultRight: defaultRight,
                                             interactive: interactive,
                                             round: round, movableByBackground: movableByBackground,
-                                            onOpen: onOpen) { setFloatOnTop in
-            AnyView(ClockMenu(round: round, setFloatOnTop: setFloatOnTop, face: face(), options: options()))
+                                            onOpen: onOpen) { setLevel in
+            AnyView(ClockMenu(round: round, canSitBehindIcons: canSitBehindIcons, setLevel: setLevel,
+                              face: face(), options: options()))
         }
         app.delegate = delegate
         app.servicesProvider = delegate
@@ -45,19 +47,22 @@ enum DesktopClock {
     static func run<Face: View>(size: CGSize, defaultTop: CGFloat = 24, defaultRight: CGFloat = 24,
                                 interactive: Bool = false,
                                 round: Bool = false, movableByBackground: Bool = true,
-                                floatsByDefault: Bool? = nil, onOpen: (([URL]) -> Void)? = nil,
+                                floatsByDefault: Bool? = nil, canSitBehindIcons: Bool = false,
+                                onOpen: (([URL]) -> Void)? = nil,
                                 @ViewBuilder face: @escaping () -> Face) {
         run(size: size, defaultTop: defaultTop, defaultRight: defaultRight, interactive: interactive, round: round,
             movableByBackground: movableByBackground, floatsByDefault: floatsByDefault,
-            onOpen: onOpen, face: face) { EmptyView() }
+            canSitBehindIcons: canSitBehindIcons, onOpen: onOpen, face: face) { EmptyView() }
     }
 }
 
 struct ClockMenu<Face: View, Options: View>: View {
     @AppStorage("floatOnTop") private var floatOnTop = false // default registered in run
+    @AppStorage("behindIcons") private var behindIcons = false
     @AppStorage("accent", store: Accent.defaults) private var accent = Accent.orange
     var round: Bool
-    var setFloatOnTop: (Bool) -> Void
+    var canSitBehindIcons: Bool
+    var setLevel: (_ onTop: Bool, _ behindIcons: Bool) -> Void
     var face: Face
     var options: Options
 
@@ -83,7 +88,15 @@ struct ClockMenu<Face: View, Options: View>: View {
             }
             // Right-click anywhere on the window, not just on the drawn marks.
             .contentShape(round ? AnyShape(Circle()) : AnyShape(Rectangle()))
-            .onChange(of: floatOnTop, initial: true) { setFloatOnTop(floatOnTop) }
+            // Floating on top and sitting behind the icons rule each other out.
+            .onChange(of: floatOnTop, initial: true) {
+                if floatOnTop { behindIcons = false }
+                setLevel(floatOnTop, behindIcons && canSitBehindIcons)
+            }
+            .onChange(of: behindIcons) {
+                if behindIcons { floatOnTop = false }
+                setLevel(floatOnTop, behindIcons && canSitBehindIcons)
+            }
             .contextMenu {
                 options
                 Picker("Accent Color", selection: $accent) {
@@ -93,6 +106,9 @@ struct ClockMenu<Face: View, Options: View>: View {
                     }
                 }
                 Toggle("Float on Top", isOn: $floatOnTop)
+                if canSitBehindIcons {
+                    Toggle("Behind Desktop Icons", isOn: $behindIcons)
+                }
                 Divider()
                 Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Clock")") {
                     NSApp.terminate(nil)
@@ -158,13 +174,13 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     private let round: Bool
     private let movableByBackground: Bool
     private let onOpen: (([URL]) -> Void)?
-    private let makeContent: (@escaping (Bool) -> Void) -> AnyView
+    private let makeContent: (@escaping (Bool, Bool) -> Void) -> AnyView
     private var panel: DesktopPanel!
     private var clickMonitor: Any?
 
     init(size: CGSize, defaultTop: CGFloat, defaultRight: CGFloat, interactive: Bool, round: Bool,
          movableByBackground: Bool, onOpen: (([URL]) -> Void)?,
-         makeContent: @escaping (@escaping (Bool) -> Void) -> AnyView) {
+         makeContent: @escaping (@escaping (Bool, Bool) -> Void) -> AnyView) {
         self.size = size
         self.defaultTop = defaultTop
         self.defaultRight = defaultRight
@@ -201,13 +217,21 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         if panel.level != .floating {
             panel.level = .floating
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-                self?.panel.level = UserDefaults.standard.bool(forKey: "floatOnTop") ? .floating : Self.desktopLevel
+                let defaults = UserDefaults.standard
+                self?.panel.level = Self.level(onTop: defaults.bool(forKey: "floatOnTop"),
+                                               behindIcons: defaults.bool(forKey: "behindIcons"))
             }
         }
         return false
     }
 
     static let desktopLevel = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
+    /// Above the desktop picture but under its icons, which then take the clicks there.
+    static let behindIconsLevel = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)) + 1)
+
+    static func level(onTop: Bool, behindIcons: Bool) -> NSWindow.Level {
+        onTop ? .floating : behindIcons ? behindIconsLevel : desktopLevel
+    }
 
     static let corner: CGFloat = 24
 
@@ -248,19 +272,28 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         // The setting is also written out explicitly, even when it's only the registered
         // default, so Widget Bar (another process, which can't see this app's registered
         // defaults) reads the real value; it toggles it by writing to this app's domain.
-        let host = NSHostingView(rootView: makeContent { [weak self] onTop in
-            self?.panel.level = onTop ? .floating : Self.desktopLevel
+        // Behind the icons the frosted background all but fades away, leaving the face
+        // drawn on the desktop picture, so the face sits beside it rather than inside it.
+        let host = NSHostingView(rootView: makeContent { [weak self] onTop, behindIcons in
+            guard let self else { return }
+            panel.level = Self.level(onTop: onTop, behindIcons: behindIcons)
             UserDefaults.standard.set(onTop, forKey: "floatOnTop")
+            blur.animator().alphaValue = behindIcons ? 0.15 : 1
+            panel.hasShadow = !behindIcons
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [panel] in panel?.invalidateShadow() }
         })
-        host.translatesAutoresizingMaskIntoConstraints = false
-        blur.addSubview(host)
-        NSLayoutConstraint.activate([
-            host.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
-            host.trailingAnchor.constraint(equalTo: blur.trailingAnchor),
-            host.topAnchor.constraint(equalTo: blur.topAnchor),
-            host.bottomAnchor.constraint(equalTo: blur.bottomAnchor),
-        ])
-        panel.contentView = blur
+        let content = NSView()
+        for view in [blur, host] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            content.addSubview(view)
+            NSLayoutConstraint.activate([
+                view.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+                view.topAnchor.constraint(equalTo: content.topAnchor),
+                view.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            ])
+        }
+        panel.contentView = content
 
         // Default to the top-right corner, stepped in by defaultRight and down by defaultTop
         // but never off a smaller screen; afterwards restore wherever it was dragged.
