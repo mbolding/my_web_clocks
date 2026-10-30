@@ -54,7 +54,9 @@ struct ViewerWindow: View {
                 columns = count > 1 ? .all : .detailOnly
             }
             .onAppear {
-                model.receive = { [$urls, openWindow, model] files in
+                // Weakly, as the model keeps this closure.
+                model.receive = { [$urls, openWindow, weak model] files in
+                    guard let model else { return }
                     if model.isEmpty { $urls.wrappedValue = files } else { openWindow(value: files) }
                 }
                 if active == .key || !Inbox.shared.hasFront { Inbox.shared.makeFront(model) }
@@ -65,7 +67,6 @@ struct ViewerWindow: View {
             .onDisappear { Inbox.shared.closed(model) }
             .tint(accent.color)
             .environment(\.accent, accent.color)
-            .focusedSceneObject(model)
     }
 
     private var title: String {

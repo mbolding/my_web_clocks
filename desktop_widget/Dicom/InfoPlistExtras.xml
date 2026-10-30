@@ -2,9 +2,10 @@
          nor one of the widgets for Widget Bar. -->
     <key>LSUIElement</key><false/>
     <key>DesktopWidget</key><false/>
-    <!-- Lists it under Open With for .dcm files, without making it their default app. DICOM
-         files often have no extension at all, so any file or folder can also be dropped on
-         its Dock icon (rank None: accepted, but never offered as the app to open them). -->
+    <!-- Lists it under Open With for .dcm files and zip archives, without making it their
+         default app. DICOM files often have no extension at all, so any file or folder can
+         also be dropped on its Dock icon (rank None: accepted, but never offered as the app
+         to open them). -->
     <key>CFBundleDocumentTypes</key>
     <array>
         <dict>
@@ -14,6 +15,15 @@
             <key>LSItemContentTypes</key>
             <array>
                 <string>org.nema.dicom</string>
+            </array>
+        </dict>
+        <dict>
+            <key>CFBundleTypeName</key><string>Zip Archive</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.zip-archive</string>
             </array>
         </dict>
         <dict>

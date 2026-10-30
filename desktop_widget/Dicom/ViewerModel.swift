@@ -5,6 +5,7 @@
 
 import SwiftUI
 import AppKit
+import Combine
 
 @MainActor
 final class ViewerModel: ObservableObject {
@@ -37,6 +38,8 @@ final class ViewerModel: ObservableObject {
         display.fileChanged = { [tags] file in tags.show(file) }
     }
 
+
+
     var isEmpty: Bool { phase == .empty || { if case .failed = phase { return true } else { return false } }() }
 
     var selected: Series? { series.first { $0.id == selection } }
@@ -58,15 +61,19 @@ final class ViewerModel: ObservableObject {
         }.value
         guard self.urls == urls else { return }
 
+        let broken = result.badArchives.isEmpty ? nil
+            : "Couldn’t unpack \(result.badArchives.count == 1 ? result.badArchives[0] : "\(result.badArchives.count) archives")."
         guard !result.series.isEmpty else {
             let what = result.skipped == 1 ? "That file isn’t" : "None of those \(result.skipped.formatted()) files are"
-            phase = .failed(result.skipped == 0 ? "There were no files to read." : "\(what) DICOM.")
+            phase = .failed(broken ?? (result.skipped == 0 ? "There were no files to read." : "\(what) DICOM."))
             return
         }
         series = result.series
         thumbnails = [:]
         phase = .ready
-        if result.skipped > 0 {
+        if let broken {
+            flash(broken)
+        } else if result.skipped > 0 {
             flash("Skipped \(Series.count(result.skipped, "file")) that \(result.skipped == 1 ? "isn’t" : "aren’t") DICOM")
         }
         selection = (series.first { $0.hasImage } ?? series[0]).id
@@ -350,14 +357,25 @@ final class Tags: ObservableObject {
 }
 
 /// Where opened files go: to the frontmost window, or to new windows while there's none.
+/// The menu commands act on its front window too. They watch it here rather than through
+/// `focusedSceneObject`, which SwiftUI's table cells hold on to after the window closes,
+/// keeping its files in memory.
 @MainActor
-final class Inbox {
+final class Inbox: ObservableObject {
     static let shared = Inbox()
 
     /// SwiftUI's action for opening a window on files. The menu commands hand it over, as
     /// SwiftUI sets them up at launch, before any window.
     var openWindow: OpenWindowAction?
-    private weak var front: ViewerModel?
+    private(set) weak var front: ViewerModel? {
+        didSet {
+            guard front !== oldValue else { return }
+            objectWillChange.send()
+            // Pass on the front window's changes, so the menus follow its series.
+            watching = front?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+        }
+    }
+    private var watching: AnyCancellable?
     private var pending: [URL] = []
 
     func open(_ urls: [URL]) {

@@ -1,6 +1,6 @@
 // Series — gathers the DICOM files from what was opened or dropped (folders are searched
-// all the way down, and anything that isn't DICOM is skipped by its contents, not its
-// name), groups them by Series Instance UID and image size, and puts each series' slices
+// all the way down, zip archives are unpacked into a temporary folder, and anything that
+// isn't DICOM is skipped by its contents, not its name), groups them by Series Instance UID and image size, and puts each series' slices
 // in order: by Instance Number, then by position along the slice normal, then by name.
 // A multi-frame file's frames are slices too.
 
@@ -80,6 +80,43 @@ enum Loader {
         var series: [Series] = []
         var files = 0
         var skipped = 0
+        /// Archives that couldn't be unpacked, by name.
+        var badArchives: [String] = []
+    }
+
+    /// Where zip archives are unpacked, one folder per archive, until their files are read.
+    /// It's cleared at launch too, in case the app quit partway.
+    static let unpackRoot = FileManager.default.temporaryDirectory.appendingPathComponent("Unpacked Archives", isDirectory: true)
+
+    static func clearUnpacked() {
+        try? FileManager.default.removeItem(at: unpackRoot)
+    }
+
+    /// A zip archive, by its signature rather than its name.
+    static func isZip(_ url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { try? handle.close() }
+        let head = (try? handle.read(upToCount: 4)) ?? Data()
+        return head == Data([0x50, 0x4B, 0x03, 0x04]) || head == Data([0x50, 0x4B, 0x05, 0x06])
+    }
+
+    /// Unpacks an archive with ditto, which handles ZIP64 and the __MACOSX folders that
+    /// Finder's compression adds, into a new folder of its own.
+    static func unpack(_ archive: URL) -> URL? {
+        let folder = unpackRoot.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let ditto = Process()
+            ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+            ditto.arguments = ["-x", "-k", archive.path, folder.path]
+            ditto.standardOutput = FileHandle.nullDevice
+            ditto.standardError = FileHandle.nullDevice
+            try ditto.run()
+            ditto.waitUntilExit()
+            if ditto.terminationStatus == 0 { return folder }
+        } catch {}
+        try? FileManager.default.removeItem(at: folder)
+        return nil
     }
 
     /// Every regular file in the URLs, searching folders but skipping hidden files.
@@ -99,7 +136,19 @@ enum Loader {
     }
 
     static func load(_ urls: [URL], progress: @escaping @Sendable (Double) -> Void) -> Result {
-        let paths = files(in: urls)
+        var result = Result()
+        // Zip archives among the files are unpacked and searched like folders; archives
+        // inside those are left alone.
+        var paths: [URL] = [], unpacked: [URL] = []
+        for file in files(in: urls) {
+            guard isZip(file) else { paths.append(file); continue }
+            if let folder = unpack(file) {
+                unpacked.append(folder)
+                paths += files(in: [folder])
+            } else {
+                result.badArchives.append(file.lastPathComponent)
+            }
+        }
         var parsed = [DicomFile?](repeating: nil, count: paths.count)
         let lock = NSLock()
         var done = 0
@@ -115,8 +164,14 @@ enum Loader {
                 if report { progress(fraction) }
             }
         }
+        // The unpacked copies can go as soon as they're read: each file's bytes are mapped
+        // or loaded, and macOS keeps a deleted file's contents while they're mapped.
+        for folder in unpacked { try? FileManager.default.removeItem(at: folder) }
         let files = parsed.compactMap { $0 }
-        return Result(series: group(files), files: files.count, skipped: paths.count - files.count)
+        result.series = group(files)
+        result.files = files.count
+        result.skipped = paths.count - files.count
+        return result
     }
 
     static func group(_ files: [DicomFile]) -> [Series] {
