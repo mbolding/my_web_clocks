@@ -101,6 +101,11 @@ struct MarkdownTextView: NSViewRepresentable {
 /// Takes the focus as it comes into its window, so Find works without a click first, even
 /// in a window or tab that opens in the background.
 final class EditorTextView: NSTextView {
+    // No Touch Bar. On a Mac with one, AppKit refreshes the text view's formatting buttons
+    // every time it lays out more text, converting the font of every coloured run as it
+    // goes, which stalled scrolling and Find in a long file for seconds at a time.
+    override func makeTouchBar() -> NSTouchBar? { nil }
+
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         window?.makeFirstResponder(self)
