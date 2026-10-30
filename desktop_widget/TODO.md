@@ -10,8 +10,6 @@ Common desktop widgets that would sit well beside the ones here. Each would be a
 
 Small apps that are a bit more than widgets: ordinary windowed apps with a menu bar and Dock icon, built like Map Browser (an ordinary SwiftUI `App`, with `LSUIElement` and `DesktopWidget` set to false in its `InfoPlistExtras.xml`), and each a line in `build.sh`'s `CLOCKS` table. The same rule on Swift macros applies.
 
-- **Polyhedra.** Explore the five Platonic solids: pick one and turn it with a drag, show or hide faces, edges and vertices, and read off its faces, edges and vertices (and V − E + F = 2), Schläfli symbol, dihedral angle, and circumradius and inradius for a unit edge. A slider could morph each solid into its dual (cube to octahedron, dodecahedron to icosahedron, the tetrahedron to itself) through the truncations between them. SceneKit draws it without a CDN or macros, or a `Canvas` with its own projection keeps it flat-shaded and light.
-
 ## Future ideas
 
 - **Replicants, after BeOS.** Drag part of a widget (Soma Player's now-playing line, the stopwatch readout) out onto the desktop to make it a small live window of its own, perhaps by a hand-like grip shown on hover; drop one on Widget Bar to dock it there, like the Deskbar's tray. Each piece would be another `DesktopPanel` in the same app, opened when a drag ends outside the window and restored at launch. Unlike Be's, a piece closes when its app quits, since macOS apps can't host each other's views.

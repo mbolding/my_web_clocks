@@ -36,6 +36,7 @@ CLOCKS=(
   Markdown MarkdownEditor com.mbolding.markdowneditor "Markdown Editor"
   Dicom   DicomViewer   com.mbolding.dicomviewer   "DICOM Viewer"
   Stipple Stipple       com.mbolding.stipple       "Stipple"
+  Polyhedra Polyhedra   com.mbolding.polyhedra     "Polyhedra"
 )
 
 build_clock() {

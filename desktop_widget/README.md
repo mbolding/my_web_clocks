@@ -1,6 +1,6 @@
 # Desktop widgets for macOS
 
-Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. Seven are different: Dock Clock lives in its Dock icon, Server List lives in the menu bar, and Map Browser, Text Extractor, Markdown Editor, DICOM Viewer and Stipple are ordinary apps with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
+Small native Mac apps that float on the desktop: frosted, borderless windows that sit just above the desktop icons (or above every window, with Float on Top), show on every Space, and stay out of the Dock and menu bar. Eight are different: Dock Clock lives in its Dock icon, Server List lives in the menu bar, and Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple and Polyhedra are ordinary apps with windows and a menu bar. They're written in SwiftUI and built with a single script, so you don't need Xcode itself.
 
 | App | What it is |
 | --- | --- |
@@ -18,6 +18,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Markdown Editor** (`Markdown/`) | A plain text editor for Markdown files, with light syntax colouring and no preview; an ordinary document app with New, Open, Save and window tabs |
 | **DICOM Viewer** (`Dicom/`) | A viewer for DICOM medical images: open or drop files, folders or zip archives to see each series, scroll through its slices, change the window and level, and read the tags |
 | **Stipple** (`Stipple/`) | Drop a picture on it and it's redrawn in dots, gathered where the picture is dark, or as one continuous line through them, to save as SVG for a pen plotter or PNG; a native take on Evil Mad Scientist's [StippleGen](https://github.com/mbolding/stipplegen) |
+| **Polyhedra** (`Polyhedra/`) | The five Platonic solids to turn over and look at, each with a slider that morphs it into its dual through the truncations between, and the numbers for whatever is showing |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -195,6 +196,14 @@ All of them:
 - **Save as SVG…** (**⌘S**) writes circles or one polyline, in drawing units 1,200 on the picture's long side; black on white has no background, ready for a pen plotter. **Save as PNG…** (**⇧⌘S**) renders it 2,400, 4,800 or 9,600 pixels on the long side, picked under **Export**. **Edit → Copy Drawing** (**⌥⌘C**) puts a PNG on the clipboard.
 - It's written fresh in Swift rather than ported, since StippleGen is LGPL. Pictures are read on the Mac and nothing is sent anywhere.
 
+**Polyhedra**
+
+- Pick a solid from the toolbar, the **Solid** menu or **⌘1**–**⌘5**: tetrahedron, cube, octahedron, dodecahedron or icosahedron. Drag to turn it, pinch to zoom, and double-click (or **⌘0**) to set it straight. **Spin** (**⌘J**) turns it slowly by itself.
+- The slider under **Towards its dual** slices its corners off until only its dual is left. It stops at five named shapes, with a dot for each to jump to: the solid, its truncation, the rectified solid (cut to the edge midpoints), the truncated dual, and the dual; the cube goes through the truncated cube, the cuboctahedron and the truncated octahedron to the octahedron. **⌘]** and **⌘[** step between them, and **Morph Back and Forth** (**⌘K**) runs it there and back by itself. The solid's own faces are in the accent colour and the dual's are pale, so you can watch one set give way to the other.
+- **View** has **Faces**, **Edges**, **Corners** and **The Hidden Side** (**⌥⌘1**–**⌥⌘4**), which shows the edges and corners round the back, dashed, through the faces.
+- The inspector's numbers are measured from the shape on screen rather than looked up: the corners, edges and faces (with Euler's V − E + F = 2), the faces by kind, the faces round each corner (3.8.8 for the truncated cube), the Schläfli symbol for the Platonic solids, the dihedral angles, and at the named stops the circumradius, midradius, inradius, surface area and volume for edges of length 1. Below them are the solid's symmetry group, its dual and the element Plato gave it.
+- Each shape is worked out as the intersection of the solid's face planes with its dual's, moved closer as the slider goes, and drawn flat-shaded in a SwiftUI `Canvas`; there's no SceneKit and nothing to download.
+
 ## Uninstall
 
 Quit the app from its right-click menu, delete it from `~/Applications`, and if you like, remove its saved settings:
@@ -203,7 +212,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor`, `com.mbolding.markdowneditor`, `com.mbolding.dicomviewer`, `com.mbolding.stipple` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor`, `com.mbolding.markdowneditor`, `com.mbolding.dicomviewer`, `com.mbolding.stipple`, `com.mbolding.polyhedra` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`.
 
 ## How it's put together
 
@@ -225,10 +234,11 @@ desktop_widget/
 ├── Markdown/       App.swift (with the menus and Settings), Icon.swift, the document, the editor and its highlighter, InfoPlistExtras.xml (with the document types)
 ├── Dicom/          App.swift (with the menus), Icon.swift, the DICOM parser, pixel decoding, series and tag list, the window, image view and model, InfoPlistExtras.xml (with the document types)
 ├── Stipple/        App.swift (with the menus), Icon.swift, the stippler, the line, the drawing and saving, the window and model, InfoPlistExtras.xml (with the document types)
+├── Polyhedra/      App.swift (with the menus), Icon.swift, the solids, the plane-intersection geometry, the stage, the window and model, InfoPlistExtras.xml
 └── Launcher/       App.swift, Icon.swift, the bar, the launcher that finds and drives the widgets, and the updater
 ```
 
-Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer and Stipple do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` for Map Browser (with `Settings`), Text Extractor, DICOM Viewer and Stipple, a `DocumentGroup` and `Settings` for Markdown Editor, and a `MenuBarExtra` for Server List. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple and Polyhedra do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` for Map Browser (with `Settings`), Text Extractor, DICOM Viewer, Stipple and Polyhedra, a `DocumentGroup` and `Settings` for Markdown Editor, and a `MenuBarExtra` for Server List. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
 To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 
