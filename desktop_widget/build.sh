@@ -35,6 +35,7 @@ CLOCKS=(
   Extractor TextExtractor com.mbolding.textextractor "Text Extractor"
   Markdown MarkdownEditor com.mbolding.markdowneditor "Markdown Editor"
   Dicom   DicomViewer   com.mbolding.dicomviewer   "DICOM Viewer"
+  Stipple Stipple       com.mbolding.stipple       "Stipple"
 )
 
 build_clock() {

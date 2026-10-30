@@ -1,0 +1,18 @@
+    <!-- An ordinary app with windows, a menu bar and a Dock icon, so it isn't LSUIElement,
+         nor one of the widgets for Widget Bar. -->
+    <key>LSUIElement</key><false/>
+    <key>DesktopWidget</key><false/>
+    <!-- Lists it under Open With for pictures, and lets them be dropped on its Dock icon,
+         without making it their default app. -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key><string>Image</string>
+            <key>CFBundleTypeRole</key><string>Viewer</string>
+            <key>LSHandlerRank</key><string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.image</string>
+            </array>
+        </dict>
+    </array>

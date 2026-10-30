@@ -23,7 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Dock Clock, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Widget Bar — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Dock Clock, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -87,7 +87,10 @@ Markdown Editor (a Markdown text editor with light syntax colouring and no
 preview, likewise an ordinary app, built on SwiftUI's `DocumentGroup`),
 DICOM Viewer (another ordinary windowed app: open or drop DICOM files or folders
 for their series, window and level, and tags, with a Swift port of the parser in
-`dicom/index.html`)
+`dicom/index.html`),
+Stipple (likewise an ordinary app: drop a picture on it to redraw it in
+weighted Voronoi stipple dots or one continuous "TSP art" line, saved as SVG or
+PNG)
 and Widget Bar
 (a toolbar that opens the others and flips their Float on Top; it finds them by
 the `DesktopWidget` key build.sh adds to every Info.plist). Each app is a folder with `App.swift`
