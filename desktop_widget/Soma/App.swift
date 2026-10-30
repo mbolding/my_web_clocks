@@ -7,7 +7,7 @@ enum SomaPlayerApp {
     @MainActor static func main() {
         // Starts below the command bar.
         DesktopClock.run(size: CGSize(width: 330, height: 108),
-                         defaultTop: 24 + 170 + 20 + 250 + 20 + 260 + 20) {
+                         defaultTop: 24 + 170 + 20 + 250 + 20 + 260 + 20, canSitBehindIcons: true) {
             SomaView()
         } options: {
             SomaOptions()
