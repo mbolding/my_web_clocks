@@ -1,0 +1,4 @@
+    <!-- The Dock icon is the whole app, so it isn't LSUIElement. Nor is it one of the
+         widgets for Widget Bar: there's no window to open or float on top. -->
+    <key>LSUIElement</key><false/>
+    <key>DesktopWidget</key><false/>

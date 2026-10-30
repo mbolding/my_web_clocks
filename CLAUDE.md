@@ -23,7 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Dock Clock, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Widget Bar — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -79,6 +79,8 @@ onto), Soma Player (a SomaFM radio), Dial Timer (a round timer), Month Calendar
 (this month's calendar), Scratch Pad (a text pad you can copy or save to the Desktop),
 Server List (a menu bar item listing servers that opens Screen Sharing or SSH),
 Dock Clock (an analog clock drawn into its Dock icon, with no window),
+Dock Load (CPU load and memory pressure as rings in its Dock icon, likewise
+windowless, with the busiest processes in its Dock menu),
 Map Browser (an OpenStreetMap browser built as an ordinary windowed app, with a
 menu bar, Dock icon and Settings, rather than a floating widget),
 Text Extractor (another ordinary windowed app: drop a PDF or Word document on it

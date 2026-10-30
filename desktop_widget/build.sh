@@ -31,6 +31,7 @@ CLOCKS=(
   Scratch ScratchPad    com.mbolding.scratchpad   "Scratch Pad"
   Servers ServerList    com.mbolding.serverlist   "Server List"
   Dock    DockClock     com.mbolding.dockclock    "Dock Clock"
+  Load    DockLoad      com.mbolding.dockload     "Dock Load"
   Maps    MapBrowser    com.mbolding.mapbrowser   "Map Browser"
   Extractor TextExtractor com.mbolding.textextractor "Text Extractor"
   Markdown MarkdownEditor com.mbolding.markdowneditor "Markdown Editor"
