@@ -6,6 +6,9 @@
 #   ./build.sh word             build just one (folder name, any case)
 #   ./build.sh analog --run     build, then (re)launch it
 #   ./build.sh --install        build, copy to ~/Applications, and launch
+#   ./build.sh --update         rebuild only the apps already in ~/Applications, and
+#                               reopen only the ones that were running (Widget Bar's
+#                               Update from GitHub runs this after a git pull)
 #
 # WidgetKit widget (parked): Analog/Widget is only built and embedded when an Apple
 # Development certificate exists (Xcode → Settings → Accounts → Manage Certificates),
@@ -66,6 +69,8 @@ build_clock() {
     <key>CFBundleShortVersionString</key><string>1.0</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <!-- The checkout it was built from, for Widget Bar's Update from GitHub. -->
+    <key>SourceFolder</key><string>${PWD:h}</string>
 $(grep -qs "<key>LSUIElement</key>" $dir/InfoPlistExtras.xml || echo '    <key>LSUIElement</key><true/>')
 $(grep -qs "<key>DesktopWidget</key>" $dir/InfoPlistExtras.xml || echo '    <!-- Marks it as one of these widgets, for Widget Bar to find. -->
     <key>DesktopWidget</key><true/>')
@@ -114,10 +119,11 @@ PLIST
   echo "Built $app${IDENTITY:+ (with WidgetKit widget)}"
 }
 
-wanted=() action=
+wanted=() action= update=
 for arg in "$@"; do
   case $arg in
     --run|--install) action=$arg ;;
+    --update) action=--install update=1 ;;
     *) wanted+=(${(L)arg}) ;;
   esac
 done
@@ -126,11 +132,14 @@ built=0 known=()
 for dir exe id name in $CLOCKS; do
   known+=(${(L)dir})
   (( ${#wanted} )) && (( ! ${wanted[(Ie)${(L)dir}]} )) && continue
+  [[ -n $update && ! -d ~/Applications/$exe.app ]] && continue
   build_clock $dir $exe $id $name
   (( ++built ))
 
   # Quit any running copy and wait for it to go, or open can race the exit and fail.
+  running=
   if [[ -n $action ]]; then
+    pgrep -qx $exe && running=1
     pkill -x $exe || true
     while pgrep -qx $exe; do sleep 0.1; done
   fi
@@ -146,12 +155,14 @@ for dir exe id name in $CLOCKS; do
       # any Finder service the app declares.
       /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f ~/Applications/$exe.app
       /System/Library/CoreServices/pbs -update
-      open ~/Applications/$exe.app
+      [[ -z $update || -n $running ]] && open ~/Applications/$exe.app
       echo "Installed to ~/Applications/$exe.app" ;;
   esac
 done
 
-if (( ! built )); then
+if (( ! built )) && [[ -n $update ]]; then
+  echo "None of the apps are installed in ~/Applications, so there's nothing to update."
+elif (( ! built )); then
   echo "No clock named: ${wanted[*]}. Choose from: ${known[*]}" >&2
   exit 1
 fi

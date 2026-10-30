@@ -12,6 +12,9 @@ enum WidgetBarApp {
         DesktopClock.run(size: folded ? LauncherBar.collapsedSize : LauncherBar.size(for: WidgetLauncher.shared.widgets.count),
                          defaultTop: .greatestFiniteMagnitude, floatsByDefault: true) {
             LauncherBar()
+        } options: {
+            Button("Update from GitHub…") { Updater.confirmAndRun() }
+            Divider()
         }
     }
 }

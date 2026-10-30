@@ -51,11 +51,14 @@ Other forms:
 | `desktop_widget/build.sh` | Builds every app into `desktop_widget/build/` without installing |
 | `desktop_widget/build.sh word --run` | Builds one and launches it from `build/` |
 | `desktop_widget/build.sh --install` | Builds, installs to `~/Applications` and launches |
+| `desktop_widget/build.sh --update` | Rebuilds only the apps already in `~/Applications`, and reopens only the ones that were running |
 
 ### Update
 
+Right-click Widget Bar's background and choose **Update from GitHub…**, or from a terminal:
+
 ```bash
-cd ~/repos/my_web_clocks && git pull && desktop_widget/build.sh --install
+cd ~/repos/my_web_clocks && git pull && desktop_widget/build.sh --update
 ```
 
 Installing quits the running copy first and starts the new one. Window positions and settings are kept.
@@ -111,6 +114,7 @@ All of them:
 - The dot under an icon is grey while that widget runs on the desktop and in the accent colour while it floats on top; no dot means it isn't running.
 - Click a widget that isn't running to open it. Click a running one to flip its Float on Top.
 - Right-click an icon to float it or put it on the desktop, **Show** it for a few seconds, or quit it.
+- Right-click the bar's background for **Update from GitHub…**. After you confirm, it pulls the latest code into the checkout the apps were built from (fast-forward only, so local commits stop it) and runs `build.sh --update`. Running apps quit and reopen, Widget Bar included, so save your work in Markdown Editor first, and Command Bar starts a new shell. A notification says when it's done; if it fails, the log (`~/Library/Logs/Widget Bar Update.log`) opens in TextEdit. If there's nothing new, nothing is rebuilt.
 - The **›** at the right end folds the bar into a small square at its right edge, to get it out of the way; click the square to open the bar again. It stays folded or open across restarts.
 
 **Clock Widget** has a **Show Seconds** option in its right-click menu.
@@ -210,7 +214,7 @@ desktop_widget/
 ├── Extractor/      App.swift (with the menus), Icon.swift, the window, the model and the text extraction, InfoPlistExtras.xml (with its document types)
 ├── Markdown/       App.swift (with the menus and Settings), Icon.swift, the document, the editor and its highlighter, InfoPlistExtras.xml (with the document types)
 ├── Dicom/          App.swift (with the menus), Icon.swift, the DICOM parser, pixel decoding, series and tag list, the window, image view and model, InfoPlistExtras.xml (with the document types)
-└── Launcher/       App.swift, Icon.swift, the bar and the launcher that finds and drives the widgets
+└── Launcher/       App.swift, Icon.swift, the bar, the launcher that finds and drives the widgets, and the updater
 ```
 
 Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Map Browser, Text Extractor, Markdown Editor and DICOM Viewer do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor, Markdown Editor, DICOM Viewer and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` for Map Browser (with `Settings`), Text Extractor and DICOM Viewer, a `DocumentGroup` and `Settings` for Markdown Editor, and a `MenuBarExtra` for Server List. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
