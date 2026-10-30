@@ -14,10 +14,6 @@ Small apps that are a bit more than widgets: ordinary windowed apps with a menu 
 - **Markdown Editor.** A plain text editor for `.md` files with light syntax highlighting (headings, emphasis, code, links and list markers), with no preview, opening and saving ordinary files through the standard Open and Save panels.
 - **Text Extractor.** Drop a Word document or PDF on it and it shows just the text, ready to select, copy or save as plain text. PDFKit's `PDFDocument.string` reads PDFs, and `NSAttributedString` reads `.docx`, `.doc` and `.rtf`, so it needs no other libraries.
 
-## Improvements
-
-- **Show Float on Top in the border.** Drop the little "Floating on top" tip that appears when Float on Top toggles. Instead, show the state in the widget's border: a little darker, or tinted with the `accent`, while the widget floats on top, and back to normal when it doesn't.
-
 ## Future ideas
 
 - **Replicants, after BeOS.** Drag part of a widget (Soma Player's now-playing line, the stopwatch readout) out onto the desktop to make it a small live window of its own, perhaps by a hand-like grip shown on hover; drop one on Widget Bar to dock it there, like the Deskbar's tray. Each piece would be another `DesktopPanel` in the same app, opened when a drag ends outside the window and restored at launch. Unlike Be's, a piece closes when its app quits, since macOS apps can't host each other's views.

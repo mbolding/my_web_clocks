@@ -2,8 +2,8 @@
 // Borderless, translucent, just above the desktop icons (or above every window with
 // Float on Top), on every Space. Drag to move (position is remembered). Right-click
 // for the clock's own options, the accent colour all the widgets share, Float on Top,
-// and Quit. ⌘-click or force click anywhere flips Float on Top, and a brief label says
-// which it is now. An interactive window (the command bar) also takes typing, resizes
+// and Quit. ⌘-click or force click anywhere flips Float on Top, and an accent edge shows
+// while it's on. An interactive window (the command bar) also takes typing, resizes
 // from its edges, and floats on top unless turned off. An app given `onOpen` receives
 // files and folders opened with it (open -a, Open With) or sent from its Finder service,
 // if its Info.plist declares them. A round window is cut to a circle; one whose face has
@@ -60,38 +60,30 @@ struct ClockMenu<Face: View, Options: View>: View {
     var setFloatOnTop: (Bool) -> Void
     var face: Face
     var options: Options
-    // A brief label after Float on Top changes, however it was changed, since most of the
-    // windows have no pin to show it. Each change gets a new number, so only the latest
-    // one's timer hides it.
-    @State private var levelNote: (onTop: Bool, number: Int)?
+
+    private var edge: Color { accent.color.opacity(floatOnTop ? 0.8 : 0) }
 
     var body: some View {
         face
             .environment(\.accent, accent.color)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // An accent edge around the window while it floats on top, however that was
+            // set, since most of the windows have no pin to show it.
             .overlay {
-                if let levelNote {
-                    Label(levelNote.onTop ? "Floating on top" : "On the desktop",
-                          systemImage: levelNote.onTop ? "pin.fill" : "pin.slash")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.thickMaterial, in: Capsule())
-                        .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
-                        .transition(.opacity)
-                        .allowsHitTesting(false)
+                Group {
+                    if round {
+                        Circle().strokeBorder(edge, lineWidth: 2)
+                    } else {
+                        RoundedRectangle(cornerRadius: DesktopClockDelegate.corner, style: .circular)
+                            .strokeBorder(edge, lineWidth: 2)
+                    }
                 }
+                .allowsHitTesting(false)
+                .animation(.easeInOut(duration: 0.2), value: floatOnTop)
             }
             // Right-click anywhere on the window, not just on the drawn marks.
             .contentShape(round ? AnyShape(Circle()) : AnyShape(Rectangle()))
             .onChange(of: floatOnTop, initial: true) { setFloatOnTop(floatOnTop) }
-            .onChange(of: floatOnTop) {
-                let number = (levelNote?.number ?? 0) + 1
-                withAnimation(.easeOut(duration: 0.15)) { levelNote = (floatOnTop, number) }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-                    if levelNote?.number == number { withAnimation(.easeIn(duration: 0.3)) { levelNote = nil } }
-                }
-            }
             .contextMenu {
                 options
                 Picker("Accent Color", selection: $accent) {
@@ -217,8 +209,10 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
 
     static let desktopLevel = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
 
+    static let corner: CGFloat = 24
+
     func applicationDidFinishLaunching(_ note: Notification) {
-        let corner: CGFloat = 24
+        let corner = Self.corner
 
         // Non-activating, so typing into it doesn't pull focus from the app you were in.
         var style: NSWindow.StyleMask = [.borderless, .nonactivatingPanel]
