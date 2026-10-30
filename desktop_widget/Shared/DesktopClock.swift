@@ -2,11 +2,11 @@
 // Borderless, translucent, just above the desktop icons (or above every window with
 // Float on Top), on every Space. Drag to move (position is remembered). Right-click
 // for the clock's own options, the accent colour all the widgets share, Float on Top,
-// and Quit. ⌘-click anywhere flips Float on Top, and a brief label says which it is now.
-// An interactive window (the command bar) also takes typing, resizes from its edges,
-// and floats on top unless turned off. An app given `onOpen` receives files and folders
-// opened with it (open -a, Open With) or sent from its Finder service, if its
-// Info.plist declares them. A round window is cut to a circle; one whose face has
+// and Quit. ⌘-click or force click anywhere flips Float on Top, and a brief label says
+// which it is now. An interactive window (the command bar) also takes typing, resizes
+// from its edges, and floats on top unless turned off. An app given `onOpen` receives
+// files and folders opened with it (open -a, Open With) or sent from its Finder service,
+// if its Info.plist declares them. A round window is cut to a circle; one whose face has
 // gestures of its own turns off dragging by the background and uses MovesWindow on the
 // parts that should move it instead.
 
@@ -282,15 +282,42 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.async { [panel] in panel?.invalidateShadow() }
 
         // ⌘-click anywhere on the window flips Float on Top, before the face sees the
-        // click. The menu and any pin follow the setting, and set the window's level.
-        clickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
-            guard let panel = self?.panel, event.window === panel,
-                  event.modifierFlags.intersection([.command, .shift, .option, .control]) == .command
-            else { return event }
-            let defaults = UserDefaults.standard
-            defaults.set(!defaults.bool(forKey: "floatOnTop"), forKey: "floatOnTop")
-            return nil
+        // click, and so does a force click on a trackpad, once the press deepens. That
+        // click began as an ordinary one, so its mouse-up is moved far off the window,
+        // where a button it pressed lets go without acting. The menu and any pin follow
+        // the setting, and set the window's level.
+        clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .pressure, .leftMouseUp]) { [weak self] event in
+            guard let self, let panel, event.window === panel else { return event }
+            switch event.type {
+            case .leftMouseDown where event.modifierFlags.intersection([.command, .shift, .option, .control]) == .command:
+                flipFloatOnTop()
+                return nil
+            case .pressure:
+                // A press sends a stream of these; act once, as it first reaches stage 2.
+                defer { pressStage = event.stage }
+                guard event.stage == 2, pressStage < 2 else { return event }
+                forceClicked = true
+                flipFloatOnTop()
+                return nil
+            case .leftMouseUp where forceClicked:
+                forceClicked = false
+                return NSEvent.mouseEvent(with: .leftMouseUp, location: NSPoint(x: -10_000, y: -10_000),
+                                          modifierFlags: event.modifierFlags, timestamp: event.timestamp,
+                                          windowNumber: event.windowNumber, context: nil,
+                                          eventNumber: event.eventNumber, clickCount: event.clickCount,
+                                          pressure: 0)
+            default:
+                return event
+            }
         }
+    }
+
+    private var forceClicked = false
+    private var pressStage = 0
+
+    private func flipFloatOnTop() {
+        let defaults = UserDefaults.standard
+        defaults.set(!defaults.bool(forKey: "floatOnTop"), forKey: "floatOnTop")
     }
 }
 
