@@ -1,55 +1,67 @@
-// The Markdown Editor app icon: a page of Markdown as the editor colours it, with a
-// heading, a bulleted list and a code block.
+// The Markdown Editor app icon: the Markdown mark, an M and a down arrow in a rounded frame,
+// on a white card over deep ink, with the arrow in the accent.
 
 import SwiftUI
 
 struct IconFace: View {
-    private let ink = Color(white: 0.22)
-    private let faint = Color(white: 0.78)
+    @Environment(\.accent) private var accent
+    private let ink = Color(red: 0.12, green: 0.14, blue: 0.20)
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(white: 0.99), Color(white: 0.93)], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [Color(red: 0.20, green: 0.23, blue: 0.32), Color(red: 0.07, green: 0.08, blue: 0.12)],
+                           startPoint: .top, endPoint: .bottom)
 
-            VStack(alignment: .leading, spacing: 34) {
-                HStack(spacing: 26) {
-                    Text("#")
-                        .font(.system(size: 150, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(.orange)
-                    bar(330, height: 64, ink)
-                }
-                .frame(height: 140)
+            RoundedRectangle(cornerRadius: 70, style: .continuous)
+                .fill(LinearGradient(colors: [.white, Color(white: 0.92)], startPoint: .top, endPoint: .bottom))
+                .frame(width: 640, height: 420)
+                .shadow(color: .black.opacity(0.45), radius: 24, y: 14)
 
-                VStack(alignment: .leading, spacing: 30) {
-                    HStack(spacing: 22) { bar(250, faint); bar(180, .orange.opacity(0.85)) }
-                    bar(470, faint)
-                }
+            // The frame of the mark.
+            RoundedRectangle(cornerRadius: 46, style: .continuous)
+                .stroke(ink, lineWidth: 34)
+                .frame(width: 540, height: 320)
 
-                VStack(alignment: .leading, spacing: 30) {
-                    ForEach([300, 380], id: \.self) { width in
-                        HStack(spacing: 30) {
-                            Circle().fill(.orange).frame(width: 30, height: 30)
-                            bar(CGFloat(width), faint)
-                        }
-                    }
-                }
+            MLetter()
+                .stroke(ink, style: StrokeStyle(lineWidth: 48, lineCap: .square, lineJoin: .miter))
+                .frame(width: 190, height: 170)
+                .offset(x: -95, y: 0)
 
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(Color(white: 0.86))
-                    .frame(width: 560, height: 150)
-                    .overlay(alignment: .leading) {
-                        VStack(alignment: .leading, spacing: 26) {
-                            bar(300, height: 28, Color(white: 0.55))
-                            bar(200, height: 28, Color(white: 0.55))
-                        }
-                        .padding(.leading, 44)
-                    }
+            DownArrow()
+                .fill(accent)
+                .frame(width: 140, height: 170)
+                .offset(x: 130, y: 0)
+        }
+        .frame(width: 824, height: 824)
+    }
+
+    private struct MLetter: Shape {
+        func path(in rect: CGRect) -> Path {
+            Path { p in
+                p.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+                p.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+                p.addLine(to: CGPoint(x: rect.midX, y: rect.midY + rect.height * 0.08))
+                p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+                p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
             }
-            .frame(width: 560, alignment: .leading)
         }
     }
 
-    private func bar(_ width: CGFloat, height: CGFloat = 34, _ color: Color) -> some View {
-        Capsule().fill(color).frame(width: width, height: height)
+    /// A stem with a wide head pointing down.
+    private struct DownArrow: Shape {
+        func path(in rect: CGRect) -> Path {
+            let stem = rect.width * 0.36
+            let head = rect.height * 0.46
+            return Path { p in
+                p.move(to: CGPoint(x: rect.midX - stem / 2, y: rect.minY))
+                p.addLine(to: CGPoint(x: rect.midX + stem / 2, y: rect.minY))
+                p.addLine(to: CGPoint(x: rect.midX + stem / 2, y: rect.maxY - head))
+                p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - head))
+                p.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+                p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - head))
+                p.addLine(to: CGPoint(x: rect.midX - stem / 2, y: rect.maxY - head))
+                p.closeSubpath()
+            }
+        }
     }
 }

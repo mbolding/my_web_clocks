@@ -1,99 +1,93 @@
-// The Text Extractor app icon: a page of text with two lines selected in the accent colour
-// and the text cursor at the end of them.
+// The Text Extractor app icon: a laid-out document, with a picture and coloured headings,
+// behind the plain text taken out of it, set in a fixed-width face on a clean card, with an
+// arrow in the accent curving from one to the other.
 
 import SwiftUI
 
 struct IconFace: View {
     @Environment(\.accent) private var accent
 
-    // Line widths down the page; the selected ones are picked out.
-    private let lines: [CGFloat] = [380, 420, 340, 410, 400, 260, 0, 390, 410, 300]
-    private let selected = 3...4
-
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.36, green: 0.42, blue: 0.52), Color(red: 0.2, green: 0.24, blue: 0.31)],
+            LinearGradient(colors: [Color(red: 0.36, green: 0.42, blue: 0.52), Color(red: 0.16, green: 0.19, blue: 0.25)],
                            startPoint: .top, endPoint: .bottom)
 
-            ZStack(alignment: .topLeading) {
-                Page()
-                    .fill(.white)
-                    .shadow(color: .black.opacity(0.35), radius: 18, y: 12)
-                Page.fold
-                    .fill(Color(white: 0.84))
+            document
+                .frame(width: 420, height: 540)
+                .rotationEffect(.degrees(-7))
+                .shadow(color: .black.opacity(0.35), radius: 18, y: 12)
+                .offset(x: -125, y: -60)
 
-                VStack(alignment: .leading, spacing: 22) {
-                    ForEach(lines.indices, id: \.self) { i in
-                        Capsule()
-                            .fill(selected.contains(i) ? accent : Color(white: 0.72))
-                            .frame(width: lines[i], height: 20)
-                            .opacity(lines[i] == 0 ? 0 : 1)
-                            .background(alignment: .leading) {
-                                if selected.contains(i) {
-                                    Rectangle()
-                                        .fill(accent.opacity(0.25))
-                                        .frame(width: 470, height: 42)
-                                        .offset(x: -12)
-                                }
-                            }
-                    }
-                }
-                .padding(.leading, 70)
-                .padding(.top, 150)
-            }
-            .frame(width: 560, height: 680)
+            plainText
+                .frame(width: 400, height: 460)
+                .shadow(color: .black.opacity(0.4), radius: 22, y: 14)
+                .offset(x: 140, y: 110)
 
-            ZStack {
-                IBeam().stroke(.white, style: StrokeStyle(lineWidth: 46, lineCap: .round, lineJoin: .round))
-                IBeam().stroke(accent, style: StrokeStyle(lineWidth: 26, lineCap: .round, lineJoin: .round))
-            }
-            .frame(width: 120, height: 300)
-            .shadow(color: .black.opacity(0.3), radius: 8, y: 6)
-            .offset(x: 200, y: -30)
+            Arc()
+                .stroke(accent, style: StrokeStyle(lineWidth: 34, lineCap: .round))
+                .frame(width: 230, height: 170)
+                .offset(x: 115, y: -215)
+            Head()
+                .fill(accent)
+                .frame(width: 96, height: 96)
+                .rotationEffect(.degrees(100))
+                .offset(x: 228, y: -118)
         }
+        .frame(width: 824, height: 824)
     }
 
-    /// The text cursor: a bar with a short crossbar at each end.
-    private struct IBeam: Shape {
+    /// The source: a heading, a picture, and columns of text in colour.
+    private var document: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            Capsule().fill(Color(red: 0.75, green: 0.2, blue: 0.22)).frame(width: 250, height: 34)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(LinearGradient(colors: [Color(red: 0.45, green: 0.68, blue: 0.9), Color(red: 0.32, green: 0.6, blue: 0.4)],
+                                     startPoint: .top, endPoint: .bottom))
+                .frame(height: 150)
+                .overlay(alignment: .bottomLeading) {
+                    Circle().fill(Color(red: 1, green: 0.85, blue: 0.4)).frame(width: 46).offset(x: 230, y: -90)
+                }
+            ForEach([340.0, 300, 330, 220], id: \.self) { width in
+                Capsule().fill(Color(white: 0.75)).frame(width: width, height: 18)
+            }
+        }
+        .padding(38)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 22).fill(.white))
+    }
+
+    /// The result: plain fixed-width lines and nothing else.
+    private var plainText: some View {
+        VStack(alignment: .leading, spacing: 26) {
+            Text("Aa")
+                .font(.system(size: 96, weight: .bold, design: .monospaced))
+                .foregroundStyle(Color(white: 0.18))
+            ForEach([300.0, 260, 320, 180, 280], id: \.self) { width in
+                Capsule().fill(Color(white: 0.35)).frame(width: width, height: 20)
+            }
+        }
+        .padding(44)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 26).fill(Color(white: 0.97)))
+    }
+
+    /// The arrow's sweep, over the top from the document to the text.
+    private struct Arc: Shape {
         func path(in rect: CGRect) -> Path {
             Path { p in
-                p.move(to: CGPoint(x: rect.midX, y: rect.minY))
-                p.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-                for y in [rect.minY, rect.maxY] {
-                    p.move(to: CGPoint(x: rect.minX, y: y))
-                    p.addLine(to: CGPoint(x: rect.maxX, y: y))
-                }
+                p.move(to: CGPoint(x: rect.minX, y: rect.maxY * 0.75))
+                p.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.maxY), control: CGPoint(x: rect.midX * 1.2, y: rect.minY - 40))
             }
         }
     }
 
-    /// A sheet of paper with its top right corner folded down.
-    private struct Page: Shape {
-        static let corner: CGFloat = 110
-
+    private struct Head: Shape {
         func path(in rect: CGRect) -> Path {
             Path { p in
                 p.move(to: CGPoint(x: rect.minX, y: rect.minY))
-                p.addLine(to: CGPoint(x: rect.maxX - Self.corner, y: rect.minY))
-                p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + Self.corner))
-                p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+                p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
                 p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
                 p.closeSubpath()
-            }
-        }
-
-        static var fold: some Shape {
-            Fold()
-        }
-
-        private struct Fold: Shape {
-            func path(in rect: CGRect) -> Path {
-                Path { p in
-                    p.move(to: CGPoint(x: rect.maxX - Page.corner, y: rect.minY))
-                    p.addLine(to: CGPoint(x: rect.maxX - Page.corner, y: rect.minY + Page.corner))
-                    p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + Page.corner))
-                    p.closeSubpath()
-                }
             }
         }
     }
