@@ -11,6 +11,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left. Also a stopwatch |
 | **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
 | **Scratch Pad** (`Scratch/`) | A text pad that keeps what you type, with buttons to copy it all or save it to the Desktop |
+| **SDF Post** (`Post/`) | A pad that posts what's in it to your [SDF](https://sdf.org) site: a web blog, a gopher phlog and a Gemini gemlog at once, over ssh with your key |
 | **Server List** (`Servers/`) | A menu bar item listing your Macs and servers: choose one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
 | **Dock Clock** (`Dock/`) | An analog clock with no window: its live Dock icon is the whole app |
 | **Dock Load** (`Load/`) | CPU load and memory pressure as rings in its Dock icon, with the busiest processes in its Dock menu; also no window |
@@ -135,6 +136,14 @@ All of them:
 - The right-click menu (on the header; the text has its own) also has **Show Saved File in Finder** and **Clear**.
 - Floats on top by default; the window resizes from its edges.
 
+**SDF Post**
+
+- Type, paste or drop text into it, or drop a text or Markdown file while it's empty, give it a title (or let the first line be one, a Markdown `#` taken off), and press **Post** (**⌘↩**). It goes up as a page on your web blog at `user.sdf.org/blog/`, a text file in your phlog at `gopher://sdf.org/1/users/user/phlog/`, and a page in a gemlog at `gemini://sdf.org/user/gemlog/`, each listed newest first; afterwards the three addresses are links under the text.
+- It posts over the Mac's own `ssh` with the key SDF already knows, never a password, as the login in the right-click menu (it starts as your Mac user name at sdf.org). It needs a gopher space and a web space on SDF already, from `mkgopher` and `mkhomepg`.
+- Each post's text is kept as written in `~/.sdfpost/posts` on SDF, a private folder, and every page and index is made again from those on each post, so the three halves always agree; the phlog's copy is wrapped to 70 columns, with quotes carrying their `>`. A post's date is SDF's, which keeps UTC. Phlog posts written by hand are listed too, read from the phlog's own text.
+- The first post adds a Gemlog link to the capsule's front page and, unless it's turned off in the right-click menu, one `blog` link to the homepage, after its first heading; neither is touched again. The menu also opens the blog, phlog and gemlog.
+- Nothing typed reaches SDF's shell: the post travels as base64 inside the script.
+
 **Server List**
 
 - It lives in the menu bar, as a server rack, with no window or Dock icon, and isn't on Widget Bar. Click it for the list.
@@ -258,7 +267,7 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.dockload`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor`, `com.mbolding.markdowneditor`, `com.mbolding.dicomviewer`, `com.mbolding.stipple`, `com.mbolding.polyhedra`, `com.mbolding.gopherbrowser`, `com.mbolding.newsreader`, `com.mbolding.relaychat` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`, and News Reader and Relay Chat keep passwords in the Keychain, under their names.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.sdfpost`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.dockload`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor`, `com.mbolding.markdowneditor`, `com.mbolding.dicomviewer`, `com.mbolding.stipple`, `com.mbolding.polyhedra`, `com.mbolding.gopherbrowser`, `com.mbolding.newsreader`, `com.mbolding.relaychat` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles in `~/Library/Caches/com.mbolding.mapbrowser`, and News Reader and Relay Chat keep passwords in the Keychain, under their names.
 
 ## How it's put together
 

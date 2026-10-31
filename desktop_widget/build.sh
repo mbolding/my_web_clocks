@@ -41,6 +41,7 @@ CLOCKS=(
   Gopher  GopherBrowser com.mbolding.gopherbrowser "Gopher Browser"
   News    NewsReader    com.mbolding.newsreader    "News Reader"
   Relay   RelayChat     com.mbolding.relaychat     "Relay Chat"
+  Post    SDFPost       com.mbolding.sdfpost       "SDF Post"
 )
 
 build_clock() {
