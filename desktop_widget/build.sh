@@ -40,6 +40,7 @@ CLOCKS=(
   Polyhedra Polyhedra   com.mbolding.polyhedra     "Polyhedra"
   Gopher  GopherBrowser com.mbolding.gopherbrowser "Gopher Browser"
   News    NewsReader    com.mbolding.newsreader    "News Reader"
+  Relay   RelayChat     com.mbolding.relaychat     "Relay Chat"
 )
 
 build_clock() {

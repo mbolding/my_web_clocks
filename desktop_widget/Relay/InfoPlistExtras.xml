@@ -1,0 +1,4 @@
+    <!-- An ordinary app with a window, a menu bar and a Dock icon (which counts mentions while
+         the window is closed), so it isn't LSUIElement, nor one of the widgets for Widget Bar. -->
+    <key>LSUIElement</key><false/>
+    <key>DesktopWidget</key><false/>
