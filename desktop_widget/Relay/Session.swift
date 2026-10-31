@@ -132,6 +132,20 @@ final class Session: ObservableObject, Identifiable {
     private var channelTypes: Set<Character> = ["#", "&"]
     private var pendingNames: [String: [String: String]] = [:]
     private var pendingListing: [Listing] = []
+    /// The nick asked for, kept so it can be taken back if it was in use.
+    private(set) var preferredNick = ""
+
+    // What the Log In and Register sheet watches.
+    /// The account logged in to, from the server's 900 and 901 replies.
+    @Published private(set) var account: String?
+    /// What NickServ has said since the sheet asked it something.
+    @Published private(set) var servicesLog: [String] = []
+    @Published private(set) var servicesFailure: String?
+    /// NickServ wants the code it emailed.
+    @Published private(set) var servicesNeedsCode = false
+    @Published private(set) var servicesConfirmed = false
+    /// The network has no NickServ, as SDF hasn't.
+    @Published private(set) var servicesMissing = false
     /// A channel the person asked to join here, to show once it's joined.
     var showOnJoin: String?
     var onShow: (BufferRef) -> Void = { _ in }
@@ -152,6 +166,7 @@ final class Session: ObservableObject, Identifiable {
             return
         }
         self.nick = nick
+        preferredNick = nick
         wanted = true
         network.autoConnect = true
         onChange(network)
@@ -214,6 +229,7 @@ final class Session: ObservableObject, Identifiable {
 
     private func dropped(reason: String?) {
         connection = nil
+        account = nil
         state = .disconnected
         for i in buffers.indices where buffers[i].kind == .channel {
             buffers[i].joined = false
@@ -244,6 +260,7 @@ final class Session: ObservableObject, Identifiable {
             if let me = p.first { nick = me }
             server(p.last ?? "Connected.", m)
             if !network.channels.isEmpty { send("JOIN \(network.channels.joined(separator: ","))") }
+            regainNick()
         case "005":
             for token in p.dropFirst().dropLast() { support(token) }
         case "433", "432":
@@ -254,7 +271,12 @@ final class Session: ObservableObject, Identifiable {
                 active(.error, p.dropFirst().joined(separator: " "))
             }
         case "900":
+            if p.count >= 3 { account = p[2] }
             server(p.last ?? "Logged in.", m)
+            regainNick()
+        case "901":
+            account = nil
+            server(p.last ?? "Logged out.", m)
         case "903":
             server("Logged in with SASL.", m)
             endCaps()
@@ -331,6 +353,7 @@ final class Session: ObservableObject, Identifiable {
                 update(buffer.name) { $0.users[from] = nil }
                 event(buffer.name, "\(from) quit\(reason)", m)
             }
+            takeNickIfFreed(from)
         case "NICK":
             guard let new = p.first else { return }
             let me = from.caseInsensitiveCompare(nick) == .orderedSame
@@ -342,7 +365,7 @@ final class Session: ObservableObject, Identifiable {
                 }
                 event(buffer.kind == .query ? new : buffer.name, me ? "You're now \(new)" : "\(from) is now \(new)", m)
             }
-            if me { server("You're now \(new)", m) }
+            if me { server("You're now \(new)", m) } else { takeNickIfFreed(from) }
         case "TOPIC":
             guard p.count >= 2 else { return }
             update(p[0]) { $0.topic = p[1] }
@@ -360,7 +383,16 @@ final class Session: ObservableObject, Identifiable {
         default:
             guard let code = Int(m.command) else { return }
             let text = p.dropFirst().joined(separator: " ")
+            if code == 401, p.count > 1, p[1].caseInsensitiveCompare("NickServ") == .orderedSame {
+                servicesMissing = true
+                return active(.error, "\(network.name) has no NickServ, so nicks here aren't registered: anyone can use a nick that's free.")
+            }
             if code >= 400 { active(.error, text) } else { active(.info, text) }
+            // Channels that only take registered people say so in a few ways.
+            let lower = text.lowercased()
+            if code >= 400, account == nil, lower.contains("identified") || lower.contains("registered") || code == 477 {
+                active(.info, "To log in, or to register \(preferredNick.isEmpty ? nick : preferredNick), choose Network → Log In or Register on \(network.name)….")
+            }
         }
     }
 
@@ -399,6 +431,7 @@ final class Session: ObservableObject, Identifiable {
         } else {
             destination = target
         }
+        if from.caseInsensitiveCompare("NickServ") == .orderedSame { heardFromServices(Self.plain(text)) }
         let mention = !toMe && kind != .notice && Self.mentions(text, nick: nick)
         let line = Line(id: 0, time: m.time, kind: kind, nick: from, text: text,
                         mention: mention || (toMe && !notice && destination != ""))
@@ -465,6 +498,77 @@ final class Session: ObservableObject, Identifiable {
         }
     }
 
+    // MARK: Accounts
+
+    /// Logs in to an account that's already registered, and keeps it for SASL next time.
+    func logIn(account: String, password: String) {
+        keep(account: account, password: password)
+        beginServices()
+        send(IRCMessage.line("PRIVMSG", "NickServ", "IDENTIFY \(account) \(password)"))
+    }
+
+    /// Registers the nick in use, and keeps it for SASL once it's done.
+    func register(password: String, email: String) {
+        keep(account: nick, password: password)
+        beginServices()
+        send(IRCMessage.line("PRIVMSG", "NickServ", "REGISTER \(password) \(email)"))
+    }
+
+    /// Sends the code NickServ emailed: Atheme (Libera) wants VERIFY REGISTER, Anope
+    /// (tilde.chat and most others) CONFIRM.
+    func confirm(code: String) {
+        let atheme = servicesLog.contains { $0.uppercased().contains("VERIFY REGISTER") }
+        send(IRCMessage.line("PRIVMSG", "NickServ", atheme ? "VERIFY REGISTER \(network.account) \(code)" : "CONFIRM \(code)"))
+    }
+
+    func beginServices() {
+        servicesLog = []
+        servicesFailure = nil
+        servicesNeedsCode = false
+        servicesConfirmed = false
+    }
+
+    private func keep(account: String, password: String) {
+        network.account = account
+        onChange(network)
+        Keychain.setPassword(password, for: network)
+    }
+
+    /// Reads what NickServ says for the sheet: a code to send, a confirmation, or a refusal.
+    private func heardFromServices(_ text: String) {
+        let lower = text.lowercased()
+        // Atheme gives a nick back with REGAIN, Anope with RECOVER; trying the one first is no news.
+        if lower.contains("regain") && (lower.contains("unknown command") || lower.contains("no such command")) {
+            send(IRCMessage.line("PRIVMSG", "NickServ", "RECOVER \(preferredNick)"))
+            return
+        }
+        servicesLog.append(text)
+        if ["has been confirmed", "has been verified", "is now confirmed", "is now verified"].contains(where: lower.contains) {
+            servicesConfirmed = true
+            servicesNeedsCode = false
+        } else if ["passcode", "verification", "verify register", "/msg nickserv confirm", "activation", "activate"].contains(where: lower.contains) {
+            servicesNeedsCode = true
+        }
+        if ["incorrect", "invalid", "isn't registered", "is not registered", "already registered", "denied", "too many",
+            "must wait", "too short", "too weak", "cannot", "can't", "failed", "not a valid", "insufficient"].contains(where: lower.contains) {
+            servicesFailure = text
+        }
+    }
+
+    /// Once logged in, asks NickServ for the nick asked for if another one is in use.
+    private func regainNick() {
+        guard state == .connected, !preferredNick.isEmpty, nick.caseInsensitiveCompare(preferredNick) != .orderedSame,
+              account?.caseInsensitiveCompare(preferredNick) == .orderedSame else { return }
+        send(IRCMessage.line("PRIVMSG", "NickServ", "REGAIN \(preferredNick)"))
+    }
+
+    /// Takes the nick asked for as soon as whoever had it leaves or changes name.
+    private func takeNickIfFreed(_ gone: String) {
+        guard state == .connected, gone.caseInsensitiveCompare(preferredNick) == .orderedSame,
+              nick.caseInsensitiveCompare(preferredNick) != .orderedSame else { return }
+        send(IRCMessage.line("NICK", preferredNick))
+    }
+
     // MARK: What you say
 
     /// Sends what was typed in a buffer: a message, or a command starting with "/".
@@ -490,7 +594,9 @@ final class Session: ObservableObject, Identifiable {
         let room = 440 - target.utf8.count - nick.utf8.count - (action ? 9 : 0)
         for piece in IRCMessage.split(text, room: room) {
             send(IRCMessage.line("PRIVMSG", target, action ? "\u{1}ACTION \(piece)\u{1}" : piece))
-            add(Line(id: 0, time: Date(), kind: action ? .action : .message, nick: nick, text: piece, own: true), to: target)
+            // What's sent to NickServ is shown with any password in it hidden.
+            let shown = target.caseInsensitiveCompare("NickServ") == .orderedSame ? Self.masked(piece) : piece
+            add(Line(id: 0, time: Date(), kind: action ? .action : .message, nick: nick, text: shown, own: true), to: target)
         }
     }
 
@@ -519,6 +625,10 @@ final class Session: ObservableObject, Identifiable {
         case "me":
             guard let here else { return active(.error, "/me works in a channel or private conversation.") }
             privmsg(here, rest, action: true)
+        case "ns", "nickserv":
+            guard !rest.isEmpty else { return active(.error, "Usage: /ns command, such as /ns help") }
+            open("NickServ", kind: .query)
+            privmsg("NickServ", rest)
         case "msg", "query", "q":
             guard let who = words.first else { return active(.error, "Usage: /\(name) nick [message]") }
             if !isChannel(who) { open(who, kind: .query) }
@@ -530,6 +640,7 @@ final class Session: ObservableObject, Identifiable {
             send(IRCMessage.line("NOTICE", words[0], words.dropFirst().joined(separator: " ")))
         case "nick":
             guard let new = words.first else { return active(.error, "Usage: /nick newnick") }
+            preferredNick = new
             send(IRCMessage.line("NICK", new))
         case "topic":
             guard let here, isChannel(here) else { return active(.error, "/topic works in a channel.") }
@@ -556,7 +667,7 @@ final class Session: ObservableObject, Identifiable {
         case "clear":
             update(buffer.name) { $0.lines = [] }
         case "help":
-            active(.info, "Commands: /join #channel, /part [reason], /me action, /msg nick text, /query nick, /notice target text, /nick name, /topic [text], /whois nick, /away [message], /names, /close, /clear, /quit [message], /raw line. Any other /command is sent to the server as it is. Start a message with // to send one that begins with a slash.")
+            active(.info, "Commands: /join #channel, /part [reason], /me action, /msg nick text, /query nick, /notice target text, /nick name, /ns command for NickServ, /topic [text], /whois nick, /away [message], /names, /close, /clear, /quit [message], /raw line. Any other /command is sent to the server as it is. Start a message with // to send one that begins with a slash.")
         default:
             send(text)
         }
@@ -667,6 +778,46 @@ final class Session: ObservableObject, Identifiable {
     }
 
     // MARK: Text
+
+    /// A NickServ command with its password hidden: REGISTER pass email, IDENTIFY [account]
+    /// pass, SET PASSWORD pass, GHOST, RECOVER or REGAIN nick pass, GROUP nick pass, PASSWD old new.
+    static func masked(_ command: String) -> String {
+        var words = command.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
+        guard let verb = words.first?.uppercased() else { return command }
+        var hide: [Int] = []
+        switch verb {
+        case "REGISTER": hide = [1]
+        case "IDENTIFY", "ID", "LOGIN": hide = [words.count >= 3 ? 2 : 1]
+        case "SET", "SASET": if words.count >= 3, ["PASSWORD", "PASS"].contains(words[1].uppercased()) { hide = [2] }
+        case "GHOST", "RECOVER", "REGAIN", "RELEASE", "GROUP", "DROP": hide = [2]
+        case "PASSWD": hide = [1, 2]
+        default: break
+        }
+        for i in hide where i < words.count && !words[i].isEmpty { words[i] = "••••••" }
+        return words.joined(separator: " ")
+    }
+
+    /// A typed line as it's kept in the input history: a NickServ command, by /msg, /ns or
+    /// /quote, has its password hidden.
+    static func maskedInput(_ line: String) -> String {
+        let words = line.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true).map(String.init)
+        guard let first = words.first?.lowercased() else { return line }
+        switch first {
+        case "/ns", "/nickserv":
+            return words.count > 1 ? first + " " + masked(words.dropFirst().joined(separator: " ")) : line
+        case "/msg", "/query", "/q":
+            guard words.count == 3, words[1].caseInsensitiveCompare("NickServ") == .orderedSame else { return line }
+            return "\(first) \(words[1]) \(masked(words[2]))"
+        case "/quote", "/raw":
+            guard words.count == 3, words[1].uppercased() == "PRIVMSG" else { return line }
+            let rest = words[2]
+            guard rest.lowercased().hasPrefix("nickserv ") else { return line }
+            let text = rest.dropFirst(9).drop { $0 == ":" || $0 == " " }
+            return "\(first) PRIVMSG NickServ :\(masked(String(text)))"
+        default:
+            return line
+        }
+    }
 
     /// Text with IRC's formatting codes taken out.
     static func plain(_ text: String) -> String {

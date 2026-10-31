@@ -23,6 +23,8 @@ final class Chat: ObservableObject {
     }
     /// The network whose channel list is open, for the Join Channel sheet.
     @Published var joining: Session?
+    /// The network whose Log In or Register sheet is open.
+    @Published var accountFor: Session?
     @Published var showUsers = true
 
     /// Set by the menu commands, so the Dock icon can bring the window back.

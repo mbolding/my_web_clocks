@@ -132,5 +132,8 @@ struct NetworkMenu: View {
         } else {
             Button("Disconnect from \(session.network.name)") { session.disconnect() }
         }
+        Button("Log In or Register on \(session.network.name)…") { Chat.shared.accountFor = session }
+            .disabled(session.state != .connected)
+        Divider()
     }
 }

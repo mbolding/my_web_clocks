@@ -34,6 +34,9 @@ struct ChatWindow: View {
         .sheet(item: $chat.joining) { session in
             JoinSheet(session: session)
         }
+        .sheet(item: $chat.accountFor) { session in
+            AccountSheet(session: session)
+        }
         .onAppear { chat.windowAppeared(true) }
         .onDisappear { chat.windowAppeared(false) }
         .onChange(of: active) { if active == .key { chat.appBecameActive() } }
@@ -97,6 +100,8 @@ struct NetworkSection: View {
             }
             Button("Join Channel…") { Chat.shared.joining = session }
                 .disabled(session.state != .connected)
+            Button("Log In or Register…") { Chat.shared.accountFor = session }
+                .disabled(session.state != .connected)
         case .channel:
             if buffer.joined {
                 Button("Leave \(buffer.name)") { session.leave(buffer.name) }
@@ -120,7 +125,7 @@ struct NetworkSection: View {
 
     private var statusText: String {
         switch session.state {
-        case .connected: "Connected as \(session.nick)"
+        case .connected: "Connected as \(session.nick)\(session.account.map { ", logged in as \($0)" } ?? "")"
         case .connecting, .registering: "Connecting…"
         case .disconnected: "Not connected"
         }
@@ -187,7 +192,9 @@ struct BufferView: View {
 
     private func subtitle(_ buffer: Buffer) -> String {
         switch buffer.kind {
-        case .server: session.state == .connected ? "\(session.network.host) as \(session.nick)" : session.network.host
+        case .server:
+            session.state != .connected ? session.network.host
+                : "\(session.network.host) as \(session.nick)\(session.account == nil ? "" : ", logged in")"
         case .channel: buffer.joined ? "\(buffer.users.count) people · \(session.network.name)" : "not joined · \(session.network.name)"
         case .query: session.network.name
         }
@@ -244,7 +251,7 @@ struct InputLine: View {
     private func send() {
         let line = text
         guard !line.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-        history.append(line)
+        history.append(Session.maskedInput(line))
         if history.count > 100 { history.removeFirst() }
         historyIndex = nil
         completion = nil
