@@ -1,6 +1,7 @@
 // BrowserWindow — an address field and back and forward in the toolbar, the page in the
-// middle, and a status bar that says where the link under the pointer goes. Menus are set
-// in a monospaced font, as their ASCII art expects, with links in the accent colour.
+// middle, and a status bar that says where the link under the pointer goes. Gopher menus are
+// set in a monospaced font, as their ASCII art expects, and Gemini pages in the system font
+// with their preformatted blocks monospaced; links are in the accent colour in both.
 
 import SwiftUI
 import AppKit
@@ -25,27 +26,18 @@ struct BrowserWindow: View {
         .frame(minWidth: 520, minHeight: 360)
         .toolbar { toolbar }
         .navigationTitle(model.title.isEmpty ? "Gopher Browser" : model.title)
-        .alert(model.searching?.title ?? "Search", isPresented: Binding(
-            get: { model.searching != nil }, set: { if !$0 { model.searching = nil } })
-        ) {
-            TextField("Words to search for", text: $model.searchWords)
-            Button("Search") { model.search() }
-            Button("Cancel", role: .cancel) { model.searching = nil }
-        } message: {
-            Text("What would you like to search for?")
-        }
         .focusedSceneObject(model)
         .tint(accent.color)
         .environment(\.accent, accent.color)
         .onAppear(perform: start)
-        .onChange(of: model.address) {
+        .onChange(of: model.location) {
             if !addressFocused { typed = model.url ?? "" }
         }
         .onChange(of: model.focusAddress) { addressFocused = true }
     }
 
     private func start() {
-        guard model.address == nil else { return }
+        guard model.location == nil else { return }
         let id = opening?.id ?? UUID()
         model.onVisit = { opening = Opening(url: $0, id: id) }
         if let url = opening?.url ?? Inbox.shared.takeFirst() {
@@ -62,6 +54,9 @@ struct BrowserWindow: View {
         case .menu(let items):
             MenuPage(items: items, model: model, fontSize: fontSize) { openWindow(value: Opening(url: $0)) }
                 .id(model.pageID)
+        case .gemtext(let lines):
+            GemPage(lines: lines, model: model, fontSize: fontSize) { openWindow(value: Opening(url: $0)) }
+                .id(model.pageID)
         case .text(let text):
             TextPage(text: text, fontSize: fontSize)
                 .id(model.pageID)
@@ -72,6 +67,17 @@ struct BrowserWindow: View {
                     .padding(20)
             }
             .id(model.pageID)
+        case .input(let prompt, let sensitive):
+            InputPage(prompt: prompt, sensitive: sensitive, model: model)
+                .id(model.pageID)
+        case .file(let type, let size):
+            ContentUnavailableView {
+                Label("A File to Save", systemImage: "arrow.down.circle")
+            } description: {
+                Text("This is a \(type) file of \(BrowserModel.size(size)), which Gopher Browser can't show.")
+            } actions: {
+                Button("Save…") { model.save() }
+            }
         case .failure(let message):
             ContentUnavailableView {
                 Label("Couldn't Open the Page", systemImage: "exclamationmark.triangle")
@@ -79,6 +85,17 @@ struct BrowserWindow: View {
                 Text(message)
             } actions: {
                 Button("Try Again") { model.reload() }
+            }
+        case .certificateChanged(let changed):
+            ContentUnavailableView {
+                Label("The Certificate Has Changed", systemImage: "lock.trianglebadge.exclamationmark")
+            } description: {
+                Text("\(changed.server) shows a different certificate from the one it showed before. "
+                     + "Servers change them now and then, but it could also mean someone is in the way. "
+                     + "Trust it only if you expected the change.")
+            } actions: {
+                Button("Trust the New Certificate") { model.trust(changed) }
+                Button("Go Back") { model.goBack() }.disabled(!model.canGoBack)
             }
         }
     }
@@ -165,15 +182,7 @@ struct MenuPage: View {
             Button { model.open(item) } label: { line.contentShape(Rectangle()) }
                 .buttonStyle(.plain)
                 .foregroundStyle(accent)
-                .onHover { inside in
-                    if inside {
-                        model.hovered = item
-                        NSCursor.pointingHand.set()
-                    } else if model.hovered?.id == item.id {
-                        model.hovered = nil
-                        NSCursor.arrow.set()
-                    }
-                }
+                .linkHover("\(item.kind.name): \(item.location)", model: model)
                 .contextMenu {
                     if [.menu, .text, .image, .search].contains(item.kind) {
                         Button("Open in New Window") { openInNewWindow(item.address.url) }
@@ -185,6 +194,162 @@ struct MenuPage: View {
                         }
                     }
                 }
+        }
+    }
+}
+
+/// A Gemini page: text that wraps to a comfortable measure, headings, lists, quotes, links
+/// one to a line, and preformatted blocks kept as they are.
+struct GemPage: View {
+    let lines: [GemLine]
+    @ObservedObject var model: BrowserModel
+    var fontSize: Double
+    var openInNewWindow: (String) -> Void
+    @Environment(\.accent) private var accent
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: fontSize * 0.45) {
+                ForEach(lines) { line($0) }
+            }
+            .frame(maxWidth: fontSize * 48, alignment: .leading)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 22)
+            .frame(maxWidth: .infinity)
+        }
+        .font(.system(size: fontSize + 1))
+        .textSelection(.enabled)
+    }
+
+    @ViewBuilder private func line(_ line: GemLine) -> some View {
+        switch line.kind {
+        case .text(let text):
+            Text(text.isEmpty ? " " : text)
+                .lineSpacing(fontSize * 0.25)
+                .fixedSize(horizontal: false, vertical: true)
+        case .heading(let level, let text):
+            Text(text)
+                .font(.system(size: fontSize * [1.9, 1.45, 1.2][level - 1], weight: level == 3 ? .semibold : .bold))
+                .padding(.top, fontSize * (level == 1 ? 0.4 : 0.6))
+                .fixedSize(horizontal: false, vertical: true)
+        case .item(let text):
+            HStack(alignment: .firstTextBaseline, spacing: fontSize * 0.6) {
+                Text("•").foregroundStyle(.secondary)
+                Text(text).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.leading, fontSize * 0.6)
+        case .quote(let text):
+            Text(text)
+                .italic()
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, fontSize)
+                .overlay(alignment: .leading) {
+                    Rectangle().fill(accent.opacity(0.5)).frame(width: 3)
+                }
+        case .preformatted(let alt, let text):
+            ScrollView(.horizontal) {
+                Text(text)
+                    .font(.system(size: fontSize, design: .monospaced))
+                    .fixedSize()
+                    .padding(fontSize * 0.7)
+            }
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+            .help(alt)
+            .accessibilityLabel(alt.isEmpty ? "Preformatted text" : alt)
+        case .link(let url, let label):
+            link(url, label: label)
+        }
+    }
+
+    @ViewBuilder private func link(_ url: URL?, label: String) -> some View {
+        let scheme = url?.scheme?.lowercased() ?? ""
+        let symbol = switch scheme {
+        case "gemini": "arrow.right.circle"
+        case "gopher": "folder"
+        case "http", "https": "globe"
+        case "mailto": "envelope"
+        default: "questionmark.square"
+        }
+        let row = HStack(alignment: .firstTextBaseline, spacing: fontSize * 0.5) {
+            Image(systemName: symbol).font(.system(size: fontSize * 0.9))
+            // A label spaced into columns, as SDF's index is, keeps them in a fixed-width font.
+            Text(label)
+                .font(label.contains("  ") ? .system(size: fontSize, design: .monospaced) : nil)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        if let url {
+            Button { model.follow(url.absoluteString, title: label) } label: { row.contentShape(Rectangle()) }
+                .buttonStyle(.plain)
+                .foregroundStyle(accent)
+                .linkHover(url.absoluteString, model: model)
+                .contextMenu {
+                    if scheme == "gemini" || scheme == "gopher" {
+                        Button("Open in New Window") { openInNewWindow(url.absoluteString) }
+                    }
+                    Button("Copy Link") { model.copyLink(url.absoluteString) }
+                    if scheme == "gemini" || scheme == "gopher" {
+                        Button(Bookmarks.shared.contains(url.absoluteString) ? "Remove Bookmark" : "Bookmark Link") {
+                            Bookmarks.shared.toggle(url.absoluteString, title: label)
+                        }
+                    }
+                }
+        } else {
+            row.foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// A server's question, such as a search, with a field for the answer.
+struct InputPage: View {
+    let prompt: String
+    let sensitive: Bool
+    @ObservedObject var model: BrowserModel
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: sensitive ? "lock" : "magnifyingglass")
+                .font(.system(size: 34))
+                .foregroundStyle(.secondary)
+            Text(prompt)
+                .font(.title3)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Group {
+                    if sensitive {
+                        SecureField("Answer", text: $model.inputWords)
+                    } else {
+                        TextField("Words to send", text: $model.inputWords)
+                    }
+                }
+                .textFieldStyle(.roundedBorder)
+                .focused($focused)
+                .onSubmit { model.submit() }
+                Button("Send") { model.submit() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(model.inputWords.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .frame(maxWidth: 420)
+        }
+        .padding(30)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { focused = true }
+    }
+}
+
+extension View {
+    /// Shows where a link goes in the status bar, with the pointing hand, while the pointer is on it.
+    func linkHover(_ destination: String, model: BrowserModel) -> some View {
+        onHover { inside in
+            if inside {
+                model.hovered = destination
+                NSCursor.pointingHand.set()
+            } else if model.hovered == destination {
+                model.hovered = nil
+                NSCursor.arrow.set()
+            }
         }
     }
 }
@@ -239,15 +404,20 @@ struct StatusBar: View {
     }
 
     private var message: String {
-        if let item = model.hovered { return "\(item.kind.name): \(item.location)" }
+        if let hovered = model.hovered { return hovered }
         if model.loading {
-            return model.received > 0 ? "Loading… \(BrowserModel.size(model.received))" : "Connecting to \(model.address?.host ?? "")…"
+            return model.received > 0 ? "Loading… \(BrowserModel.size(model.received))" : "Connecting to \(model.location?.host ?? "")…"
         }
         if let note = model.note { return note }
         switch model.page {
         case .menu(let items):
             let links = items.filter { ![.info, .error].contains($0.kind) }.count
             return links == 1 ? "1 link" : "\(links) links"
+        case .gemtext(let lines):
+            let links = lines.filter { if case .link = $0.kind { true } else { false } }.count
+            return links == 1 ? "1 link" : "\(links) links"
+        case .input:
+            return "Waiting for your words"
         case .text(let text):
             let lines = text.split(separator: "\n", omittingEmptySubsequences: false).count
             return lines == 1 ? "1 line" : "\(lines) lines"

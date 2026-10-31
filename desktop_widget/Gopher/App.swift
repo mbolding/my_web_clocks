@@ -1,7 +1,8 @@
 // Gopher Browser — a browser for gopherspace, the menus-and-text internet of 1991 that SDF
-// and others still run, as a native app since a web page can't open the raw connection it
-// needs. An ordinary Mac app like Map Browser, with windows, a menu bar and a Dock icon,
-// and the handler for gopher:// links anywhere on the Mac.
+// and others still run, and for Gemini, its TLS successor, as a native app since a web page
+// can't open the raw connections they need. An ordinary Mac app like Map Browser, with
+// windows, a menu bar and a Dock icon, and the handler for gopher:// and gemini:// links
+// anywhere on the Mac.
 
 import SwiftUI
 import AppKit
@@ -27,7 +28,7 @@ struct GopherBrowserApp: App {
     }
 }
 
-/// gopher:// links clicked in other apps arrive as a Get URL event. It's taken before
+/// gopher:// and gemini:// links clicked in other apps arrive as a Get URL event. It's taken before
 /// SwiftUI sees it, so each opens one window of this app's own.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -141,6 +142,7 @@ struct GopherCommands: Commands {
 
         CommandGroup(replacing: .help) {
             Link("The Gopher Protocol (RFC 1436)", destination: URL(string: "https://www.rfc-editor.org/rfc/rfc1436")!)
+            Link("The Gemini Protocol", destination: URL(string: "https://geminiprotocol.net")!)
             Link("SDF Public Access UNIX System", destination: URL(string: "https://sdf.org")!)
         }
     }

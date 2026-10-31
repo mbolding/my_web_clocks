@@ -20,7 +20,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **DICOM Viewer** (`Dicom/`) | A viewer for DICOM medical images: open or drop files, folders or zip archives to see each series, scroll through its slices, change the window and level, and read the tags |
 | **Stipple** (`Stipple/`) | Drop a picture on it and it's redrawn in dots, gathered where the picture is dark, or as one continuous line through them, to save as SVG for a pen plotter or PNG; a native take on Evil Mad Scientist's [StippleGen](https://github.com/mbolding/stipplegen) |
 | **Polyhedra** (`Polyhedra/`) | The five Platonic solids to turn over and look at, each with a slider that morphs it into its dual through the truncations between, and the numbers for whatever is showing |
-| **Gopher Browser** (`Gopher/`) | A browser for gopherspace, the menus-and-text internet that SDF and others still run, with bookmarks, searches and the Mac's handler for `gopher://` links |
+| **Gopher Browser** (`Gopher/`) | A browser for gopherspace, the menus-and-text internet that SDF and others still run, and for Gemini, its successor over TLS, with bookmarks, searches and the Mac's handler for `gopher://` and `gemini://` links |
 | **Widget Bar** (`Launcher/`) | A small toolbar of the other widgets: open them, see which are running, and flip their Float on Top |
 
 ## Requirements
@@ -215,12 +215,14 @@ All of them:
 
 **Gopher Browser**
 
-- It opens at SDF's gopher server, the home page until you choose another with **Go → Set This Page as Home**. Type an address in the toolbar (**⌘L**) as `gopher://host/` or just the host's name, with a port after a colon and the item type and selector after the slash, as in `gopher://sdf.org/1/maps/`. A web address typed there opens in your web browser.
+- It opens at SDF's gopher server, the home page until you choose another with **Go → Set This Page as Home**. Type an address in the toolbar (**⌘L**) as `gopher://host/` or just the host's name, with a port after a colon and the item type and selector after the slash, as in `gopher://sdf.org/1/maps/`, or as `gemini://host/path`. A web address typed there opens in your web browser.
 - Menus are set in a monospaced font, as their ASCII art expects, with each link's type as a symbol beside it in the accent colour: a folder for a menu, a page for a text file, a magnifying glass for a search, a picture, a globe for a web link and an arrow for a file to save. The status bar says where the link under the pointer goes. Text files open as text you can select and search with **⌘F**, pictures show in the window, web links open in your web browser, and other files ask where to save them. Telnet links show their address but don't open.
-- A search asks for its words, then shows what the server finds; Veronica-2, among the bookmarks, searches all of gopherspace.
+- Gemini pages are set in the system font, wrapped to a comfortable width, with their headings, lists and quotes, links one to a line (an arrow for Gemini, a folder for gopher, a globe for the web), and preformatted blocks kept monospaced. A Gemini page that's an image shows it, other text shows as text, and anything else offers to save it. Redirects are followed, up to five.
+- A search, or any question a Gemini page asks, shows a field for the words and sends them; Veronica-2 among the bookmarks searches all of gopherspace, and Kennedy searches Gemini.
+- Gemini servers mostly sign their own certificates, so the first one a server shows is remembered, the way SSH remembers hosts. If it later shows a different one that the Mac doesn't itself trust, the page stops and says so, with **Trust the New Certificate** to accept it. Pages that ask for a client certificate aren't supported.
 - **⌘[** and **⌘]** go back and forward, **⌘R** reloads, **⌘.** stops, and **⇧⌘H** goes home. **⌘D** bookmarks the page, the **Bookmarks** menu lists them, and **Edit Bookmarks…** (**⌥⌘B**) renames, reorders and deletes them. **Go** lists the pages you've visited lately. Right-click a link to open it in a new window, copy it or bookmark it.
 - **⌘+** and **⌘−** make the text bigger and smaller, and **⌘0** puts it back. **Save Page As…** (**⌘S**) saves the page as the server sent it, and **⌥⌘C** copies its address.
-- It's the Mac's handler for `gopher://` links, so one clicked in any other app opens in a window of its own. Each request is one connection to the server, usually on port 70, with nothing else sent; there's no TLS, since gopher has none.
+- It's the Mac's handler for `gopher://` and `gemini://` links, so one clicked in any other app opens in a window of its own. Each request is one connection to the server with nothing else sent: plain TCP to port 70 for gopher, which has no encryption, and TLS to port 1965 for Gemini.
 
 ## Uninstall
 
@@ -254,7 +256,7 @@ desktop_widget/
 ├── Dicom/          App.swift (with the menus), Icon.swift, the DICOM parser, pixel decoding, series and tag list, the window, image view and model, InfoPlistExtras.xml (with the document types)
 ├── Stipple/        App.swift (with the menus), Icon.swift, the stippler, the line, the drawing and saving, the window and model, InfoPlistExtras.xml (with the document types)
 ├── Polyhedra/      App.swift (with the menus), Icon.swift, the solids, the plane-intersection geometry, the stage, the window and model, InfoPlistExtras.xml
-├── Gopher/         App.swift (with the menus), Icon.swift, the protocol and menu parser, the window and model, InfoPlistExtras.xml (with the gopher URL scheme)
+├── Gopher/         App.swift (with the menus), Icon.swift, the shared connection, gopher and its menus, Gemini and gemtext with its certificate check, the window and model, InfoPlistExtras.xml (with the URL schemes)
 └── Launcher/       App.swift, Icon.swift, the bar, the launcher that finds and drives the widgets, and the updater
 ```
 

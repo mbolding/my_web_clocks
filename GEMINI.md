@@ -95,8 +95,9 @@ weighted Voronoi stipple dots or one continuous "TSP art" line, saved as SVG or
 PNG),
 Polyhedra (likewise: the five Platonic solids to turn over, each morphing into
 its dual through the truncations between, with numbers measured from the shape),
-Gopher Browser (likewise: a browser for gopherspace over raw TCP, with
-bookmarks and searches, and the Mac's handler for `gopher://` links)
+Gopher Browser (likewise: a browser for gopherspace over raw TCP and Gemini
+over TLS, with bookmarks and searches, and the Mac's handler for `gopher://`
+and `gemini://` links)
 and Widget Bar
 (a toolbar that opens the others and flips their Float on Top; it finds them by
 the `DesktopWidget` key build.sh adds to every Info.plist). Each app is a folder with `App.swift`

@@ -165,10 +165,6 @@ struct Item: Identifiable {
 }
 
 enum Gopher {
-    struct Failure: LocalizedError {
-        var errorDescription: String?
-    }
-
     /// Text as servers send it: UTF-8 these days, Latin-1 on older servers.
     static func text(_ data: Data) -> String {
         String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
@@ -201,117 +197,11 @@ enum Gopher {
     }
 
     /// Fetches what's at an address. `progress` hears the bytes so far, on the main actor.
-    static func fetch(_ address: Address, limit: Int = 256 << 20,
-                      progress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> Data {
-        guard let port = NWEndpoint.Port(rawValue: UInt16(clamping: address.port)) else {
-            throw Failure(errorDescription: "\(address.port) isn't a port number.")
-        }
+    static func fetch(_ address: Address, progress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> Data {
         let tcp = NWProtocolTCP.Options()
         tcp.connectionTimeout = 15
-        let connection = NWConnection(host: NWEndpoint.Host(address.host), port: port,
-                                      using: NWParameters(tls: nil, tcp: tcp))
         let request = address.selector + (address.query.map { "\t" + $0 } ?? "") + "\r\n"
-        let fetch = Fetch(connection, request: Data(request.utf8), limit: limit, progress: progress)
-        return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { fetch.start($0) }
-        } onCancel: {
-            fetch.cancel()
-        }
-    }
-
-    /// One request's state, touched only on its own serial queue.
-    private final class Fetch: @unchecked Sendable {
-        private let connection: NWConnection
-        private let request: Data
-        private let limit: Int
-        private let progress: @MainActor (Int) -> Void
-        private let queue = DispatchQueue(label: "gopher.fetch")
-        private var continuation: CheckedContinuation<Data, Error>?
-        private var data = Data()
-        private var lastByte = Date()
-
-        init(_ connection: NWConnection, request: Data, limit: Int, progress: @escaping @MainActor (Int) -> Void) {
-            self.connection = connection
-            self.request = request
-            self.limit = limit
-            self.progress = progress
-        }
-
-        func start(_ continuation: CheckedContinuation<Data, Error>) {
-            queue.async { [self] in
-                self.continuation = continuation
-                connection.stateUpdateHandler = { [self] state in
-                    switch state {
-                    case .ready:
-                        connection.send(content: request, completion: .contentProcessed { [self] error in
-                            if let error { finish(.failure(error)) }
-                        })
-                        receive()
-                    case .waiting(let error), .failed(let error):
-                        finish(.failure(Self.describe(error)))
-                    case .cancelled:
-                        finish(.failure(CancellationError()))
-                    default:
-                        break
-                    }
-                }
-                connection.start(queue: queue)
-                watch()
-            }
-        }
-
-        func cancel() {
-            queue.async { [self] in finish(.failure(CancellationError())) }
-        }
-
-        private func receive() {
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 1 << 16) { [self] content, _, complete, error in
-                if let content {
-                    data.append(content)
-                    lastByte = Date()
-                    let count = data.count
-                    Task { @MainActor [progress] in progress(count) }
-                }
-                if data.count > limit {
-                    finish(.failure(Failure(errorDescription: "It's larger than \(limit >> 20) MB, so it was stopped.")))
-                } else if complete {
-                    finish(.success(data))
-                } else if let error {
-                    // A server that resets instead of closing has usually sent it all.
-                    data.isEmpty ? finish(.failure(Self.describe(error))) : finish(.success(data))
-                } else {
-                    receive()
-                }
-            }
-        }
-
-        /// Gives up on a server that stops sending for half a minute.
-        private func watch() {
-            queue.asyncAfter(deadline: .now() + 5) { [self] in
-                guard continuation != nil else { return }
-                if Date().timeIntervalSince(lastByte) > 30 {
-                    finish(.failure(Failure(errorDescription: "The server stopped answering.")))
-                } else {
-                    watch()
-                }
-            }
-        }
-
-        private func finish(_ result: Result<Data, Error>) {
-            guard let continuation else { return }
-            self.continuation = nil
-            connection.stateUpdateHandler = nil
-            connection.cancel()
-            continuation.resume(with: result)
-        }
-
-        private static func describe(_ error: NWError) -> Error {
-            switch error {
-            case .posix(.ECONNREFUSED): Failure(errorDescription: "The server refused the connection.")
-            case .posix(.ETIMEDOUT): Failure(errorDescription: "The server didn't answer.")
-            case .dns: Failure(errorDescription: "There's no server by that name.")
-            default: Failure(errorDescription: error.localizedDescription)
-            }
-        }
+        return try await Net.fetch(host: address.host, port: address.port, parameters: NWParameters(tls: nil, tcp: tcp),
+                                   request: Data(request.utf8), progress: progress)
     }
 }
