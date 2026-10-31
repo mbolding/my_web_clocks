@@ -12,7 +12,8 @@ import Network
 import CryptoKit
 import Security
 
-struct GeminiResponse {
+/// A Gemini or Spartan answer, which have the same shape: a status, a line about it, and the body.
+struct Reply {
     var status: Int
     /// The prompt for input, the type of a page, where a redirect goes, or why it failed.
     var meta: String
@@ -23,7 +24,8 @@ struct GeminiResponse {
 struct GemLine: Identifiable {
     enum Kind {
         case text(String)
-        case link(url: URL?, label: String)
+        /// `prompt` is a Spartan "=:" link, which asks for words to send before it's followed.
+        case link(url: URL?, label: String, prompt: Bool)
         case heading(level: Int, text: String)
         case item(String)
         case quote(String)
@@ -41,7 +43,7 @@ enum Gemini {
         var errorDescription: String? { "\(server)'s certificate isn't the one it had before." }
     }
 
-    static func fetch(_ url: URL, progress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> GeminiResponse {
+    static func fetch(_ url: URL, progress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> Reply {
         guard let host = url.host, !host.isEmpty else {
             throw Net.Failure(errorDescription: "That address has no server in it.")
         }
@@ -78,7 +80,7 @@ enum Gemini {
             throw Net.Failure(errorDescription: "The server didn't answer in Gemini.")
         }
         let meta = header.dropFirst(2).trimmingCharacters(in: .whitespaces)
-        return GeminiResponse(status: status, meta: meta, body: data[data.index(after: newline)...])
+        return Reply(status: status, meta: meta, body: data[data.index(after: newline)...])
     }
 
     /// What a failure's status means, for servers that don't say.
@@ -128,12 +130,13 @@ enum Gemini {
     }
 
     private static func kind(of line: Substring, base: URL) -> GemLine.Kind {
-        if line.hasPrefix("=>") {
+        let prompt = line.hasPrefix("=:") && base.scheme?.lowercased() == "spartan"
+        if line.hasPrefix("=>") || prompt {
             let rest = line.dropFirst(2).drop { $0 == " " || $0 == "\t" }
             let end = rest.firstIndex { $0 == " " || $0 == "\t" } ?? rest.endIndex
             let link = String(rest[..<end])
             let label = rest[end...].trimmingCharacters(in: .whitespaces)
-            return .link(url: resolve(link, against: base), label: label.isEmpty ? link : label)
+            return .link(url: resolve(link, against: base), label: label.isEmpty ? link : label, prompt: prompt)
         }
         for level in (1...3).reversed() where line.hasPrefix(String(repeating: "#", count: level)) {
             return .heading(level: level, text: line.dropFirst(level).trimmingCharacters(in: .whitespaces))

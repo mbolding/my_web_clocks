@@ -116,6 +116,8 @@ struct BrowserWindow: View {
                 .onSubmit {
                     model.go(typed)
                     addressFocused = false
+                    // Telnet and the web open elsewhere, leaving this page where it was.
+                    typed = model.url ?? typed
                 }
                 .onExitCommand {
                     typed = model.url ?? ""
@@ -257,20 +259,27 @@ struct GemPage: View {
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
             .help(alt)
             .accessibilityLabel(alt.isEmpty ? "Preformatted text" : alt)
-        case .link(let url, let label):
-            link(url, label: label)
+        case .link(let url, let label, let prompt):
+            link(url, label: label, prompt: prompt)
         }
     }
 
-    @ViewBuilder private func link(_ url: URL?, label: String) -> some View {
+    @ViewBuilder private func link(_ url: URL?, label: String, prompt: Bool) -> some View {
         let scheme = url?.scheme?.lowercased() ?? ""
         let symbol = switch scheme {
+        case _ where prompt: "square.and.pencil"
         case "gemini": "arrow.right.circle"
+        case "spartan": "shield"
         case "gopher": "folder"
+        case "finger": "person"
+        case "telnet", "tn3270": "terminal"
         case "http", "https": "globe"
         case "mailto": "envelope"
         default: "questionmark.square"
         }
+        // A prompt link only asks for its words when followed from its page, so it isn't one to
+        // open elsewhere or keep.
+        let here = Location.schemes.contains(scheme) && !prompt
         let row = HStack(alignment: .firstTextBaseline, spacing: fontSize * 0.5) {
             Image(systemName: symbol).font(.system(size: fontSize * 0.9))
             // A label spaced into columns, as SDF's index is, keeps them in a fixed-width font.
@@ -279,16 +288,16 @@ struct GemPage: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         if let url {
-            Button { model.follow(url.absoluteString, title: label) } label: { row.contentShape(Rectangle()) }
+            Button { model.follow(url.absoluteString, title: label, prompt: prompt) } label: { row.contentShape(Rectangle()) }
                 .buttonStyle(.plain)
                 .foregroundStyle(accent)
-                .linkHover(url.absoluteString, model: model)
+                .linkHover(prompt ? "Asks for words to send to \(url.absoluteString)" : url.absoluteString, model: model)
                 .contextMenu {
-                    if scheme == "gemini" || scheme == "gopher" {
+                    if here {
                         Button("Open in New Window") { openInNewWindow(url.absoluteString) }
                     }
                     Button("Copy Link") { model.copyLink(url.absoluteString) }
-                    if scheme == "gemini" || scheme == "gopher" {
+                    if here {
                         Button(Bookmarks.shared.contains(url.absoluteString) ? "Remove Bookmark" : "Bookmark Link") {
                             Bookmarks.shared.toggle(url.absoluteString, title: label)
                         }

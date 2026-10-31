@@ -1,13 +1,26 @@
 // Gopher Browser — a browser for gopherspace, the menus-and-text internet of 1991 that SDF
-// and others still run, and for Gemini, its TLS successor, as a native app since a web page
-// can't open the raw connections they need. An ordinary Mac app like Map Browser, with
-// windows, a menu bar and a Dock icon, and the handler for gopher:// and gemini:// links
+// and others still run, for Gemini, its TLS successor, and Spartan, Gemini's plain-TCP cousin,
+// and for finger, as a native app since a web page can't open the raw connections they need.
+// Telnet links open in Terminal. An ordinary Mac app like Map Browser, with windows, a menu bar
+// and a Dock icon, and the handler for gopher://, gemini://, spartan:// and finger:// links
 // anywhere on the Mac.
 
 import SwiftUI
 import AppKit
 
+/// The app, unless it was started in Terminal as `GopherBrowser --telnet host port`, which is
+/// how telnet links run a session on a Mac without telnet.
 @main
+enum Main {
+    static func main() {
+        let arguments = CommandLine.arguments
+        if arguments.count == 4, arguments[1] == "--telnet", let port = Int(arguments[3]) {
+            TelnetSession.run(host: arguments[2], port: port)
+        }
+        GopherBrowserApp.main()
+    }
+}
+
 struct GopherBrowserApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
@@ -28,7 +41,7 @@ struct GopherBrowserApp: App {
     }
 }
 
-/// gopher:// and gemini:// links clicked in other apps arrive as a Get URL event. It's taken before
+/// gopher://, gemini://, spartan:// and finger:// links clicked in other apps arrive as a Get URL event. It's taken before
 /// SwiftUI sees it, so each opens one window of this app's own.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -143,6 +156,9 @@ struct GopherCommands: Commands {
         CommandGroup(replacing: .help) {
             Link("The Gopher Protocol (RFC 1436)", destination: URL(string: "https://www.rfc-editor.org/rfc/rfc1436")!)
             Link("The Gemini Protocol", destination: URL(string: "https://geminiprotocol.net")!)
+            // Spartan's specification is served over Spartan, so it opens here.
+            Button("The Spartan Protocol") { openWindow(value: Opening(url: "spartan://spartan.mozz.us/")) }
+            Link("The Finger Protocol (RFC 1288)", destination: URL(string: "https://www.rfc-editor.org/rfc/rfc1288")!)
             Link("SDF Public Access UNIX System", destination: URL(string: "https://sdf.org")!)
         }
     }

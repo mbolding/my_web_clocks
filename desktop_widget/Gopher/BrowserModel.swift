@@ -1,6 +1,6 @@
 // BrowserModel — one window's browsing: the page showing, back and forward, input for
 // searches and saving. Bookmarks and History are shared by every window, and Inbox hands
-// gopher:// and gemini:// links opened elsewhere on the Mac to a new window.
+// gopher://, gemini://, spartan:// and finger:// links opened elsewhere on the Mac to a new window.
 
 import SwiftUI
 import AppKit
@@ -19,23 +19,34 @@ struct Visit: Codable, Identifiable, Hashable {
     var url: String
 }
 
-/// A page in either protocol.
+/// A page in any of the protocols.
 enum Location: Hashable {
     case gopher(Address)
     case gemini(URL)
+    case spartan(URL)
+    case finger(URL)
 
-    /// Reads a gemini:// URL, or a gopher address with or without its scheme.
+    /// The schemes whose pages open here rather than in another app.
+    static let schemes: Set = ["gopher", "gemini", "spartan", "finger"]
+
+    /// Reads a gemini://, spartan:// or finger:// URL, or a gopher address with or without its scheme.
     init?(_ text: String) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if text.lowercased().hasPrefix("gemini://") {
+        let scheme = text.range(of: "://").map { text[..<$0.lowerBound].lowercased() }
+        if let scheme, ["gemini", "spartan", "finger"].contains(scheme) {
             let escaped = text.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed.union(["#", "%"])) ?? text
             guard var url = URL(string: text) ?? URL(string: escaped), let host = url.host, !host.isEmpty else { return nil }
-            // A bare server is asked for its root, as servers expect.
-            if url.path.isEmpty, var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            // A bare server is asked for its root, as servers expect. Finger has no root: a
+            // bare server lists who's on.
+            if scheme != "finger", url.path.isEmpty, var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) {
                 parts.path = "/"
                 url = parts.url ?? url
             }
-            self = .gemini(url)
+            switch scheme {
+            case "gemini": self = .gemini(url)
+            case "spartan": self = .spartan(url)
+            default: self = .finger(url)
+            }
         } else if let address = Address(text) {
             self = .gopher(address)
         } else {
@@ -46,15 +57,21 @@ enum Location: Hashable {
     var url: String {
         switch self {
         case .gopher(let address): address.url
-        case .gemini(let url): url.absoluteString
+        case .gemini(let url), .spartan(let url), .finger(let url): url.absoluteString
         }
     }
 
     var host: String {
         switch self {
         case .gopher(let address): address.host
-        case .gemini(let url): url.host ?? ""
+        case .gemini(let url), .spartan(let url), .finger(let url): url.host ?? ""
         }
+    }
+
+    /// What to call the page until it says otherwise: its server, or for finger, who's asked about.
+    var name: String {
+        if case .finger(let url) = self, case let user = Finger.user(url), !user.isEmpty { return "\(user)@\(host)" }
+        return host
     }
 }
 
@@ -96,6 +113,8 @@ final class BrowserModel: ObservableObject {
     private var forward: [Visit] = []
     private var raw = Data()
     private var task: Task<Void, Never>?
+    /// Spartan addresses reached by a "=:" link, which ask for words before they're fetched.
+    private var prompts: Set<URL> = []
 
     var canGoBack: Bool { !back.isEmpty }
     var canGoForward: Bool { !forward.isEmpty }
@@ -110,15 +129,19 @@ final class BrowserModel: ObservableObject {
         follow(text, title: "")
     }
 
-    /// Goes to a gopher or Gemini address here, and hands anything else (the web, mail) to
-    /// the app that opens it.
-    func follow(_ text: String, title: String) {
+    /// Goes to a gopher, Gemini, Spartan or finger address here, opens telnet in Terminal, and
+    /// hands anything else (the web, mail) to the app that opens it. `prompt` is for a Spartan
+    /// "=:" link, which asks for words to send first.
+    func follow(_ text: String, title: String, prompt: Bool = false) {
         if let location = Location(text) {
-            visit(location, title: title.isEmpty ? location.host : title)
-        } else if let url = URL(string: text), let scheme = url.scheme, scheme != "gopher" {
+            if prompt, case .spartan(let url) = location { prompts.insert(url) }
+            visit(location, title: title.isEmpty ? location.name : title)
+        } else if let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["telnet", "tn3270"].contains(scheme) {
+            telnet(host: url.host ?? "", port: url.port ?? 23, user: url.user(percentEncoded: false) ?? "")
+        } else if let url = URL(string: text), let scheme = url.scheme, !Location.schemes.contains(scheme.lowercased()) {
             NSWorkspace.shared.open(url)
         } else {
-            note = "That isn't a gopher or Gemini address."
+            note = "That isn't an address Gopher Browser can open."
         }
     }
 
@@ -139,7 +162,16 @@ final class BrowserModel: ObservableObject {
         case .download, .unsupported:
             download(item.address, name: title)
         case .telnet:
-            note = "Gopher Browser doesn't do telnet. The session is at \(item.location)."
+            telnet(host: item.host, port: item.port, user: item.selector)
+        }
+    }
+
+    private func telnet(host: String, port: Int, user: String) {
+        do {
+            try Telnet.open(host: host, port: port, user: user)
+            note = "Opened a session with \(host) in Terminal."
+        } catch {
+            note = error.localizedDescription
         }
     }
 
@@ -197,6 +229,10 @@ final class BrowserModel: ObservableObject {
                     try await loadGopher(address)
                 case .gemini(let url):
                     try await loadGemini(url)
+                case .spartan(let url):
+                    try await loadSpartan(url)
+                case .finger(let url):
+                    try await loadFinger(url)
                 }
             } catch is CancellationError {
                 return
@@ -211,7 +247,7 @@ final class BrowserModel: ObservableObject {
 
     private func arrive(at location: Location, title: String) {
         self.location = location
-        self.title = title.isEmpty ? location.host : title
+        self.title = title.isEmpty ? location.name : title
         onVisit(location.url)
     }
 
@@ -261,7 +297,7 @@ final class BrowserModel: ObservableObject {
                 show(.input(prompt: response.meta.isEmpty ? "The page asks for some words." : response.meta,
                             sensitive: response.status == 11))
             case 2:
-                showGemini(response, from: url)
+                showDocument(response, from: url)
             case 3:
                 guard let next = Gemini.resolve(response.meta, against: url) else {
                     show(.failure("The server sent a redirect that doesn't say where to."))
@@ -286,7 +322,49 @@ final class BrowserModel: ObservableObject {
         show(.failure("The server redirected too many times."))
     }
 
-    private func showGemini(_ response: GeminiResponse, from url: URL) {
+    /// Spartan's answers are like Gemini's: a type, then the page, gemtext unless it says otherwise.
+    private func loadSpartan(_ start: URL) async throws {
+        if prompts.contains(start) && start.query == nil {
+            inputWords = ""
+            show(.input(prompt: title, sensitive: false))
+            return
+        }
+        var url = start
+        for _ in 0..<5 {
+            let reply = try await Spartan.fetch(url) { [weak self] count in self?.received = count }
+            try Task.checkCancellation()
+            switch reply.status {
+            case 2:
+                showDocument(reply, from: url)
+            case 3:
+                // Redirects stay on the same server; the spec gives them only a path.
+                guard let next = Gemini.resolve(reply.meta, against: url),
+                      next.scheme?.lowercased() == "spartan", next.host == url.host, next.port == url.port else {
+                    show(.failure("The server sent a redirect that doesn't stay on the server."))
+                    return
+                }
+                url = next
+                arrive(at: .spartan(next), title: title)
+                continue
+            default:
+                let reason = reply.meta.isEmpty
+                    ? (reply.status == 4 ? "The server couldn't find or wouldn't send that." : "The server failed.")
+                    : reply.meta
+                show(.failure("\(reason) (\(reply.status))"))
+            }
+            return
+        }
+        show(.failure("The server redirected too many times."))
+    }
+
+    private func loadFinger(_ url: URL) async throws {
+        let data = try await Finger.fetch(url) { [weak self] count in self?.received = count }
+        try Task.checkCancellation()
+        let text = Gopher.text(data).replacingOccurrences(of: "\r\n", with: "\n")
+        show(.text(text.isEmpty ? "The server had nothing to say about \(title)." : text), raw: data)
+    }
+
+    private func showDocument(_ response: Reply, from url: URL) {
         let mime = response.meta.split(separator: ";").first.map {
             $0.trimmingCharacters(in: .whitespaces).lowercased()
         } ?? "text/gemini"
@@ -295,7 +373,9 @@ final class BrowserModel: ObservableObject {
             let lines = Gemini.gemtext(Gopher.text(response.body), base: url)
             if let heading = Gemini.title(lines) { title = heading }
             show(.gemtext(lines), raw: response.body)
-        } else if type.hasPrefix("text/") {
+        } else if type.hasPrefix("text/") || (type == "application/octet-stream" && Self.isPlainText(response.body)) {
+            // Servers that don't know a type call it octet-stream, as Spartan's echo does; if
+            // it's plain text, it's shown.
             show(.text(Gopher.text(response.body)), raw: response.body)
         } else if type.hasPrefix("image/"), let image = NSImage(data: response.body) {
             show(.image(image), raw: response.body)
@@ -307,7 +387,7 @@ final class BrowserModel: ObservableObject {
     // MARK: Input
 
     /// Sends the words typed on an input page: after a tab to a gopher server, or as the
-    /// URL's query to a Gemini one.
+    /// URL's query to a Gemini or Spartan one, which Spartan sends as the request's data.
     func submit() {
         let words = inputWords.trimmingCharacters(in: .whitespaces)
         guard !words.isEmpty, let location else { return }
@@ -316,12 +396,21 @@ final class BrowserModel: ObservableObject {
             address.query = words
             visit(.gopher(address), title: "\(title): \(words)")
         case .gemini(let url):
-            var parts = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            parts?.percentEncodedQuery = words.addingPercentEncoding(withAllowedCharacters: Self.queryAllowed)
-            guard let next = parts?.url else { return }
+            guard let next = Self.adding(words, to: url) else { return }
             visit(.gemini(next), title: title)
+        case .spartan(let url):
+            guard let next = Self.adding(words, to: url) else { return }
+            visit(.spartan(next), title: title)
+        case .finger:
+            return
         }
         inputWords = ""
+    }
+
+    private static func adding(_ words: String, to url: URL) -> URL? {
+        var parts = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        parts?.percentEncodedQuery = words.addingPercentEncoding(withAllowedCharacters: queryAllowed)
+        return parts?.url
     }
 
     private static let queryAllowed = CharacterSet.urlQueryAllowed.subtracting(CharacterSet(charactersIn: "+&=?#"))
@@ -364,9 +453,11 @@ final class BrowserModel: ObservableObject {
         case .gopher(let address):
             name = Self.fileName(for: address.selector, fallback: title)
             if Kind(address.type) == .menu, !name.hasSuffix(".txt") { name += ".txt" }
-        case .gemini(let url):
+        case .gemini(let url), .spartan(let url):
             name = Self.fileName(for: url.path, fallback: title)
             if case .gemtext = page, !name.hasSuffix(".gmi") { name += ".gmi" }
+        case .finger:
+            name = location.name + ".txt"
         }
         panel.nameFieldStringValue = name
         guard panel.runModal() == .OK, let destination = panel.url else { return }
@@ -389,6 +480,12 @@ final class BrowserModel: ObservableObject {
         return name.replacingOccurrences(of: ":", with: "-").trimmingCharacters(in: .whitespaces)
     }
 
+    /// Short UTF-8 with no control characters but tabs and line breaks.
+    private static func isPlainText(_ data: Data) -> Bool {
+        guard data.count < 1 << 20, let text = String(data: data, encoding: .utf8) else { return false }
+        return !text.unicodeScalars.contains { $0.value < 32 && ![9, 10, 13].contains($0.value) }
+    }
+
     static func size(_ bytes: Int) -> String {
         ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
     }
@@ -396,8 +493,8 @@ final class BrowserModel: ObservableObject {
 
 // MARK: - Shared lists
 
-/// Saved places, kept between launches, starting with SDF's gopherspace and Floodgap's
-/// and a few Gemini capsules.
+/// Saved places, kept between launches, starting with SDF's gopherspace and Floodgap's, a few
+/// Gemini capsules, Spartan's home and SDF's finger server.
 @MainActor
 final class Bookmarks: ObservableObject {
     static let shared = Bookmarks()
@@ -411,6 +508,8 @@ final class Bookmarks: ObservableObject {
         Visit(title: "SDF Gemini", url: "gemini://sdf.org/"),
         Visit(title: "Project Gemini", url: "gemini://geminiprotocol.net/"),
         Visit(title: "Kennedy, a Gemini search", url: "gemini://kennedy.gemi.dev/search"),
+        Visit(title: "Spartan, and the servers that speak it", url: "spartan://mozz.us/"),
+        Visit(title: "SDF, by finger", url: "finger://sdf.org"),
     ]
 
     @Published var all: [Visit] {
@@ -457,7 +556,7 @@ final class History: ObservableObject {
     func clear() { recent = [] }
 }
 
-/// Opens gopher:// links from other apps, each in a new window. Links that come in before
+/// Opens gopher://, gemini://, spartan:// and finger:// links from other apps, each in a new window. Links that come in before
 /// SwiftUI can open windows wait for it.
 @MainActor
 final class Inbox {

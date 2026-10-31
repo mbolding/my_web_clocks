@@ -159,7 +159,10 @@ struct Item: Identifiable {
     /// What the status bar shows while the pointer is over it.
     var location: String {
         if let webURL { return webURL.absoluteString }
-        if kind == .telnet { return "telnet://\(host)\(port == 23 ? "" : ":\(port)")" }
+        if kind == .telnet {
+            let user = selector.isEmpty ? "" : selector + "@"
+            return "\(type == "T" ? "tn3270" : "telnet")://\(user)\(host)\(port == 23 ? "" : ":\(port)")"
+        }
         return address.url
     }
 }
