@@ -23,7 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Widget Bar — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -104,7 +104,10 @@ in Terminal through a small telnet client of its own, and the Mac's handler for
 News Reader (likewise: a Usenet newsreader over NNTP, with subscriptions,
 threads, read marks, follow-ups and new posts, and logins kept in the Keychain),
 Relay Chat (likewise, but it stays connected with its window closed: an IRC
-client with SASL logins, a Dock badge and notifications for mentions)
+client with SASL logins, a Dock badge and notifications for mentions),
+Offsite (likewise: a Finder-like window on an rsync.net account, or any SSH
+account, over the Mac's own sftp and key, with uploads, downloads and the
+account's ZFS snapshots to look back through)
 and Widget Bar
 (a toolbar that opens the others and flips their Float on Top; it finds them by
 the `DesktopWidget` key build.sh adds to every Info.plist). Each app is a folder with `App.swift`

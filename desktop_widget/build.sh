@@ -42,6 +42,7 @@ CLOCKS=(
   News    NewsReader    com.mbolding.newsreader    "News Reader"
   Relay   RelayChat     com.mbolding.relaychat     "Relay Chat"
   Post    SDFPost       com.mbolding.sdfpost       "SDF Post"
+  Offsite Offsite       com.mbolding.offsite       "Offsite"
 )
 
 build_clock() {
