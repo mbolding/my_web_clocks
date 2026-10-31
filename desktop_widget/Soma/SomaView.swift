@@ -30,7 +30,7 @@ struct SomaView: View {
     }
 
     private var art: some View {
-        AsyncImage(url: player.channel?.largeimage ?? player.channel?.image) { image in
+        AsyncImage(url: player.songArt ?? player.channel?.largeimage ?? player.channel?.image) { image in
             image.resizable().aspectRatio(contentMode: .fill)
         } placeholder: {
             Image(systemName: "dot.radiowaves.left.and.right")
@@ -45,8 +45,14 @@ struct SomaView: View {
 
     private var channelMenu: some View {
         Menu {
-            ForEach(player.channels) { channel in
-                Button(channel.title) { player.select(channel) }
+            ForEach(player.stations) { station in
+                Button(station.title) { player.select(station) }
+            }
+            Divider()
+            Section("SomaFM") {
+                ForEach(player.channels) { channel in
+                    Button(channel.title) { player.select(channel) }
+                }
             }
         } label: {
             HStack(spacing: 3) {
@@ -83,7 +89,8 @@ struct SomaView: View {
         case .playing:
             HStack(spacing: 4) {
                 Circle().fill(Color.red).frame(width: 6, height: 6)
-                Text(player.isMuted ? "LIVE · muted" : "LIVE")
+                Text(["LIVE", player.liveHost.map { "DJ \($0)" }, player.isMuted ? "muted" : nil]
+                    .compactMap { $0 }.joined(separator: " · "))
             }
             .font(.system(size: 10, weight: .semibold, design: .rounded))
             .foregroundStyle(.secondary)
@@ -100,7 +107,7 @@ struct SomaView: View {
                 .foregroundStyle(.red)
                 .lineLimit(1)
         case .stopped:
-            Text(player.channel?.listeners.map { "\($0) listening" } ?? "")
+            Text((player.listeners ?? player.channel?.listeners).map { "\($0) listening" } ?? "")
                 .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.tertiary)
         }

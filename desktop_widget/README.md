@@ -7,7 +7,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Clock Widget** (`Analog/`) | An analog clock with the weekday and date; second hand optional |
 | **Word Clock** (`Word/`) | The time spelled out on an 11×11 letter grid, a native port of [`clocks/art/word_clock.html`](../clocks/art/word_clock.html) |
 | **Command Bar** (`Command/`) | A floating zsh you can type into and drop folders onto, with history, Tab completion and the current git branch |
-| **Soma Player** (`Soma/`) | A small [SomaFM](https://somafm.com) radio with a channel menu and what's playing |
+| **Soma Player** (`Soma/`) | A small [SomaFM](https://somafm.com) radio with a channel menu and what's playing, and [tilderadio](https://tilderadio.org), the tildeverse's community station |
 | **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left. Also a stopwatch |
 | **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
 | **Scratch Pad** (`Scratch/`) | A text pad that keeps what you type, with buttons to copy it all or save it to the Desktop |
@@ -104,6 +104,7 @@ All of them:
 **Soma Player**
 
 - Pick a channel from the menu on its name and press play. It shows up in Control Center and answers the keyboard's play/pause key.
+- tilderadio, the tildeverse's own station, is at the top of the menu above SomaFM's channels. Its song, cover art and listener count come from the station's AzuraCast server, and when a DJ is broadcasting live their name shows beside LIVE. Its DJs talk in `#tilderadio` on tilde.chat, which Relay Chat can join.
 - It never starts playing on its own. SomaFM is listener-supported; the right-click menu has a link to [support it](https://somafm.com/support/).
 
 **Dial Timer**

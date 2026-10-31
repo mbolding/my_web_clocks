@@ -3,6 +3,10 @@
 // (.pls, trying each server in turn), and what's playing from its recent-songs feed,
 // checked every 20 seconds while playing. Also shows up in Control Center and answers
 // the keyboard's play/pause key.
+//
+// tilderadio, the tildeverse's community station with live DJs, sits above the SomaFM
+// channels. It has a stream of its own rather than a playlist, and says what's playing,
+// and who's on air, through its AzuraCast server's now-playing API.
 
 import AVFoundation
 import AppKit
@@ -18,6 +22,12 @@ struct Channel: Decodable, Identifiable, Hashable {
     let largeimage: URL?
     let listeners: String?
     let playlists: [Playlist]
+    /// For stations other than SomaFM: the stream itself, the station's site, its name, and
+    /// an AzuraCast now-playing address.
+    var stream: URL? = nil
+    var site: URL? = nil
+    var station: String? = nil
+    var nowPlaying: URL? = nil
 
     struct Playlist: Decodable, Hashable {
         let url: URL
@@ -25,7 +35,17 @@ struct Channel: Decodable, Identifiable, Hashable {
     }
 
     var streamPlaylist: URL? { (playlists.first { $0.format == "mp3" } ?? playlists.first)?.url }
-    var page: URL { URL(string: "https://somafm.com/\(id)/")! }
+    var page: URL { site ?? URL(string: "https://somafm.com/\(id)/")! }
+    var network: String { station ?? "SomaFM" }
+
+    enum CodingKeys: String, CodingKey { case id, title, description, genre, image, largeimage, listeners, playlists }
+
+    static let tilderadio = Channel(
+        id: "tilderadio", title: "tilderadio",
+        description: "The tildeverse's community radio, with live DJs", genre: "community",
+        image: URL(string: "https://tilderadio.org/logos/tilderadio.png"), largeimage: nil, listeners: nil, playlists: [],
+        stream: URL(string: "https://tilderadio.org/listen/mp3/192k"), site: URL(string: "https://tilderadio.org"),
+        station: "tilderadio", nowPlaying: URL(string: "https://azuracast.tilderadio.org/api/nowplaying/tilderadio"))
 }
 
 struct Song: Decodable, Equatable {
@@ -40,11 +60,17 @@ final class SomaPlayer: ObservableObject {
 
     enum State: Equatable { case stopped, connecting, playing, failed(String) }
 
+    /// Stations other than SomaFM, at the top of the menu.
+    let stations = [Channel.tilderadio]
     @Published private(set) var channels: [Channel] = []
     @Published private(set) var channel: Channel?
     @Published private(set) var song: Song?
     @Published private(set) var state = State.stopped
     @Published var isMuted = false { didSet { player.isMuted = isMuted } }
+    /// From a station's now-playing API: the song's art, how many are listening, and the DJ on air.
+    @Published private(set) var songArt: URL?
+    @Published private(set) var listeners: String?
+    @Published private(set) var liveHost: String?
 
     private let player = AVPlayer()
     private var streams: [URL] = []
@@ -63,6 +89,10 @@ final class SomaPlayer: ObservableObject {
             .sink { [weak self] status in self?.timeControlChanged(status) }
             .store(in: &observers)
         setUpRemoteCommands()
+        if let saved = UserDefaults.standard.string(forKey: "channel"), let station = stations.first(where: { $0.id == saved }) {
+            channel = station
+            channelChanged()
+        }
         Task { await loadChannels() }
     }
 
@@ -84,6 +114,7 @@ final class SomaPlayer: ObservableObject {
         guard let list = try? JSONDecoder().decode(List.self, from: data) else { return }
         channels = list.channels.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
         let saved = UserDefaults.standard.string(forKey: "channel") ?? "groovesalad"
+        if let channel, stations.contains(channel) { return }
         let current = channels.first { $0.id == (channel?.id ?? saved) } ?? channels.first
         if current?.id != channel?.id || channel == nil {
             channel = current
@@ -105,6 +136,9 @@ final class SomaPlayer: ObservableObject {
     private func channelChanged() {
         song = nil
         artwork = nil
+        songArt = nil
+        listeners = nil
+        liveHost = nil
         Task { await refreshSong() }
         guard let url = channel?.largeimage ?? channel?.image else { return }
         let id = channel?.id
@@ -122,12 +156,16 @@ final class SomaPlayer: ObservableObject {
     }
 
     func play() {
-        guard let playlist = channel?.streamPlaylist else { return }
+        guard let channel, let playlist = channel.stream ?? channel.streamPlaylist else { return }
         attempt += 1
         let mine = attempt
         state = .connecting
         player.replaceCurrentItem(with: nil)
-        Task {
+        if channel.stream != nil {
+            streams = [playlist]
+            streamIndex = 0
+            startStream()
+        } else { Task {
             do {
                 let (data, _) = try await URLSession.shared.data(from: playlist)
                 guard mine == attempt else { return }
@@ -138,7 +176,7 @@ final class SomaPlayer: ObservableObject {
             } catch {
                 if mine == attempt { fail("Can't load the stream") }
             }
-        }
+        } }
         songTimer?.invalidate()
         songTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
             Task { await self?.refreshSong() }
@@ -213,6 +251,7 @@ final class SomaPlayer: ObservableObject {
     // MARK: - Now playing
 
     func refreshSong() async {
+        if let url = channel?.nowPlaying { return await refreshStation(url) }
         guard let id = channel?.id, let url = URL(string: "https://somafm.com/songs/\(id).json") else { return }
         struct Feed: Decodable { let songs: [Song] }
         guard let (data, _) = try? await URLSession.shared.data(from: url),
@@ -220,6 +259,38 @@ final class SomaPlayer: ObservableObject {
               channel?.id == id else { return }
         if song != feed.songs.first {
             song = feed.songs.first
+            updateNowPlaying()
+        }
+    }
+
+    /// What's on a station with an AzuraCast server: the song, its art, the listeners, and
+    /// the DJ when someone is broadcasting live.
+    private func refreshStation(_ url: URL) async {
+        struct NowPlaying: Decodable {
+            struct Playing: Decodable { let song: Track }
+            struct Track: Decodable { let title: String?; let artist: String?; let album: String?; let art: URL? }
+            struct Listeners: Decodable { let current: Int }
+            struct Live: Decodable { let is_live: Bool; let streamer_name: String? }
+            let now_playing: Playing
+            let listeners: Listeners
+            let live: Live?
+        }
+        let id = channel?.id
+        guard let (data, _) = try? await URLSession.shared.data(from: url),
+              let now = try? JSONDecoder().decode(NowPlaying.self, from: data), channel?.id == id else { return }
+        let track = now.now_playing.song
+        let next = Song(title: track.title.flatMap { $0.isEmpty ? nil : $0 }, artist: track.artist.flatMap { $0.isEmpty ? nil : $0 },
+                        album: track.album)
+        listeners = "\(now.listeners.current)"
+        liveHost = now.live?.is_live == true ? now.live?.streamer_name.flatMap { $0.isEmpty ? nil : $0 } : nil
+        if songArt != track.art {
+            songArt = track.art
+            if let art = track.art, let (image, _) = try? await URLSession.shared.data(from: art), channel?.id == id {
+                artwork = NSImage(data: image)
+            }
+        }
+        if song != next {
+            song = next
             updateNowPlaying()
         }
     }
@@ -248,8 +319,8 @@ final class SomaPlayer: ObservableObject {
         }
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: song?.title ?? channel.title,
-            MPMediaItemPropertyArtist: song?.artist ?? "SomaFM",
-            MPMediaItemPropertyAlbumTitle: "SomaFM · \(channel.title)",
+            MPMediaItemPropertyArtist: song?.artist ?? channel.network,
+            MPMediaItemPropertyAlbumTitle: channel.network == channel.title ? channel.title : "\(channel.network) · \(channel.title)",
             MPNowPlayingInfoPropertyIsLiveStream: true,
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
         ]

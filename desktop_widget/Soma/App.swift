@@ -21,7 +21,9 @@ struct SomaOptions: View {
     var body: some View {
         Toggle("Mute", isOn: $player.isMuted)
         if let channel = player.channel {
-            Button("Open \(channel.title) on somafm.com") { NSWorkspace.shared.open(channel.page) }
+            Button(channel.site == nil ? "Open \(channel.title) on somafm.com" : "Open \(channel.page.host() ?? channel.title)") {
+                NSWorkspace.shared.open(channel.page)
+            }
         }
         Button("Support SomaFM") { NSWorkspace.shared.open(URL(string: "https://somafm.com/support/")!) }
         Divider()
