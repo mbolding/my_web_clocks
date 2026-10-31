@@ -542,6 +542,13 @@ final class Session: ObservableObject, Identifiable {
             send(IRCMessage.line("PRIVMSG", "NickServ", "RECOVER \(preferredNick)"))
             return
         }
+        // Once NickServ has let go of the nick, or found nobody using it, it's free to take.
+        if lower.contains(preferredNick.lowercased()) || lower.contains("not currently in use") || lower.contains("isn't currently in use") {
+            if ["released", "recovered", "regained", "not currently in use", "isn't currently in use", "has been ghosted", "has been killed"]
+                .contains(where: lower.contains) {
+                claimPreferredNick()
+            }
+        }
         servicesLog.append(text)
         if ["has been confirmed", "has been verified", "is now confirmed", "is now verified"].contains(where: lower.contains) {
             servicesConfirmed = true
@@ -560,6 +567,14 @@ final class Session: ObservableObject, Identifiable {
         guard state == .connected, !preferredNick.isEmpty, nick.caseInsensitiveCompare(preferredNick) != .orderedSame,
               account?.caseInsensitiveCompare(preferredNick) == .orderedSame else { return }
         send(IRCMessage.line("PRIVMSG", "NickServ", "REGAIN \(preferredNick)"))
+        // In case NickServ's answer isn't one recognised above, try for the nick a little later.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in self?.claimPreferredNick() }
+    }
+
+    /// Asks for the nick asked for, if it isn't the one in use.
+    private func claimPreferredNick() {
+        guard state == .connected, !preferredNick.isEmpty, nick.caseInsensitiveCompare(preferredNick) != .orderedSame else { return }
+        send(IRCMessage.line("NICK", preferredNick))
     }
 
     /// Takes the nick asked for as soon as whoever had it leaves or changes name.
