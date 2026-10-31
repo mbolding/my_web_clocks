@@ -23,7 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, Widget Bar — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -98,7 +98,9 @@ its dual through the truncations between, with numbers measured from the shape),
 Gopher Browser (likewise: a browser for gopherspace over raw TCP, Gemini
 over TLS, Spartan and finger, with bookmarks and searches, telnet links opened
 in Terminal through a small telnet client of its own, and the Mac's handler for
-`gopher://`, `gemini://`, `spartan://` and `finger://` links)
+`gopher://`, `gemini://`, `spartan://` and `finger://` links),
+News Reader (likewise: a Usenet newsreader over NNTP, with subscriptions,
+threads, read marks, follow-ups and new posts, and logins kept in the Keychain)
 and Widget Bar
 (a toolbar that opens the others and flips their Float on Top; it finds them by
 the `DesktopWidget` key build.sh adds to every Info.plist). Each app is a folder with `App.swift`
