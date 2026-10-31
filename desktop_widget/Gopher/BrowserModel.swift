@@ -508,7 +508,12 @@ final class Bookmarks: ObservableObject {
         Visit(title: "SDF Gemini", url: "gemini://sdf.org/"),
         Visit(title: "Project Gemini", url: "gemini://geminiprotocol.net/"),
         Visit(title: "Kennedy, a Gemini search", url: "gemini://kennedy.gemi.dev/search"),
+        Visit(title: "TLGS, a Gemini and Spartan search", url: "gemini://tlgs.one/"),
+        Visit(title: "Cosmos, new gemlog posts", url: "gemini://cosmos.skyjake.fi/"),
+        Visit(title: "Bubble, a Gemini BBS", url: "gemini://bbs.geminispace.org/"),
+        Visit(title: "Station, a small Gemini social site", url: "gemini://station.martinrue.com/"),
         Visit(title: "Spartan, and the servers that speak it", url: "spartan://mozz.us/"),
+        Visit(title: "The Spartan Protocol", url: "spartan://spartan.mozz.us/"),
         Visit(title: "SDF, by finger", url: "finger://sdf.org"),
     ]
 
