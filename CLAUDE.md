@@ -23,6 +23,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── automata/                  # Digraph Automata Bench: single-file cellular automata on directed graphs, listed under "Other Apps"
+├── carbon13/                  # 13C Carrier Calculator: single-file Prisma 13C MRS carrier frequency calculator, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
 ├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
@@ -68,6 +69,14 @@ text language declares the states, builds the graph (rings, grids, random and
 de Bruijn graphs, chords) and sets the rules; the page runs, steps or resets the
 automaton and draws its history. It fetches nothing. It is listed under "Other
 Apps" and not counted as a clock. Don't apply the clock-file conventions to it.
+
+`carbon13/` is the 13C Carrier Calculator, one self-contained
+`carbon13/index.html` for setting the ¹³C carrier on the Siemens Prisma at the
+scanner. It takes the session's ¹H system frequency and a target chemical
+shift, returns the ¹³C frequency to enter, and tabulates where the glycogen,
+urea and lipid resonances fall relative to the carrier. It fetches nothing. It
+is listed under "Other Apps" and not counted as a clock. Don't apply the
+clock-file conventions to it.
 
 `dicom/` is DICOM Explorer, a three-plane viewer and tag browser for DICOM files
 the user opens or drops in, listed under "Other Apps" and not counted as a
