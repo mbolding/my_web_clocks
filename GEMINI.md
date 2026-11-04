@@ -22,6 +22,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── CLAUDE.md                  # Equivalent guidance file for Claude Code (keep in sync with this file)
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
+├── automata/                  # Digraph Automata Bench: single-file cellular automata on directed graphs, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
 ├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
@@ -60,6 +61,13 @@ the data changes; the site itself still has no build step. Sources, licences
 and the data formats are in `brain/README.md`. Apart from its own data, the
 only thing it fetches is a URL the user types into "Load" to open an overlay.
 Don't apply the clock-file conventions to it.
+
+`automata/` is the Digraph Automata Bench, a single self-contained
+`automata/index.html` for running cellular automata on directed graphs. A small
+text language declares the states, builds the graph (rings, grids, random and
+de Bruijn graphs, chords) and sets the rules; the page runs, steps or resets the
+automaton and draws its history. It fetches nothing. It is listed under "Other
+Apps" and not counted as a clock. Don't apply the clock-file conventions to it.
 
 `dicom/` is DICOM Explorer, a three-plane viewer and tag browser for DICOM files
 the user opens or drops in, listed under "Other Apps" and not counted as a
