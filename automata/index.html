@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digraph automata bench</title>
+<style>
+  :root{
+    --case:#dcdfd7;
+    --case-hi:#ecefe8;
+    --case-lo:#c6cbc2;
+    --seam:#a9b0a5;
+    --ink:#19211f;
+    --ink-soft:#5c6763;
+    --well:#0c1215;
+    --well-line:#1b2429;
+    --signal:#0c6a62;
+    --signal-hi:#0f8378;
+    --warn:#9c3020;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--case);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.45;
+    -webkit-text-size-adjust:100%;
+  }
+  .bench{
+    min-height:100%;
+    display:grid;
+    grid-template-rows:auto 1fr;
+    max-width:1480px;
+    margin:0 auto;
+    border-left:1px solid var(--seam);
+    border-right:1px solid var(--seam);
+    background:var(--case-hi);
+  }
+
+  /* nameplate */
+  .plate{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    flex-wrap:wrap;
+    padding:10px 16px;
+    border-bottom:1px solid var(--seam);
+    background:linear-gradient(var(--case-hi), var(--case));
+  }
+  .plate h1{
+    margin:0;
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:-0.022em;
+  }
+  .plate .sub{color:var(--ink-soft);font-size:12.5px;letter-spacing:-0.01em}
+  .plate .readout{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-soft);
+    display:flex;
+    gap:16px;
+  }
+  .plate .readout b{color:var(--ink);font-weight:600}
+
+  .body{
+    display:grid;
+    grid-template-columns:minmax(330px,400px) 1fr;
+    align-items:stretch;
+  }
+  .source{
+    border-right:1px solid var(--seam);
+    padding:14px 14px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    min-width:0;
+  }
+  .stage{
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    min-width:0;
+  }
+
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  label.f{font-size:12px;color:var(--ink-soft)}
+
+  select, button, input[type=range]{font-family:inherit}
+  select{
+    font-size:13px;padding:5px 6px;border:1px solid var(--seam);
+    background:var(--case-hi);color:var(--ink);border-radius:2px;
+    max-width:100%;
+  }
+  button{
+    font-size:13px;padding:6px 12px;border:1px solid var(--seam);
+    background:var(--case-hi);color:var(--ink);border-radius:2px;cursor:pointer;
+  }
+  button:hover{background:#fff}
+  button:active{background:var(--case-lo)}
+  button.key{background:var(--signal);border-color:var(--signal);color:#f2f7f6;font-weight:600}
+  button.key:hover{background:var(--signal-hi)}
+  :focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+
+  /* dark wells */
+  .well{
+    background:var(--well);
+    border:1px solid #0a0f11;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 1px 0 rgba(255,255,255,.5);
+    border-radius:2px;
+    position:relative;
+  }
+  textarea{
+    display:block;width:100%;flex:1;min-height:300px;
+    background:transparent;border:0;resize:vertical;
+    color:#cfdad6;font-family:var(--mono);font-size:12.5px;line-height:1.62;
+    padding:11px 12px;tab-size:2;
+  }
+  textarea:focus{outline:none}
+  .editwrap{display:flex;flex-direction:column;flex:1;min-height:300px}
+
+  .status{
+    font-family:var(--mono);font-size:12px;min-height:32px;
+    padding:6px 8px;border:1px solid var(--seam);border-radius:2px;
+    background:var(--case);color:var(--ink-soft);
+  }
+  .status.bad{color:var(--warn);border-color:#c58b80;background:#f6e9e6}
+
+  #graphwell{height:min(52vh,520px);min-height:260px}
+  #tracewell{height:200px}
+  canvas{display:block;width:100%;height:100%}
+
+  .caption{
+    position:absolute;left:9px;bottom:7px;
+    font-family:var(--mono);font-size:10.5px;color:#5e6f73;
+    pointer-events:none;
+  }
+  #tip{
+    position:absolute;pointer-events:none;
+    font-family:var(--mono);font-size:11px;
+    background:#0a0f11;color:#d5e1dd;border:1px solid #22313a;
+    padding:3px 6px;border-radius:2px;white-space:pre;opacity:0;
+    transform:translate(8px,-50%);
+  }
+
+  .transport{
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    padding:9px 10px;border:1px solid var(--seam);border-radius:2px;background:var(--case);
+  }
+  .transport input[type=range]{width:120px;accent-color:var(--signal)}
+  .transport .spd{font-family:var(--mono);font-size:12px;color:var(--ink-soft);min-width:74px}
+  .check{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft)}
+
+  .census{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:12px}
+  .chip{display:flex;align-items:center;gap:6px;border:1px solid var(--seam);border-radius:2px;padding:3px 7px;background:var(--case)}
+  .chip i{width:9px;height:9px;display:block;border:1px solid rgba(0,0,0,.35)}
+
+  details{border-top:1px solid var(--seam);padding-top:8px}
+  summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft)}
+  details .ref{font-family:var(--mono);font-size:11.5px;line-height:1.65;color:var(--ink-soft);margin-top:8px}
+  details .ref b{color:var(--ink);font-weight:600}
+  details .ref p{margin:0 0 7px}
+
+  @media (max-width:900px){
+    .body{grid-template-columns:1fr}
+    .source{border-right:0;border-top:1px solid var(--seam);order:2}
+    .stage{order:1}
+    #graphwell{height:46vh}
+    .plate .readout{margin-left:0;width:100%;gap:12px}
+  }
+</style>
+</head>
+<body>
+<div class="bench">
+  <header class="plate">
+    <h1>Digraph automata bench</h1>
+    <span class="sub">write a rule, wire a graph, watch it run</span>
+    <div class="readout">
+      <span>step <b id="r-step">0</b></span>
+      <span>nodes <b id="r-nodes">0</b></span>
+      <span>edges <b id="r-edges">0</b></span>
+    </div>
+  </header>
+
+  <div class="body">
+    <section class="source">
+      <div class="row">
+        <label class="f" for="examples">Load</label>
+        <select id="examples"></select>
+        <button class="key" id="apply">Apply source</button>
+      </div>
+
+      <div class="editwrap well">
+        <textarea id="src" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off"></textarea>
+      </div>
+
+      <div class="status" id="status">Ready.</div>
+
+      <details>
+        <summary>Language reference</summary>
+        <div class="ref">
+          <p><b>states { rest #11181c  firing #ffb020 }</b><br>
+            Declares the state set, in order. The first state is the background state. Colours are optional. Declare states before <b>init</b> and <b>rules</b>.</p>
+          <p><b>options { seed 12   order sync }</b><br>
+            <b>seed</b> fixes every random draw. <b>order</b> is <b>sync</b> (all nodes update from the same snapshot) or <b>random</b> (one random sweep, updates visible immediately).</p>
+          <p><b>graph { ... }</b> builds nodes and directed edges, top to bottom. Each generator appends a fresh block of nodes.<br>
+            <b>nodes n</b> · <b>ring n</b> · <b>path n</b> · <b>grid w h</b> (add <b>torus</b> to wrap) · <b>random n k</b> (k out-edges each) · <b>debruijn k len</b> · <b>chords k</b> (adds i&nbsp;→&nbsp;i+k over all nodes) · <b>edge a -> b</b> · <b>bidir</b> (mirror every edge so far) · <b>layout circle|grid|force</b></p>
+          <p><b>init { ... }</b><br>
+            <b>all rest</b> · <b>node 12 = firing</b> (several indices allowed) · <b>random firing 0.02</b> · <b>set firing where id % 30 == 0</b></p>
+          <p><b>rules { from -> to when condition }</b><br>
+            Rules are tried top to bottom; the first match wins, otherwise the node holds. <b>from</b> may be <b>*</b> for any state. <b>when</b> is optional.</p>
+          <p><b>In an expression:</b> <b>inc(s)</b> in-neighbours in state s, <b>outc(s)</b> out-neighbours, <b>nbc(s)</b> both, <b>pop(s)</b> whole graph. <b>state</b>, <b>id</b>, <b>step</b>, <b>indeg</b>, <b>outdeg</b>, <b>deg</b>, <b>n</b>. <b>rand()</b>, <b>min</b>, <b>max</b>, <b>abs</b>, <b>floor</b>, <b>sqrt</b>. Operators <b>+ - * / %</b>, <b>== != &lt; &lt;= &gt; &gt;=</b>, <b>and or not</b>. A state name is its own index, so <b>state == firing</b> works.</p>
+          <p>Comments start with <b>//</b>. Click a node in the graph to change its state by hand.</p>
+        </div>
+      </details>
+    </section>
+
+    <section class="stage">
+      <div class="well" id="graphwell">
+        <canvas id="graph"></canvas>
+        <div class="caption" id="gcap">graph</div>
+        <div id="tip"></div>
+      </div>
+
+      <div class="transport">
+        <button class="key" id="run">Run</button>
+        <button id="stepb">Step</button>
+        <button id="reset">Reset</button>
+        <label class="f" for="speed">Speed</label>
+        <input type="range" id="speed" min="1" max="120" value="14">
+        <span class="spd" id="spdread">14 steps/s</span>
+        <label class="check"><input type="checkbox" id="showedges" checked> edges</label>
+      </div>
+
+      <div class="census" id="census"></div>
+
+      <div class="well" id="tracewell">
+        <canvas id="trace"></canvas>
+        <div class="caption">history, newest row at the bottom, one column per node</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------- prng */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ------------------------------------------------------------- errors */
+class LangError extends Error{
+  constructor(msg, line){ super(msg); this.line = line; }
+}
+
+/* ---------------------------------------------------------- tokenizer */
+const TWO = ["->","==","!=","<=",">="];
+const ONE = "{}(),=<>+-*/%;".split("");
+
+function tokenize(src){
+  const toks = [];
+  let i = 0, line = 1;
+  const push = (t,v) => toks.push({t, v, line});
+  while(i < src.length){
+    const c = src[i];
+    if(c === "\n"){ push("nl"); line++; i++; continue; }
+    if(c === " " || c === "\t" || c === "\r"){ i++; continue; }
+    if(c === "/" && src[i+1] === "/"){ while(i < src.length && src[i] !== "\n") i++; continue; }
+    if(c === "#"){
+      let j = i+1, h = "";
+      while(j < src.length && /[0-9a-fA-F]/.test(src[j])){ h += src[j]; j++; }
+      if(h.length === 3 || h.length === 6){ push("color", "#"+h); i = j; continue; }
+      throw new LangError("a colour must be #rgb or #rrggbb", line);
+    }
+    if(/[0-9]/.test(c) || (c === "." && /[0-9]/.test(src[i+1] || ""))){
+      let j = i, s = "";
+      while(j < src.length && /[0-9.]/.test(src[j])){ s += src[j]; j++; }
+      const v = parseFloat(s);
+      if(!isFinite(v)) throw new LangError("bad number '"+s+"'", line);
+      push("num", v); i = j; continue;
+    }
+    if(/[A-Za-z_]/.test(c)){
+      let j = i, s = "";
+      while(j < src.length && /[A-Za-z0-9_]/.test(src[j])){ s += src[j]; j++; }
+      push("id", s); i = j; continue;
+    }
+    const two = src.substr(i,2);
+    if(TWO.indexOf(two) >= 0){ push("op", two); i += 2; continue; }
+    if(ONE.indexOf(c) >= 0){ push("op", c); i++; continue; }
+    throw new LangError("unexpected character '"+c+"'", line);
+  }
+  push("eof");
+  return toks;
+}
+
+function describe(tok){
+  if(tok.t === "eof") return "end of source";
+  if(tok.t === "nl") return "end of line";
+  return "'" + tok.v + "'";
+}
+
+/* ---------------------------------------------------- expression eval */
+const VARS = {
+  state:  c => c.state,
+  id:     c => c.id,
+  step:   c => c.step,
+  indeg:  c => c.indeg,
+  outdeg: c => c.outdeg,
+  deg:    c => c.indeg + c.outdeg,
+  n:      c => c.n,
+  "true": () => 1,
+  "false": () => 0
+};
+const FNS = {
+  inc:  1, outc: 1, nbc: 1, pop: 1,
+  rand: 0, abs: 1, floor: 1, sqrt: 1, min: 2, max: 2
+};
+
+/* ------------------------------------------------------------- parser */
+class Parser{
+  constructor(toks){ this.toks = toks; this.i = 0; this.states = []; }
+  peek(k){ return this.toks[this.i + (k||0)]; }
+  next(){ return this.toks[this.i++]; }
+  at(t,v){ const x = this.peek(); return x.t === t && (v === undefined || x.v === v); }
+  eat(t,v){ return this.at(t,v) ? this.next() : null; }
+  expect(t,v,what){
+    if(this.at(t,v)) return this.next();
+    const tok = this.peek();
+    throw new LangError("expected " + (what || (v ? "'"+v+"'" : t)) + ", found " + describe(tok), tok.line);
+  }
+  skipNL(){ while(this.at("nl")) this.next(); }
+  stateIndex(name){ return this.states.indexOf(name); }
+  needState(){
+    const t = this.expect("id", undefined, "a state name");
+    const k = this.stateIndex(t.v);
+    if(k < 0) throw new LangError("'" + t.v + "' is not a declared state", t.line);
+    return k;
+  }
+  endOfStatement(){
+    this.eat("op",";");
+    this.skipNL();
+  }
+
+  parse(){
+    const prog = {
+      states: [], colors: [],
+      options: { seed: 1, order: "sync" },
+      graph: [], init: [], rules: [],
+      layout: null
+    };
+    this.skipNL();
+    while(!this.at("eof")){
+      const kw = this.expect("id", undefined, "a block name (states, options, graph, init, rules)");
+      switch(kw.v){
+        case "states":  this.parseStates(prog);  break;
+        case "options": this.parseOptions(prog); break;
+        case "graph":   this.parseGraph(prog);   break;
+        case "init":    this.parseInit(prog);    break;
+        case "rule":
+        case "rules":   this.parseRules(prog);   break;
+        default: throw new LangError("unknown block '" + kw.v + "'", kw.line);
+      }
+      this.skipNL();
+    }
+    if(!prog.states.length) throw new LangError("no states declared, start with a states block", 1);
+    if(!prog.graph.length)  throw new LangError("no graph declared, add a graph block", 1);
+    return prog;
+  }
+
+  parseStates(prog){
+    this.expect("op","{");
+    this.skipNL();
+    while(!this.at("op","}")){
+      if(this.at("eof")) throw new LangError("the states block is missing its '}'", this.peek().line);
+      if(this.eat("nl") || this.eat("op",",")) continue;
+      const t = this.expect("id", undefined, "a state name");
+      if(prog.states.indexOf(t.v) >= 0) throw new LangError("state '" + t.v + "' is declared twice", t.line);
+      prog.states.push(t.v);
+      const c = this.eat("color");
+      prog.colors.push(c ? c.v : null);
+    }
+    this.expect("op","}");
+    this.states = prog.states;
+  }
+
+  parseOptions(prog){
+    this.expect("op","{"); this.skipNL();
+    while(!this.at("op","}")){
+      if(this.at("eof")) throw new LangError("the options block is missing its '}'", this.peek().line);
+      const k = this.expect("id", undefined, "an option name");
+      if(k.v === "seed"){
+        prog.options.seed = this.expect("num", undefined, "a seed number").v | 0;
+      }else if(k.v === "order"){
+        const v = this.expect("id", undefined, "sync or random");
+        if(v.v !== "sync" && v.v !== "random") throw new LangError("order must be sync or random", v.line);
+        prog.options.order = v.v;
+      }else{
+        throw new LangError("unknown option '" + k.v + "'", k.line);
+      }
+      this.endOfStatement();
+    }
+    this.expect("op","}");
+  }
+
+  parseGraph(prog){
+    this.expect("op","{"); this.skipNL();
+    while(!this.at("op","}")){
+      if(this.at("eof")) throw new LangError("the graph block is missing its '}'", this.peek().line);
+      const k = this.expect("id", undefined, "a graph command");
+      const num = what => this.expect("num", undefined, what).v;
+      switch(k.v){
+        case "nodes":  prog.graph.push({op:"nodes", n: num("a node count")|0}); break;
+        case "ring":   prog.graph.push({op:"ring",  n: num("a node count")|0}); break;
+        case "path":   prog.graph.push({op:"path",  n: num("a node count")|0}); break;
+        case "grid": {
+          const w = num("a width")|0, h = num("a height")|0;
+          const torus = !!this.eat("id","torus");
+          prog.graph.push({op:"grid", w, h, torus});
+          break;
+        }
+        case "random": {
+          const n = num("a node count")|0, k2 = num("out-edges per node")|0;
+          prog.graph.push({op:"random", n, k:k2});
+          break;
+        }
+        case "debruijn": {
+          const k2 = num("an alphabet size")|0, len = num("a word length")|0;
+          prog.graph.push({op:"debruijn", k:k2, len});
+          break;
+        }
+        case "chords": prog.graph.push({op:"chords", k: num("a stride")|0}); break;
+        case "edge": {
+          const a = num("a node index")|0;
+          this.expect("op","->");
+          const b = num("a node index")|0;
+          prog.graph.push({op:"edge", a, b});
+          break;
+        }
+        case "bidir": prog.graph.push({op:"bidir"}); break;
+        case "layout": {
+          const v = this.expect("id", undefined, "circle, grid or force");
+          if(["circle","grid","force"].indexOf(v.v) < 0)
+            throw new LangError("layout must be circle, grid or force", v.line);
+          prog.layout = v.v;
+          break;
+        }
+        default: throw new LangError("unknown graph command '" + k.v + "'", k.line);
+      }
+      this.endOfStatement();
+    }
+    this.expect("op","}");
+  }
+
+  parseInit(prog){
+    if(!prog.states.length) throw new LangError("declare states before init", this.peek().line);
+    this.states = prog.states;
+    this.expect("op","{"); this.skipNL();
+    while(!this.at("op","}")){
+      if(this.at("eof")) throw new LangError("the init block is missing its '}'", this.peek().line);
+      const k = this.expect("id", undefined, "all, node, random or set");
+      if(k.v === "all"){
+        prog.init.push({op:"all", state:this.needState()});
+      }else if(k.v === "node"){
+        const ids = [this.expect("num", undefined, "a node index").v | 0];
+        while(this.eat("op",",")) ids.push(this.expect("num", undefined, "a node index").v | 0);
+        this.expect("op","=");
+        prog.init.push({op:"node", ids, state:this.needState()});
+      }else if(k.v === "random"){
+        const s = this.needState();
+        const p = this.expect("num", undefined, "a probability").v;
+        prog.init.push({op:"random", state:s, p});
+      }else if(k.v === "set"){
+        const s = this.needState();
+        this.expect("id","where","'where'");
+        prog.init.push({op:"set", state:s, cond:this.expr()});
+      }else{
+        throw new LangError("unknown init command '" + k.v + "'", k.line);
+      }
+      this.endOfStatement();
+    }
+    this.expect("op","}");
+  }
+
+  parseRules(prog){
+    if(!prog.states.length) throw new LangError("declare states before rules", this.peek().line);
+    this.states = prog.states;
+    this.expect("op","{"); this.skipNL();
+    while(!this.at("op","}")){
+      if(this.at("eof")) throw new LangError("the rules block is missing its '}'", this.peek().line);
+      let from = -1;
+      if(this.at("op","*")) this.next();
+      else from = this.needState();
+      this.expect("op","->");
+      const to = this.needState();
+      let cond = null;
+      if(this.eat("id","when")) cond = this.expr();
+      prog.rules.push({from, to, cond});
+      this.endOfStatement();
+    }
+    this.expect("op","}");
+  }
+
+  /* expressions compile straight to closures over the eval context */
+  expr(){ return this.or(); }
+  or(){
+    let a = this.and();
+    while(this.at("id","or")){
+      this.next();
+      const b = this.and(), l = a;
+      a = c => (l(c) || b(c)) ? 1 : 0;
+    }
+    return a;
+  }
+  and(){
+    let a = this.not();
+    while(this.at("id","and")){
+      this.next();
+      const b = this.not(), l = a;
+      a = c => (l(c) && b(c)) ? 1 : 0;
+    }
+    return a;
+  }
+  not(){
+    if(this.at("id","not")){ this.next(); const a = this.not(); return c => a(c) ? 0 : 1; }
+    return this.cmp();
+  }
+  cmp(){
+    let a = this.add();
+    const t = this.peek();
+    if(t.t === "op" && ["==","!=","<",">","<=",">="].indexOf(t.v) >= 0){
+      this.next();
+      const b = this.add(), l = a, op = t.v;
+      switch(op){
+        case "==": return c => l(c) === b(c) ? 1 : 0;
+        case "!=": return c => l(c) !== b(c) ? 1 : 0;
+        case "<":  return c => l(c) <   b(c) ? 1 : 0;
+        case ">":  return c => l(c) >   b(c) ? 1 : 0;
+        case "<=": return c => l(c) <=  b(c) ? 1 : 0;
+        case ">=": return c => l(c) >=  b(c) ? 1 : 0;
+      }
+    }
+    return a;
+  }
+  add(){
+    let a = this.mul();
+    for(;;){
+      if(this.at("op","+")){ this.next(); const b = this.mul(), l = a; a = c => l(c) + b(c); }
+      else if(this.at("op","-")){ this.next(); const b = this.mul(), l = a; a = c => l(c) - b(c); }
+      else return a;
+    }
+  }
+  mul(){
+    let a = this.unary();
+    for(;;){
+      if(this.at("op","*")){ this.next(); const b = this.unary(), l = a; a = c => l(c) * b(c); }
+      else if(this.at("op","/")){ this.next(); const b = this.unary(), l = a; a = c => { const d = b(c); return d === 0 ? 0 : l(c) / d; }; }
+      else if(this.at("op","%")){ this.next(); const b = this.unary(), l = a; a = c => { const d = b(c); return d === 0 ? 0 : ((l(c) % d) + d) % d; }; }
+      else return a;
+    }
+  }
+  unary(){
+    if(this.at("op","-")){ this.next(); const a = this.unary(); return c => -a(c); }
+    return this.primary();
+  }
+  primary(){
+    if(this.at("op","(")){
+      this.next();
+      const a = this.expr();
+      this.expect("op",")");
+      return a;
+    }
+    if(this.at("num")){ const v = this.next().v; return () => v; }
+    const t = this.expect("id", undefined, "a value");
+    if(this.at("op","(")){
+      const arity = FNS[t.v];
+      if(arity === undefined) throw new LangError("unknown function '" + t.v + "'", t.line);
+      this.next();
+      const args = [];
+      if(!this.at("op",")")){
+        args.push(this.expr());
+        while(this.eat("op",",")) args.push(this.expr());
+      }
+      this.expect("op",")");
+      if(args.length !== arity)
+        throw new LangError(t.v + "() takes " + arity + " argument" + (arity === 1 ? "" : "s"), t.line);
+      const a0 = args[0], a1 = args[1];
+      switch(t.v){
+        case "inc":   return c => c.inC[a0(c) | 0] || 0;
+        case "outc":  return c => c.outC[a0(c) | 0] || 0;
+        case "nbc":   return c => (c.inC[a0(c) | 0] || 0) + (c.outC[a0(c) | 0] || 0);
+        case "pop":   return c => c.pop[a0(c) | 0] || 0;
+        case "rand":  return c => c.rand();
+        case "abs":   return c => Math.abs(a0(c));
+        case "floor": return c => Math.floor(a0(c));
+        case "sqrt":  return c => Math.sqrt(Math.abs(a0(c)));
+        case "min":   return c => Math.min(a0(c), a1(c));
+        case "max":   return c => Math.max(a0(c), a1(c));
+      }
+    }
+    if(VARS[t.v]) return VARS[t.v];
+    const k = this.stateIndex(t.v);
+    if(k >= 0) return () => k;
+    throw new LangError("unknown name '" + t.v + "'", t.line);
+  }
+}
+
+function compile(src){
+  return new Parser(tokenize(src)).parse();
+}
+
+/* ------------------------------------------------------------- engine */
+const KEY = 1000000;
+
+class Bench{
+  constructor(prog){
+    this.prog = prog;
+    this.nS = prog.states.length;
+    this.build();
+  }
+
+  build(){
+    const prog = this.prog;
+    this.rng = mulberry32(prog.options.seed || 1);
+    const rng = this.rng;
+
+    let n = 0;
+    const eset = new Set();
+    const edges = [];
+    const addEdge = (a,b) => {
+      if(a === b) return;
+      if(a < 0 || b < 0) return;
+      const k = a * KEY + b;
+      if(eset.has(k)) return;
+      eset.add(k); edges.push(a,b);
+    };
+    let hint = "force";
+    let gridDims = null;
+
+    for(const g of prog.graph){
+      const base = n;
+      switch(g.op){
+        case "nodes": n += Math.max(0,g.n); break;
+        case "path":
+          n += Math.max(0,g.n);
+          for(let i=0;i<g.n-1;i++) addEdge(base+i, base+i+1);
+          hint = "circle";
+          break;
+        case "ring":
+          n += Math.max(0,g.n);
+          for(let i=0;i<g.n;i++) addEdge(base+i, base+((i+1)%g.n));
+          hint = "circle";
+          break;
+        case "grid": {
+          const w = Math.max(1,g.w), h = Math.max(1,g.h);
+          n += w*h;
+          const at = (x,y) => base + y*w + x;
+          for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+            if(x+1 < w) addEdge(at(x,y), at(x+1,y)); else if(g.torus && w>2) addEdge(at(x,y), at(0,y));
+            if(y+1 < h) addEdge(at(x,y), at(x,y+1)); else if(g.torus && h>2) addEdge(at(x,y), at(x,0));
+          }
+          if(!gridDims) gridDims = {w,h,base};
+          hint = "grid";
+          break;
+        }
+        case "random": {
+          const m = Math.max(0,g.n);
+          n += m;
+          const k = Math.max(0, Math.min(g.k, m-1));
+          for(let i=0;i<m;i++){
+            let tries = 0;
+            const picked = new Set();
+            while(picked.size < k && tries < k*12){
+              tries++;
+              const j = Math.floor(rng()*m);
+              if(j !== i && !picked.has(j)){ picked.add(j); addEdge(base+i, base+j); }
+            }
+          }
+          hint = "force";
+          break;
+        }
+        case "debruijn": {
+          const k = Math.max(2,g.k), len = Math.max(1,g.len);
+          const m = Math.min(Math.pow(k,len), 20000) | 0;
+          n += m;
+          for(let i=0;i<m;i++) for(let s=0;s<k;s++) addEdge(base+i, base + ((i*k + s) % m));
+          hint = "circle";
+          break;
+        }
+        case "chords":
+          if(n > 1) for(let i=0;i<n;i++) addEdge(i, (i + g.k % n + n) % n);
+          break;
+        case "edge":
+          n = Math.max(n, g.a+1, g.b+1);
+          addEdge(g.a, g.b);
+          break;
+        case "bidir": {
+          const snapshot = edges.slice();
+          for(let i=0;i<snapshot.length;i+=2) addEdge(snapshot[i+1], snapshot[i]);
+          break;
+        }
+      }
+    }
+
+    if(n <= 0) throw new LangError("the graph block produced no nodes", 1);
+    if(n > 20000) throw new LangError("that graph is too large for the bench (limit 20000 nodes)", 1);
+
+    this.n = n;
+    this.edges = edges;
+    this.m = edges.length / 2;
+
+    const inAdj = new Array(n), outAdj = new Array(n);
+    for(let i=0;i<n;i++){ inAdj[i] = []; outAdj[i] = []; }
+    for(let e=0;e<edges.length;e+=2){
+      outAdj[edges[e]].push(edges[e+1]);
+      inAdj[edges[e+1]].push(edges[e]);
+    }
+    this.inAdj = inAdj; this.outAdj = outAdj;
+
+    this.cur = new Uint8Array(n);
+    this.nxt = new Uint8Array(n);
+    this.pop = new Int32Array(this.nS);
+    this.sweep = new Int32Array(n);
+    for(let i=0;i<n;i++) this.sweep[i] = i;
+    this.step = 0;
+    this.order = prog.options.order;
+
+    this.ctx = {
+      id:0, state:0, step:0, indeg:0, outdeg:0, n:n,
+      inC: new Int32Array(this.nS),
+      outC: new Int32Array(this.nS),
+      pop: this.pop,
+      rand: () => this.rng()
+    };
+
+    this.layout(prog.layout || hint, gridDims);
+    this.applyInit();
+  }
+
+  layout(mode, gridDims){
+    const n = this.n;
+    const px = new Float32Array(n), py = new Float32Array(n);
+    if(mode === "grid" && gridDims){
+      const {w,h} = gridDims;
+      for(let i=0;i<n;i++){
+        const j = i - gridDims.base;
+        if(j >= 0 && j < w*h){ px[i] = (j % w) / Math.max(1,w-1); py[i] = Math.floor(j / w) / Math.max(1,h-1); }
+        else { const a = 2*Math.PI*i/n; px[i] = .5 + .5*Math.cos(a); py[i] = .5 + .5*Math.sin(a); }
+      }
+    }else if(mode === "circle"){
+      for(let i=0;i<n;i++){
+        const a = 2*Math.PI*i/n - Math.PI/2;
+        px[i] = .5 + .47*Math.cos(a); py[i] = .5 + .47*Math.sin(a);
+      }
+    }else{
+      for(let i=0;i<n;i++){
+        const a = 2*Math.PI*i/n, r = .28 + .12*this.rng();
+        px[i] = .5 + r*Math.cos(a); py[i] = .5 + r*Math.sin(a);
+      }
+      const iters = Math.max(25, Math.min(300, Math.floor(3e7 / (n*n + 1))));
+      const k = Math.sqrt(1 / n) * 1.1;
+      const dx = new Float32Array(n), dy = new Float32Array(n);
+      const E = this.edges;
+      for(let it=0; it<iters; it++){
+        dx.fill(0); dy.fill(0);
+        for(let i=0;i<n;i++){
+          for(let j=i+1;j<n;j++){
+            let ax = px[i]-px[j], ay = py[i]-py[j];
+            let d2 = ax*ax + ay*ay;
+            if(d2 < 1e-6){ ax = (this.rng()-.5)*1e-3; ay = (this.rng()-.5)*1e-3; d2 = 1e-6; }
+            const f = (k*k) / d2;
+            dx[i] += ax*f; dy[i] += ay*f;
+            dx[j] -= ax*f; dy[j] -= ay*f;
+          }
+        }
+        for(let e=0;e<E.length;e+=2){
+          const a = E[e], b = E[e+1];
+          const ax = px[a]-px[b], ay = py[a]-py[b];
+          const d = Math.sqrt(ax*ax + ay*ay) + 1e-6;
+          const f = d / k;
+          dx[a] -= ax*f; dy[a] -= ay*f;
+          dx[b] += ax*f; dy[b] += ay*f;
+        }
+        const temp = 0.08 * (1 - it/iters) + 0.002;
+        for(let i=0;i<n;i++){
+          const d = Math.sqrt(dx[i]*dx[i] + dy[i]*dy[i]) + 1e-9;
+          const s = Math.min(d, temp) / d;
+          px[i] += dx[i]*s; py[i] += dy[i]*s;
+        }
+      }
+      let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+      for(let i=0;i<n;i++){
+        if(px[i]<minx)minx=px[i]; if(px[i]>maxx)maxx=px[i];
+        if(py[i]<miny)miny=py[i]; if(py[i]>maxy)maxy=py[i];
+      }
+      const sx = maxx-minx || 1, sy = maxy-miny || 1;
+      for(let i=0;i<n;i++){ px[i] = (px[i]-minx)/sx; py[i] = (py[i]-miny)/sy; }
+    }
+    this.px = px; this.py = py;
+  }
+
+  prep(i, src){
+    const c = this.ctx;
+    c.inC.fill(0); c.outC.fill(0);
+    const ia = this.inAdj[i];
+    for(let k=0;k<ia.length;k++) c.inC[src[ia[k]]]++;
+    const oa = this.outAdj[i];
+    for(let k=0;k<oa.length;k++) c.outC[src[oa[k]]]++;
+    c.id = i; c.state = src[i]; c.indeg = ia.length; c.outdeg = oa.length; c.step = this.step;
+    return c;
+  }
+
+  countPop(){
+    this.pop.fill(0);
+    for(let i=0;i<this.n;i++) this.pop[this.cur[i]]++;
+  }
+
+  applyInit(){
+    this.cur.fill(0);
+    this.countPop();
+    for(const s of this.prog.init){
+      switch(s.op){
+        case "all": this.cur.fill(s.state); break;
+        case "node":
+          for(const id of s.ids) if(id >= 0 && id < this.n) this.cur[id] = s.state;
+          break;
+        case "random":
+          for(let i=0;i<this.n;i++) if(this.rng() < s.p) this.cur[i] = s.state;
+          break;
+        case "set": {
+          const mark = new Uint8Array(this.n);
+          for(let i=0;i<this.n;i++){ if(s.cond(this.prep(i, this.cur))) mark[i] = 1; }
+          for(let i=0;i<this.n;i++) if(mark[i]) this.cur[i] = s.state;
+          break;
+        }
+      }
+      this.countPop();
+    }
+  }
+
+  evalNode(i, src){
+    const c = this.prep(i, src);
+    const rules = this.prog.rules;
+    for(let r=0;r<rules.length;r++){
+      const R = rules[r];
+      if(R.from >= 0 && R.from !== c.state) continue;
+      if(R.cond && !R.cond(c)) continue;
+      return R.to;
+    }
+    return src[i];
+  }
+
+  tick(){
+    this.countPop();
+    const n = this.n;
+    if(this.order === "random"){
+      const ord = this.sweep;
+      for(let k=n-1;k>0;k--){
+        const j = Math.floor(this.rng()*(k+1));
+        const t = ord[k]; ord[k] = ord[j]; ord[j] = t;
+      }
+      for(let k=0;k<n;k++){ const i = ord[k]; this.cur[i] = this.evalNode(i, this.cur); }
+    }else{
+      for(let i=0;i<n;i++) this.nxt[i] = this.evalNode(i, this.cur);
+      const t = this.cur; this.cur = this.nxt; this.nxt = t;
+    }
+    this.step++;
+    this.countPop();
+  }
+}
+
+/* ------------------------------------------------------------ palette */
+const FALLBACK = ["#111a1e","#ffb020","#e05263","#4fc3c7","#9b7bf0","#8dc63f","#ff7ac6","#5b8def","#d9d2c5","#3f7d5a"];
+function paletteFor(prog){
+  return prog.states.map((s,i) => prog.colors[i] || FALLBACK[i % FALLBACK.length]);
+}
+function hexToRgb(h){
+  let s = h.slice(1);
+  if(s.length === 3) s = s[0]+s[0]+s[1]+s[1]+s[2]+s[2];
+  const v = parseInt(s,16);
+  return [(v>>16)&255, (v>>8)&255, v&255];
+}
+
+/* ---------------------------------------------------------- examples */
+const EXAMPLES = [
+["Excitable network",
+`// Activity spreads along the edges, each node fires once,
+// goes quiet for a few steps, then becomes excitable again.
+// The second rule lets a node fire on its own now and then,
+// which keeps the network from ever going completely dark.
+
+states {
+  rest    #10171b
+  firing  #ffb020
+  spent   #2c5a63
+}
+
+options {
+  seed 12
+  order sync
+}
+
+graph {
+  random 220 2
+  bidir
+  layout force
+}
+
+init {
+  all rest
+  random firing 0.02
+}
+
+rules {
+  rest   -> firing when inc(firing) >= 1
+  rest   -> firing when rand() < 0.0005
+  firing -> spent
+  spent  -> rest   when rand() < 0.25
+}`],
+
+["Ring with long chords",
+`// A ring of 240 nodes with an extra edge from every node to
+// the one 12 places along. Wired both ways, each node hears
+// from four others. One node starts on, and the pattern that
+// grows out of it has not repeated itself after 500 steps.
+
+states {
+  off #101a1c
+  on  #64d6e8
+}
+
+options { seed 3 }
+
+graph {
+  ring 240
+  chords 12
+  bidir
+  layout circle
+}
+
+init {
+  all off
+  node 0 = on
+}
+
+rules {
+  off -> on  when inc(on) == 1 or inc(on) == 2
+  on  -> off when inc(on) != 2
+}`],
+
+["De Bruijn parity",
+`// Nodes are the 256 binary words of length 8, and each edge
+// shifts one bit in. Every node has exactly two in-edges and
+// takes their parity, so this is a shift register drawn as a
+// graph. Watch the history panel rather than the circle.
+
+states {
+  zero #0f1518
+  one  #ff7ac6
+}
+
+graph {
+  debruijn 2 8
+  layout circle
+}
+
+init {
+  all zero
+  node 1 = one
+}
+
+rules {
+  * -> one  when inc(one) % 2 == 1
+  * -> zero
+}`],
+
+["Fredkin replicator",
+`// A 64 by 36 torus wired in both directions, so every node
+// has four in-neighbours and the graph is an ordinary grid.
+// Odd parity switches a node on, and under that rule any
+// starting shape copies itself again and again.
+
+states {
+  off #0e1417
+  on  #8dc63f
+}
+
+graph {
+  grid 64 36 torus
+  bidir
+  layout grid
+}
+
+init {
+  all off
+  node 1170, 1171, 1234 = on
+}
+
+rules {
+  * -> on  when inc(on) % 2 == 1
+  * -> off
+}`],
+
+["Cyclic dominance",
+`// Rock, paper, scissors on a sparse directed network, where
+// each node listens to whoever points at it. Updating one
+// node at a time is what keeps this going: switch order to
+// sync and the whole graph locks into a three step cycle.
+
+states {
+  rock     #2b4d5c
+  paper    #e8d8b0
+  scissors #d9564f
+}
+
+options {
+  seed 9
+  order random
+}
+
+graph {
+  random 500 3
+  layout force
+}
+
+init {
+  all rock
+  random paper 0.34
+  random scissors 0.34
+}
+
+rules {
+  rock     -> paper    when inc(paper) >= 1
+  paper    -> scissors when inc(scissors) >= 1
+  scissors -> rock     when inc(rock) >= 1
+}`]
+];
+
+/* ---------------------------------------------------------------- UI */
+const $ = id => document.getElementById(id);
+const srcEl = $("src"), statusEl = $("status"), censusEl = $("census");
+const gCanvas = $("graph"), tCanvas = $("trace"), tip = $("tip");
+const gctx = gCanvas.getContext("2d");
+const tctx = tCanvas.getContext("2d");
+
+let bench = null, palette = [], rgb = [];
+let running = false, sps = 14, acc = 0, lastT = 0;
+let trace = null;
+let hoverNode = -1;
+
+const sel = $("examples");
+EXAMPLES.forEach((e,i) => {
+  const o = document.createElement("option");
+  o.value = String(i); o.textContent = e[0];
+  sel.appendChild(o);
+});
+
+function setStatus(msg, bad){
+  statusEl.textContent = msg;
+  statusEl.classList.toggle("bad", !!bad);
+}
+
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if(cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  return dpr;
+}
+
+function makeTrace(){
+  const W = Math.max(2, Math.min(bench.n, 1400)), H = 260;
+  const off = document.createElement("canvas");
+  off.width = W; off.height = H;
+  const octx = off.getContext("2d");
+  const img = octx.createImageData(W, H);
+  const bg = hexToRgb(palette[0]);
+  for(let p=0;p<img.data.length;p+=4){
+    img.data[p] = bg[0]*0.55 | 0; img.data[p+1] = bg[1]*0.55 | 0;
+    img.data[p+2] = bg[2]*0.55 | 0; img.data[p+3] = 255;
+  }
+  trace = {W, H, off, octx, img, dirty:true};
+}
+
+function pushTrace(){
+  const {W,H,img} = trace, d = img.data, n = bench.n, cur = bench.cur;
+  d.copyWithin(0, W*4);
+  const off = (H-1)*W*4;
+  for(let x=0;x<W;x++){
+    const i = Math.min(n-1, Math.floor(x * n / W));
+    const c = rgb[cur[i]];
+    const p = off + x*4;
+    d[p] = c[0]; d[p+1] = c[1]; d[p+2] = c[2]; d[p+3] = 255;
+  }
+  trace.dirty = true;
+}
+
+function drawTrace(){
+  fitCanvas(tCanvas);
+  if(!trace) return;
+  if(trace.dirty){ trace.octx.putImageData(trace.img, 0, 0); trace.dirty = false; }
+  tctx.imageSmoothingEnabled = false;
+  tctx.clearRect(0,0,tCanvas.width,tCanvas.height);
+  tctx.drawImage(trace.off, 0, 0, trace.W, trace.H, 0, 0, tCanvas.width, tCanvas.height);
+}
+
+function drawGraph(){
+  const dpr = fitCanvas(gCanvas);
+  const W = gCanvas.width, H = gCanvas.height;
+  gctx.clearRect(0,0,W,H);
+  if(!bench) return;
+
+  const pad = 22*dpr;
+  const sx = W - pad*2, sy = H - pad*2;
+  const n = bench.n, px = bench.px, py = bench.py, cur = bench.cur;
+  const X = i => pad + px[i]*sx, Y = i => pad + py[i]*sy;
+
+  const E = bench.edges, m = bench.m;
+  const showEdges = $("showedges").checked && m <= 40000;
+  const detail = m <= 1400;
+
+  if(showEdges){
+    // quiet edges in one bulk pass
+    gctx.lineWidth = Math.max(0.6, 0.7*dpr);
+    gctx.strokeStyle = "rgba(120,160,170,0.16)";
+    gctx.beginPath();
+    for(let e=0;e<E.length;e+=2){
+      const a = E[e], b = E[e+1];
+      if(cur[a] !== 0) continue;
+      let x1 = X(a), y1 = Y(a), x2 = X(b), y2 = Y(b);
+      if(detail){
+        const dx = x2-x1, dy = y2-y1, d = Math.hypot(dx,dy) || 1;
+        const ox = -dy/d * 2.2*dpr, oy = dx/d * 2.2*dpr;
+        x1 += ox; y1 += oy; x2 += ox; y2 += oy;
+      }
+      gctx.moveTo(x1,y1); gctx.lineTo(x2,y2);
+    }
+    gctx.stroke();
+
+    // edges leaving an active node, tinted and arrowed
+    gctx.lineWidth = Math.max(0.8, 1.0*dpr);
+    for(let e=0;e<E.length;e+=2){
+      const a = E[e], b = E[e+1];
+      const s = cur[a];
+      if(s === 0) continue;
+      let x1 = X(a), y1 = Y(a), x2 = X(b), y2 = Y(b);
+      const dx0 = x2-x1, dy0 = y2-y1, d = Math.hypot(dx0,dy0) || 1;
+      if(detail){
+        const ox = -dy0/d * 2.2*dpr, oy = dx0/d * 2.2*dpr;
+        x1 += ox; y1 += oy; x2 += ox; y2 += oy;
+      }
+      gctx.strokeStyle = palette[s] + "88";
+      gctx.beginPath();
+      gctx.moveTo(x1,y1); gctx.lineTo(x2,y2);
+      if(detail){
+        const ux = (x2-x1)/d, uy = (y2-y1)/d;
+        const hx = x1 + (x2-x1)*0.68, hy = y1 + (y2-y1)*0.68;
+        const s1 = 4.2*dpr;
+        gctx.moveTo(hx, hy);
+        gctx.lineTo(hx - ux*s1 - uy*s1*0.55, hy - uy*s1 + ux*s1*0.55);
+        gctx.moveTo(hx, hy);
+        gctx.lineTo(hx - ux*s1 + uy*s1*0.55, hy - uy*s1 - ux*s1*0.55);
+      }
+      gctx.stroke();
+    }
+  }
+
+  const r = Math.max(1.4*dpr, Math.min(9*dpr, (260/Math.sqrt(n))*dpr*0.5));
+  for(let i=0;i<n;i++){
+    const s = cur[i];
+    gctx.fillStyle = palette[s];
+    gctx.beginPath();
+    gctx.arc(X(i), Y(i), s === 0 ? r*0.8 : r, 0, 6.2832);
+    gctx.fill();
+    if(s !== 0 && n <= 900){
+      gctx.globalAlpha = 0.22;
+      gctx.beginPath();
+      gctx.arc(X(i), Y(i), r*2.4, 0, 6.2832);
+      gctx.fill();
+      gctx.globalAlpha = 1;
+    }
+  }
+  if(hoverNode >= 0 && hoverNode < n){
+    gctx.strokeStyle = "#e8f2ef";
+    gctx.lineWidth = 1.4*dpr;
+    gctx.beginPath();
+    gctx.arc(X(hoverNode), Y(hoverNode), r*2.0 + 2*dpr, 0, 6.2832);
+    gctx.stroke();
+  }
+}
+
+let lastStepShown = -1;
+function updateReadout(force){
+  if(!bench) return;
+  if(!force && bench.step === lastStepShown) return;
+  lastStepShown = bench.step;
+  $("r-step").textContent = bench.step;
+  $("r-nodes").textContent = bench.n;
+  $("r-edges").textContent = bench.m;
+  const parts = [];
+  for(let s=0;s<bench.nS;s++){
+    parts.push('<span class="chip"><i style="background:'+palette[s]+'"></i>'+
+      bench.prog.states[s]+" "+bench.pop[s]+"</span>");
+  }
+  censusEl.innerHTML = parts.join("");
+}
+
+function applySource(){
+  try{
+    const prog = compile(srcEl.value);
+    const b = new Bench(prog);
+    bench = b;
+    palette = paletteFor(prog);
+    rgb = palette.map(hexToRgb);
+    makeTrace();
+    pushTrace();
+    hoverNode = -1;
+    $("gcap").textContent = prog.states.length + " states · " +
+      prog.rules.length + " rule" + (prog.rules.length === 1 ? "" : "s") + " · " + prog.options.order;
+    setStatus("Built " + b.n + " nodes and " + b.m + " edges.", false);
+    updateReadout(true);
+  }catch(err){
+    if(err instanceof LangError) setStatus("Line " + err.line + ": " + err.message, true);
+    else setStatus(err.message, true);
+  }
+}
+
+function resetRun(){
+  if(!bench) return;
+  try{
+    bench.build();
+    makeTrace();
+    pushTrace();
+    setStatus("Reset to step 0.", false);
+    updateReadout(true);
+  }catch(err){
+    setStatus(err.message, true);
+  }
+}
+
+function tickOnce(){
+  if(!bench) return;
+  try{
+    bench.tick();
+    pushTrace();
+  }catch(err){
+    running = false; $("run").textContent = "Run";
+    setStatus("Stopped: " + err.message, true);
+  }
+}
+
+function frame(t){
+  const dt = Math.min(0.2, (t - lastT)/1000 || 0);
+  lastT = t;
+  if(running && bench){
+    acc += dt * sps;
+    let guard = 0;
+    while(acc >= 1 && guard < 400){ tickOnce(); acc -= 1; guard++; }
+    if(acc > 4) acc = 0;
+  }
+  drawGraph();
+  drawTrace();
+  updateReadout(false);
+  requestAnimationFrame(frame);
+}
+
+/* wiring */
+$("apply").addEventListener("click", applySource);
+srcEl.addEventListener("keydown", e => {
+  if((e.metaKey || e.ctrlKey) && e.key === "Enter"){ e.preventDefault(); applySource(); }
+  if(e.key === "Tab"){
+    e.preventDefault();
+    const s = srcEl.selectionStart, t = srcEl.selectionEnd;
+    srcEl.value = srcEl.value.slice(0,s) + "  " + srcEl.value.slice(t);
+    srcEl.selectionStart = srcEl.selectionEnd = s + 2;
+  }
+});
+$("run").addEventListener("click", () => {
+  running = !running;
+  acc = 0;
+  $("run").textContent = running ? "Pause" : "Run";
+});
+$("stepb").addEventListener("click", () => {
+  running = false; $("run").textContent = "Run";
+  tickOnce();
+});
+$("reset").addEventListener("click", () => {
+  running = false; $("run").textContent = "Run";
+  resetRun();
+});
+$("speed").addEventListener("input", e => {
+  sps = +e.target.value;
+  $("spdread").textContent = sps + " steps/s";
+});
+sel.addEventListener("change", e => {
+  srcEl.value = EXAMPLES[+e.target.value][1];
+  applySource();
+  running = false; $("run").textContent = "Run";
+});
+
+function pickNode(evt){
+  if(!bench) return -1;
+  const r = gCanvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const mx = (evt.clientX - r.left) * dpr, my = (evt.clientY - r.top) * dpr;
+  const pad = 22*dpr, sx = gCanvas.width - pad*2, sy = gCanvas.height - pad*2;
+  let best = -1, bd = 18*dpr;
+  for(let i=0;i<bench.n;i++){
+    const d = Math.hypot(pad + bench.px[i]*sx - mx, pad + bench.py[i]*sy - my);
+    if(d < bd){ bd = d; best = i; }
+  }
+  return best;
+}
+gCanvas.addEventListener("mousemove", e => {
+  hoverNode = pickNode(e);
+  if(hoverNode >= 0){
+    const r = gCanvas.getBoundingClientRect();
+    tip.style.opacity = "1";
+    tip.style.left = (e.clientX - r.left) + "px";
+    tip.style.top = (e.clientY - r.top) + "px";
+    tip.textContent = "node " + hoverNode + "  " + bench.prog.states[bench.cur[hoverNode]] +
+      "\nin " + bench.inAdj[hoverNode].length + "  out " + bench.outAdj[hoverNode].length;
+  }else tip.style.opacity = "0";
+});
+gCanvas.addEventListener("mouseleave", () => { hoverNode = -1; tip.style.opacity = "0"; });
+gCanvas.addEventListener("click", e => {
+  const i = pickNode(e);
+  if(i >= 0 && bench){
+    bench.cur[i] = (bench.cur[i] + 1) % bench.nS;
+    bench.countPop();
+    updateReadout(true);
+  }
+});
+
+srcEl.value = EXAMPLES[0][1];
+applySource();
+if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+  running = true;
+  $("run").textContent = "Pause";
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
