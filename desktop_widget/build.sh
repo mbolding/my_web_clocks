@@ -5,7 +5,8 @@
 #   ./build.sh                  build every clock into ./build
 #   ./build.sh word             build just one (folder name, any case)
 #   ./build.sh analog --run     build, then (re)launch it
-#   ./build.sh --install        build, copy to ~/Applications, and launch
+#   ./build.sh --install        build, copy to ~/Applications, and reopen the ones that
+#                               were running (naming apps also opens those)
 #   ./build.sh --update         rebuild only the apps already in ~/Applications, and
 #                               reopen only the ones that were running (Widget Bar's
 #                               Update from GitHub runs this after a git pull)
@@ -163,7 +164,9 @@ for dir exe id name in $CLOCKS; do
       # any Finder service the app declares.
       /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f ~/Applications/$exe.app
       /System/Library/CoreServices/pbs -update
-      [[ -z $update || -n $running ]] && open ~/Applications/$exe.app
+      # Reopen what was running, and open what was asked for by name; installing them
+      # all doesn't launch them all.
+      [[ -n $running || ( -z $update && ${#wanted} -gt 0 ) ]] && open ~/Applications/$exe.app
       echo "Installed to ~/Applications/$exe.app" ;;
   esac
 done

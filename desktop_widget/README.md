@@ -46,7 +46,7 @@ cd ~/repos/my_web_clocks
 desktop_widget/build.sh --install
 ```
 
-This builds every app, copies each to `~/Applications`, registers it with macOS (for Command Bar's Finder action), and launches it. To install only some, name their folders, in any case:
+This builds every app, copies each to `~/Applications` and registers it with macOS (for Command Bar's Finder action). It reopens any that were already running but doesn't launch the rest, so open the ones you want from `~/Applications`. To install only some, name their folders, in any case; apps named this way are opened too:
 
 ```bash
 desktop_widget/build.sh command soma --install
@@ -58,7 +58,8 @@ Other forms:
 | --- | --- |
 | `desktop_widget/build.sh` | Builds every app into `desktop_widget/build/` without installing |
 | `desktop_widget/build.sh word --run` | Builds one and launches it from `build/` |
-| `desktop_widget/build.sh --install` | Builds, installs to `~/Applications` and launches |
+| `desktop_widget/build.sh --install` | Builds and installs to `~/Applications`, reopening the apps that were running |
+| `desktop_widget/build.sh word --install` | Builds, installs and opens just the apps named |
 | `desktop_widget/build.sh --update` | Rebuilds only the apps already in `~/Applications`, and reopens only the ones that were running |
 
 ### Update
