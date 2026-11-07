@@ -17,7 +17,9 @@ import AppKit
 enum DesktopClock {
     /// Runs the app; never returns. `defaultTop` and `defaultRight` are the gaps above and
     /// to the right of the window on first launch, so clocks that share the top-right
-    /// corner don't start out stacked.
+    /// corner don't start out stacked. `onLaunch` runs once the window is up, for an app
+    /// that adds more (Widget Bar's menu bar item); an app that hides its window gets
+    /// `onReopenWhileHidden` when it's opened again, rather than the window coming up.
     static func run<Face: View, Options: View>(size: CGSize, defaultTop: CGFloat = 24,
                                                defaultRight: CGFloat = 24,
                                                interactive: Bool = false,
@@ -26,6 +28,8 @@ enum DesktopClock {
                                                floatsByDefault: Bool? = nil, // nil: only if interactive
                                                canSitBehindIcons: Bool = false,
                                                onOpen: (([URL]) -> Void)? = nil,
+                                               onLaunch: (() -> Void)? = nil,
+                                               onReopenWhileHidden: (() -> Void)? = nil,
                                                @ViewBuilder face: @escaping () -> Face,
                                                @ViewBuilder options: @escaping () -> Options) {
         // Registered once here, so the menu and any FloatPin agree on the default.
@@ -34,7 +38,8 @@ enum DesktopClock {
         let delegate = DesktopClockDelegate(size: size, defaultTop: defaultTop, defaultRight: defaultRight,
                                             interactive: interactive,
                                             round: round, movableByBackground: movableByBackground,
-                                            onOpen: onOpen) { setLevel in
+                                            onOpen: onOpen, onLaunch: onLaunch,
+                                            onReopenWhileHidden: onReopenWhileHidden) { setLevel in
             AnyView(ClockMenu(round: round, canSitBehindIcons: canSitBehindIcons, setLevel: setLevel,
                               face: face(), options: options()))
         }
@@ -174,13 +179,18 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     private let round: Bool
     private let movableByBackground: Bool
     private let onOpen: (([URL]) -> Void)?
+    private let onLaunch: (() -> Void)?
+    private let onReopenWhileHidden: (() -> Void)?
     private let makeContent: (@escaping (Bool, Bool) -> Void) -> AnyView
     private var panel: DesktopPanel!
     private var clickMonitor: Any?
 
     init(size: CGSize, defaultTop: CGFloat, defaultRight: CGFloat, interactive: Bool, round: Bool,
-         movableByBackground: Bool, onOpen: (([URL]) -> Void)?,
+         movableByBackground: Bool, onOpen: (([URL]) -> Void)?, onLaunch: (() -> Void)?,
+         onReopenWhileHidden: (() -> Void)?,
          makeContent: @escaping (@escaping (Bool, Bool) -> Void) -> AnyView) {
+        self.onLaunch = onLaunch
+        self.onReopenWhileHidden = onReopenWhileHidden
         self.size = size
         self.defaultTop = defaultTop
         self.defaultRight = defaultRight
@@ -213,6 +223,7 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
     /// comes up above the other windows for a few seconds so it can be found.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         guard let panel else { return false }
+        guard panel.isVisible else { onReopenWhileHidden?(); return false }
         panel.orderFrontRegardless()
         if panel.level != .floating {
             panel.level = .floating
@@ -337,6 +348,8 @@ final class DesktopClockDelegate: NSObject, NSApplicationDelegate {
                 return event
             }
         }
+
+        onLaunch?()
     }
 
     private var forceClicked = false

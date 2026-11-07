@@ -126,7 +126,8 @@ Offsite (likewise: a Finder-like window on an rsync.net account, or any SSH
 account, over the Mac's own sftp and key, with uploads, downloads and the
 account's ZFS snapshots to look back through)
 and Widget Bar
-(a toolbar that opens the others and flips their Float on Top; it finds them by
+(a menu bar item, with an optional floating toolbar, that opens the others and
+flips their Float on Top; it finds them by
 the `DesktopWidget` key build.sh adds to every Info.plist). Each app is a folder with `App.swift`
 (the `@main` entry, which calls `DesktopClock.run`), `Icon.swift` (an `IconFace`
 view the build renders into the app icon) and its own views; `Shared/` has the
