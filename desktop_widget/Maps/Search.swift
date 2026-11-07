@@ -69,6 +69,8 @@ actor Nominatim {
     /// Up to ten places matching the text, nearer ones first when a viewbox (west, north,
     /// east, south) is given.
     func search(_ text: String, near viewbox: [Double]?) async throws -> [SearchResult] {
+        let token = await Activity.shared.begin("Searching OpenStreetMap")
+        defer { Task { @MainActor in Activity.shared.end(token) } }
         var query = [URLQueryItem(name: "q", value: text), URLQueryItem(name: "limit", value: "10")]
         if let viewbox {
             query.append(URLQueryItem(name: "viewbox", value: viewbox.map { String(format: "%.4f", $0) }.joined(separator: ",")))
@@ -78,6 +80,8 @@ actor Nominatim {
 
     /// The place at a point, at about street level of detail; nil over open sea.
     func reverse(_ c: CLLocationCoordinate2D) async throws -> SearchResult? {
+        let token = await Activity.shared.begin("Naming this spot")
+        defer { Task { @MainActor in Activity.shared.end(token) } }
         let data = try await get("reverse", [URLQueryItem(name: "lat", value: String(c.latitude)),
                                              URLQueryItem(name: "lon", value: String(c.longitude)),
                                              URLQueryItem(name: "zoom", value: "18")])

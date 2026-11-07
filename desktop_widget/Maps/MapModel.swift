@@ -5,6 +5,7 @@
 
 import SwiftUI
 import MapKit
+import Combine
 
 enum SidebarItem: Hashable {
     case result(SearchResult.ID)
@@ -67,9 +68,23 @@ final class MapModel: ObservableObject {
     private var noticeTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
 
+    // The layers over the tiles; see Layers.swift and Parks.swift.
+    private var countyShapes: [CountyShape] = []
+    private var trailLines: [TrailLine] = []
+    private var parksShown: [String: [ParkShape]] = [:]
+    private var parkDots: Dots?
+    private var corpsDots: Dots?
+    private var parksHint: String?
+    private var watching: [AnyCancellable] = []
+
     func attach(_ map: MKMapView) {
         self.map = map
         applyOverlay()
+        // objectWillChange fires before the change, so apply it on the next turn.
+        let later: () -> Void = { [weak self] in DispatchQueue.main.async { self?.applyLayers() } }
+        watching = [Layers.shared.objectWillChange.sink { _ in later() },
+                    CountyPins.shared.objectWillChange.sink { _ in later() }]
+        applyLayers()
     }
 
     /// Once the map has a size: back to where the last window was looking.
@@ -79,14 +94,144 @@ final class MapModel: ObservableObject {
             setView(CLLocationCoordinate2D(latitude: last[0], longitude: last[1]), zoom: last[2], animated: false)
         }
         restored = true
+        // The layers last looked while the map had no size; look again now it has one.
+        regionChanged(settled: true)
     }
 
     private func applyOverlay() {
         guard let map else { return }
         let new = TileOverlay(style: style, sharp: sharp)
-        map.addOverlay(new, level: .aboveLabels)
+        // Underneath the layers, which share its level.
+        map.insertOverlay(new, at: 0, level: .aboveLabels)
         if let overlay { map.removeOverlay(overlay) }
         overlay = new
+    }
+
+    // MARK: Layers
+
+    /// Adds and removes the layers' overlays to match Layers. The counties are redrawn
+    /// whenever anything changes, since their fill depends on the pins.
+    private func applyLayers() {
+        guard let map else { return }
+        let layers = Layers.shared
+        map.removeOverlays(countyShapes)
+        countyShapes = layers.counties || layers.pins ? Alabama.countyShapes() : []
+        map.addOverlays(countyShapes, level: .aboveLabels)
+
+        if layers.trails != !trailLines.isEmpty {
+            map.removeOverlays(trailLines)
+            trailLines = layers.trails ? Alabama.trailLines() : []
+            map.addOverlays(trailLines, level: .aboveLabels)
+        }
+        // Parks above the rest, and campgrounds above them.
+        let parkOverlays: [MKOverlay] = parksShown.values.flatMap { $0 } + (parkDots.map { [$0] } ?? [])
+        map.removeOverlays(parkOverlays)
+        map.addOverlays(parkOverlays, level: .aboveLabels)
+        if let corpsDots { map.removeOverlay(corpsDots) }
+        corpsDots = layers.corps ? Dots(Corps.dots) : nil
+        if let corpsDots { map.addOverlay(corpsDots, level: .aboveLabels) }
+        refreshParks()
+    }
+
+    /// The stroke and fill for a county, from the layers that are on.
+    func countyStyle(_ id: String) -> (stroke: NSColor?, fill: NSColor?) {
+        let layers = Layers.shared
+        let fill = layers.pins ? WallMap.fill(CountyPins.shared.byCounty[id], layers.pinView)?.withAlphaComponent(0.3) : nil
+        return (layers.counties ? WallMap.border : fill == nil ? nil : .white.withAlphaComponent(0.6), fill)
+    }
+
+    /// Shows the cached parks in view, and asks for the rest.
+    private func refreshParks() {
+        guard let map else { return }
+        guard Layers.shared.parks, zoom >= 5 else {
+            for (_, shapes) in parksShown { map.removeOverlays(shapes) }
+            parksShown = [:]
+            if let parkDots { map.removeOverlay(parkDots) }
+            parkDots = nil
+            return
+        }
+        // A little beyond the edges, so a short pan finds the next parks already there.
+        let rect = map.visibleMapRect.insetBy(dx: -map.visibleMapRect.width * 0.1, dy: -map.visibleMapRect.height * 0.1)
+        let nw = MKMapPoint(x: rect.minX, y: rect.minY).coordinate, se = MKMapPoint(x: rect.maxX, y: rect.maxY).coordinate
+        let box = (s: se.latitude, w: nw.longitude, n: nw.latitude, e: se.longitude)
+        showParks(ParkStore.shared.parks(south: box.s, west: box.w, north: box.n, east: box.e))
+        ParkStore.shared.load(south: box.s, west: box.w, north: box.n, east: box.e) { [weak self] outcome in
+            guard let self, Layers.shared.parks else { return }
+            let hint: String?
+            switch outcome {
+            case .again:
+                return refreshParks()
+            case .ready:
+                hint = nil
+                showParks(ParkStore.shared.parks(south: box.s, west: box.w, north: box.n, east: box.e))
+            case .tooWide: hint = "Zoom in to load state parks here."
+            case .busy: hint = "OpenStreetMap's park server is busy; parks will load when it answers."
+            case .failed(let why): hint = "Couldn't load state parks: \(why)"
+            }
+            if case .ready = outcome {} else if case .tooWide = outcome {} else {
+                // Try again once the store's back-off is over, without waiting for a pan.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 65) { [weak self] in self?.refreshParks() }
+            }
+            if let hint, hint != parksHint { tell(hint) }
+            parksHint = hint
+        }
+    }
+
+    private func showParks(_ parks: [Park]) {
+        guard let map else { return }
+        let wanted = Dictionary(parks.map { ($0.id, $0) }) { a, _ in a }
+        guard Set(wanted.keys) != Set(parksShown.keys) || parkDots == nil else { return }
+        for (id, shapes) in parksShown where wanted[id] == nil {
+            map.removeOverlays(shapes)
+            parksShown[id] = nil
+        }
+        for (id, park) in wanted where parksShown[id] == nil {
+            let shapes = park.rings.map { ring in
+                let coords = ring.map { CLLocationCoordinate2D(latitude: $0[1], longitude: $0[0]) }
+                let shape = ParkShape(coordinates: coords, count: coords.count)
+                shape.title = park.name
+                return shape
+            }
+            map.addOverlays(shapes, level: .aboveLabels)
+            parksShown[id] = shapes
+        }
+        // The markers go on top, as one overlay made afresh for the new set.
+        if let parkDots { map.removeOverlay(parkDots) }
+        let dots = Dots(wanted.values.sorted { $0.lat > $1.lat }.map { park in
+            Dot(name: park.name, subtitle: park.historic ? "Historic state park" : "State park",
+                coordinate: park.coordinate, colour: park.historic ? WallMap.historic : WallMap.park)
+        })
+        if let corpsDots {
+            map.insertOverlay(dots, below: corpsDots)
+        } else {
+            map.addOverlay(dots, level: .aboveLabels)
+        }
+        parkDots = dots
+    }
+
+    /// The park or campground whose dot is under a spot on the map, if any.
+    private func dot(at c: CLLocationCoordinate2D) -> Dot? {
+        guard let map else { return nil }
+        let p = map.convert(c, toPointTo: map)
+        func distance(_ d: Dot) -> CGFloat {
+            let q = map.convert(d.coordinate, toPointTo: map)
+            return hypot(q.x - p.x, q.y - p.y)
+        }
+        let near = ((corpsDots?.dots ?? []) + (parkDots?.dots ?? [])).min { distance($0) < distance($1) }
+        return near.flatMap { distance($0) <= DotsRenderer.side / 2 + 5 ? $0 : nil }
+    }
+
+    /// "Fayette County", with its pins when they show, for a spot in Alabama.
+    func countyLine(at c: CLLocationCoordinate2D) -> String? {
+        let layers = Layers.shared
+        guard layers.counties || layers.pins, let county = Alabama.county(at: c) else { return nil }
+        let name = "\(county.name) County"
+        guard layers.pins, !CountyPins.shared.byCounty.isEmpty else { return name }
+        return "\(name): " + (CountyPins.shared.byCounty[county.id]?.summary ?? "no pins yet")
+    }
+
+    func importPins() {
+        if let message = CountyPins.shared.chooseFile() { tell(message) }
     }
 
     // MARK: Moving the map
@@ -98,6 +243,7 @@ final class MapModel: ObservableObject {
         if settled && restored {
             UserDefaults.standard.set([center.latitude, center.longitude, zoom], forKey: "lastView")
             deselectIfMovedAway()
+            refreshParks()
         }
     }
 
@@ -121,13 +267,23 @@ final class MapModel: ObservableObject {
     /// Shows a search result: pinned, and framed by its outline where it has one.
     func show(_ result: SearchResult) {
         setPin(result.coordinate, title: result.title, subtitle: result.detail)
-        guard let b = result.bounds, b.count == 4, let map, map.bounds.width > 0 else {
-            return setView(result.coordinate, zoom: 16)
-        }
-        let nw = MKMapPoint(CLLocationCoordinate2D(latitude: b[1], longitude: b[2]))
-        let se = MKMapPoint(CLLocationCoordinate2D(latitude: b[0], longitude: b[3]))
+        guard let b = result.bounds, b.count == 4 else { return setView(result.coordinate, zoom: 16) }
+        frame(south: b[0], west: b[2], north: b[1], east: b[3])
+    }
+
+    /// Fits a box in the window, as close in as it goes, up to street level.
+    func frame(south: Double, west: Double, north: Double, east: Double) {
+        guard let map, map.bounds.width > 0 else { return }
+        let nw = MKMapPoint(CLLocationCoordinate2D(latitude: north, longitude: west))
+        let se = MKMapPoint(CLLocationCoordinate2D(latitude: south, longitude: east))
         let fit = 20 - log2(max(abs(se.x - nw.x) / map.bounds.width, abs(se.y - nw.y) / map.bounds.height, 1e-9))
         setView(MKMapPoint(x: (nw.x + se.x) / 2, y: (nw.y + se.y) / 2).coordinate, zoom: min(fit - 0.3, 18))
+    }
+
+    /// The whole of Alabama, as its county borders reach.
+    func showAlabama() {
+        let b = Alabama.bounds
+        frame(south: b.south, west: b.west, north: b.north, east: b.east)
     }
 
     private func open(_ item: SidebarItem?) {
@@ -173,16 +329,23 @@ final class MapModel: ObservableObject {
     }
 
     /// Pins the spot, then names it from OpenStreetMap once the answer comes.
+    /// While the county layers are on, a spot in Alabama also says which county it's in
+    /// and, with pins showing, what's left there.
     func whatsHere(_ c: CLLocationCoordinate2D) {
-        setPin(c, title: "Looking…", subtitle: coordinateText(c))
+        let county = countyLine(at: c)
+        if let dot = dot(at: c) {
+            return setPin(dot.coordinate, title: dot.name, subtitle: [dot.subtitle, county].compactMap { $0 }.joined(separator: " · "))
+        }
+        let detail = { (rest: String?) in [county, rest].compactMap { $0 }.joined(separator: " · ") }
+        setPin(c, title: "Looking…", subtitle: detail(coordinateText(c)))
         Task {
             do {
                 guard let place = try await Nominatim.shared.reverse(c) else {
-                    return setPin(c, title: "Unnamed spot", subtitle: coordinateText(c))
+                    return setPin(c, title: "Unnamed spot", subtitle: detail(coordinateText(c)))
                 }
-                setPin(c, title: place.title, subtitle: place.detail)
+                setPin(c, title: place.title, subtitle: detail(place.detail))
             } catch {
-                setPin(c, title: "Dropped Pin", subtitle: coordinateText(c))
+                setPin(c, title: "Dropped Pin", subtitle: detail(coordinateText(c)))
                 tell("Couldn't reach OpenStreetMap to name this spot.")
             }
         }
@@ -335,6 +498,10 @@ final class MapModel: ObservableObject {
 
     func menu(at c: CLLocationCoordinate2D) -> NSMenu {
         let menu = NSMenu()
+        if let link = dot(at: c)?.link {
+            menu.addItem(MenuAction("Open on Recreation.gov") { NSWorkspace.shared.open(link) })
+            menu.addItem(.separator())
+        }
         menu.addItem(MenuAction("What's Here?") { [weak self] in self?.whatsHere(c) })
         menu.addItem(MenuAction("Drop Pin") { [weak self] in self?.setPin(c, title: "Dropped Pin", subtitle: coordinateText(c)) })
         if pin != nil { menu.addItem(MenuAction("Remove Pin") { [weak self] in self?.clearPin() }) }

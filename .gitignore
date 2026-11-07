@@ -4,3 +4,6 @@
 !.dev.vars.example
 .env*
 !.env.example
+
+# Map Browser data tool downloads
+desktop_widget/Maps/tools/.cache/

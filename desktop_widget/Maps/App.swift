@@ -27,8 +27,15 @@ struct MapBrowserApp: App {
 struct MapCommands: Commands {
     @FocusedObject private var model: MapModel?
     @ObservedObject private var places = Places.shared
+    @ObservedObject private var layers = Layers.shared
 
     var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Divider()
+            Button("Import County Pins…") { model?.importPins() }
+                .disabled(model == nil)
+        }
+
         CommandGroup(after: .pasteboard) {
             Divider()
             Button("Copy Link to This View") { model?.copyLink() }
@@ -45,9 +52,12 @@ struct MapCommands: Commands {
                     .keyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: .command)
             }
             Divider()
+            LayerToggles(layers: layers)
+            Divider()
             Button("Zoom In") { model?.zoomIn() }.keyboardShortcut("=", modifiers: .command)
             Button("Zoom Out") { model?.zoomOut() }.keyboardShortcut("-", modifiers: .command)
             Button("Show My Location") { model?.showMyLocation() }.keyboardShortcut("l", modifiers: .command)
+            Button("Show Alabama") { model?.showAlabama() }.keyboardShortcut("0", modifiers: [.command, .option])
             Button("Remove Pin") { model?.clearPin() }.disabled(model?.pin == nil)
             Divider()
             Button("Open in Web Browser") { model?.openInBrowser() }.keyboardShortcut("o", modifiers: [.command, .shift])

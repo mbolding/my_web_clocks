@@ -9,6 +9,7 @@ struct MapWindow: View {
     @StateObject private var model = MapModel()
     @AppStorage("accent", store: Accent.defaults) private var accent = Accent.orange
     @AppStorage("sharpTiles") private var sharp = false
+    @ObservedObject private var layers = Layers.shared
 
     var body: some View {
         NavigationSplitView {
@@ -17,6 +18,7 @@ struct MapWindow: View {
         } detail: {
             MapView(model: model, tint: NSColor(accent.color), sharp: sharp)
                 .overlay(alignment: .bottomTrailing) { StatusBar(readout: model.readout, style: model.style) }
+                .overlay(alignment: .bottomLeading) { PinKey() }
                 .overlay(alignment: .top) {
                     if let notice = model.notice {
                         Text(notice)
@@ -46,8 +48,16 @@ struct MapWindow: View {
                 }
                 .pickerStyle(.menu)
                 .help("Map style")
+                Menu {
+                    LayerToggles(layers: layers)
+                } label: {
+                    Label("Layers", systemImage: "square.3.layers.3d")
+                }
+                .help("County borders, pins, trails and state parks")
                 Button { model.showMyLocation() } label: { Label("My Location", systemImage: "location") }
                     .help("Show my location")
+                Button { model.showAlabama() } label: { Label("Alabama", systemImage: "scope") }
+                    .help("Show all of Alabama")
                 Button { model.beginSaving() } label: { Label("Save Place", systemImage: "star") }
                     .help("Save this place")
             }
@@ -132,6 +142,7 @@ struct StatusBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
+            ActivityLabel()
             Text("\(coordinateText(readout.center))  ·  zoom \(Int(readout.zoom.rounded()))")
                 .monospacedDigit()
                 .foregroundStyle(.secondary)

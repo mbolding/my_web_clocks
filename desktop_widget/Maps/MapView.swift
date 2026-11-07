@@ -33,7 +33,7 @@ struct MapView: NSViewRepresentable {
         // Only on a change of accent: this runs whenever the window redraws.
         guard tint != context.coordinator.tint else { return }
         context.coordinator.tint = tint
-        for annotation in map.annotations {
+        for annotation in map.annotations where annotation is MKPointAnnotation {
             (map.view(for: annotation) as? MKMarkerAnnotationView)?.markerTintColor = tint
         }
     }
@@ -46,8 +46,30 @@ struct MapView: NSViewRepresentable {
         init(model: MapModel) { self.model = model }
 
         func mapView(_ map: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            guard let tiles = overlay as? MKTileOverlay else { return MKOverlayRenderer(overlay: overlay) }
-            return MKTileOverlayRenderer(tileOverlay: tiles)
+            switch overlay {
+            case let tiles as MKTileOverlay:
+                return MKTileOverlayRenderer(tileOverlay: tiles)
+            case let county as CountyShape:
+                let r = MKPolygonRenderer(polygon: county)
+                let style = model.countyStyle(county.county)
+                r.strokeColor = style.stroke
+                r.fillColor = style.fill
+                r.lineWidth = Layers.shared.counties ? 1.2 : 0.6
+                r.lineJoin = .round
+                return r
+            case let trail as TrailLine:
+                return TrailRenderer.make(trail)
+            case let dots as Dots:
+                return DotsRenderer(overlay: dots)
+            case let park as ParkShape:
+                let r = MKPolygonRenderer(polygon: park)
+                r.strokeColor = WallMap.park.withAlphaComponent(0.8)
+                r.fillColor = WallMap.park.withAlphaComponent(0.14)
+                r.lineWidth = 1.4
+                return r
+            default:
+                return MKOverlayRenderer(overlay: overlay)
+            }
         }
 
         func mapViewDidChangeVisibleRegion(_ map: MKMapView) { model.regionChanged(settled: false) }

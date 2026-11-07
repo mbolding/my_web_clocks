@@ -101,7 +101,11 @@ Dock Clock (an analog clock drawn into its Dock icon, with no window),
 Dock Load (CPU load and memory pressure as rings in its Dock icon, likewise
 windowless, with the busiest processes in its Dock menu),
 Map Browser (an OpenStreetMap browser built as an ordinary windowed app, with a
-menu bar, Dock icon and Settings, rather than a floating widget),
+menu bar, Dock icon and Settings, rather than a floating widget, with layers from
+the 67 Counties wall map: Alabama's county borders and your county pins, the long
+trails, and state parks fetched live from OpenStreetMap, plus the Corps of
+Engineers' campgrounds; the county, trail and campground data is generated into
+`Maps/AlabamaData.swift` and `Maps/CorpsData.swift` by `Maps/tools/build_layers.py`),
 Text Extractor (another ordinary windowed app: drop a PDF or Word document on it
 for its plain text),
 Markdown Editor (a Markdown text editor with light syntax colouring and no
