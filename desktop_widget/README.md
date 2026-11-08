@@ -147,9 +147,9 @@ The floating bar, when it's shown:
 
 **Text Drawer**
 
-- A thin tab in the accent colour peeks in from the right edge of the main screen, above other windows. Drag selected text from any app onto it (while something is being dragged near it, it slides out a little to take the drop) and it keeps a card: the first few lines, when it came and from which app. Rich text is kept as plain text, a link as its address, and a file as its path. It only takes drops, never what you copy, so a copied password never lands in it.
+- A thin tab in the accent colour peeks in from the right edge of the main screen, above other windows. Drag selected text from any app onto it (while something is being dragged near it, it slides out a little to take the drop) and it keeps a card: the first few lines, when it came and from which app. You can also paste text in: press **⌘V** in the open drawer, click the clipboard button at its top, or choose **Paste as a Card** from the tab's right-click menu. Rich text is kept as plain text, a link as its address, and a file as its path. It never watches what you copy, only takes what you drop or paste in, so a copied password never lands in it by itself.
 - Hover over the tab or click it to slide out the cards, newest first; moving off it, clicking elsewhere or **Esc** slides it back. Click a card to copy it, or drag it out into any app. Hover a card and press **⌫** to delete it, or **⌘C** to copy it (after a click in the drawer, which gives it the keyboard). The pin on a card keeps it past the last twenty.
-- Drag the tab along the edge to move it, or, while it's open, the accent strip along the screen edge. Either one's right-click menu has **Clear Unpinned Cards**, the **Edge** (left, right, or the bottom, where the tab lies flat and the drawer slides up), the accent colour and **Quit**.
+- Drag the tab along the edge to move it, or, while it's open, the accent strip along the screen edge. Either one's right-click menu has **Paste as a Card**, **Clear Unpinned Cards**, the **Edge** (left, right, or the bottom, where the tab lies flat and the drawer slides up), the accent colour and **Quit**.
 - The cards are kept in `~/Library/Application Support/com.mbolding.textdrawer`, so they come back after a restart.
 
 **SDF Post**

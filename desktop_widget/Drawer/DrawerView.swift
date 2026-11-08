@@ -1,4 +1,4 @@
-// DrawerView — Text Drawer's panel: the dropped text as cards, newest first, each with its
+// DrawerView — Text Drawer's panel: the dropped and pasted text as cards, newest first, each with its
 // first few lines, when it came and from which app. Click a card to copy it, drag it out
 // into any app, hover and press ⌫ to delete it, or pin it to keep it past the limit.
 
@@ -17,13 +17,22 @@ struct DrawerView: View {
                 Text(cards.all.isEmpty ? "" : "\(cards.all.count)")
                     .font(.system(size: 11).monospacedDigit())
                     .foregroundStyle(.tertiary)
+                Button { cards.paste() } label: {
+                    Image(systemName: "doc.on.clipboard")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 20, height: 18)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Paste what you've copied as a card (⌘V)")
             }
             .padding(.horizontal, 14)
             .padding(.top, 11)
             .padding(.bottom, 8)
             Divider()
             if cards.all.isEmpty {
-                Text("Drop text here from any app, or onto the tab at the edge of the screen.")
+                Text("Drop text here from any app, or onto the tab at the edge of the screen, or paste it in with ⌘V.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

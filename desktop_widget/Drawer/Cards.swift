@@ -1,7 +1,7 @@
 // Cards — what's been dropped on Text Drawer: the text, when, and from which app, newest
 // first. Twenty are kept, plus any you pin; the list is saved in Application Support and
-// comes back after a restart. Only drops are taken, never the clipboard, so a password
-// copied elsewhere never lands here.
+// comes back after a restart. Text comes in by a drop or when you paste it in yourself;
+// the clipboard is never watched, so a password copied elsewhere never lands here.
 
 import AppKit
 import UniformTypeIdentifiers
@@ -81,6 +81,30 @@ final class Cards: ObservableObject {
     func clearUnpinned() {
         all.removeAll { !$0.pinned }
         save()
+    }
+
+    /// Pastes the clipboard in as a card: plain text as it is, rich text as its plain text,
+    /// a link as its address. Returns false when there's no text on it.
+    @discardableResult
+    func paste() -> Bool {
+        let board = NSPasteboard.general
+        let text: String?
+        if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+           let file = urls.first {
+            text = file.path
+        } else if let plain = board.string(forType: .string) {
+            text = plain
+        } else if let rtf = board.data(forType: .rtf) {
+            text = NSAttributedString(rtf: rtf, documentAttributes: nil)?.string
+        } else {
+            text = (board.readObjects(forClasses: [NSURL.self]) as? [URL])?.first?.absoluteString
+        }
+        guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            NSSound.beep()
+            return false
+        }
+        add(text, from: nil)
+        return true
     }
 
     /// Takes a drop: plain text as it is, rich text as its plain text, a link as its

@@ -1,5 +1,6 @@
-// Text Drawer — a drawer at the edge of the screen for text you drop on it. A thin tab
-// peeks in from the edge; drag selected text onto it from any app and it keeps a card.
+// Text Drawer — a drawer at the edge of the screen for text you drop or paste on it. A thin
+// tab peeks in from the edge; drag selected text onto it from any app, or paste it in with
+// ⌘V or the paste button, and it keeps a card.
 // Hover or click the tab to slide out the last twenty, click one to copy it or drag it
 // back out into any app.
 
@@ -13,6 +14,10 @@ enum TextDrawerApp {
                        onDrop: { Cards.shared.take($0) },
                        keyDown: { event in
                            let cards = Cards.shared
+                           if event.keyCode == 9, event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command { // ⌘V
+                               cards.paste()
+                               return true
+                           }
                            guard let id = cards.hovered else { return false }
                            switch event.keyCode {
                            case 51, 117: // ⌫, ⌦
@@ -36,6 +41,7 @@ struct DrawerOptions: View {
     @ObservedObject private var cards = Cards.shared
 
     var body: some View {
+        Button("Paste as a Card") { cards.paste() }
         Button("Clear Unpinned Cards") { cards.clearUnpinned() }
             .disabled(!cards.all.contains { !$0.pinned })
         Divider()
