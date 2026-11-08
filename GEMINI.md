@@ -121,9 +121,10 @@ PNG),
 Polyhedra (likewise: the five Platonic solids to turn over, each morphing into
 its dual through the truncations between, with numbers measured from the shape),
 Gopher Browser (likewise: a browser for gopherspace over raw TCP, Gemini
-over TLS, Spartan and finger, with bookmarks and searches, telnet links opened
-in Terminal through a small telnet client of its own, and the Mac's handler for
-`gopher://`, `gemini://`, `spartan://` and `finger://` links),
+over TLS, Spartan, finger and anonymous FTP, with start pages for Gemini and FTP
+built in, bookmarks and searches, telnet links opened in Terminal through a
+small telnet client of its own, and the Mac's handler for `gopher://`,
+`gemini://`, `spartan://`, `finger://` and `ftp://` links),
 News Reader (likewise: a Usenet newsreader over NNTP, with subscriptions,
 threads, read marks, follow-ups and new posts, and logins kept in the Keychain),
 Relay Chat (likewise, but it stays connected with its window closed: an IRC

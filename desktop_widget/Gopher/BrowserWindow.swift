@@ -1,7 +1,8 @@
 // BrowserWindow — an address field and back and forward in the toolbar, the page in the
 // middle, and a status bar that says where the link under the pointer goes. Gopher menus are
 // set in a monospaced font, as their ASCII art expects, and Gemini pages in the system font
-// with their preformatted blocks monospaced; links are in the accent colour in both.
+// with their preformatted blocks monospaced; links are in the accent colour in both. FTP
+// folders are lists of names with their sizes and dates.
 
 import SwiftUI
 import AppKit
@@ -59,6 +60,9 @@ struct BrowserWindow: View {
                 .id(model.pageID)
         case .text(let text):
             TextPage(text: text, fontSize: fontSize)
+                .id(model.pageID)
+        case .listing(let listing):
+            FTPPage(listing: listing, model: model, fontSize: fontSize) { openWindow(value: Opening(url: $0)) }
                 .id(model.pageID)
         case .image(let image):
             ScrollView([.horizontal, .vertical]) {
@@ -272,6 +276,8 @@ struct GemPage: View {
         case "spartan": "shield"
         case "gopher": "folder"
         case "finger": "person"
+        case "ftp": "externaldrive.connected.to.line.below"
+        case "about": "house"
         case "telnet", "tn3270": "terminal"
         case "http", "https": "globe"
         case "mailto": "envelope"
@@ -306,6 +312,116 @@ struct GemPage: View {
         } else {
             row.foregroundStyle(.secondary)
         }
+    }
+}
+
+/// An FTP folder: the server's note, the folder above, then each entry with its size and
+/// date, folders first.
+struct FTPPage: View {
+    let listing: FTP.Listing
+    @ObservedObject var model: BrowserModel
+    var fontSize: Double
+    var openInNewWindow: (String) -> Void
+    @Environment(\.accent) private var accent
+
+    private static let date: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                Text(listing.path)
+                    .font(.system(size: fontSize * 1.3, weight: .semibold, design: .monospaced))
+                    .textSelection(.enabled)
+                    .padding(.bottom, fontSize * 0.8)
+                if !listing.message.isEmpty {
+                    Text(listing.message)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.bottom, fontSize)
+                }
+                if let parent = model.ftpParent {
+                    row(symbol: "arrow.turn.left.up", name: "..", size: "", date: "",
+                        destination: parent.absoluteString) { model.goUp() }
+                }
+                ForEach(listing.entries) { entry in
+                    let url = FTP.url(for: entry, in: folder)
+                    row(symbol: symbol(entry), name: entry.name + (entry.kind == .directory ? "/" : ""),
+                        size: entry.kind == .file ? entry.size.map(BrowserModel.size) ?? "" : "",
+                        date: entry.modified.map(Self.date.string) ?? "",
+                        destination: url.absoluteString + (entry.target.map { "  →  \($0)" } ?? "")) {
+                        model.open(entry)
+                    }
+                    .contextMenu {
+                        if entry.kind != .file || FTP.isViewable(entry) {
+                            Button("Open in New Window") { openInNewWindow(url.absoluteString) }
+                        }
+                        Button("Copy Link") { model.copyLink(url.absoluteString) }
+                        Button(Bookmarks.shared.contains(url.absoluteString) ? "Remove Bookmark" : "Bookmark Link") {
+                            Bookmarks.shared.toggle(url.absoluteString, title: entry.name)
+                        }
+                    }
+                }
+                if listing.entries.isEmpty && listing.unread.isEmpty {
+                    Text("This folder is empty.")
+                        .foregroundStyle(.secondary)
+                        .padding(.top, fontSize * 0.5)
+                }
+                if !listing.unread.isEmpty {
+                    Text(listing.unread.joined(separator: "\n"))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .padding(.top, fontSize)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.system(size: fontSize, design: .monospaced))
+    }
+
+    private var folder: URL {
+        if case .ftp(let url) = model.location { return url }
+        return URL(string: "ftp://localhost/")!
+    }
+
+    private func symbol(_ entry: FTP.Entry) -> String {
+        switch entry.kind {
+        case .directory: "folder"
+        case .link: "arrowshape.turn.up.right"
+        case .file: FTP.isViewable(entry) ? "doc.text" : "arrow.down.circle"
+        }
+    }
+
+    private func row(symbol: String, name: String, size: String, date: String, destination: String,
+                     action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(alignment: .firstTextBaseline, spacing: fontSize * 0.6) {
+                Image(systemName: symbol)
+                    .font(.system(size: fontSize * 0.9))
+                    .frame(width: fontSize * 1.5)
+                Text(name)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(size)
+                    .foregroundStyle(.secondary)
+                    .frame(width: fontSize * 6.5, alignment: .trailing)
+                Text(date)
+                    .foregroundStyle(.secondary)
+                    .frame(width: fontSize * 6.5, alignment: .trailing)
+            }
+            .padding(.vertical, 1)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(accent)
+        .linkHover(destination, model: model)
     }
 }
 
@@ -430,6 +546,9 @@ struct StatusBar: View {
         case .text(let text):
             let lines = text.split(separator: "\n", omittingEmptySubsequences: false).count
             return lines == 1 ? "1 line" : "\(lines) lines"
+        case .listing(let listing):
+            let count = listing.entries.count
+            return count == 1 ? "1 item" : "\(count.formatted()) items"
         case .image(let image):
             return "\(Int(image.size.width)) × \(Int(image.size.height))"
         default:

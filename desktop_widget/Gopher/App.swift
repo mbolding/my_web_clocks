@@ -1,9 +1,10 @@
 // Gopher Browser — a browser for gopherspace, the menus-and-text internet of 1991 that SDF
 // and others still run, for Gemini, its TLS successor, and Spartan, Gemini's plain-TCP cousin,
-// and for finger, as a native app since a web page can't open the raw connections they need.
-// Telnet links open in Terminal. An ordinary Mac app like Map Browser, with windows, a menu bar
-// and a Dock icon, and the handler for gopher://, gemini://, spartan:// and finger:// links
-// anywhere on the Mac.
+// for finger, and for the anonymous FTP archives, as a native app since a web page can't open
+// the raw connections they need. Telnet links open in Terminal. Start pages for Gemini and FTP
+// are built in. An ordinary Mac app like Map Browser, with windows, a menu bar and a Dock icon,
+// and the handler for gopher://, gemini://, spartan://, finger:// and ftp:// links anywhere on
+// the Mac.
 
 import SwiftUI
 import AppKit
@@ -41,7 +42,7 @@ struct GopherBrowserApp: App {
     }
 }
 
-/// gopher://, gemini://, spartan:// and finger:// links clicked in other apps arrive as a Get URL event. It's taken before
+/// gopher://, gemini://, spartan://, finger:// and ftp:// links clicked in other apps arrive as a Get URL event. It's taken before
 /// SwiftUI sees it, so each opens one window of this app's own.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -63,6 +64,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 struct GopherCommands: Commands {
+    /// Goes there in the front window, or opens a window for it.
+    private func go(_ url: String) {
+        if let model { model.go(url) } else { openWindow(value: Opening(url: url)) }
+    }
+
     @FocusedObject private var model: BrowserModel?
     @ObservedObject private var bookmarks = Bookmarks.shared
     @ObservedObject private var history = History.shared
@@ -121,6 +127,12 @@ struct GopherCommands: Commands {
                 .disabled(model == nil)
             Button("Set This Page as Home") { if let url = model?.url { home = url } }
                 .disabled(model?.url == nil || model?.url == home)
+            Button("Enclosing Folder") { model?.goUp() }
+                .keyboardShortcut(.upArrow, modifiers: .command)
+                .disabled(model?.ftpParent == nil)
+            Divider()
+            Button("Gemini Start Page") { go("about:gemini") }
+            Button("FTP Start Page") { go("about:ftp") }
             Divider()
             Section("Recently Visited") {
                 ForEach(history.recent.prefix(15)) { visit in
@@ -159,6 +171,7 @@ struct GopherCommands: Commands {
             // Spartan's specification is served over Spartan, so it opens here.
             Button("The Spartan Protocol") { openWindow(value: Opening(url: "spartan://spartan.mozz.us/")) }
             Link("The Finger Protocol (RFC 1288)", destination: URL(string: "https://www.rfc-editor.org/rfc/rfc1288")!)
+            Link("The File Transfer Protocol (RFC 959)", destination: URL(string: "https://www.rfc-editor.org/rfc/rfc959")!)
             Link("SDF Public Access UNIX System", destination: URL(string: "https://sdf.org")!)
         }
     }

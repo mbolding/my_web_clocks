@@ -1,6 +1,7 @@
 // BrowserModel — one window's browsing: the page showing, back and forward, input for
 // searches and saving. Bookmarks and History are shared by every window, and Inbox hands
-// gopher://, gemini://, spartan:// and finger:// links opened elsewhere on the Mac to a new window.
+// gopher://, gemini://, spartan://, finger:// and ftp:// links opened elsewhere on the Mac to
+// a new window.
 
 import SwiftUI
 import AppKit
@@ -25,15 +26,25 @@ enum Location: Hashable {
     case gemini(URL)
     case spartan(URL)
     case finger(URL)
+    case ftp(URL)
+    /// One of the start pages built in, such as about:gemini.
+    case start(String)
 
     /// The schemes whose pages open here rather than in another app.
-    static let schemes: Set = ["gopher", "gemini", "spartan", "finger"]
+    static let schemes: Set = ["gopher", "gemini", "spartan", "finger", "ftp", "about"]
 
-    /// Reads a gemini://, spartan:// or finger:// URL, or a gopher address with or without its scheme.
+    /// Reads a gemini://, spartan://, finger:// or ftp:// URL, a start page's about: address,
+    /// or a gopher address with or without its scheme.
     init?(_ text: String) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.lowercased().hasPrefix("about:") {
+            let name = String(text.dropFirst(6)).lowercased()
+            guard StartPages.has(name) else { return nil }
+            self = .start(name)
+            return
+        }
         let scheme = text.range(of: "://").map { text[..<$0.lowerBound].lowercased() }
-        if let scheme, ["gemini", "spartan", "finger"].contains(scheme) {
+        if let scheme, ["gemini", "spartan", "finger", "ftp"].contains(scheme) {
             let escaped = text.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed.union(["#", "%"])) ?? text
             guard var url = URL(string: text) ?? URL(string: escaped), let host = url.host, !host.isEmpty else { return nil }
             // A bare server is asked for its root, as servers expect. Finger has no root: a
@@ -45,6 +56,7 @@ enum Location: Hashable {
             switch scheme {
             case "gemini": self = .gemini(url)
             case "spartan": self = .spartan(url)
+            case "ftp": self = .ftp(url)
             default: self = .finger(url)
             }
         } else if let address = Address(text) {
@@ -57,20 +69,23 @@ enum Location: Hashable {
     var url: String {
         switch self {
         case .gopher(let address): address.url
-        case .gemini(let url), .spartan(let url), .finger(let url): url.absoluteString
+        case .gemini(let url), .spartan(let url), .finger(let url), .ftp(let url): url.absoluteString
+        case .start(let name): "about:\(name)"
         }
     }
 
     var host: String {
         switch self {
         case .gopher(let address): address.host
-        case .gemini(let url), .spartan(let url), .finger(let url): url.host ?? ""
+        case .gemini(let url), .spartan(let url), .finger(let url), .ftp(let url): url.host ?? ""
+        case .start: ""
         }
     }
 
     /// What to call the page until it says otherwise: its server, or for finger, who's asked about.
     var name: String {
         if case .finger(let url) = self, case let user = Finger.user(url), !user.isEmpty { return "\(user)@\(host)" }
+        if case .start(let name) = self { return StartPages.title(name) }
         return host
     }
 }
@@ -82,6 +97,8 @@ final class BrowserModel: ObservableObject {
         case gemtext([GemLine])
         case text(String)
         case image(NSImage)
+        /// An FTP folder.
+        case listing(FTP.Listing)
         /// A search or other question, waiting for words to send.
         case input(prompt: String, sensitive: Bool)
         /// Something to save rather than show.
@@ -129,7 +146,7 @@ final class BrowserModel: ObservableObject {
         follow(text, title: "")
     }
 
-    /// Goes to a gopher, Gemini, Spartan or finger address here, opens telnet in Terminal, and
+    /// Goes to a gopher, Gemini, Spartan, finger or FTP address or a start page here, opens telnet in Terminal, and
     /// hands anything else (the web, mail) to the app that opens it. `prompt` is for a Spartan
     /// "=:" link, which asks for words to send first.
     func follow(_ text: String, title: String, prompt: Bool = false) {
@@ -164,6 +181,29 @@ final class BrowserModel: ObservableObject {
         case .telnet:
             telnet(host: item.host, port: item.port, user: item.selector)
         }
+    }
+
+    /// Follows an entry in an FTP folder: folders and links open here, and so do text and
+    /// pictures; anything else is saved.
+    func open(_ entry: FTP.Entry) {
+        guard case .ftp(let folder) = location else { return }
+        let url = FTP.url(for: entry, in: folder)
+        if entry.kind != .file || FTP.isViewable(entry) {
+            visit(.ftp(url), title: entry.name)
+        } else {
+            downloadFTP(url, name: entry.name)
+        }
+    }
+
+    /// The FTP folder above this one.
+    var ftpParent: URL? {
+        guard case .ftp(let url) = location else { return nil }
+        return FTP.parent(of: url)
+    }
+
+    func goUp() {
+        guard let parent = ftpParent else { return }
+        visit(.ftp(parent), title: "")
     }
 
     private func telnet(host: String, port: Int, user: String) {
@@ -233,6 +273,11 @@ final class BrowserModel: ObservableObject {
                     try await loadSpartan(url)
                 case .finger(let url):
                     try await loadFinger(url)
+                case .ftp(let url):
+                    try await loadFTP(url)
+                case .start(let name):
+                    let text = StartPages.text(name)
+                    show(.gemtext(Gemini.gemtext(text, base: URL(string: "about:\(name)")!)), raw: Data(text.utf8))
                 }
             } catch is CancellationError {
                 return
@@ -364,6 +409,36 @@ final class BrowserModel: ObservableObject {
         show(.text(text.isEmpty ? "The server had nothing to say about \(title)." : text), raw: data)
     }
 
+    private func loadFTP(_ url: URL) async throws {
+        let result = try await FTP.fetch(url) { [weak self] count in self?.received = count }
+        try Task.checkCancellation()
+        switch result {
+        case .listing(let listing, let raw):
+            // A folder's address ends in a slash, as links in it are made from it.
+            if !url.path(percentEncoded: true).hasSuffix("/"), var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                parts.path = listing.path
+                if let folder = parts.url { arrive(at: .ftp(folder), title: title) }
+            }
+            show(.listing(listing), raw: raw)
+        case .file(let data):
+            if let image = NSImage(data: data), !FTP.looksLikeText(data) {
+                show(.image(image), raw: data)
+            } else if FTP.looksLikeText(data) {
+                show(.text(Gopher.text(data).replacingOccurrences(of: "\r\n", with: "\n")), raw: data)
+            } else {
+                show(.file(type: Self.fileType(url.lastPathComponent), size: data.count), raw: data)
+            }
+        case .large(let size):
+            show(.file(type: Self.fileType(url.lastPathComponent), size: size))
+        }
+    }
+
+    /// What to call a file in "This is a … file": its extension, or just "binary".
+    private static func fileType(_ name: String) -> String {
+        let ext = (name as NSString).pathExtension
+        return ext.isEmpty ? "binary" : ext.uppercased()
+    }
+
     private func showDocument(_ response: Reply, from url: URL) {
         let mime = response.meta.split(separator: ";").first.map {
             $0.trimmingCharacters(in: .whitespaces).lowercased()
@@ -401,7 +476,7 @@ final class BrowserModel: ObservableObject {
         case .spartan(let url):
             guard let next = Self.adding(words, to: url) else { return }
             visit(.spartan(next), title: title)
-        case .finger:
+        case .finger, .ftp, .start:
             return
         }
         inputWords = ""
@@ -442,11 +517,40 @@ final class BrowserModel: ObservableObject {
         }
     }
 
-    var canSave: Bool { !raw.isEmpty }
+    /// Asks where to save an FTP file, then fetches it straight to disk, however large.
+    private func downloadFTP(_ url: URL, name: String) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = Self.fileName(for: url.path(percentEncoded: false), fallback: name)
+        guard panel.runModal() == .OK, let destination = panel.url else { return }
+        let file = destination.lastPathComponent
+        note = "Saving \(file)…"
+        Task {
+            do {
+                let count = try await FTP.download(url, to: destination) { [weak self] count, size in
+                    self?.note = "Saving \(file)… \(Self.size(count))" + (size.map { " of \(Self.size($0))" } ?? "")
+                }
+                note = "Saved \(file), \(Self.size(count))."
+            } catch {
+                note = "Couldn't save \(file): \(error.localizedDescription)"
+            }
+        }
+    }
+
+    /// An FTP file too big to show, which is fetched when saved.
+    private var isLargeFTPFile: Bool {
+        if case .ftp = location, case .file = page, raw.isEmpty { return true }
+        return false
+    }
+
+    var canSave: Bool { !raw.isEmpty || isLargeFTPFile }
 
     /// Saves the page as the server sent it.
     func save() {
         guard let location, canSave else { return }
+        if isLargeFTPFile, case .ftp(let url) = location {
+            downloadFTP(url, name: title)
+            return
+        }
         let panel = NSSavePanel()
         var name: String
         switch location {
@@ -458,6 +562,11 @@ final class BrowserModel: ObservableObject {
             if case .gemtext = page, !name.hasSuffix(".gmi") { name += ".gmi" }
         case .finger:
             name = location.name + ".txt"
+        case .ftp(let url):
+            name = Self.fileName(for: url.path(percentEncoded: false), fallback: title)
+            if case .listing = page { name = (name.isEmpty ? location.host : name) + ".txt" }
+        case .start(let start):
+            name = start + ".gmi"
         }
         panel.nameFieldStringValue = name
         guard panel.runModal() == .OK, let destination = panel.url else { return }
@@ -494,7 +603,7 @@ final class BrowserModel: ObservableObject {
 // MARK: - Shared lists
 
 /// Saved places, kept between launches, starting with SDF's gopherspace and Floodgap's, a few
-/// Gemini capsules, Spartan's home and SDF's finger server.
+/// Gemini capsules, Spartan's home, SDF's finger server and the start pages.
 @MainActor
 final class Bookmarks: ObservableObject {
     static let shared = Bookmarks()
@@ -515,6 +624,8 @@ final class Bookmarks: ObservableObject {
         Visit(title: "Spartan, and the servers that speak it", url: "spartan://mozz.us/"),
         Visit(title: "The Spartan Protocol", url: "spartan://spartan.mozz.us/"),
         Visit(title: "SDF, by finger", url: "finger://sdf.org"),
+        Visit(title: "Geminispace, a start page", url: "about:gemini"),
+        Visit(title: "Anonymous FTP, a start page", url: "about:ftp"),
     ]
 
     @Published var all: [Visit] {
@@ -561,7 +672,7 @@ final class History: ObservableObject {
     func clear() { recent = [] }
 }
 
-/// Opens gopher://, gemini://, spartan:// and finger:// links from other apps, each in a new window. Links that come in before
+/// Opens gopher://, gemini://, spartan://, finger:// and ftp:// links from other apps, each in a new window. Links that come in before
 /// SwiftUI can open windows wait for it.
 @MainActor
 final class Inbox {
