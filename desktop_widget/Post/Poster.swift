@@ -5,6 +5,7 @@
 // Everything sent rides as base64 inside the script, so nothing typed reaches the shell.
 
 import AppKit
+import UniformTypeIdentifiers
 
 @MainActor
 final class Poster: ObservableObject {
@@ -289,6 +290,35 @@ final class Poster: ObservableObject {
         }
         body = text
         state = .idle
+    }
+
+    /// Takes a drop on the drawer's tab or the empty pad: a text file is read in, text
+    /// goes in as it is, and the drawer opens on it. Over a draft already written, a drop
+    /// on the tab is added on the end rather than replacing it.
+    func take(_ providers: [NSItemProvider]) -> Bool {
+        guard let provider = providers.first else { return false }
+        if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url else { return }
+                Task { @MainActor in
+                    Poster.shared.load(url)
+                    DrawerState.shared.open()
+                }
+            }
+        } else if provider.canLoadObject(ofClass: String.self) {
+            _ = provider.loadObject(ofClass: String.self) { text, _ in
+                guard let text else { return }
+                Task { @MainActor in
+                    let poster = Poster.shared
+                    poster.body = poster.isEmpty ? text : poster.body + "\n\n" + text
+                    poster.state = .idle
+                    DrawerState.shared.open()
+                }
+            }
+        } else {
+            return false
+        }
+        return true
     }
 
     func setLogin() {

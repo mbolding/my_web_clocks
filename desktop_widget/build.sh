@@ -43,6 +43,7 @@ CLOCKS=(
   News    NewsReader    com.mbolding.newsreader    "News Reader"
   Relay   RelayChat     com.mbolding.relaychat     "Relay Chat"
   Post    SDFPost       com.mbolding.sdfpost       "SDF Post"
+  Drawer  TextDrawer    com.mbolding.textdrawer    "Text Drawer"
   Offsite Offsite       com.mbolding.offsite       "Offsite"
 )
 
@@ -54,12 +55,12 @@ build_clock() {
   rm -rf $app
   mkdir -p $app/Contents/MacOS $app/Contents/Resources
 
-  swiftc -O -parse-as-library -target $TARGET Shared/DesktopClock.swift Shared/Accent.swift ${sources:#*/Icon.swift} \
+  swiftc -O -parse-as-library -target $TARGET Shared/DesktopClock.swift Shared/Accent.swift Shared/EdgeDrawer.swift ${sources:#*/Icon.swift} \
       -o $app/Contents/MacOS/$exe
 
   # App icon: draw the clock's own face, then pack the sizes into an .icns. The shared
   # window code comes along for views that use its pieces, like FloatPin.
-  swiftc -O -parse-as-library -target $TARGET Shared/MakeIcon.swift Shared/DesktopClock.swift Shared/Accent.swift \
+  swiftc -O -parse-as-library -target $TARGET Shared/MakeIcon.swift Shared/DesktopClock.swift Shared/Accent.swift Shared/EdgeDrawer.swift \
       ${sources:#*/App.swift} -o build/MakeIcon-$exe
   rm -rf build/$exe.iconset
   build/MakeIcon-$exe build/$exe.iconset

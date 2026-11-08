@@ -44,6 +44,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+        launcher.refreshWidgets()
         if launcher.widgets.isEmpty {
             menu.addItem(withTitle: "No Widgets Installed", action: nil, keyEquivalent: "")
         }
@@ -91,7 +92,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             submenu.addItem(item)
         }
         add("Show \(widget.name)", #selector(open(_:)))
-        add("Float on Top", #selector(toggleFloat(_:)), state: isFloating ? .on : .off)
+        if !widget.isDrawer {
+            add("Float on Top", #selector(toggleFloat(_:)), state: isFloating ? .on : .off)
+        }
         submenu.addItem(.separator())
         add("Quit \(widget.name)", #selector(quit(_:)))
         row.submenu = submenu

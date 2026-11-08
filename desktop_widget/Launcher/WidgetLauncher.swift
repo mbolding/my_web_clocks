@@ -1,6 +1,8 @@
 // WidgetLauncher — finds the installed widgets (apps whose Info.plist has DesktopWidget,
-// which build.sh adds) in ~/Applications and /Applications, tracks which are running and
-// which float on top, and opens, shows or quits them, or flips their Float on Top.
+// which build.sh adds) in ~/Applications and /Applications, looking again whenever either
+// folder changes, tracks which are running and which float on top, and opens, shows or
+// quits them, or flips their Float on Top. The edge drawers (DesktopWidgetDrawer in their
+// Info.plist) always float, so they have no Float on Top; showing one slides it out.
 
 import AppKit
 
@@ -9,6 +11,8 @@ struct Widget: Identifiable {
     let name: String
     let url: URL
     let icon: NSImage
+    /// An edge drawer, which always floats: there's no Float on Top to flip.
+    let isDrawer: Bool
 }
 
 @MainActor
@@ -24,6 +28,7 @@ final class WidgetLauncher: ObservableObject {
     // Each running widget, held so it outlives its observation; KVO throws if an observed
     // object is freed with observers still attached.
     private var quits: [(app: NSRunningApplication, observation: NSKeyValueObservation)] = []
+    private var folderWatches: [DispatchSourceFileSystemObject] = []
 
     private init() {
         widgets = Self.findWidgets()
@@ -39,14 +44,44 @@ final class WidgetLauncher: ObservableObject {
         floatCheck = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.refreshFloating() }
         }
+        watchFolders()
+    }
+
+    /// Looks again when an app is added to or taken from either folder, as build.sh
+    /// --install does, so a new widget turns up without restarting Widget Bar.
+    private func watchFolders() {
+        for folder in Self.folders {
+            let fd = Darwin.open(folder.path, O_EVTONLY)
+            guard fd >= 0 else { continue }
+            let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: .write, queue: .main)
+            source.setEventHandler { [weak self] in
+                // An install writes the folder more than once; look after it settles.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    MainActor.assumeIsolated { self?.refreshWidgets() }
+                }
+            }
+            source.setCancelHandler { Darwin.close(fd) }
+            source.resume()
+            folderWatches.append(source)
+        }
+    }
+
+    func refreshWidgets() {
+        let found = Self.findWidgets()
+        guard found.map(\.id) != widgets.map(\.id) else { return }
+        widgets = found
+        refreshRunning()
+    }
+
+    private static var folders: [URL] {
+        [FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications"),
+         URL(fileURLWithPath: "/Applications")]
     }
 
     /// Every widget except this one, by name. A copy in ~/Applications wins over one in
     /// /Applications.
     static func findWidgets() -> [Widget] {
         let fm = FileManager.default
-        let folders = [fm.homeDirectoryForCurrentUser.appendingPathComponent("Applications"),
-                       URL(fileURLWithPath: "/Applications")]
         var found: [String: Widget] = [:]
         for folder in folders {
             let apps = (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
@@ -57,7 +92,8 @@ final class WidgetLauncher: ObservableObject {
                       id != Bundle.main.bundleIdentifier,
                       found[id] == nil else { continue }
                 let name = info["CFBundleName"] as? String ?? url.deletingPathExtension().lastPathComponent
-                found[id] = Widget(id: id, name: name, url: url, icon: NSWorkspace.shared.icon(forFile: url.path))
+                found[id] = Widget(id: id, name: name, url: url, icon: NSWorkspace.shared.icon(forFile: url.path),
+                                   isDrawer: info["DesktopWidgetDrawer"] as? Bool == true)
             }
         }
         return found.values.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
@@ -84,7 +120,8 @@ final class WidgetLauncher: ObservableObject {
     }
 
     private func refreshFloating() {
-        let now = Set(running.filter(Self.floats))
+        let drawers = Set(widgets.filter(\.isDrawer).map(\.id))
+        let now = Set(running.filter { !drawers.contains($0) && Self.floats($0) })
         if now != floating { floating = now }
     }
 
@@ -95,7 +132,8 @@ final class WidgetLauncher: ObservableObject {
         refreshFloating()
     }
 
-    /// Opens a widget, or, if it's running, brings its window up for a moment.
+    /// Opens a widget, or, if it's running, brings its window up for a moment (or slides a
+    /// drawer out).
     func open(_ widget: Widget) {
         NSWorkspace.shared.openApplication(at: widget.url, configuration: NSWorkspace.OpenConfiguration())
     }

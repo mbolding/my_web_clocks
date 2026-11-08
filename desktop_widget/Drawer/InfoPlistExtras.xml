@@ -1,0 +1,3 @@
+    <!-- An edge drawer, which always floats: Widget Bar leaves out Float on Top for it,
+         and a click on it slides the drawer out. -->
+    <key>DesktopWidgetDrawer</key><true/>

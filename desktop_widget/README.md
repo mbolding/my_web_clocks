@@ -11,7 +11,8 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Dial Timer** (`Timer/`) | A round, up-to-an-hour timer: drag the face to set it, and a coloured wedge shows the time left. Also a stopwatch |
 | **Month Calendar** (`Calendar/`) | This month's calendar, with today picked out |
 | **Scratch Pad** (`Scratch/`) | A text pad that keeps what you type, with buttons to copy it all or save it to the Desktop |
-| **SDF Post** (`Post/`) | A pad that posts what's in it to your [SDF](https://sdf.org) site: a web blog, a gopher phlog and a Gemini gemlog at once, over ssh with your key |
+| **Text Drawer** (`Drawer/`) | A drawer at the edge of the screen for text you drop on it: a thin tab peeks in, and slides out to the last twenty drops as cards, to copy or drag back out |
+| **SDF Post** (`Post/`) | A drawer at the edge of the screen holding a pad that posts what's in it to your [SDF](https://sdf.org) site: a web blog, a gopher phlog and a Gemini gemlog at once, over ssh with your key |
 | **Server List** (`Servers/`) | A menu bar item listing your Macs and servers: choose one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
 | **Dock Clock** (`Dock/`) | An analog clock with no window: its live Dock icon is the whole app |
 | **Dock Load** (`Load/`) | CPU load and memory pressure as rings in its Dock icon, with the busiest processes in its Dock menu; also no window |
@@ -120,15 +121,15 @@ All of them:
 
 **Widget Bar**
 
-- It lives in the menu bar, as a grid of four squares. Its menu lists every installed widget, found when it starts; restart it to pick up a newly installed one.
-- In the menu, a tick marks a widget that's running, and a pin takes the tick's place while it floats on top. Click a widget that isn't running to open it; a running one has a submenu to **Show** it for a few seconds, flip **Float on Top**, or quit it.
+- It lives in the menu bar, as a grid of four squares. Its menu lists every installed widget, and picks up one that's newly installed or removed without a restart.
+- In the menu, a tick marks a widget that's running, and a pin takes the tick's place while it floats on top. Click a widget that isn't running to open it; a running one has a submenu to **Show** it for a few seconds, flip **Float on Top**, or quit it. The drawers (Text Drawer and SDF Post) always float, so they have no **Float on Top**, and **Show** slides one out.
 - The menu also has **Update from GitHub…** (below) and **Show Floating Bar**, which brings back the toolbar of widget icons. It's hidden at first, and stays shown or hidden across restarts; hide it again from the menu or its own right-click menu. Opening Widget Bar again from Finder or `open -a` drops its menu down while the bar is hidden.
 
 The floating bar, when it's shown:
 
 - It floats on top by default and starts at the bottom right.
 - The dot under an icon is grey while that widget runs on the desktop and in the accent colour while it floats on top; no dot means it isn't running.
-- Click a widget that isn't running to open it. Click a running one to flip its Float on Top.
+- Click a widget that isn't running to open it. Click a running one to flip its Float on Top, or, for a drawer, to slide it out.
 - Right-click an icon to float it or put it on the desktop, **Show** it for a few seconds, or quit it.
 - **Update from GitHub…** is in the menu bar item's menu, and in the bar's right-click menu. After you confirm, it pulls the latest code into the checkout the apps were built from (fast-forward only, so local commits stop it) and runs `build.sh --update`. Running apps quit and reopen, Widget Bar included, so save your work in Markdown Editor first, and Command Bar starts a new shell. A notification says when it's done; if it fails, the log (`~/Library/Logs/Widget Bar Update.log`) opens in TextEdit. If there's nothing new, nothing is rebuilt.
 - The **›** at the right end folds the bar into a small square at its right edge, to get it out of the way; click the square to open the bar again. It stays folded or open across restarts.
@@ -144,12 +145,20 @@ The floating bar, when it's shown:
 - The right-click menu (on the header; the text has its own) also has **Show Saved File in Finder** and **Clear**.
 - Floats on top by default; the window resizes from its edges.
 
+**Text Drawer**
+
+- A thin tab in the accent colour peeks in from the right edge of the main screen, above other windows. Drag selected text from any app onto it (while something is being dragged near it, it slides out a little to take the drop) and it keeps a card: the first few lines, when it came and from which app. Rich text is kept as plain text, a link as its address, and a file as its path. It only takes drops, never what you copy, so a copied password never lands in it.
+- Hover over the tab or click it to slide out the cards, newest first; moving off it, clicking elsewhere or **Esc** slides it back. Click a card to copy it, or drag it out into any app. Hover a card and press **⌫** to delete it, or **⌘C** to copy it (after a click in the drawer, which gives it the keyboard). The pin on a card keeps it past the last twenty.
+- Drag the tab along the edge to move it, or, while it's open, the accent strip along the screen edge. Either one's right-click menu has **Clear Unpinned Cards**, the **Edge** (left, right, or the bottom, where the tab lies flat and the drawer slides up), the accent colour and **Quit**.
+- The cards are kept in `~/Library/Application Support/com.mbolding.textdrawer`, so they come back after a restart.
+
 **SDF Post**
 
+- It's a drawer like Text Drawer: a tab in the accent colour peeks in from the right edge, below Text Drawer's so the two sit apart. Hover over it or click it to slide out the pad. Once you've clicked in it, it stays out while you type, until you click elsewhere or press **Esc**; otherwise it slides back when you move off it. Drop text or a text file on the tab and the pad opens with it in (text dropped on a draft goes on its end). Drag the tab (or the open pad's accent strip) to move it along the edge, and right-click either for the options below, the **Edge**, the accent colour and **Quit**.
 - Type, paste or drop text into it, or drop a text or Markdown file while it's empty, give it a title (or let the first line be one, a Markdown `#` taken off), and press **Post** (**⌘↩**). It goes up as a page on your web blog at `user.sdf.org/blog/`, a text file in your phlog at `gopher://sdf.org/1/users/user/phlog/`, and a page in a gemlog at `gemini://sdf.org/user/gemlog/`, each listed newest first; afterwards the three addresses are links under the text.
-- It posts over the Mac's own `ssh` with the key SDF already knows, never a password, as the login in the right-click menu (it starts as your Mac user name at sdf.org). It needs a gopher space and a web space on SDF already, from `mkgopher` and `mkhomepg`.
+- It posts over the Mac's own `ssh` with the key SDF already knows, never a password, as the login in the tab's right-click menu (it starts as your Mac user name at sdf.org). It needs a gopher space and a web space on SDF already, from `mkgopher` and `mkhomepg`.
 - Each post's text is kept as written in `~/.sdfpost/posts` on SDF, a private folder, and every page and index is made again from those on each post, so the three halves always agree; the phlog's copy is wrapped to 70 columns, with quotes carrying their `>`. A post's date is SDF's, which keeps UTC. Phlog posts written by hand are listed too, read from the phlog's own text.
-- The first post adds a Gemlog link to the capsule's front page and, unless it's turned off in the right-click menu, one `blog` link to the homepage, after its first heading; neither is touched again. The menu also opens the blog, phlog and gemlog.
+- The first post adds a Gemlog link to the capsule's front page and, unless it's turned off in the tab's right-click menu, one `blog` link to the homepage, after its first heading; neither is touched again. The menu also opens the blog, phlog and gemlog.
 - Nothing typed reaches SDF's shell: the post travels as base64 inside the script.
 
 **Server List**
@@ -293,14 +302,14 @@ Quit the app from its right-click menu, delete it from `~/Applications`, and if 
 defaults delete com.mbolding.commandbar
 ```
 
-The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.sdfpost`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.dockload`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor`, `com.mbolding.markdowneditor`, `com.mbolding.dicomviewer`, `com.mbolding.stipple`, `com.mbolding.polyhedra`, `com.mbolding.gopherbrowser`, `com.mbolding.newsreader`, `com.mbolding.relaychat`, `com.mbolding.offsite` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles and state parks in `~/Library/Caches/com.mbolding.mapbrowser`, and your county pins in `~/Library/Application Support/com.mbolding.mapbrowser`, News Reader and Relay Chat keep passwords in the Keychain, under their names, and Offsite keeps the files it fetched for opening or Quick Look in `~/Library/Caches/com.mbolding.offsite` until it quits.
+The settings domains are `com.mbolding.clockwidget`, `com.mbolding.wordclock`, `com.mbolding.commandbar`, `com.mbolding.somaplayer`, `com.mbolding.dialtimer`, `com.mbolding.monthcalendar`, `com.mbolding.scratchpad`, `com.mbolding.sdfpost`, `com.mbolding.textdrawer`, `com.mbolding.serverlist`, `com.mbolding.dockclock`, `com.mbolding.dockload`, `com.mbolding.mapbrowser`, `com.mbolding.textextractor`, `com.mbolding.markdowneditor`, `com.mbolding.dicomviewer`, `com.mbolding.stipple`, `com.mbolding.polyhedra`, `com.mbolding.gopherbrowser`, `com.mbolding.newsreader`, `com.mbolding.relaychat`, `com.mbolding.offsite` and `com.mbolding.widgetbar`, plus `com.mbolding.desktopwidgets` for the accent colour they share. Map Browser also keeps its map tiles and state parks in `~/Library/Caches/com.mbolding.mapbrowser`, and your county pins in `~/Library/Application Support/com.mbolding.mapbrowser`, News Reader and Relay Chat keep passwords in the Keychain, under their names, and Offsite keeps the files it fetched for opening or Quick Look in `~/Library/Caches/com.mbolding.offsite` until it quits.
 
 ## How it's put together
 
 ```
 desktop_widget/
 ├── build.sh        the build script; lists every app in its CLOCKS table
-├── Shared/         the floating window, right-click menu, FloatPin, the accent colour, and the icon renderer
+├── Shared/         the floating window, right-click menu, FloatPin, the accent colour, the edge drawer window, and the icon renderer
 ├── Analog/         App.swift, Icon.swift, ClockFace.swift; Widget/ is a parked WidgetKit version
 ├── Word/           App.swift, Icon.swift, WordFace.swift
 ├── Command/        App.swift, Icon.swift, the view and shell session, InfoPlistExtras.xml
@@ -308,6 +317,7 @@ desktop_widget/
 ├── Timer/          App.swift, Icon.swift, the dial, its view, the timer, the stopwatch and the chime
 ├── Calendar/       App.swift, Icon.swift, CalendarFace.swift
 ├── Scratch/        App.swift, Icon.swift, the view and the pad
+├── Drawer/         App.swift, Icon.swift, the cards and the drawer's view, run in Shared/'s edge drawer
 ├── Servers/        App.swift (the menu bar item), Icon.swift, the saved server list, InfoPlistExtras.xml
 ├── Dock/           App.swift, Icon.swift, DockTile.swift, InfoPlistExtras.xml; ClockFace.swift links to Analog's
 ├── Load/           App.swift (with the Dock menu), Icon.swift, LoadTile.swift, the sampler, InfoPlistExtras.xml
@@ -324,8 +334,8 @@ desktop_widget/
 └── Launcher/       App.swift, Icon.swift, the menu bar item, the bar, the launcher that finds and drives the widgets, and the updater
 ```
 
-Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat and Offsite do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` for Map Browser (with `Settings`), Text Extractor, DICOM Viewer, Stipple, Polyhedra and Gopher Browser, a `WindowGroup` and `Settings` for News Reader and Offsite, a single `Window` and `Settings` for Relay Chat, a `DocumentGroup` and `Settings` for Markdown Editor, and a `MenuBarExtra` for Server List. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
+Each app is a folder: `App.swift` holds the `@main` entry (window size and any extra menu items), `Icon.swift` draws its app icon, and the rest is its face. App icons are drawn at build time from the app's own SwiftUI code, so no image files are checked in. Draw highlights with the `accent` environment value rather than a fixed colour, so they follow the shared Accent Color setting; it falls back to orange where no window sets it, as in the app icons. An app can add keys to its `Info.plist` with an `InfoPlistExtras.xml` file, as Command Bar does for its Finder action. Every app gets `LSUIElement` and the `DesktopWidget` key (which Widget Bar looks for) unless that file sets the key itself, as Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat and Offsite do to show their Dock icons and stay out of Widget Bar, and Server List does to stay out of it. Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite and Server List don't use `DesktopClock.run` at all: their `App.swift` is an ordinary SwiftUI `App`, with a `WindowGroup` for Map Browser (with `Settings`), Text Extractor, DICOM Viewer, Stipple, Polyhedra and Gopher Browser, a `WindowGroup` and `Settings` for News Reader and Offsite, a single `Window` and `Settings` for Relay Chat, a `DocumentGroup` and `Settings` for Markdown Editor, and a `MenuBarExtra` for Server List. Text Drawer and SDF Post run `EdgeDrawer.run` (in `Shared/EdgeDrawer.swift`) instead: a tab at the screen edge that slides out to the app's panel, with its own edge and place along it, and a tab that takes drops. A window can be round (`round: true`, as Dial Timer is); if its face has drags of its own, turn off dragging by the background (`movableByBackground: false`) and put `MovesWindow` on the parts that should move it.
 
-To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed and the bar restarts. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
+To add one: make a folder with those files, then add a line to the `CLOCKS` table in `build.sh` (folder, executable name, bundle id, display name). `build.sh` marks every app it builds with a `DesktopWidget` key in its `Info.plist`, which is how Widget Bar finds them, so a new widget appears on the bar once it's installed. A drawer's `InfoPlistExtras.xml` adds `DesktopWidgetDrawer`, so the bar leaves out its Float on Top. Each widget writes its `floatOnTop` setting to its own preferences domain and watches it, which is how the bar reads and flips it from outside.
 
 The WidgetKit version of the analog clock in `Analog/Widget/` is only built when an Apple Development signing certificate is present, because macOS ignores widgets that aren't signed by one.

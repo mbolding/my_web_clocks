@@ -1,6 +1,7 @@
 // LauncherBar — Widget Bar's window: a row of widget icons with a dot under each one
 // that's running, in the accent colour if it floats on top. Click to open a widget, or to flip a
-// running one's Float on Top; right-click an icon to show it for a moment or quit it.
+// running one's Float on Top (or slide a drawer out); right-click an icon to show it for a
+// moment or quit it. The bar grows or shrinks as widgets are installed or removed.
 // The chevron at the end folds the bar into a small square at its right edge, out of the
 // way; clicking the square opens it out again.
 
@@ -28,6 +29,7 @@ struct LauncherBar: View {
         }
         // Resized after SwiftUI finishes this update, not in the middle of it.
         .onChange(of: collapsed) { DispatchQueue.main.async { fitWindow(animate: true) } }
+        .onChange(of: launcher.widgets.count) { DispatchQueue.main.async { fitWindow(animate: true) } }
         .onAppear {
             // After the window has restored its saved frame, which may be either size.
             DispatchQueue.main.async { fitWindow(animate: false) }
@@ -45,7 +47,7 @@ struct LauncherBar: View {
                 let isRunning = launcher.running.contains(widget.id)
                 let isFloating = launcher.floating.contains(widget.id)
                 Button {
-                    if isRunning { launcher.toggleFloat(widget) } else { launcher.open(widget) }
+                    if isRunning, !widget.isDrawer { launcher.toggleFloat(widget) } else { launcher.open(widget) }
                 } label: {
                     VStack(spacing: 3) {
                         Image(nsImage: widget.icon)
@@ -59,11 +61,14 @@ struct LauncherBar: View {
                 }
                 .buttonStyle(PressStyle())
                 .help(!isRunning ? "Open \(widget.name)"
+                      : widget.isDrawer ? "Click to slide out \(widget.name)."
                       : isFloating ? "\(widget.name) floats on top. Click to put it on the desktop."
                       : "\(widget.name) is on the desktop. Click to float it on top.")
                 .contextMenu {
                     if isRunning {
-                        Button(isFloating ? "Put on Desktop" : "Float on Top") { launcher.toggleFloat(widget) }
+                        if !widget.isDrawer {
+                            Button(isFloating ? "Put on Desktop" : "Float on Top") { launcher.toggleFloat(widget) }
+                        }
                         Button("Show \(widget.name)") { launcher.open(widget) }
                         Divider()
                         Button("Quit \(widget.name)") { launcher.quit(widget) }

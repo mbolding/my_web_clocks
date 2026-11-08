@@ -1,9 +1,8 @@
-// PostView — the widget: a title, the text, and a Post button, with what happened shown
+// PostView — the drawer's pad: a title, the text, and a Post button, with what happened shown
 // beneath. Text can be typed, pasted, or dropped in; a dropped file fills it while it's
 // empty. After posting, the three addresses are links.
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct PostView: View {
     @ObservedObject var poster = Poster.shared
@@ -42,20 +41,10 @@ struct PostView: View {
             .padding(.horizontal, 5)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .contentShape(Rectangle())
-            .onTapGesture { bodyFocused = true }
-            .onDrop(of: [.fileURL, .plainText], isTargeted: nil) { providers in
-                guard let provider = providers.first else { return false }
-                if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                    _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                        if let url { Task { @MainActor in poster.load(url) } }
-                    }
-                } else {
-                    _ = provider.loadObject(ofClass: String.self) { text, _ in
-                        if let text { Task { @MainActor in poster.body = text } }
-                    }
-                }
-                return true
-            }
+            // The first click on the closed-up drawer also gives it the keyboard; focus
+            // the text once it has it, or the focus is lost.
+            .onTapGesture { DispatchQueue.main.async { bodyFocused = true } }
+            .onDrop(of: [.fileURL, .plainText], isTargeted: nil) { poster.take($0) }
     }
 
     private var footer: some View {

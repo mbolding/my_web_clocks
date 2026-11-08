@@ -1,15 +1,21 @@
-// SDF Post — a floating pad that posts what's in it to an SDF member's site: the web blog
-// at user.sdf.org/blog/, the phlog in the gopher hole, and a gemlog in the Gemini capsule,
-// all at once, over ssh with the key SDF already knows.
+// SDF Post — a drawer at the edge of the screen that posts what's in it to an SDF member's
+// site: the web blog at user.sdf.org/blog/, the phlog in the gopher hole, and a gemlog in
+// the Gemini capsule, all at once, over ssh with the key SDF already knows. A thin tab
+// peeks in from the edge; hover or click it to slide out the pad, or drop text or a text
+// file on it to open the pad with that in it.
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 @main
 enum SDFPostApp {
     @MainActor static func main() {
-        // Starts below Scratch Pad, beside Command Bar, and floats on top until turned off.
-        DesktopClock.run(size: CGSize(width: 340, height: 280), defaultTop: 24 + 170 + 20 + 250 + 20 + 240 + 20,
-                         defaultRight: 24 + 420 + 20, interactive: true) {
+        // Lower on the edge than Text Drawer's tab, so the two sit apart on one edge. It
+        // stays open while you type in it, until you click elsewhere or press Esc.
+        EdgeDrawer.run(panelSize: CGSize(width: 340, height: 300), position: 0.62,
+                       stayOpenWhileTyping: true,
+                       dropTypes: [.fileURL, .plainText],
+                       onDrop: { Poster.shared.take($0) }) {
             PostView()
         } options: {
             PostOptions()
