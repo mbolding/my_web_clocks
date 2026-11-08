@@ -1,10 +1,12 @@
-// DockTile — the analog dial on the app icon's light tile, sized to fit any square.
+// DockTile — the analog dial or the digital time on the app icon's light tile, sized
+// to fit any square.
 
 import SwiftUI
 
 struct DockTile: View {
     var date: Date
     var showSeconds: Bool
+    var face: DockFace = .analog
 
     var body: some View {
         // The same grid as the app icon: an 824/1024 rounded square, so the live tile
@@ -13,7 +15,12 @@ struct DockTile: View {
             let side = min(geo.size.width, geo.size.height)
             let tile = side * 824 / 1024
             let shape = RoundedRectangle(cornerRadius: tile * 185 / 824, style: .continuous)
-            ClockFace(date: date, showSeconds: showSeconds)
+            Group {
+                switch face {
+                case .analog: ClockFace(date: date, showSeconds: showSeconds)
+                case .digital: DigitalFace(date: date, showSeconds: showSeconds)
+                }
+            }
                 .padding(tile * 70 / 824)
                 .frame(width: tile, height: tile)
                 .background(LinearGradient(colors: [Color(white: 0.99), Color(white: 0.86)],
@@ -25,4 +32,11 @@ struct DockTile: View {
                 .environment(\.colorScheme, .light)
         }
     }
+}
+
+/// Which face the Dock tile shows, remembered in Dock Clock's defaults under "face".
+enum DockFace: String, CaseIterable {
+    case analog, digital
+
+    var name: String { self == .analog ? "Analog" : "Digital" }
 }

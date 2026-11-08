@@ -14,7 +14,7 @@ Small native Mac apps that float on the desktop: frosted, borderless windows tha
 | **Text Drawer** (`Drawer/`) | A drawer at the edge of the screen for text you drop on it: a thin tab peeks in, and slides out to the last twenty drops as cards, to copy or drag back out |
 | **SDF Post** (`Post/`) | A drawer at the edge of the screen holding a pad that posts what's in it to your [SDF](https://sdf.org) site: a web blog, a gopher phlog and a Gemini gemlog at once, over ssh with your key |
 | **Server List** (`Servers/`) | A menu bar item listing your Macs and servers: choose one to open Screen Sharing (`vnc://`) or an SSH session in Terminal (`ssh://`), like Finder's Go → Connect to Server |
-| **Dock Clock** (`Dock/`) | An analog clock with no window: its live Dock icon is the whole app |
+| **Dock Clock** (`Dock/`) | An analog or digital clock with no window: its live Dock icon is the whole app |
 | **Dock Load** (`Load/`) | CPU load and memory pressure as rings in its Dock icon, with the busiest processes in its Dock menu; also no window |
 | **Map Browser** (`Maps/`) | An [OpenStreetMap](https://www.openstreetmap.org) browser, and an ordinary Mac app with windows, a menu bar and a Dock icon: search for places, save them, switch between map styles, and turn on Alabama's county borders, your county pins, the long trails, state parks and Corps of Engineers campgrounds |
 | **Text Extractor** (`Extractor/`) | Another ordinary app: drop a PDF or Word document on it and it shows just the text, to select, copy or save as plain text |
@@ -177,8 +177,9 @@ The floating bar, when it's shown:
 
 **Dock Clock**
 
-- Keep it in the Dock (right-click its icon → **Options → Keep in Dock**) and open it; the icon becomes the analog dial and keeps time while the app runs. When it quits, the Dock shows the plain icon again, since there's no Dock tile plug-in to draw it while closed.
-- Right-click the Dock icon for **Show Seconds** (the dial redraws once a minute without it) and **Accent Color**, the same shared colour as the widgets.
+- Keep it in the Dock (right-click its icon → **Options → Keep in Dock**) and open it; the icon becomes the clock and keeps time while the app runs. When it quits, the Dock shows the plain icon again, since there's no Dock tile plug-in to draw it while closed.
+- Right-click the Dock icon to choose **Analog** or **Digital**. Analog is the dial with the weekday and date; Digital is the hours and minutes in large figures under the weekday and date, in the system's 12- or 24-hour style, with the seconds as an accent bar filling across the minute. The choice is remembered across launches.
+- The same menu has **Show Seconds** (the clock redraws once a minute without it) and **Accent Color**, the same shared colour as the widgets.
 - It has no window, so it isn't `LSUIElement` like the others, and Widget Bar doesn't list it. Quit it from the Dock icon or with **⌘Q** while it's active.
 
 **Dock Load**

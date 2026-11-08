@@ -1,6 +1,7 @@
-// Dock Clock — an analog clock that lives in its Dock icon. There's no window: the app
-// draws the dial into its Dock tile once a second (or minute, without the second hand)
-// while it runs. Right-click the icon for Show Seconds and the shared accent colour.
+// Dock Clock — a clock that lives in its Dock icon. There's no window: the app draws an
+// analog dial or the digital time into its Dock tile once a second (or minute, without
+// seconds) while it runs. Right-click the icon for Analog or Digital, Show Seconds and
+// the shared accent colour.
 
 import SwiftUI
 import AppKit
@@ -21,6 +22,11 @@ final class DockClock: NSObject, NSApplicationDelegate {
     private var showSeconds: Bool {
         get { UserDefaults.standard.object(forKey: "showSeconds") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "showSeconds"); schedule() }
+    }
+
+    private var face: DockFace {
+        get { DockFace(rawValue: UserDefaults.standard.string(forKey: "face") ?? "") ?? .analog }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "face"); draw() }
     }
 
     private var accent: Accent {
@@ -66,7 +72,7 @@ final class DockClock: NSObject, NSApplicationDelegate {
     }
 
     private func draw() {
-        host.rootView = AnyView(DockTile(date: .now, showSeconds: showSeconds)
+        host.rootView = AnyView(DockTile(date: .now, showSeconds: showSeconds, face: face)
             .environment(\.accent, accent.color))
         NSApp.dockTile.display()
     }
@@ -90,6 +96,15 @@ final class DockClock: NSObject, NSApplicationDelegate {
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         let menu = NSMenu()
+        for f in DockFace.allCases {
+            let item = NSMenuItem(title: f.name, action: #selector(pickFace(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = f.rawValue
+            item.state = f == face ? .on : .off
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+
         let seconds = NSMenuItem(title: "Show Seconds", action: #selector(toggleSeconds), keyEquivalent: "")
         seconds.target = self
         seconds.state = showSeconds ? .on : .off
@@ -111,6 +126,10 @@ final class DockClock: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleSeconds() { showSeconds.toggle() }
+
+    @objc private func pickFace(_ item: NSMenuItem) {
+        if let f = DockFace(rawValue: item.representedObject as? String ?? "") { face = f }
+    }
 
     @objc private func pickAccent(_ item: NSMenuItem) {
         Accent.defaults.set(item.representedObject as? String, forKey: "accent")

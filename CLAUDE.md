@@ -99,7 +99,8 @@ on it, as cards to copy or drag back out),
 SDF Post (a pad in an edge drawer like Text Drawer's, whose text it posts, over
 ssh, to an SDF member's web blog, phlog and gemlog at once),
 Server List (a menu bar item listing servers that opens Screen Sharing or SSH),
-Dock Clock (an analog clock drawn into its Dock icon, with no window),
+Dock Clock (an analog or digital clock, chosen from its Dock menu, drawn into its
+Dock icon, with no window),
 Dock Load (CPU load and memory pressure as rings in its Dock icon, likewise
 windowless, with the busiest processes in its Dock menu),
 Map Browser (an OpenStreetMap browser built as an ordinary windowed app, with a
