@@ -25,7 +25,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── automata/                  # Digraph Automata Bench: single-file cellular automata on directed graphs, listed under "Other Apps"
 ├── carbon13/                  # 13C Carrier Calculator: single-file Prisma 13C MRS carrier frequency calculator, listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Text Drawer, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Widget Bar — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Text Drawer, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Panorama, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -132,7 +132,11 @@ Relay Chat (likewise, but it stays connected with its window closed: an IRC
 client with SASL logins, a Dock badge and notifications for mentions),
 Offsite (likewise: a Finder-like window on an rsync.net account, or any SSH
 account, over the Mac's own sftp and key, with uploads, downloads and the
-account's ZFS snapshots to look back through)
+account's ZFS snapshots to look back through),
+Panorama (likewise: drop overlapping photos on it and it stitches them into
+one panorama, with its own corner matching, RANSAC and bundle adjustment in
+Swift, since Vision's image registration only follows small movements, and
+saves it at full size, or a burst as a GIF held steady on the background)
 and Widget Bar
 (a menu bar item, with an optional floating toolbar, that opens the others and
 flips their Float on Top; it finds them by
