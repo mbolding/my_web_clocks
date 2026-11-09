@@ -1,6 +1,7 @@
 // Updater — Widget Bar's Update from GitHub: pulls the latest code into the checkout the
 // apps were built from (build.sh writes its path into every Info.plist as SourceFolder),
-// then rebuilds and reinstalls the apps already in ~/Applications with build.sh --update.
+// then rebuilds and reinstalls the apps already in ~/Applications with build.sh --update,
+// and installs any app added since the last pull.
 // The work runs as a detached shell script writing to a log, since the update quits and
 // reopens Widget Bar itself partway through. The script posts a notification when it's
 // done, and opens the log in TextEdit if anything failed.
@@ -37,7 +38,8 @@ enum Updater {
         alert.messageText = "Update from GitHub?"
         alert.informativeText = """
             Pulls the latest code into \((folder as NSString).abbreviatingWithTildeInPath), then rebuilds \
-            the apps installed in ~/Applications, which takes a minute or two. Apps that are running \
+            the apps installed in ~/Applications and installs any new ones, which takes a minute or \
+            two. Apps that are running \
             quit and reopen: Command Bar's shell session ends, and Markdown Editor closes without \
             saving, so save your work first.
             """
@@ -91,10 +93,16 @@ enum Updater {
             exit 2
           fi
           git log --oneline $before..HEAD
-          desktop_widget/build.sh --update
+          desktop_widget/build.sh --update --since=$before
         ) > "$2" 2>&1
         case $? in
-          0) notify "Updated to $(git log -1 --format=%s)" ;;
+          0)
+            added=(${(f)"$(sed -n 's/^New app: //p' "$2")"})
+            if (( ${#added} )); then
+              notify "Updated to $(git log -1 --format=%s). New: ${(j:, :)added}."
+            else
+              notify "Updated to $(git log -1 --format=%s)"
+            fi ;;
           2) notify "Already up to date." ;;
           *) notify "The update failed. The log has the details."; open -e "$2" ;;
         esac

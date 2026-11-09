@@ -63,13 +63,14 @@ Other forms:
 | `desktop_widget/build.sh --install` | Builds and installs to `~/Applications`, reopening the apps that were running |
 | `desktop_widget/build.sh word --install` | Builds, installs and opens just the apps named |
 | `desktop_widget/build.sh --update` | Rebuilds only the apps already in `~/Applications`, and reopens only the ones that were running |
+| `desktop_widget/build.sh --update --since=REV` | The same, and installs the apps added since commit `REV` |
 
 ### Update
 
 Choose **Update from GitHub…** from Widget Bar's menu bar item, or from a terminal:
 
 ```bash
-cd ~/repos/my_web_clocks && git pull && desktop_widget/build.sh --update
+cd ~/repos/my_web_clocks && before=$(git rev-parse HEAD) && git pull && desktop_widget/build.sh --update --since=$before
 ```
 
 Installing quits the running copy first and starts the new one. Window positions and settings are kept.
@@ -132,7 +133,7 @@ The floating bar, when it's shown:
 - The dot under an icon is grey while that widget runs on the desktop and in the accent colour while it floats on top; no dot means it isn't running.
 - Click a widget that isn't running to open it. Click a running one to flip its Float on Top, or, for a drawer, to slide it out.
 - Right-click an icon to float it or put it on the desktop, **Show** it for a few seconds, or quit it.
-- **Update from GitHub…** is in the menu bar item's menu, and in the bar's right-click menu. After you confirm, it pulls the latest code into the checkout the apps were built from (fast-forward only, so local commits stop it) and runs `build.sh --update`. Running apps quit and reopen, Widget Bar included, so save your work in Markdown Editor first, and Command Bar starts a new shell. A notification says when it's done; if it fails, the log (`~/Library/Logs/Widget Bar Update.log`) opens in TextEdit. If there's nothing new, nothing is rebuilt.
+- **Update from GitHub…** is in the menu bar item's menu, and in the bar's right-click menu. After you confirm, it pulls the latest code into the checkout the apps were built from (fast-forward only, so local commits stop it) and runs `build.sh --update`, which rebuilds the apps you have and installs any added since the last pull (the notification names them; they aren't opened). Running apps quit and reopen, Widget Bar included, so save your work in Markdown Editor first, and Command Bar starts a new shell. A notification says when it's done; if it fails, the log (`~/Library/Logs/Widget Bar Update.log`) opens in TextEdit. If there's nothing new, nothing is rebuilt.
 - The **›** at the right end folds the bar into a small square at its right edge, to get it out of the way; click the square to open the bar again. It stays folded or open across restarts.
 
 **Clock Widget** has a **Show Seconds** option in its right-click menu.

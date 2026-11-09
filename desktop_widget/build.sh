@@ -8,8 +8,11 @@
 #   ./build.sh --install        build, copy to ~/Applications, and reopen the ones that
 #                               were running (naming apps also opens those)
 #   ./build.sh --update         rebuild only the apps already in ~/Applications, and
-#                               reopen only the ones that were running (Widget Bar's
-#                               Update from GitHub runs this after a git pull)
+#                               reopen only the ones that were running
+#   ./build.sh --update --since=REV
+#                               the same, and also install the apps added to the table
+#                               below since commit REV (Widget Bar's Update from GitHub
+#                               runs this after a git pull, with REV the commit before it)
 #
 # WidgetKit widget (parked): Analog/Widget is only built and embedded when an Apple
 # Development certificate exists (Xcode → Settings → Accounts → Manage Certificates),
@@ -130,20 +133,34 @@ PLIST
   echo "Built $app${IDENTITY:+ (with WidgetKit widget)}"
 }
 
-wanted=() action= update=
+wanted=() action= update= since=
 for arg in "$@"; do
   case $arg in
     --run|--install) action=$arg ;;
     --update) action=--install update=1 ;;
+    --since=*) since=${arg#--since=} ;;
     *) wanted+=(${(L)arg}) ;;
   esac
 done
+
+# This table as it was at --since, to tell the apps added after it. If that commit can't be
+# read, no app counts as new, rather than every one.
+old_table=
+if [[ -n $since ]]; then
+  old_table=$(git show "$since:desktop_widget/build.sh" 2>/dev/null) ||
+    echo "Couldn't read build.sh at $since, so no new apps are installed." >&2
+fi
+is_new() { [[ -n $old_table && $old_table != *" $1 "* ]] }
 
 built=0 known=()
 for dir exe id name in $CLOCKS; do
   known+=(${(L)dir})
   (( ${#wanted} )) && (( ! ${wanted[(Ie)${(L)dir}]} )) && continue
-  [[ -n $update && ! -d ~/Applications/$exe.app ]] && continue
+  new=
+  if [[ -n $update && ! -d ~/Applications/$exe.app ]]; then
+    is_new $id || continue
+    new=1
+  fi
   build_clock $dir $exe $id $name
   (( ++built ))
 
@@ -169,7 +186,8 @@ for dir exe id name in $CLOCKS; do
       # Reopen what was running, and open what was asked for by name; installing them
       # all doesn't launch them all.
       [[ -n $running || ( -z $update && ${#wanted} -gt 0 ) ]] && open ~/Applications/$exe.app
-      echo "Installed to ~/Applications/$exe.app" ;;
+      echo "Installed to ~/Applications/$exe.app"
+      [[ -n $new ]] && echo "New app: $name" ;;
   esac
 done
 
