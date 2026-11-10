@@ -24,6 +24,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── brain/                     # Brain Explorer: MNI152 atlas viewer + prebuilt data, listed under "Other Apps"
 ├── automata/                  # Digraph Automata Bench: single-file cellular automata on directed graphs, listed under "Other Apps"
 ├── carbon13/                  # 13C Carrier Calculator: single-file Prisma 13C MRS carrier frequency calculator, listed under "Other Apps"
+├── galaxy_mri/                # Galaxy Traveling-Subject MRI: interactive multi-site MRI teaching case (index.html + style.css + app.js + img/), listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
 ├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Text Drawer, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Panorama, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
@@ -76,6 +77,16 @@ scanner. It takes the session's ¹H system frequency and a target chemical
 shift, returns the ¹³C frequency to enter, and tabulates where the glycogen,
 urea and lipid resonances fall relative to the carrier. It fetches nothing. It
 is listed under "Other Apps" and not counted as a clock. Don't apply the
+clock-file conventions to it.
+
+`galaxy_mri/` is Galaxy Traveling-Subject MRI, an interactive teaching page on a
+multi-site traveling-subject MRI study, with the sites renamed as Star Wars planets
+and the volunteers as Star Wars characters. Unlike most of the apps it is split
+into `index.html`, `style.css` and `app.js`, with its figures in `galaxy_mri/img/`.
+The charts are drawn in plain JavaScript from numbers written into `app.js`; it
+fetches nothing beyond its own images and Google Fonts. It is listed under "Other
+Apps" and not counted as a clock. Keep the site and volunteer names anonymized:
+don't add real site names, cities or a geographic route map. Don't apply the
 clock-file conventions to it.
 
 `dicom/` is DICOM Explorer, a three-plane viewer and tag browser for DICOM files

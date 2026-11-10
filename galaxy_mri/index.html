@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galaxy Traveling-Subject MRI</title>
+<meta name="description" content="Interactive teaching case: three volunteers scanned at six MRI sites. Anatomy, resting-state and task fMRI reproducibility, with sites and volunteers anonymized.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div class="stack">
+    <span class="eyebrow">NBL 425/625 · Case study in measurement</span>
+    <h1>Three volunteers, six planets, one brain each</h1>
+    <p class="lede">Three people were scanned on six different MRI systems with the same protocol. Their brains didn't change between scanners, so every difference you see between their scans is measurement error. This page walks through what that error looks like for anatomy, resting-state fMRI and task fMRI, and what it teaches about multi-site studies.</p>
+    <p class="caption">Real data from a multi-site traveling-subject study. Sites and volunteers are anonymized: sites are named after Star Wars planets and volunteers after Star Wars characters.</p>
+  </div>
+  <div class="fig" aria-label="Diagram of the traveling-subject design">
+    <svg id="heroSvg" viewBox="0 0 420 300" style="max-width:30rem;margin:0 auto" role="img" aria-label="Three volunteers travel to six scanner sites"></svg>
+  </div>
+</header>
+
+<nav class="jump" aria-label="Sections">
+  <a href="#design">Design</a><a href="#anatomy">Anatomy</a><a href="#rest">Resting state</a><a href="#task">Task fMRI</a><a href="#timing">Timing puzzle</a><a href="#lessons">Lessons</a><a href="#check">Check yourself</a>
+</nav>
+
+<!-- DESIGN -->
+<section id="design">
+  <div class="prose stack">
+    <span class="eyebrow">Part 0</span>
+    <h2>The traveling-subject design</h2>
+    <p>In most studies, every person is scanned at one site. If people at one site look different, you can't tell whether it's the people or the scanner. A traveling-subject study removes that ambiguity: the <em>same</em> people visit every site. Anything that differs between one person's scans is the scanner, the protocol, the software or ordinary session-to-session noise.</p>
+  </div>
+  <figure class="photo">
+    <img src="img/traveling-lab-rv.jpg" alt="A rented RV parked on a sandy pull-off beside the sea, with a car next to it and a highway in the foreground" width="1400" height="1050" loading="lazy">
+    <figcaption>The traveling lab. The volunteers and the study team drove this rented RV from site to site in 2017, scanning everyone at each stop.</figcaption>
+  </figure>
+  <div class="panel">
+    <h3>The route</h3>
+    <p class="muted">One loop, twelve stops, starting and ending at Endor. Drawn without geography: the order of the stops is real, the shape is not.</p>
+    <div class="controls"><button class="btn" id="driveBtn" type="button">Drive the route</button><span class="mono muted" id="driveStop" aria-live="polite"></span></div>
+    <div class="fig"><svg id="routeSvg" viewBox="0 0 680 320" role="img" aria-label="Abstract map of the trip: a loop through six study sites and six other stops"></svg></div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Study site</span><span><i style="background:var(--surface);border:2px solid var(--muted)"></i>Other stop on the trip</span><span><i style="background:var(--accent2)"></i>The RV</span></div>
+  </div>
+  <div class="cast" aria-label="Volunteers">
+    <div><b>Leia</b><span class="muted">Volunteer 1</span></div>
+    <div><b>Luke</b><span class="muted">Volunteer 2</span></div>
+    <div><b>Han</b><span class="muted">Volunteer 3</span></div>
+  </div>
+  <div class="panel">
+    <h3>What was collected at each site</h3>
+    <div class="controls"><div class="seg" id="modSeg" role="group" aria-label="Scan type"></div></div>
+    <div class="fig"><svg id="designSvg" viewBox="0 0 640 210" role="img" aria-label="Which scans exist for each site and volunteer"></svg></div>
+    <p class="caption" id="designNote"></p>
+  </div>
+  <div class="tbl panel">
+    <h3>The six sites</h3>
+    <table>
+      <thead><tr><th>Site</th><th>Vendor</th><th>T1-weighted notes</th><th class="num">T1 contrast (CNR)</th><th class="num">T1 blur (FWHM, mm)</th></tr></thead>
+      <tbody id="siteTable"></tbody>
+    </table>
+    <p class="caption">CNR and FWHM are MRIQC image-quality measures averaged over the three volunteers. Higher CNR means more grey/white contrast; higher FWHM means a smoother, blurrier image.</p>
+  </div>
+  <div class="teach">
+    <span class="eyebrow">Teaching point</span>
+    <p>The key comparison is always <b>within a person</b> against <b>between people</b>. If Leia at Endor looks more like Leia at Hoth than like Luke at Endor, the measurement carries an individual signature. If Leia and Luke at Endor look more alike than Leia at Endor and Leia at Hoth, the site is leaving a fingerprint.</p>
+  </div>
+</section>
+
+<!-- ANATOMY -->
+<section id="anatomy">
+  <div class="prose stack">
+    <span class="eyebrow">Part 1</span>
+    <h2>Anatomy: seven ways to measure the same brain</h2>
+    <p>The 18 T1-weighted scans (3 people × 6 sites) were run through seven segmentation pipelines. For each person and structure we compute the <b>coefficient of variation</b> across the six sites (standard deviation divided by mean), then average over the three people. Lower is better: it means the volume barely changed from scanner to scanner.</p>
+  </div>
+  <div class="panel">
+    <h3>Cross-site variability by pipeline</h3>
+    <div class="controls"><label class="inline" for="cvStruct">Structure <select id="cvStruct"></select></label></div>
+    <div class="fig"><svg id="cvSvg" viewBox="0 0 640 260" role="img" aria-label="Cross-site coefficient of variation for each pipeline"></svg></div>
+    <p class="caption">CV in percent, averaged over three volunteers. The best pipeline for the selected structure is highlighted. FSL values for deep structures come from FIRST; one Hoth session failed there, so those use five sites.</p>
+  </div>
+  <div class="try"><span class="eyebrow">Try this</span><p>Switch between <b>Thalamus</b>, <b>Cerebral cortex</b> and <b>Hippocampus</b>. Which pipeline family is consistently best? Now look at FSL for cortex and white matter. What might go wrong in a tissue-classification method when image quality differs between sites?</p></div>
+
+  <div class="panel">
+    <h3>Where the site effects come from</h3>
+    <p class="muted">Each bar is how far a site's measurement sits from the volunteer's own six-site average, in percent, averaged over the three volunteers.</p>
+    <div class="controls">
+      <div class="seg" id="offMeasure" role="group" aria-label="Measure"></div>
+    </div>
+    <div class="controls"><div class="seg" id="offPipe" role="group" aria-label="Pipeline"></div></div>
+    <div class="fig"><svg id="offSvg" viewBox="0 0 640 250" role="img" aria-label="Site offsets for the selected measure and pipeline"></svg></div>
+    <p class="readout" id="offNote"></p>
+  </div>
+  <div class="grid2">
+    <div class="teach"><span class="eyebrow">Teaching point · contrast</span><p>Tatooine's T1 uses a different sequence (an inversion-recovery fast gradient echo) with the highest grey/white contrast. Pipelines that put boundaries where the intensity changes (FreeSurfer, and FastSurfer, which is trained to imitate it) shrink the thalamus there by 8 to 11%. SynthSeg was trained to ignore contrast and SAMSEG fits its intensity model to each scan, so both barely notice.</p></div>
+    <div class="teach"><span class="eyebrow">Teaching point · resolution</span><p>Hoth's T1 was reconstructed into 0.5 mm slices by interpolation, not acquired at 0.5 mm. That makes it the blurriest image, and blur pulls the pial surface inward. Every surface pipeline finds the cortex about 7% thinner at Hoth, while cortex <em>volume</em> barely moves. No software choice fixes an acquisition problem.</p></div>
+  </div>
+  <div class="panel tbl">
+    <h3>Pipelines disagree more than sites do</h3>
+    <table>
+      <thead><tr><th>Structure (cm³)</th><th class="num">FreeSurfer 8.1</th><th class="num">FreeSurfer 7.4.1</th><th class="num">FastSurfer</th><th class="num">SynthSeg</th><th class="num">SAMSEG</th><th class="num">FSL</th></tr></thead>
+      <tbody>
+        <tr><td>Cerebral cortex</td><td class="num">474.7</td><td class="num">474.0</td><td class="num">472.1</td><td class="num">525.7</td><td class="num">462.0</td><td class="num">462.9</td></tr>
+        <tr><td>Cerebral white matter</td><td class="num">423.5</td><td class="num">423.8</td><td class="num">426.2</td><td class="num">433.9</td><td class="num">370.1</td><td class="num">500.0</td></tr>
+        <tr><td>Lateral ventricles</td><td class="num">17.1</td><td class="num">15.7</td><td class="num">15.7</td><td class="num">14.9</td><td class="num">17.8</td><td class="num">23.4</td></tr>
+        <tr><td>Thalamus</td><td class="num">14.1</td><td class="num">14.2</td><td class="num">14.5</td><td class="num">14.9</td><td class="num">12.5</td><td class="num">16.0</td></tr>
+        <tr><td>Putamen</td><td class="num">11.3</td><td class="num">10.2</td><td class="num">10.4</td><td class="num">11.7</td><td class="num">10.8</td><td class="num">10.3</td></tr>
+      </tbody>
+    </table>
+    <p class="caption">Mean over all 18 sessions. SynthSeg's cortex is 11% larger than FreeSurfer's and FSL's ventricles are 37% larger, far bigger gaps than any site effect. Even two versions of FreeSurfer differ by 10% on the putamen.</p>
+  </div>
+  <div class="teach"><span class="eyebrow">Teaching point</span><p>Absolute volumes depend on the tool. Pick one pipeline and one version at the start of a study and never change it; switching tools halfway is worse than adding a site.</p></div>
+</section>
+
+<!-- REST -->
+<section id="rest">
+  <div class="prose stack">
+    <span class="eyebrow">Part 2</span>
+    <h2>Resting state: is a connectome a fingerprint?</h2>
+    <p>Each volunteer lay still for 8 minutes at every site. We split the cortex into 200 regions and correlated every region's signal with every other, giving 19,900 connections per scan, the <b>connectome</b>. Then we asked how similar two connectomes are.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Signal quality by site</h3>
+      <div class="fig"><svg id="tsnrSvg" viewBox="0 0 320 230" role="img" aria-label="Cortical temporal SNR by site"></svg></div>
+      <p class="caption">Cortical temporal SNR (signal mean divided by its fluctuation). Dagobah used quarter-size voxels in-plane (1.72 mm instead of 3.44 mm), which costs almost half the SNR. Head motion was low everywhere (mean 0.08 to 0.12 mm per volume).</p>
+    </div>
+    <div class="panel">
+      <h3>How alike are two connectomes?</h3>
+      <div class="fig"><svg id="simSvg" viewBox="0 0 320 230" role="img" aria-label="Connectome similarity for three kinds of pairs"></svg></div>
+      <p class="caption">Mean correlation between connectomes, with the range across pairs. Same-person pairs are always from different sites.</p>
+    </div>
+  </div>
+  <div class="try"><span class="eyebrow">Predict first</span><p>Before you look at the right-hand chart: will two <em>different</em> people scanned on the same scanner look more alike than two different people on different scanners? Then compare the second and third bars.</p></div>
+  <div class="panel">
+    <h3>Same person, two sites</h3>
+    <p class="muted">Each cell is how similar a volunteer's connectome is between those two sites (mean over Leia, Luke and Han). Hover or tap a cell.</p>
+    <div class="fig"><svg id="pairSvg" viewBox="0 0 440 410" style="max-width:34rem" role="img" aria-label="Same-person connectome similarity for each pair of sites"></svg></div>
+    <p class="readout" id="pairNote">Select a cell to see the value.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Fingerprinting</h3>
+      <p>Take the three people's connectomes from one site and match them to the three from another site by highest correlation. Chance is 1 in 3.</p>
+      <div class="fig"><svg id="fpSvg" viewBox="0 0 320 200" role="img" aria-label="Identification accuracy by site"></svg></div>
+      <p class="caption">83 of 90 matches correct (92%). Matching each scan to its single most similar other scan works for 17 of 18.</p>
+    </div>
+    <div class="panel">
+      <h3>Where the variation comes from</h3>
+      <p>For each connection, a two-way analysis splits the variance into person, site and leftover noise. Compare each share with what pure noise would give.</p>
+      <div class="fig"><svg id="anovaSvg" viewBox="0 0 320 200" role="img" aria-label="Variance shares against chance"></svg></div>
+      <p class="caption">Person explains far more than chance; site explains no more than chance.</p>
+    </div>
+  </div>
+  <div class="teach"><span class="eyebrow">Teaching point</span><p>The individual signature is in the <em>pattern</em> of 19,900 connections, not in any single one. A typical single connection has a reliability (ICC) of only 0.18. Also notice Dagobah: its SNR was half the others', yet its connectomes matched other sites just as well. Lower SNR does not automatically mean worse data for a given question.</p></div>
+</section>
+
+<!-- TASK -->
+<section id="task">
+  <div class="prose stack">
+    <span class="eyebrow">Part 3</span>
+    <h2>Task fMRI: Stroop and food pictures</h2>
+    <p>Four sites also ran two tasks. In the <b>Stroop task</b>, a color word appears in colored ink and the volunteer presses the button for the ink color; incongruent trials (RED written in blue) are slower than congruent ones. In the <b>food-cue task</b>, volunteers watch blocks of high-calorie food, low-calorie food and non-food pictures. Tatooine and Dagobah collected no task data, and Naboo's Stroop logs were lost.</p>
+  </div>
+  <div class="panel">
+    <h3>Stroop behaviour at each site</h3>
+    <div class="controls"><div class="seg" id="stroopSeg" role="group" aria-label="Stroop measure"></div></div>
+    <div class="fig"><svg id="stroopSvg" viewBox="0 0 640 260" role="img" aria-label="Stroop behaviour for each volunteer at each site"></svg></div>
+    <p class="caption" id="stroopNote"></p>
+  </div>
+  <div class="panel">
+    <h3>Group brain maps: all runs pooled</h3>
+    <p class="muted">Each map combines every run of that contrast (Stouffer z, shown where z &gt; 3.1). Red and yellow are positive, blue is negative. Glass-brain views: left side, back, right side, top.</p>
+    <div class="controls"><div class="seg" id="mapSeg" role="group" aria-label="Contrast"></div></div>
+    <figure class="brainmap"><img id="mapImg" src="img/group_full_foodcue_pictures_vs_baseline.png" alt="" width="1047" height="376"></figure>
+    <p class="readout" id="mapNote"></p>
+  </div>
+  <div class="try"><span class="eyebrow">Look closely</span><p>Open <b>Food vs non-food</b>. The red blob at the back of the brain is early visual cortex responding more to food photos; the blue regions along the side and underside are object-selective cortex responding more to household objects. How much of a "food response" could come from colour and texture rather than appetite?</p></div>
+  <div class="panel">
+    <h3>Are single-run brain maps reproducible?</h3>
+    <p class="muted">For each contrast we correlate whole-brain maps between pairs of runs. Same-person pairs are always from different sites. A gap between the teal and grey bars means the map carries an individual signature.</p>
+    <div class="controls"><div class="seg" id="reproSeg" role="group" aria-label="Analysis version"></div></div>
+    <div class="fig"><svg id="reproSvg" viewBox="0 0 640 300" role="img" aria-label="Map similarity for each contrast"></svg></div>
+    <p class="caption" id="reproNote"></p>
+  </div>
+  <div class="grid2">
+    <div class="teach"><span class="eyebrow">Teaching point · effect size</span><p>Big contrasts (pictures against fixation, any Stroop trial against rest) give maps with a modest individual signature. The contrasts researchers care most about, high- against low-calorie food and incongruent against congruent Stroop, are small differences between two similar conditions. From one 8 to 15 minute run, those maps are mostly noise.</p></div>
+    <div class="teach"><span class="eyebrow">Teaching point · group vs individual</span><p>Pooled over all runs, the Stroop interference map lands exactly where it should: lateral prefrontal, parietal and salience regions. A contrast can be solid at the group level and still unreliable in any one person. Those are different questions and need different amounts of data.</p></div>
+  </div>
+</section>
+
+<!-- TIMING -->
+<section id="timing">
+  <div class="prose stack">
+    <span class="eyebrow">Part 3, continued</span>
+    <h2>The timing puzzle</h2>
+    <p>To model task fMRI you need to know when each stimulus appeared. The Stroop logs recorded every onset. The food-cue logs recorded <b>no times at all</b>, only the order of the pictures. The order is fixed and each frame lasts 4 s, but halfway through there is a self-paced break of unknown length. Slide the break below and watch the second half move.</p>
+  </div>
+  <div class="panel">
+    <div class="controls">
+      <label class="inline" for="runSel">Run <select id="runSel"></select></label>
+    </div>
+    <label class="inline" for="brk">Break length <input id="brk" type="range" min="0" max="250" step="1" value="0"><span id="brkVal" class="mono">0 s</span></label>
+    <div class="controls"><button class="btn" id="fitBtn" type="button">Show the fitted break</button></div>
+    <div class="fig"><svg id="timeSvg" viewBox="0 0 680 172" role="img" aria-label="Food-cue block timeline against the scan window"></svg></div>
+    <div class="legend"><span><i style="background:var(--hi)"></i>High-calorie</span><span><i style="background:var(--lo)"></i>Low-calorie</span><span><i style="background:var(--nf)"></i>Non-food</span><span><i style="background:var(--base)"></i>Baseline</span><span><i style="background:var(--accent2)"></i>Break</span></div>
+    <p class="readout" id="timeNote"></p>
+  </div>
+  <div class="teach"><span class="eyebrow">How the break was found</span><p>For each candidate break length, build the predicted brain response and fit it to every voxel; keep the length that fits best. The visual cortex responds strongly to pictures, so the fit is sharp when the data are good. Hoth's scan for Leia stopped 5 s after the task's end, and the fit recovered exactly that 5 s break. Two runs had no clear answer and were analysed using only their first half.</p></div>
+  <div class="try"><span class="eyebrow">Discuss</span><p>A long break pushes the second half of the task past the end of the scan, so less of the model has to fit. Why would that make a long break look artificially good? How would you guard against it?</p></div>
+</section>
+
+<!-- LESSONS -->
+<section id="lessons">
+  <div class="prose stack">
+    <span class="eyebrow">Synthesis</span>
+    <h2>What carries an individual signature?</h2>
+    <p>Ranked from most to least reproducible within a person. For the functional measures the number is how much more similar a person is to themselves at another site than to someone else.</p>
+  </div>
+  <div class="panel ladder" id="ladder"></div>
+  <div class="teach"><span class="eyebrow">Then and now</span><p>The team's first look at these data in 2017 used one number per scan: T1 contrast-to-noise gave an intraclass correlation of 0.84 across sites, and a Friedman test found no site effect on resting-state SNR (p = 0.19). That was the right quick answer. The 2026 reanalysis, with seven anatomy pipelines and full connectomes, keeps the conclusion and adds the details a single number hides: Tatooine's thalamus, Hoth's cortical thickness, Dagobah's SNR.</p></div>
+  <div class="grid2">
+    <div class="panel stack">
+      <h3>Lessons for multi-site studies</h3>
+      <ol class="stack" style="margin:0;padding-left:1.2rem">
+        <li><b>Match acquisitions.</b> Every real site effect traced to a protocol choice: Tatooine's T1 contrast, Hoth's interpolated slices, Dagobah's small voxels.</li>
+        <li><b>Freeze the pipeline.</b> Tools disagree by up to 37% on absolute volume. Choose one version and keep it.</li>
+        <li><b>Prefer site-robust tools</b> for volumes (SynthSeg, SAMSEG) and model site explicitly for cortical thickness.</li>
+        <li><b>Log everything a task needs:</b> stimulus onsets and the scanner trigger. One missing column in a log file cost days of reconstruction here.</li>
+        <li><b>Collect enough data per person</b> for subtle contrasts: several runs, or a region-of-interest measure.</li>
+      </ol>
+    </div>
+    <div class="panel stack">
+      <h3>Discussion questions</h3>
+      <details><summary>Why can't this study measure accuracy?</summary><p>Reproducibility asks whether the answer is the same every time; accuracy asks whether it's right. A pipeline can give the same wrong thalamus volume at every site. You'd need a ground truth, such as a phantom, manual segmentation or histology, to measure accuracy.</p></details>
+      <details><summary>Each person visited each site once. What does that hide?</summary><p>Without a second scan at the same site, a site effect can't be separated from ordinary day-to-day variation. The cross-site numbers here are an upper bound on site variability.</p></details>
+      <details><summary>Hoth's thickness is 7% low. Would you drop Hoth?</summary><p>Not necessarily. The offset is consistent across volunteers, so a site covariate or a harmonization method such as ComBat can correct it. Dropping a site costs participants; modelling it costs one parameter.</p></details>
+      <details><summary>Three volunteers is small. What conclusions are still safe?</summary><p>Rankings of pipelines and the presence or absence of large site offsets are robust, because each comparison uses every volunteer at every site. Reliability coefficients like ICC with only three people are very unstable and shouldn't be trusted to two decimals.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- CHECK -->
+<section id="check">
+  <div class="prose stack">
+    <span class="eyebrow">Check yourself</span>
+    <h2>Five questions</h2>
+  </div>
+  <div class="quiz" id="quiz"></div>
+</section>
+
+<footer>
+  <p><a href="../">Web Clocks</a> · Data: a 2017 multi-site traveling-subject MRI collection, reanalysed in November 2026 on a university compute cluster (FreeSurfer 8.1 and 7.4.1, FastSurfer, SynthSeg, SAMSEG, FSL 6.0.7, MRIQC, fMRIPrep 25.2.7, nilearn). Site and volunteer names are pseudonyms. Food-cue paradigm: Legget et al. 2022, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8970978/">PMC8970978</a>.</p>
+</footer>
+</div>
+<script src="app.js" defer></script>
+</body>
+</html>
