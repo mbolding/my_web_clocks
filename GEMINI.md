@@ -103,7 +103,7 @@ conventions to it.
 `desktop_widget/` holds native macOS apps rather than web pages: small floating
 SwiftUI windows, currently an analog clock, a word clock ported from
 `clocks/art/word_clock.html`, Command Bar (a floating zsh you can drop folders
-onto), Soma Player (a SomaFM radio, with tilderadio too), Dial Timer (a round timer), Month Calendar
+onto), Soma Player (a SomaFM radio, with tilderadio too, as a floating window or an edge drawer), Dial Timer (a round timer), Month Calendar
 (this month's calendar), Scratch Pad (a text pad you can copy or save to the Desktop),
 Text Drawer (a tab at the screen edge that slides out to the text you've dropped or pasted
 on it, as cards to copy or drag back out),

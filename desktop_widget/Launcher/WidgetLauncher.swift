@@ -11,8 +11,9 @@ struct Widget: Identifiable {
     let name: String
     let url: URL
     let icon: NSImage
-    /// An edge drawer, which always floats: there's no Float on Top to flip.
-    let isDrawer: Bool
+    /// Built as an edge drawer, which always floats: there's no Float on Top to flip. One that
+    /// can be either (Soma Player) says so in its settings; see `WidgetLauncher.isDrawer`.
+    let isDrawerApp: Bool
 }
 
 @MainActor
@@ -93,7 +94,7 @@ final class WidgetLauncher: ObservableObject {
                       found[id] == nil else { continue }
                 let name = info["CFBundleName"] as? String ?? url.deletingPathExtension().lastPathComponent
                 found[id] = Widget(id: id, name: name, url: url, icon: NSWorkspace.shared.icon(forFile: url.path),
-                                   isDrawer: info["DesktopWidgetDrawer"] as? Bool == true)
+                                   isDrawerApp: info["DesktopWidgetDrawer"] as? Bool == true)
             }
         }
         return found.values.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
@@ -120,9 +121,16 @@ final class WidgetLauncher: ObservableObject {
     }
 
     private func refreshFloating() {
-        let drawers = Set(widgets.filter(\.isDrawer).map(\.id))
+        let drawers = Set(widgets.filter(Self.isDrawer).map(\.id))
         let now = Set(running.filter { !drawers.contains($0) && Self.floats($0) })
         if now != floating { floating = now }
+    }
+
+    /// Whether it's an edge drawer now: built as one, or switched into its drawer mode.
+    static func isDrawer(_ widget: Widget) -> Bool {
+        if widget.isDrawerApp { return true }
+        CFPreferencesAppSynchronize(widget.id as CFString)
+        return CFPreferencesCopyAppValue("drawerMode" as CFString, widget.id as CFString) as? Bool ?? false
     }
 
     /// A running widget's Float on Top, flipped.

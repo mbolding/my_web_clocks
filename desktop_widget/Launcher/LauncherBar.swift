@@ -47,7 +47,7 @@ struct LauncherBar: View {
                 let isRunning = launcher.running.contains(widget.id)
                 let isFloating = launcher.floating.contains(widget.id)
                 Button {
-                    if isRunning, !widget.isDrawer { launcher.toggleFloat(widget) } else { launcher.open(widget) }
+                    if isRunning, !WidgetLauncher.isDrawer(widget) { launcher.toggleFloat(widget) } else { launcher.open(widget) }
                 } label: {
                     VStack(spacing: 3) {
                         Image(nsImage: widget.icon)
@@ -61,12 +61,12 @@ struct LauncherBar: View {
                 }
                 .buttonStyle(PressStyle())
                 .help(!isRunning ? "Open \(widget.name)"
-                      : widget.isDrawer ? "Click to slide out \(widget.name)."
+                      : WidgetLauncher.isDrawer(widget) ? "Click to slide out \(widget.name)."
                       : isFloating ? "\(widget.name) floats on top. Click to put it on the desktop."
                       : "\(widget.name) is on the desktop. Click to float it on top.")
                 .contextMenu {
                     if isRunning {
-                        if !widget.isDrawer {
+                        if !WidgetLauncher.isDrawer(widget) {
                             Button(isFloating ? "Put on Desktop" : "Float on Top") { launcher.toggleFloat(widget) }
                         }
                         Button("Show \(widget.name)") { launcher.open(widget) }

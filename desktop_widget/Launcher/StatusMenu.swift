@@ -92,7 +92,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             submenu.addItem(item)
         }
         add("Show \(widget.name)", #selector(open(_:)))
-        if !widget.isDrawer {
+        if !WidgetLauncher.isDrawer(widget) {
             add("Float on Top", #selector(toggleFloat(_:)), state: isFloating ? .on : .off)
         }
         submenu.addItem(.separator())

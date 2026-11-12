@@ -94,6 +94,15 @@ final class SomaPlayer: ObservableObject {
             channelChanged()
         }
         Task { await loadChannels() }
+        // Started again after switching between window and drawer: play on once the
+        // channel is back.
+        if UserDefaults.standard.bool(forKey: "resumeOnLaunch") {
+            UserDefaults.standard.set(false, forKey: "resumeOnLaunch")
+            Task {
+                for _ in 0..<100 where channel == nil { try? await Task.sleep(for: .milliseconds(100)) }
+                play()
+            }
+        }
     }
 
     // MARK: - Channels
