@@ -6,7 +6,8 @@
 // tab, or the open drawer's grip along the screen edge, to move it along the edge;
 // right-click either for the edge, the app's own options, the accent colour and Quit.
 // Each app keeps its own edge and place on it, and starts at a different place so two
-// drawers on one edge sit apart.
+// drawers on one edge sit apart. The app's name sits beside its tab, in a window clicks
+// pass through, so the tab itself stays a thin strip and two drawers can be told apart.
 
 import SwiftUI
 import AppKit
@@ -67,7 +68,8 @@ enum EdgeDrawer {
                                                   keyDown: ((NSEvent) -> Bool)? = nil,
                                                   @ViewBuilder content: @escaping () -> Content,
                                                   @ViewBuilder options: @escaping () -> Options) {
-        UserDefaults.standard.register(defaults: ["drawerEdge": DrawerEdge.right.rawValue, "drawerPosition": position])
+        UserDefaults.standard.register(defaults: ["drawerEdge": DrawerEdge.right.rawValue, "drawerPosition": position,
+                                                  "drawerLabel": true])
         let app = NSApplication.shared
         let controller = DrawerController(panelSize: panelSize, stayOpenWhileTyping: stayOpenWhileTyping,
                                           keyDown: keyDown) { controller in
@@ -193,6 +195,7 @@ private struct DrawerHandle<Options: View>: ViewModifier {
     var options: Options
     @AppStorage("drawerEdge") private var edgeName = DrawerEdge.right.rawValue
     @AppStorage("accent", store: Accent.defaults) private var accentChoice = Accent.orange
+    @AppStorage("drawerLabel") private var showsLabel = true
 
     func body(content: Content) -> some View {
         content
@@ -207,6 +210,7 @@ private struct DrawerHandle<Options: View>: ViewModifier {
                 Picker("Edge", selection: $edgeName) {
                     ForEach(DrawerEdge.allCases) { Text($0.name).tag($0.rawValue) }
                 }
+                Toggle("Show Name Beside Tab", isOn: $showsLabel)
                 Picker("Accent Color", selection: $accentChoice) {
                     ForEach(Accent.allCases) { accent in
                         Label { Text(accent.name) } icon: { Image(nsImage: accent.swatch) }
@@ -225,6 +229,28 @@ private extension View {
     func drawerHandle<Options: View>(moveTab: @escaping () -> Void, endMove: @escaping () -> Void,
                                      options: Options) -> some View {
         modifier(DrawerHandle(moveTab: moveTab, endMove: endMove, options: options))
+    }
+}
+
+/// The app's name beside the tab: small, in the accent colour, on a pale backing so it
+/// reads over anything, and turned to run along a side edge like a book's spine.
+private struct DrawerLabel: View {
+    @AppStorage("drawerEdge") private var edgeName = DrawerEdge.right.rawValue
+    @AppStorage("accent", store: Accent.defaults) private var accent = Accent.orange
+    private let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Drawer"
+
+    var body: some View {
+        let edge = DrawerEdge(rawValue: edgeName) ?? .right
+        Text(name)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(accent.color)
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(Color(nsColor: .windowBackgroundColor).opacity(0.85)))
+            .fixedSize()
+            .rotationEffect(.degrees(edge == .left ? -90 : edge == .right ? 90 : 0))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -267,8 +293,25 @@ final class DrawerController: NSObject, NSApplicationDelegate {
         self.makeContent = makeContent
     }
 
+    /// The name beside the tab, in a window of its own that clicks pass through.
+    private var label: NSPanel!
+    static let labelDepth: CGFloat = 18
+    static let labelGap: CGFloat = 3
+
     func applicationDidFinishLaunching(_ note: Notification) {
         state.controller = self
+        label = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        label.ignoresMouseEvents = true
+        label.level = .floating
+        label.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+        label.isOpaque = false
+        label.backgroundColor = .clear
+        label.hasShadow = false
+        // The window keeps the size it's given: left to itself it would grow to fit the
+        // name laid out flat, which on a side edge pushes it back over the tab.
+        let host = NSHostingView(rootView: DrawerLabel())
+        host.sizingOptions = []
+        label.contentView = host
         panel = DesktopPanel(contentRect: frame(for: .peek), styleMask: [.borderless, .nonactivatingPanel],
                              backing: .buffered, defer: false)
         panel.acceptsKeyboard = true
@@ -289,9 +332,13 @@ final class DrawerController: NSObject, NSApplicationDelegate {
         defaultsWatch = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification,
                                                                object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.edge.rawValue != self.lastEdge else { return }
-                self.lastEdge = self.edge.rawValue
-                self.place(animated: false)
+                guard let self else { return }
+                if self.edge.rawValue != self.lastEdge {
+                    self.lastEdge = self.edge.rawValue
+                    self.place(animated: false)
+                } else {
+                    self.placeLabel()
+                }
             }
         }
         NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main) { [weak self] _ in
@@ -301,6 +348,7 @@ final class DrawerController: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated { self?.menuOpen = false }
         }
         watchMouse()
+        placeLabel()
     }
 
     /// Opened again while running (Widget Bar, Finder, open -a): slide out.
@@ -472,11 +520,32 @@ final class DrawerController: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Shows the name beside the tab while it's tucked in, and hides it while the drawer
+    /// is out or the setting is off.
+    private func placeLabel() {
+        guard let label else { return }
+        guard state.phase == .peek, !state.showsPanel, defaults.bool(forKey: "drawerLabel") else {
+            label.orderOut(nil)
+            return
+        }
+        let tab = frame(for: .peek), depth = Self.labelDepth, gap = Self.labelGap
+        let frame: NSRect
+        switch edge {
+        case .right: frame = NSRect(x: tab.minX - gap - depth, y: tab.minY, width: depth, height: tab.height)
+        case .left: frame = NSRect(x: tab.maxX + gap, y: tab.minY, width: depth, height: tab.height)
+        case .bottom: frame = NSRect(x: tab.minX, y: tab.maxY + gap, width: tab.width, height: depth)
+        }
+        label.setFrame(frame, display: true)
+        label.orderFrontRegardless()
+    }
+
     private func place(animated: Bool, then done: (() -> Void)? = nil) {
         guard let panel else { return }
         let target = frame(for: state.phase)
+        if state.phase != .peek { label?.orderOut(nil) }
         guard animated, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
             panel.setFrame(target, display: true)
+            placeLabel()
             done?()
             return
         }
@@ -488,6 +557,7 @@ final class DrawerController: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated {
                 panel.invalidateShadow()
                 done?()
+                self.placeLabel()
             }
         })
     }
