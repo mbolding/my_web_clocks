@@ -49,6 +49,7 @@ CLOCKS=(
   Drawer  TextDrawer    com.mbolding.textdrawer    "Text Drawer"
   Offsite Offsite       com.mbolding.offsite       "Offsite"
   Panorama Panorama     com.mbolding.panorama      "Panorama"
+  Codes   RevealCodes   com.mbolding.revealcodes   "Reveal Codes"
 )
 
 build_clock() {

@@ -14,6 +14,28 @@ Small apps that are a bit more than widgets: ordinary windowed apps with a menu 
 - **Fourier Epicycles.** Draw a closed curve, or drop an SVG path, and watch a chain of rotating circles trace it, with a slider for how many terms to keep, so the outline sharpens from an ellipse as terms are added. A discrete Fourier transform of the resampled points gives the circles, biggest first. Save the trace as SVG or PNG like Stipple.
 - **Orrery.** The planets where they are today, from Kepler's orbital elements (JPL's approximate elements, good to a fraction of a degree for 1800–2050), with a date scrubber and play speeds, and Polyhedra's turntable to tilt the view out of the ecliptic. Inner and outer planets want separate zooms, or a log scale for distance. The Moon and its phase would follow from the same maths.
 
+## Reveal Codes, and a Word 5.1a beside it
+
+Reveal Codes (`Codes/`) is a Markdown editor dressed as WordPerfect 5.1, built in two halves: `MarkupEngine.swift` reads Markdown as a word processor's hidden codes and `MarkupEditor.swift` edits it by WordPerfect's rules, and neither knows how the text is drawn; `GridLayout.swift` and `ScreenView.swift` are the WordPerfect screen. The engine's tests (headless, in a scratch `main.swift` compiled with the two engine files) cover parsing, the cursor's stops, F6 on and off, blocks, Reveal Codes deletes, Enter in lists and bold, and styles.
+
+Still to do on the WordPerfect side:
+
+- **The VGA font.** VileR's Oldschool PC Font Pack (int10h.org, CC BY-SA 4.0) has IBM's VGA 8x16 font as a TrueType file. Bundle it in the app's Resources (build.sh would copy it), with credit in the README, in place of Menlo.
+- **Pull-down menus (Alt-=).** 5.1's menu bar across the top of the screen: File, Edit, Search, Layout, Mark, Tools, Font, Graphics, Help, drawn in the grid.
+- **Print (Shift-F7).** The pages as WordPerfect would print them, in a typewriter face with 1" margins, through `NSPrintOperation`, so Save as PDF works too.
+- **Links typed in.** A Link entry on the Font menu that asks for the address on the status line, as F2 asks for the search.
+- **Spell (Ctrl-F2)** through `NSSpellChecker`, word by word on the status line as WordPerfect did it.
+- **The CRT look**, optional: scanlines and a glow, as a Metal shader on the screen layer (build.sh would compile the `.metal` file with `xcrun metal`).
+
+**Word 5.1a for the Macintosh (1992)** is the planned sibling: the same engine under System 7's black-and-white look, with proportional type. Plan:
+
+- **A second app sharing the engine.** build.sh compiles a folder's own `.swift` files, so the engine needs a home both apps can use: move `MarkupEngine.swift` and `MarkupEditor.swift` to a shared folder (say `Shared/Markup/`), and give build.sh a way for an app to name extra source folders (a `Sources.txt` beside its `App.swift`, listing them) rather than compiling them into every app.
+- **The page.** Word 5.1's Normal view: a white page with the Ribbon (font, size, bold, italic, underline) and the Ruler (indents, tabs, alignment, line spacing) across the top, and the status box at the bottom left (`Page 1`). Its styles are Markdown's: Normal, heading 1 to 3, a list, a quote, code.
+- **Show ¶ (⌘J in Word 5.1)** is its Reveal Codes: the hidden Markdown drawn in grey where it is (¶ at returns, dots for spaces, and the `**` and `#` themselves), editable like any text.
+- **Outline view** folds the document by heading level, which suits Markdown's headings exactly.
+- **The text view.** Proportional, styled text with the markup hidden, done in TextKit (hiding the markup glyphs through the layout manager) rather than a grid. This is the harder part: Markdown Editor's lesson about the Touch Bar applies (return nil from `makeTouchBar()`), and the cursor rules have to come from `MarkupEditor` rather than the text view's own.
+- **The look.** Geneva and Monaco still ship with macOS; Chicago, the menu font, doesn't and can't be bundled, so a free look-alike would stand in. The Mac's own menu bar is Word's menu bar, so its menus (File, Edit, View, Insert, Format, Font, Tools, Window) are ordinary SwiftUI commands.
+
 ## Future ideas
 
 - **Replicants, after BeOS.** Drag part of a widget (Soma Player's now-playing line, the stopwatch readout) out onto the desktop to make it a small live window of its own, perhaps by a hand-like grip shown on hover; drop one on Widget Bar to dock it there, like the Deskbar's tray. Each piece would be another `DesktopPanel` in the same app, opened when a drag ends outside the window and restored at launch. Unlike Be's, a piece closes when its app quits, since macOS apps can't host each other's views.

@@ -26,7 +26,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── carbon13/                  # 13C Carrier Calculator: single-file Prisma 13C MRS carrier frequency calculator, listed under "Other Apps"
 ├── galaxy_mri/                # Galaxy Traveling-Subject MRI: interactive multi-site MRI teaching case (index.html + style.css + app.js + img/), listed under "Other Apps"
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
-├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Text Drawer, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Panorama, Widget Bar — not web pages
+├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Text Drawer, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, Reveal Codes, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Panorama, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
 ├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
@@ -124,6 +124,10 @@ Text Extractor (another ordinary windowed app: drop a PDF or Word document on it
 for its plain text),
 Markdown Editor (a Markdown text editor with light syntax colouring and no
 preview, likewise an ordinary app, built on SwiftUI's `DocumentGroup`),
+Reveal Codes (likewise: a Markdown editor dressed as WordPerfect 5.1 for DOS,
+on an 80-column blue screen, whose Reveal Codes shows the Markdown as codes like
+`[BOLD]`; its engine, `Codes/MarkupEngine.swift` and `Codes/MarkupEditor.swift`,
+is kept apart from the look so a Word 5.1-style editor can share it),
 DICOM Viewer (another ordinary windowed app: open or drop DICOM files or folders
 for their series, window and level, and tags, with a Swift port of the parser in
 `dicom/index.html`),
