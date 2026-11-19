@@ -7,7 +7,7 @@
 import AppKit
 
 enum KeyAction {
-    case cancel, search, searchBack, help, reveal, block, bold, exit, print, italic, font, style, save, open
+    case cancel, search, searchBack, help, reveal, block, bold, exit, print, italic, font, style, save, open, table
 }
 
 struct TemplateKey {
@@ -42,6 +42,7 @@ struct TemplateKey {
         TemplateKey(number: 10, shift: .shift, action: .open, label: "Retrieve"),
         TemplateKey(number: 3, shift: .alt, action: .reveal, label: "Reveal Codes"),
         TemplateKey(number: 4, shift: .alt, action: .block, label: "Block"),
+        TemplateKey(number: 7, shift: .alt, action: .table, label: "Table"),
         TemplateKey(number: 8, shift: .alt, action: .style, label: "Style"),
         TemplateKey(number: 8, shift: .ctrl, action: .font, label: "Font"),
     ]

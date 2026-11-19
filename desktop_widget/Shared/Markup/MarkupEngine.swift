@@ -3,7 +3,9 @@
 // WordPerfect), and every piece of markup becomes a code: a block code at the start of the
 // line (`# `, `- `, `1. `, `> `, a fence) and paired inline codes around the text they
 // format (`**` for bold, `*` for italic, `~~`, backticks, a link's `[` and `](address)`).
-// What's left is the visible text, each character with its style.
+// What's left is the visible text, each character with its style. A pipe table's `|`s are
+// cell codes, and the line of dashes under its header is one code, the table's definition
+// (WordPerfect's [Tbl Def]), carrying each column's alignment.
 //
 // This file knows nothing about how it's drawn: the WordPerfect screen lays it out in a
 // character grid, and a proportional, Word-style screen could lay out the same pieces.
@@ -26,10 +28,14 @@ enum CodeKind: Equatable {
     case quote
     case rule
     case fence(String)
+    /// A table's `|`, between its cells.
+    case cell
+    /// The line of dashes under a table's header, with each column's alignment.
+    case tableRule([TableAlign])
 
     var isBlock: Bool {
         switch self {
-        case .heading, .bullet, .number, .quote, .rule, .fence: true
+        case .heading, .bullet, .number, .quote, .rule, .fence, .tableRule: true
         default: false
         }
     }
@@ -53,6 +59,16 @@ enum CodeKind: Equatable {
         default: false
         }
     }
+}
+
+enum TableAlign: Equatable { case left, center, right }
+
+/// A pipe table: its lines (the header, the rule under it, the rows) and how each column is
+/// aligned.
+struct Table: Equatable {
+    var lines: ClosedRange<Int>
+    var aligns: [TableAlign]
+    var columns: Int { aligns.count }
 }
 
 struct Code: Equatable {
@@ -96,6 +112,10 @@ enum BlockKind: Equatable {
     case fence
     /// A line inside a code block.
     case fenced
+    /// A row of a table (an index into `Markup.tables`), its header or one of its rows.
+    case tableRow(Int, header: Bool)
+    /// The line of dashes under a table's header.
+    case tableRule(Int)
 }
 
 struct Line {
@@ -123,6 +143,7 @@ struct Markup {
     let chars: [Character]
     private(set) var lines: [Line] = []
     private(set) var codes: [Code] = []
+    private(set) var tables: [Table] = []
 
     init(_ chars: [Character]) {
         self.chars = chars
@@ -144,6 +165,12 @@ struct Markup {
     func stops(revealed: Bool) -> [Int] {
         var stops: [Int] = []
         for line in lines {
+            // A table's rule has nothing to type on; with the codes revealed its code can be
+            // stood on (and deleted).
+            if case .tableRule = line.block {
+                if revealed, let code = line.blockCode { stops.append(codes[code].range.lowerBound) }
+                continue
+            }
             for piece in line.pieces {
                 switch piece {
                 case .char(let offset, _): stops.append(offset)
@@ -209,12 +236,48 @@ struct Markup {
     // MARK: - Blocks
 
     private mutating func parse() {
+        // The lines first, so a table's header can look ahead to the rule under it.
+        var spans: [Range<Int>] = []
         var start = 0
-        var fence: (char: Character, length: Int, code: Int)?
         while true {
             var end = start
             while end < chars.count, !chars[end].isNewline { end += 1 }
-            var line = Line(range: start..<end, newline: end < chars.count ? end : nil)
+            spans.append(start..<end)
+            guard end < chars.count else { break }
+            start = end + 1
+        }
+        var fence: (char: Character, length: Int, code: Int)?
+        var table: Int?
+        for (n, span) in spans.enumerated() {
+            let start = span.lowerBound, end = span.upperBound
+            var line = Line(range: span, newline: end < chars.count ? end : nil)
+            if let current = table {
+                if let last = lines.last, case .tableRow(current, true) = last.block, let aligns = tableRule(span) {
+                    // The rule under the header: one code, the table's definition.
+                    line.block = .tableRule(current)
+                    let index = addCode(Code(kind: .tableRule(aligns), range: span, opens: true, partner: nil))
+                    line.blockCode = index
+                    line.pieces = [.code(index)]
+                    lines.append(line)
+                    continue
+                }
+                if !span.isEmpty, !pipes(in: span).isEmpty, !chars[span].allSatisfy(\.isWhitespace) {
+                    parseRow(&line, table: current, header: false)
+                    tables[current].lines = tables[current].lines.lowerBound...n
+                    lines.append(line)
+                    continue
+                }
+                table = nil
+            }
+            if fence == nil, n + 1 < spans.count, let aligns = tableRule(spans[n + 1]),
+               cells(in: span).count == aligns.count, !pipes(in: span).isEmpty {
+                // A header row, with its rule next.
+                tables.append(Table(lines: n...(n + 1), aligns: aligns))
+                table = tables.count - 1
+                parseRow(&line, table: table!, header: true)
+                lines.append(line)
+                continue
+            }
             if let open = fence {
                 if let closing = fenceRun(start, end), closing.char == open.char, closing.length >= open.length,
                    chars[(start + closing.indent + closing.length)..<end].allSatisfy(\.isWhitespace) {
@@ -239,10 +302,63 @@ struct Markup {
                 parseBlock(&line)
             }
             lines.append(line)
-            guard end < chars.count else { break }
-            start = end + 1
         }
         // A fence never closed runs to the end of the document, as Markdown has it.
+    }
+
+    // MARK: - Tables
+
+    /// The `|`s in a line that divide cells: any not escaped with a backslash.
+    private func pipes(in span: Range<Int>) -> [Int] {
+        var found: [Int] = []
+        var i = span.lowerBound
+        while i < span.upperBound {
+            if chars[i] == "\\" { i += 2; continue }
+            if chars[i] == "|" { found.append(i) }
+            i += 1
+        }
+        return found
+    }
+
+    /// A row's cells, between its pipes, leaving out the empty ends outside a leading or
+    /// trailing pipe.
+    private func cells(in span: Range<Int>) -> [Range<Int>] {
+        let bars = pipes(in: span)
+        var edges = [span.lowerBound] + bars.flatMap { [$0, $0 + 1] } + [span.upperBound]
+        var cells: [Range<Int>] = []
+        while edges.count >= 2 {
+            cells.append(edges[0]..<edges[1])
+            edges.removeFirst(2)
+        }
+        if let first = cells.first, chars[first].allSatisfy(\.isWhitespace), !bars.isEmpty, bars[0] >= first.upperBound { cells.removeFirst() }
+        if let last = cells.last, chars[last].allSatisfy(\.isWhitespace), let bar = bars.last, bar < last.lowerBound { cells.removeLast() }
+        return cells
+    }
+
+    /// The alignments of a table's rule (`| --- | :---: | ---: |`), if the line is one.
+    private func tableRule(_ span: Range<Int>) -> [TableAlign]? {
+        guard !pipes(in: span).isEmpty || chars[span].contains("-") else { return nil }
+        var aligns: [TableAlign] = []
+        for cell in cells(in: span) {
+            let text = String(chars[cell]).trimmingCharacters(in: .whitespaces)
+            guard !text.isEmpty, text.allSatisfy({ $0 == "-" || $0 == ":" }), text.contains("-") else { return nil }
+            let left = text.hasPrefix(":"), right = text.hasSuffix(":")
+            aligns.append(left && right ? .center : right ? .right : .left)
+        }
+        return aligns.isEmpty || pipes(in: span).isEmpty && aligns.count < 2 ? nil : aligns
+    }
+
+    /// A header or body row: each `|` a cell code, each cell's text parsed on its own.
+    private mutating func parseRow(_ line: inout Line, table: Int, header: Bool) {
+        line.block = .tableRow(table, header: header)
+        var at = line.range.lowerBound
+        for bar in pipes(in: line.range) + [line.range.upperBound] {
+            if at < bar { line.pieces += inline(at..<bar, base: header ? [.bold] : []) }
+            if bar < line.range.upperBound {
+                line.pieces.append(.code(addCode(Code(kind: .cell, range: bar..<(bar + 1), opens: true, partner: nil))))
+            }
+            at = bar + 1
+        }
     }
 
     private func fenceRun(_ start: Int, _ end: Int) -> (char: Character, length: Int, indent: Int)? {

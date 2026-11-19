@@ -2,8 +2,8 @@
 // blue screen, the status line, F6 for bold and Alt-F3 to reveal the codes. The file is
 // plain Markdown, and the Markdown is the codes: `**` is [BOLD], `# ` is [Head 1]. An
 // ordinary document app, like Markdown Editor, with New, Open, Save, Revert and recent files
-// from DocumentGroup. MarkupEngine and MarkupEditor know nothing of WordPerfect, so a
-// Word 5.1-style app can be built on them later.
+// from DocumentGroup. The engine (MarkupEngine, MarkupEditor) and the file (MarkdownFile) are
+// in Shared/Markup, which Pilcrow, the Word 5.1-style editor, builds on too.
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -11,7 +11,7 @@ import UniformTypeIdentifiers
 @main
 struct RevealCodesApp: App {
     var body: some Scene {
-        DocumentGroup(newDocument: { RevealDocument() }) { file in
+        DocumentGroup(newDocument: { MarkdownFile() }) { file in
             ScreenWindow(document: file.document, fileURL: file.fileURL)
         }
         .defaultSize(width: 960, height: 600)
@@ -34,6 +34,7 @@ struct RevealCodesApp: App {
                 }
                 Divider()
                 send("Block On/Off", "toggleBlock:", "b", [.command, .option])
+                Button("Insert Table") { NSApp.sendAction(#selector(ScreenView.insertTable(_:)), to: nil, from: nil) }
             }
             CommandGroup(before: .toolbar) {
                 send("Reveal Codes", "toggleRevealCodes:", "r", [.command, .option])
@@ -56,54 +57,8 @@ struct RevealCodesApp: App {
     }
 }
 
-extension UTType {
-    /// Declared in InfoPlistExtras.xml, with its file extensions.
-    static let markdown = UTType(importedAs: "net.daringfireball.markdown", conformingTo: .plainText)
-}
-
-/// A Markdown or plain text file, written back as it came: the same encoding, and a byte
-/// order mark only if it had one. A reference type, so the screen's own undo is what marks
-/// it edited.
-final class RevealDocument: ReferenceFileDocument {
-    static var readableContentTypes: [UTType] { [.markdown, .plainText] }
-    static var writableContentTypes: [UTType] { [.markdown, .plainText] }
-
-    var text: String
-    private var encoding = String.Encoding.utf8
-    private var byteOrderMark = false
-
-    init(text: String = "") {
-        self.text = text
-    }
-
-    required init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents else { throw CocoaError(.fileReadCorruptFile) }
-        if let text = String(data: data, encoding: .utf8) {
-            self.text = text
-            byteOrderMark = data.starts(with: [0xEF, 0xBB, 0xBF])
-        } else if data.starts(with: [0xFF, 0xFE]) || data.starts(with: [0xFE, 0xFF]), let text = String(data: data, encoding: .utf16) {
-            self.text = text
-            encoding = .utf16
-        } else if let text = String(data: data, encoding: .windowsCP1252) {
-            self.text = text
-            encoding = .windowsCP1252
-        } else {
-            text = String(decoding: data.map { UInt16($0) }, as: UTF16.self)
-            encoding = .isoLatin1
-        }
-    }
-
-    func snapshot(contentType: UTType) throws -> String { text }
-
-    func fileWrapper(snapshot: String, configuration: WriteConfiguration) throws -> FileWrapper {
-        var data = snapshot.data(using: encoding) ?? Data(snapshot.utf8)
-        if byteOrderMark, encoding == .utf8 { data.insert(contentsOf: [0xEF, 0xBB, 0xBF], at: 0) }
-        return FileWrapper(regularFileWithContents: data)
-    }
-}
-
 struct ScreenWindow: View {
-    @ObservedObject var document: RevealDocument
+    @ObservedObject var document: MarkdownFile
     var fileURL: URL?
     @Environment(\.undoManager) private var undoManager
 
@@ -115,7 +70,7 @@ struct ScreenWindow: View {
 }
 
 struct Screen: NSViewRepresentable {
-    let document: RevealDocument
+    let document: MarkdownFile
     var fileURL: URL?
     var undoManager: UndoManager?
 

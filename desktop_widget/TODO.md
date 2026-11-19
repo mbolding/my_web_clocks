@@ -27,14 +27,14 @@ Still to do on the WordPerfect side:
 - **Spell (Ctrl-F2)** through `NSSpellChecker`, word by word on the status line as WordPerfect did it.
 - **The CRT look**, optional: scanlines and a glow, as a Metal shader on the screen layer (build.sh would compile the `.metal` file with `xcrun metal`).
 
-**Word 5.1a for the Macintosh (1992)** is the planned sibling: the same engine under System 7's black-and-white look, with proportional type. Plan:
+**Pilcrow** (`Pilcrow/`) is the Word 5.1a-style sibling, built on the same engine, which now lives in `Shared/Markup` (named in each app's `Sources.txt`). Its first version has Word's Normal view, the Ribbon, the Ruler, the page box, the styles and Show ¶. Still to do there:
 
-- **A second app sharing the engine.** build.sh compiles a folder's own `.swift` files, so the engine needs a home both apps can use: move `MarkupEngine.swift` and `MarkupEditor.swift` to a shared folder (say `Shared/Markup/`), and give build.sh a way for an app to name extra source folders (a `Sources.txt` beside its `App.swift`, listing them) rather than compiling them into every app.
-- **The page.** Word 5.1's Normal view: a white page with the Ribbon (font, size, bold, italic, underline) and the Ruler (indents, tabs, alignment, line spacing) across the top, and the status box at the bottom left (`Page 1`). Its styles are Markdown's: Normal, heading 1 to 3, a list, a quote, code.
-- **Show ¶ (⌘J in Word 5.1)** is its Reveal Codes: the hidden Markdown drawn in grey where it is (¶ at returns, dots for spaces, and the `**` and `#` themselves), editable like any text.
-- **Outline view** folds the document by heading level, which suits Markdown's headings exactly.
-- **The text view.** Proportional, styled text with the markup hidden, done in TextKit (hiding the markup glyphs through the layout manager) rather than a grid. This is the harder part: Markdown Editor's lesson about the Touch Bar applies (return nil from `makeTouchBar()`), and the cursor rules have to come from `MarkupEditor` rather than the text view's own.
-- **The look.** Geneva and Monaco still ship with macOS; Chicago, the menu font, doesn't and can't be bundled, so a free look-alike would stand in. The Mac's own menu bar is Word's menu bar, so its menus (File, Edit, View, Insert, Format, Font, Tools, Window) are ordinary SwiftUI commands.
+- **Outline view** folds the document by heading level, which suits Markdown's headings exactly: a View menu item, with the outline's +/− markers in the margin and ⌃⇧↑/↓ to move a heading and its section.
+- **Page view** with the pages drawn as sheets, their edges and the gaps between, and printing them.
+- **Chicago.** The menu face isn't on today's Macs and can't be bundled; a free look-alike (ChiKareGo, say, if its licence allows) for the Ribbon and page box.
+- **The Ruler's indents** draggable, to nest a list item or set a quote's width, written back as Markdown indentation.
+- **Table glitches.** Tables show some small rendering glitches in use (reported 2026-11-19, details to come); look at them in both Reveal Codes and Pilcrow.
+- **Faster restyling.** Every edit restyles the whole document, which is fine for a few thousand words; past that, restyle only the paragraphs an edit touched.
 
 ## Future ideas
 

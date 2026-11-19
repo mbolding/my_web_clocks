@@ -134,6 +134,13 @@ final class MarkupEditor {
         if selection != nil { deleteSelection() }
         anchor = nil
         let line = markup.lines[markup.lineIndex(at: cursor)]
+        // In a table, Enter adds a row below this one (a Markdown cell can't hold a return);
+        // on the header, below the rule under it, so the table stays whole.
+        if case .tableRow(let table, let header) = line.block {
+            let after = header ? markup.lines[markup.tables[table].lines.lowerBound + 1] : line
+            addRow(after: after, columns: markup.tables[table].columns)
+            return
+        }
         if let index = line.blockCode, line.firstVisible == nil, [.quote].contains(line.block) || isList(line.block) {
             removeBlockCode(index)
             tidy()
@@ -160,6 +167,82 @@ final class MarkupEditor {
         let inserted = closers + "\n" + prefix + openers
         replace(cursor..<cursor, with: Array(inserted))
         cursor += inserted.count
+        tidy()
+    }
+
+    // MARK: - Tables
+
+    /// Tab and Shift-Tab in a table: to the start of the next or previous cell, onto the
+    /// next or previous row at the ends, and Tab in the last cell adds a row. False if the
+    /// cursor isn't in a table.
+    @discardableResult
+    func moveCell(forward: Bool) -> Bool {
+        anchor = nil
+        let index = markup.lineIndex(at: cursor)
+        let line = markup.lines[index]
+        guard case .tableRow(let table, _) = line.block else { return false }
+        let starts = cellStarts(line)
+        let current = starts.lastIndex { $0 <= cursor } ?? 0
+        let rows = markup.tables[table].lines.filter { if case .tableRow = markup.lines[$0].block { true } else { false } }
+        if forward {
+            if current + 1 < starts.count {
+                cursor = starts[current + 1]
+            } else if let row = rows.first(where: { $0 > index }), let first = cellStarts(markup.lines[row]).first {
+                cursor = first
+            } else {
+                addRow(after: line, columns: markup.tables[table].columns)
+            }
+        } else if current > 0 {
+            cursor = starts[current - 1]
+        } else if let row = rows.last(where: { $0 < index }), let last = cellStarts(markup.lines[row]).last {
+            cursor = last
+        }
+        return true
+    }
+
+    /// Where typing in each cell of a row starts: just inside its first space, if it has one.
+    private func cellStarts(_ line: Line) -> [Int] {
+        let bars = line.pieces.compactMap { piece -> Int? in
+            if case .code(let index) = piece, markup.codes[index].kind == .cell { return markup.codes[index].range.lowerBound }
+            return nil
+        }
+        var cells: [Range<Int>] = []
+        var at = line.range.lowerBound
+        for edge in bars + [line.range.upperBound] {
+            cells.append(at..<edge)
+            at = edge + 1
+        }
+        // The empty ends outside a leading or trailing pipe aren't cells.
+        if let first = cells.first, !bars.isEmpty, chars[first].allSatisfy(\.isWhitespace) { cells.removeFirst() }
+        if let last = cells.last, !bars.isEmpty, chars[last].allSatisfy(\.isWhitespace), last.lowerBound > bars.last! { cells.removeLast() }
+        return cells.map { cell in cell.isEmpty || chars[cell.lowerBound] != " " ? cell.lowerBound : cell.lowerBound + 1 }
+    }
+
+    private func addRow(after line: Line, columns: Int) {
+        let row = "\n|" + String(repeating: "  |", count: max(1, columns))
+        let at = line.range.upperBound
+        replace(at..<at, with: Array(row))
+        cursor = at + 3
+        tidy()
+    }
+
+    /// A new table of two columns, its header and two rows, on a line of its own, with the
+    /// cursor in the first cell.
+    func insertTable(columns: Int = 2, rows: Int = 2) {
+        if selection != nil { deleteSelection() }
+        anchor = nil
+        let line = markup.lines[markup.lineIndex(at: cursor)]
+        let empty = "|" + String(repeating: "  |", count: columns)
+        let rule = "|" + String(repeating: " --- |", count: columns)
+        var text = ([empty, rule] + Array(repeating: empty, count: rows)).joined(separator: "\n")
+        var at = line.range.lowerBound
+        if !line.range.isEmpty {
+            at = line.range.upperBound
+            text = "\n\n" + text
+        }
+        if line.newline == nil || !line.range.isEmpty { text += "\n" }
+        replace(at..<at, with: Array(text))
+        cursor = at + (line.range.isEmpty ? 0 : 2) + 2
         tidy()
     }
 

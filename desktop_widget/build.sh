@@ -1,7 +1,8 @@
 #!/bin/zsh
 # Builds the floating desktop clocks with the Swift command-line tools; no Xcode needed.
 # Each clock is a folder holding App.swift (the @main entry), Icon.swift (its app icon)
-# and its face; Shared/ has the window, menu, accent colour and icon code they all use.
+# and its face; Shared/ has the window, menu, accent colour and icon code they all use, and
+# a folder's Sources.txt can name more source folders it shares with another app.
 #   ./build.sh                  build every clock into ./build
 #   ./build.sh word             build just one (folder name, any case)
 #   ./build.sh analog --run     build, then (re)launch it
@@ -50,12 +51,19 @@ CLOCKS=(
   Offsite Offsite       com.mbolding.offsite       "Offsite"
   Panorama Panorama     com.mbolding.panorama      "Panorama"
   Codes   RevealCodes   com.mbolding.revealcodes   "Reveal Codes"
+  Pilcrow Pilcrow       com.mbolding.pilcrow       "Pilcrow"
 )
 
 build_clock() {
   local dir=$1 exe=$2 id=$3 name=$4
   local app=build/$exe.app
   local sources=($dir/*.swift)
+  # Source folders an app shares with another (Reveal Codes and Pilcrow share Shared/Markup),
+  # one to a line in its Sources.txt, rather than compiled into every app.
+  if [[ -f $dir/Sources.txt ]]; then
+    local extra
+    for extra in ${(f)"$(<$dir/Sources.txt)"}; do sources+=($extra/*.swift); done
+  fi
 
   rm -rf $app
   mkdir -p $app/Contents/MacOS $app/Contents/Resources

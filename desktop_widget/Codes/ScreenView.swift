@@ -408,7 +408,8 @@ final class ScreenView: NSView, NSTextInputClient {
                     ("Alt-F3, F11", "Reveal Codes"), ("Alt-F4, F12", "Block on/off"),
                     ("F2, Shift-F2", "Search fwd/back"), ("F10", "Save"),
                     ("Shift-F10", "Retrieve (open)"), ("F7", "Exit"),
-                    ("F1, Esc", "Cancel"), ("F3", "Help")]
+                    ("F1, Esc", "Cancel"), ("F3", "Help"),
+                    ("Alt-F7", "Table"), ("Tab", "Next cell")]
         func column(_ pair: (String, String)) -> String {
             ("  " + pair.0.padding(toLength: 14, withPad: " ", startingAt: 0) + pair.1).padding(toLength: 40, withPad: " ", startingAt: 0)
         }
@@ -574,6 +575,8 @@ final class ScreenView: NSView, NSTextInputClient {
             say("Saving \(fileName)")
         case .open:
             NSDocumentController.shared.openDocument(nil)
+        case .table:
+            insertTable(nil)
         }
     }
 
@@ -706,7 +709,10 @@ final class ScreenView: NSView, NSTextInputClient {
                 editor.deleteSelection()
             }
         case #selector(insertNewline(_:)): edit { editor.newline() }; blockKeyOn = false
-        case #selector(insertTab(_:)): edit(typing: true) { editor.insert("\t") }
+        case #selector(insertTab(_:)):
+            // In a table Tab goes to the next cell, adding a row after the last.
+            edit { if !editor.moveCell(forward: true) { editor.insert("\t") } }
+        case #selector(insertBacktab(_:)): edit { editor.moveCell(forward: false) }
         case #selector(cancelOperation(_:)): cancel()
         default: break
         }
@@ -818,6 +824,13 @@ final class ScreenView: NSView, NSTextInputClient {
             blockKeyOn = false
         }
         needsDisplay = true
+    }
+
+    /// Alt-F7, Columns/Table in WordPerfect: a new table, two columns by two rows.
+    @objc func insertTable(_ sender: Any?) {
+        blockKeyOn = false
+        edit { editor.insertTable() }
+        say("Table: Tab moves to the next cell; Enter adds a row")
     }
 
     @objc func toggleKeyTemplate(_ sender: Any?) {
