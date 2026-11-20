@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prolog Clock</title>
+<style>
+    :root {
+        --bg: #12141c;
+        --panel: #171a24;
+        --rule: #2a2f3f;
+        --text: #cfd3e0;
+        --dim: #7a8199;
+        --faint: #444b62;
+        --query: #8fb8ff;
+        --answer: #e9d9a6;
+        --words: #f4efe1;
+        --accent: #f0a868;
+        --error: #ff8f86;
+        --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+    }
+
+    body {
+        min-height: 100vh;
+        padding: clamp(12px, 3vw, 32px);
+    }
+
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.4em 1.2em;
+        margin-bottom: clamp(10px, 2vw, 20px);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: clamp(18px, 2.4vw, 26px);
+        font-weight: 600;
+        color: var(--query);
+    }
+
+    header p {
+        margin: 0;
+        font-size: clamp(11px, 1.2vw, 13px);
+        color: var(--dim);
+    }
+
+    main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(14px, 2.5vw, 28px);
+        align-items: start;
+    }
+
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1.15fr) minmax(320px, 1fr); }
+    }
+
+    .term { min-width: 0; }
+
+    #words {
+        font-family: var(--serif);
+        font-size: clamp(30px, 5.2vw, 64px);
+        line-height: 1.15;
+        color: var(--words);
+        margin: 0.25em 0 0.6em;
+        min-height: 2.4em;
+        text-wrap: balance;
+    }
+
+    #words .hedge { color: var(--accent); font-style: italic; }
+
+    pre {
+        margin: 0;
+        font-family: var(--mono);
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .entry { margin-bottom: 0.9em; }
+
+    .in, .out {
+        font-size: clamp(12px, 1.3vw, 15px);
+        line-height: 1.5;
+    }
+
+    .in { color: var(--query); }
+    .in .p { color: var(--dim); }
+    .out { color: var(--answer); }
+    .out.err { color: var(--error); }
+    .out.printed { color: var(--text); }
+    .nb { color: var(--dim); font-style: italic; }
+
+    #status { color: var(--dim); font-size: clamp(12px, 1.3vw, 15px); }
+
+    #repl {
+        margin-top: 1.4em;
+        padding-top: 1em;
+        border-top: 1px dashed var(--rule);
+    }
+
+    #repl-hint {
+        color: var(--dim);
+        font-size: clamp(11px, 1.15vw, 13px);
+        margin: 0 0 0.8em;
+        line-height: 1.6;
+    }
+
+    #repl-hint code { color: var(--query); }
+
+    #history { max-height: 40vh; overflow-y: auto; }
+
+    .prompt {
+        display: flex;
+        align-items: baseline;
+        color: var(--query);
+    }
+
+    .prompt span { white-space: pre; font-size: 16px; color: var(--dim); }
+
+    #line {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--query);
+        font-family: var(--mono);
+        font-size: 16px;
+        caret-color: var(--query);
+        padding: 0.2em 0;
+    }
+
+    #line:disabled { opacity: 0.4; }
+    #line::placeholder { color: var(--faint); font-style: italic; }
+
+    aside {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(12px, 1.8vw, 20px);
+        min-width: 0;
+    }
+
+    aside h2 {
+        margin: 0 0 0.6em;
+        font-size: clamp(12px, 1.25vw, 14px);
+        font-weight: 600;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
+    #source {
+        font-size: clamp(10.5px, 1.05vw, 13px);
+        line-height: 1.55;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    #source .cm { color: var(--dim); font-style: italic; }
+    #source .at { color: var(--answer); }
+    #source .op { color: var(--accent); }
+
+    aside p {
+        color: var(--dim);
+        font-size: clamp(11px, 1.1vw, 12.5px);
+        line-height: 1.6;
+        margin: 1em 0 0;
+    }
+
+    aside a { color: var(--dim); }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Prolog Clock</h1>
+    <p id="version">loading Tau Prolog&hellip;</p>
+</header>
+
+<main>
+    <section class="term">
+        <div id="words" aria-live="polite"></div>
+        <div id="session"><div id="status">loading Prolog&hellip;</div></div>
+
+        <div id="repl">
+            <p id="repl-hint">Ask your own questions. End each query with a full stop and press Enter (&uarr; recalls). Try <code>say(9:41:00, S).</code>, <code>phrase(time(T), [quarter, to, H]).</code> or <code>phrase(time(3:M), W).</code> to list every way the grammar can say a time in the three o&rsquo;clock hour.</p>
+            <div id="history"></div>
+            <label class="prompt">
+                <span>?- </span>
+                <input id="line" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Prolog query" placeholder="type a query here" disabled>
+            </label>
+        </div>
+    </section>
+
+    <aside>
+        <h2>The program</h2>
+        <pre id="source"></pre>
+        <p>Prolog programs are facts and rules, not steps. The <code>--&gt;</code> rules are a grammar for the time in English, and Prolog can run a grammar in either direction: from a time to its words, or from words back to the time they name. Each second the page asks the queries on the left. The interpreter is <a href="http://tau-prolog.org" target="_blank" rel="noopener">Tau Prolog</a>, written in JavaScript and running here in your browser.</p>
+    </aside>
+</main>
+
+<!-- The Prolog program. The page shows this text and consults it, unchanged. -->
+<script type="text/plain" id="program">
+% The time in words, written as a grammar. The same rules that
+% say the time also read it back, because Prolog runs them both ways.
+
+:- use_module(library(lists)).
+
+hour(1) --> [one].    hour(2) --> [two].     hour(3) --> [three].
+hour(4) --> [four].   hour(5) --> [five].    hour(6) --> [six].
+hour(7) --> [seven].  hour(8) --> [eight].   hour(9) --> [nine].
+hour(10) --> [ten].   hour(11) --> [eleven]. hour(12) --> [twelve].
+
+amount(5) --> [five].        amount(10) --> [ten].
+amount(15) --> [quarter].    amount(20) --> [twenty].
+amount(25) --> [twenty, five].  amount(30) --> [half].
+
+% minutes M on the clock that read as "A to"
+to(35, 25).  to(40, 20).  to(45, 15).  to(50, 10).  to(55, 5).
+
+next(H, N) :- between(1, 12, H), N is H mod 12 + 1.
+
+time(H:0) --> hour(H), ['o''clock'].
+time(H:M) --> amount(M), [past], hour(H).
+time(H:M) --> amount(A), [to], hour(N), { to(M, A), next(H, N) }.
+
+% Round to the nearest five minutes and say how close we are.
+said(H:M:S, Words) :-
+    T is (H * 60 + M) * 60 + S,             % seconds since midnight
+    R is round(T / 300) * 5,                % nearest five minutes
+    H5 is (R // 60 + 11) mod 12 + 1,
+    M5 is R mod 60,
+    Off is T - R * 60,
+    hedge(Off, Hedge),
+    phrase(time(H5:M5), Time),
+    append([it, is | Hedge], Time, Words).
+
+hedge(Off, [])           :- Off =:= 0, !.
+hedge(Off, [just, gone]) :- Off > 0, !.
+hedge(_,   [nearly]).
+
+say(T, Sentence) :- said(T, Words), atomic_list_concat(Words, ' ', Sentence).
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/tau-prolog@0.3.4/modules/core.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tau-prolog@0.3.4/modules/lists.js"></script>
+<script>
+(() => {
+const wordsEl = document.getElementById('words');
+const sessionEl = document.getElementById('session');
+const versionEl = document.getElementById('version');
+const historyEl = document.getElementById('history');
+const lineEl = document.getElementById('line');
+const program = document.getElementById('program').textContent.replace(/^\n/, '');
+
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// --- the source panel, lightly coloured --------------------------------
+document.getElementById('source').innerHTML = program.split('\n').map(line => {
+    const pct = line.indexOf('%');
+    const code = pct < 0 ? line : line.slice(0, pct);
+    const cm = pct < 0 ? '' : line.slice(pct);
+    const codeHtml = esc(code)
+        .replace(/(--&gt;|:-)/g, '<span class="op">$1</span>')
+        .replace(/('(?:[^']|'')*')/g, '<span class="at">$1</span>');
+    return codeHtml + (cm ? `<span class="cm">${esc(cm)}</span>` : '');
+}).join('\n');
+
+if (typeof pl === 'undefined') {
+    versionEl.textContent = 'Prolog could not be loaded';
+    sessionEl.innerHTML = '<pre class="out err">Tau Prolog did not load. It comes from cdn.jsdelivr.net, so this page needs a network connection.</pre>';
+    return;
+}
+
+// --- one Prolog session, used one query at a time ------------------------
+// The step limit stops a runaway query instead of freezing the page.
+const session = pl.create(200000);
+let printed = '';
+session.standard_output.stream = {
+    put(text) { printed += text; return true; },
+    flush() { return true; },
+};
+
+// Run a goal and collect up to `max` answers, formatted the way Prolog prints them.
+function ask(goal, max = 1) {
+    return new Promise(resolve => {
+        const answers = [];
+        printed = '';
+        const done = (status, extra) => resolve({ answers, status, extra, printed });
+        session.query(goal, {
+            success() {
+                const next = () => session.answer({
+                    success(a) {
+                        answers.push(session.format_answer(a));
+                        if (answers.length >= max) done('more'); else next();
+                    },
+                    fail() { done('done'); },
+                    error(e) { done('error', session.format_answer(e)); },
+                    limit() { done('error', 'gave up after 200,000 steps'); },
+                });
+                next();
+            },
+            error(e) { done('error', session.format_answer(e)); },
+        });
+    });
+}
+
+// Only one query may run at a time, so queries wait their turn.
+let queue = Promise.resolve();
+const serial = fn => (queue = queue.then(fn, fn));
+
+function answerText({ answers, status, extra }) {
+    if (status === 'error') return { text: extra, err: true };
+    if (!answers.length) return { text: 'false.' };
+    const lines = answers.map((a, i) => a + (i < answers.length - 1 || status === 'more' ? ' ;' : '.'));
+    if (status === 'more' && answers.length > 1) lines.push('…');
+    if (status === 'done') lines[lines.length - 1] = lines[lines.length - 1].replace(/ ;$/, '.');
+    return { text: lines.join('\n') };
+}
+
+function entryHtml(goal, result, nb) {
+    const { text, err } = answerText(result);
+    const printedHtml = result.printed ? `<pre class="out printed">${esc(result.printed)}</pre>` : '';
+    return `<div class="entry"><pre class="in"><span class="p">?- </span>${esc(goal)}${nb ? `   <span class="nb">% ${esc(nb)}</span>` : ''}</pre>` +
+        printedHtml + `<pre class="out${err ? ' err' : ''}">${esc(text)}</pre></div>`;
+}
+
+// A Prolog list of atoms, quoted where it has to be.
+const atomList = words => '[' + words.map(w => /^[a-z][a-zA-Z0-9_]*$/.test(w) ? w : `'${w.replace(/'/g, "''")}'`).join(', ') + ']';
+
+// --- the live session ----------------------------------------------------
+async function tick() {
+    const now = new Date();
+    const t = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+    const q1 = `say(${t}, S).`;
+    const r1 = await ask(q1);
+    const said = /S = (?:'(.*)'|(.*))$/.exec(r1.answers[0] || '') || [];
+    const sentence = (said[1] ?? said[2] ?? '').replace(/''/g, "'").replace(/\\'/g, "'");
+
+    // the big sentence, with the hedge picked out
+    const m = /^it is (just gone |nearly )?(.*)$/.exec(sentence);
+    if (m) {
+        wordsEl.innerHTML = `It is ${m[1] ? `<span class="hedge">${esc(m[1].trim())}</span> ` : ''}${esc(m[2])}.`;
+    }
+
+    // read the time words back with the same grammar
+    const words = m ? m[2].split(' ') : [];
+    const q2 = `phrase(time(T), ${atomList(words)}).`;
+    const r2 = await ask(q2);
+
+    const q3 = 'findall(W, phrase(time(_), W), _Ws), length(_Ws, N).';
+    const r3 = await ask(q3);
+    r3.answers = r3.answers.map(a => a.replace(/^_Ws = .*?, N = /s, 'N = '));
+
+    sessionEl.innerHTML =
+        entryHtml(q1, r1, 'the time, said') +
+        entryHtml(q2, r2, 'and read back again') +
+        entryHtml(q3, r3, 'every phrase the grammar knows');
+}
+
+function loop() {
+    serial(tick).finally(() => setTimeout(loop, 1000 - (Date.now() % 1000) + 5));
+}
+
+// --- the prompt ----------------------------------------------------------
+const recalled = [];
+let recallAt = 0;
+
+lineEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        let goal = lineEl.value.trim();
+        lineEl.value = '';
+        if (!goal) return;
+        if (!goal.endsWith('.')) goal += '.';
+        recalled.push(goal);
+        recallAt = recalled.length;
+        serial(async () => {
+            const result = await ask(goal, 12);
+            const div = document.createElement('div');
+            div.innerHTML = entryHtml(goal, result);
+            historyEl.appendChild(div.firstChild);
+            while (historyEl.children.length > 200) historyEl.firstChild.remove();
+            historyEl.scrollTop = historyEl.scrollHeight;
+        });
+    } else if (e.key === 'ArrowUp' && recallAt > 0) {
+        e.preventDefault();
+        lineEl.value = recalled[--recallAt];
+    } else if (e.key === 'ArrowDown' && recallAt < recalled.length) {
+        e.preventDefault();
+        recallAt++;
+        lineEl.value = recalled[recallAt] ?? '';
+    }
+});
+
+session.consult(program, {
+    success() {
+        versionEl.textContent = `Tau Prolog ${pl.version ? [pl.version.major, pl.version.minor, pl.version.patch].join('.') : ''}, running in this page`;
+        lineEl.disabled = false;
+        loop();
+    },
+    error(err) {
+        versionEl.textContent = 'the program did not load';
+        sessionEl.innerHTML = `<pre class="out err">${esc(session.format_answer(err))}</pre>`;
+    },
+});
+})();
+</script>
+</body>
+</html>

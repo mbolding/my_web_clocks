@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forth Clock</title>
+<style>
+    :root {
+        --bg: #100c06;
+        --panel: #161008;
+        --rule: #3a2a12;
+        --text: #f3c27a;
+        --bright: #ffd89a;
+        --dim: #9a7440;
+        --faint: #5a4322;
+        --glow: rgba(255, 176, 64, 0.45);
+        --error: #ff7b5c;
+        --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+    }
+
+    body {
+        min-height: 100vh;
+        padding: clamp(12px, 3vw, 32px);
+        text-shadow: 0 0 6px rgba(255, 170, 60, 0.25);
+    }
+
+    /* faint CRT scanlines */
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.18) 2px 3px);
+    }
+
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.4em 1.2em;
+        margin-bottom: clamp(10px, 2vw, 20px);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: clamp(18px, 2.4vw, 26px);
+        font-weight: 700;
+        color: var(--bright);
+        letter-spacing: 0.08em;
+    }
+
+    header p { margin: 0; font-size: clamp(11px, 1.2vw, 13px); color: var(--dim); }
+
+    main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(14px, 2.5vw, 28px);
+        align-items: start;
+    }
+
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1fr); }
+    }
+
+    .term { min-width: 0; container-type: inline-size; }
+
+    pre { margin: 0; font-family: var(--mono); white-space: pre; }
+
+    .in, .out { font-size: clamp(12px, 1.3vw, 15px); line-height: 1.5; }
+    .in { color: var(--bright); }
+    .out { color: var(--text); white-space: pre-wrap; }
+    .out.err { color: var(--error); }
+    .ok { color: var(--dim); }
+    .nb { color: var(--dim); font-style: italic; }
+    .entry { margin-bottom: 0.9em; }
+
+    /* 3 rows of 20 columns of _ and | */
+    #big {
+        font-size: min(96px, calc(100cqw / 12.5));
+        line-height: 0.95;
+        font-weight: 700;
+        color: var(--bright);
+        text-shadow: 0 0 14px var(--glow);
+        margin: 0.1em 0 0.35em;
+        min-height: 3em;
+    }
+
+    h2 {
+        margin: 0 0 0.6em;
+        font-size: clamp(12px, 1.25vw, 14px);
+        font-weight: 600;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
+    #trace {
+        border-collapse: collapse;
+        font-size: clamp(12px, 1.3vw, 15px);
+        margin-bottom: 1.4em;
+    }
+
+    #trace td {
+        padding: 0.12em 1.2em 0.12em 0;
+        vertical-align: top;
+        white-space: pre;
+    }
+
+    #trace td:first-child { color: var(--bright); min-width: 6ch; }
+    #trace td:last-child { color: var(--text); }
+    #trace .top { color: var(--bright); font-weight: 700; }
+    #trace .cell {
+        display: inline-block;
+        min-width: 5ch;
+        padding: 0 0.4ch;
+        margin-right: 0.4ch;
+        border: 1px solid var(--faint);
+        text-align: right;
+    }
+
+    #status { color: var(--dim); font-size: clamp(12px, 1.3vw, 15px); }
+
+    #repl { margin-top: 1.4em; padding-top: 1em; border-top: 1px dashed var(--rule); }
+
+    #repl-hint {
+        color: var(--dim);
+        font-size: clamp(11px, 1.15vw, 13px);
+        margin: 0 0 0.8em;
+        line-height: 1.6;
+    }
+
+    #repl-hint code { color: var(--bright); }
+
+    #history { max-height: 40vh; overflow-y: auto; }
+
+    .prompt { display: flex; align-items: baseline; }
+
+    #line {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--bright);
+        font-family: var(--mono);
+        font-size: 16px;
+        caret-color: var(--bright);
+        padding: 0.2em 0;
+        text-shadow: inherit;
+    }
+
+    #line:disabled { opacity: 0.4; }
+    #line::placeholder { color: var(--faint); font-style: italic; }
+
+    aside {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(12px, 1.8vw, 20px);
+        min-width: 0;
+    }
+
+    #source {
+        font-size: clamp(10.5px, 1.05vw, 13px);
+        line-height: 1.55;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    #source .cm { color: var(--dim); font-style: italic; }
+    #source .def { color: var(--bright); font-weight: 700; }
+
+    aside p { color: var(--dim); font-size: clamp(11px, 1.1vw, 12.5px); line-height: 1.6; margin: 1em 0 0; }
+    aside a { color: var(--dim); }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>FORTH CLOCK</h1>
+    <p id="version">loading WAForth&hellip;</p>
+</header>
+
+<main>
+    <section class="term">
+        <pre class="in"><span id="big-in"></span></pre>
+        <pre id="big" aria-live="off"></pre>
+
+        <h2>The stack, word by word</h2>
+        <table id="trace" aria-label="The Forth stack after each word"></table>
+
+        <div id="session"><div id="status">loading Forth&hellip;</div></div>
+
+        <div id="repl">
+            <p id="repl-hint">Your own Forth, with the same words defined. Type a line and press Enter (&uarr; recalls). Try <code>2 3 + .</code>, <code>TIME .STACK</code>, <code>12 34 56 BIG</code> or <code>: SQUARE DUP * ; 7 SQUARE .</code></p>
+            <div id="history"></div>
+            <label class="prompt">
+                <input id="line" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Forth input" placeholder="type Forth here" disabled>
+            </label>
+        </div>
+    </section>
+
+    <aside>
+        <h2>The program</h2>
+        <pre id="source"></pre>
+        <p>Forth, from 1970, has no expressions and almost no syntax: words separated by spaces, each one acting on a stack of numbers. A colon defines a new word. The table on the left steps through the body of <code>HMS&gt;S</code>, turning hours, minutes and seconds into seconds since midnight. The interpreter is <a href="https://github.com/remko/waforth" target="_blank" rel="noopener">WAForth</a>, a Forth written in WebAssembly and running here in your browser.</p>
+    </aside>
+</main>
+
+<!-- The Forth program. The page shows this text and loads it, unchanged. -->
+<script type="text/plain" id="program">
+\ Forth keeps its data on a stack. Each word takes its arguments
+\ from the top of the stack and leaves its results there. The
+\ comment ( before -- after ) after a name shows what it does to it.
+
+: TIME   ( -- h m s )  S" time" SCALL ;       \ asks the page for the time
+
+: HMS>S  ( h m s -- secs )   ROT 3600 *  ROT 60 *  + + ;
+: S>HMS  ( secs -- h m s )   60 /MOD  60 /MOD  SWAP ROT ;
+
+\ Seven-segment digits, one bit per segment:      a
+\ a=1 b=2 c=4 d=8 e=16 f=32 g=64                f g b
+\                                               e d c
+CREATE SEGS  63 C, 6 C, 91 C, 79 C, 102 C, 109 C, 125 C, 7 C, 127 C, 111 C,
+
+: SEG?  ( digit bit -- flag )  SWAP SEGS + C@ AND 0<> ;
+: PUT   ( flag char -- )  SWAP IF EMIT ELSE DROP SPACE THEN ;
+: ROW0  ( digit -- )  SPACE  1 SEG? [CHAR] _ PUT  SPACE ;
+: ROW1  ( digit -- )  DUP 32 SEG? [CHAR] | PUT  DUP 64 SEG? [CHAR] _ PUT  2 SEG? [CHAR] | PUT ;
+: ROW2  ( digit -- )  DUP 16 SEG? [CHAR] | PUT  DUP 8 SEG? [CHAR] _ PUT  4 SEG? [CHAR] | PUT ;
+CREATE ROWS  ' ROW0 ,  ' ROW1 ,  ' ROW2 ,
+
+CREATE DIGITS 6 ALLOT
+: 2DIGITS  ( n i -- )  >R  10 /MOD  DIGITS R@ + C!  DIGITS R> 1+ + C! ;
+: >DIGITS  ( h m s -- )  4 2DIGITS  2 2DIGITS  0 2DIGITS ;
+
+: ROW  ( row -- )
+  6 0 DO
+    I DIGITS + C@  OVER CELLS ROWS + @ EXECUTE
+    I 1 = I 3 = OR IF  DUP IF [CHAR] . ELSE BL THEN EMIT  THEN
+  LOOP  DROP CR ;
+: BIG  ( h m s -- )  >DIGITS  3 0 DO I ROW LOOP ;
+
+: BAR  ( secs -- )
+  [CHAR] [ EMIT  DUP 40 86400 */  DUP 0 ?DO [CHAR] = EMIT LOOP
+  40 SWAP - SPACES  [CHAR] ] EMIT SPACE  100 86400 */ 0 .R [CHAR] % EMIT ;
+
+: .STACK  ( -- )  DEPTH 0 ?DO  DEPTH I - 1- PICK .  LOOP ;
+: CLEAR   ( ... -- )  BEGIN DEPTH WHILE DROP REPEAT ;
+</script>
+
+<script type="module">
+const ENGINE = 'https://cdn.jsdelivr.net/npm/waforth@0.20.1/+esm';
+
+// The lines shown each second, under the big digits
+const BIG_LINE = 'TIME BIG';
+const TRACE = 'TIME ROT 3600 * ROT 60 * + +';    // the body of HMS>S, one word at a time
+const LINES = [
+    { f: 'TIME HMS>S .', nb: 'seconds since midnight' },
+    { f: 'TIME HMS>S S>HMS .STACK', nb: 'and back again' },
+    { f: 'TIME HMS>S BAR', nb: 'how much of today has gone' },
+];
+
+const bigEl = document.getElementById('big');
+const bigInEl = document.getElementById('big-in');
+const traceEl = document.getElementById('trace');
+const sessionEl = document.getElementById('session');
+const versionEl = document.getElementById('version');
+const historyEl = document.getElementById('history');
+const lineEl = document.getElementById('line');
+const program = document.getElementById('program').textContent.replace(/^\n/, '');
+
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// --- the source panel, lightly coloured --------------------------------
+document.getElementById('source').innerHTML = program.split('\n').map(line => {
+    let html = esc(line);
+    // a backslash comment runs to the end of the line
+    const bs = line.search(/(^|\s)\\(\s|$)/);
+    if (bs >= 0) {
+        const at = line[bs] === '\\' ? bs : bs + 1;
+        html = esc(line.slice(0, at)) + `<span class="cm">${esc(line.slice(at))}</span>`;
+    }
+    return html
+        .replace(/(^|\s)(\( [^)]*\))/g, '$1<span class="cm">$2</span>')
+        .replace(/^(:|CREATE)\s+(\S+)/, (m, kw, name) => `${kw} <span class="def">${name}</span>`);
+}).join('\n');
+
+// --- two Forth machines: one for the clock, one for the prompt ----------
+const { default: WAForth } = await import(ENGINE).catch(err => {
+    versionEl.textContent = 'Forth could not be loaded';
+    sessionEl.innerHTML = '<pre class="out err">WAForth did not load. It comes from cdn.jsdelivr.net, so this page needs a network connection.</pre>';
+    throw err;
+});
+
+async function makeForth() {
+    const forth = new WAForth();
+    let out = '';
+    forth.onEmit = c => { out += String.fromCharCode(c); };
+    await forth.load();
+    // TIME calls this through SCALL and gets hours, minutes and seconds
+    forth.bind('time', f => {
+        const now = new Date();
+        f.push(now.getHours());
+        f.push(now.getMinutes());
+        f.push(now.getSeconds());
+    });
+    // run a line of Forth and return what it printed
+    const run = line => { out = ''; forth.interpret(line + '\n', true); return out; };
+    run(program);
+    return run;
+}
+
+const [clock, user] = await Promise.all([makeForth(), makeForth()]);
+versionEl.textContent = 'WAForth 0.20.1, a Forth in WebAssembly, running in this page';
+
+// --- the live session ----------------------------------------------------
+function stackCells(text) {
+    const cells = text.trim() ? text.trim().split(/\s+/) : [];
+    return cells.map((n, i) => `<span class="cell${i === cells.length - 1 ? ' top' : ''}">${esc(n)}</span>`).join('') || '<span class="ok">(empty)</span>';
+}
+
+function entryHtml(line, out, nb) {
+    const err = /undefined word|stack (under|over)flow|error/i.test(out);
+    return `<div class="entry"><pre class="in">${esc(line)}${nb ? `   <span class="nb">\\ ${esc(nb)}</span>` : ''}</pre>` +
+        `<pre class="out${err ? ' err' : ''}">${esc(out.replace(/\n+$/, ''))}${err ? '' : ' <span class="ok">ok</span>'}</pre></div>`;
+}
+
+function tick() {
+    clock('CLEAR');
+    bigInEl.textContent = BIG_LINE;
+    bigEl.textContent = clock(BIG_LINE).replace(/\n+$/, '');
+
+    // step through the body of HMS>S, showing the stack after each word
+    clock('CLEAR');
+    let rows = '';
+    for (const word of TRACE.split(' ')) {
+        clock(word);
+        rows += `<tr><td>${esc(word)}</td><td>${stackCells(clock('.STACK'))}</td></tr>`;
+    }
+    traceEl.innerHTML = rows;
+
+    let html = '';
+    for (const { f, nb } of LINES) {
+        clock('CLEAR');
+        html += entryHtml(f, clock(f), nb);
+    }
+    sessionEl.innerHTML = html;
+    setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
+}
+
+// --- the prompt ----------------------------------------------------------
+const recalled = [];
+let recallAt = 0;
+
+lineEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const line = lineEl.value;
+        lineEl.value = '';
+        if (!line.trim()) return;
+        recalled.push(line);
+        recallAt = recalled.length;
+        const div = document.createElement('div');
+        div.innerHTML = entryHtml(line, user(line));
+        historyEl.appendChild(div.firstChild);
+        while (historyEl.children.length > 200) historyEl.firstChild.remove();
+        historyEl.scrollTop = historyEl.scrollHeight;
+    } else if (e.key === 'ArrowUp' && recallAt > 0) {
+        e.preventDefault();
+        lineEl.value = recalled[--recallAt];
+    } else if (e.key === 'ArrowDown' && recallAt < recalled.length) {
+        e.preventDefault();
+        recallAt++;
+        lineEl.value = recalled[recallAt] ?? '';
+    }
+});
+
+lineEl.disabled = false;
+tick();
+</script>
+</body>
+</html>
