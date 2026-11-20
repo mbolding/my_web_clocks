@@ -269,6 +269,9 @@ Bar ← {"[" ∾ (40↑(⌊40×𝕩)⥊'=') ∾ "] " ∾ (•Fmt ⌊100×𝕩) �
 </script>
 
 <script>
+// Everything here lives inside one function, because bqn.js declares many
+// short global names (run, str, list, ...) that would otherwise clash.
+(() => {
 // BQN's reference implementation, pinned to one commit of the BQN repository.
 // It defines bqn(), str(), fmt() and fmtErr() as globals.
 const BQN_JS = 'https://cdn.jsdelivr.net/gh/mlochbaum/BQN@0ae87a3763c2023b159410cc2ae1048a1768c184/docs/bqn.js';
@@ -382,7 +385,7 @@ function resultHtml(result, kind) {
 
 // --- starting BQN ---------------------------------------------------------
 let session;
-function run(src) {
+function runLine(src) {
     try { return show(session(str(src))); }
     catch (e) { return { err: fmtErr(e) }; }
 }
@@ -393,10 +396,10 @@ function tick() {
     const now = new Date();
     const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
     const set = `t ← ${h}‿${m}‿${s}`;
-    run(set);
+    runLine(set);
     let html = `<div class="entry">${inputHtml(set)}</div>`;
     for (const { b, kind, nb } of SENTENCES) {
-        html += `<div class="entry">${inputHtml(b, nb)}${resultHtml(run(b), kind)}</div>`;
+        html += `<div class="entry">${inputHtml(b, nb)}${resultHtml(runLine(b), kind)}</div>`;
     }
     sessionEl.innerHTML = html;
     sessionEl.setAttribute('aria-label', `The time is ${pad(h)}:${pad(m)}:${pad(s)}`);
@@ -416,7 +419,7 @@ lineEl.addEventListener('keydown', e => {
         recallAt = recalled.length;
         const entry = document.createElement('div');
         entry.className = 'entry';
-        entry.innerHTML = inputHtml(b) + resultHtml(run(b));
+        entry.innerHTML = inputHtml(b) + resultHtml(runLine(b));
         historyEl.appendChild(entry);
         while (historyEl.children.length > 200) historyEl.firstChild.remove();
         historyEl.scrollTop = historyEl.scrollHeight;
@@ -435,7 +438,7 @@ script.src = BQN_JS;
 script.onload = () => {
     // a REPL-style scope, so definitions persist from one line to the next
     session = bqn('•ReBQN {repl⇐"loose"}');
-    const loaded = run(program);
+    const loaded = runLine(program);
     if (loaded.err) {
         sessionEl.innerHTML = `<pre class="out err">${esc(loaded.err)}</pre>`;
         return;
@@ -449,6 +452,7 @@ script.onerror = () => {
     sessionEl.innerHTML = '<pre class="out err">The BQN interpreter did not load. It comes from cdn.jsdelivr.net, so this page needs a network connection.</pre>';
 };
 document.head.appendChild(script);
+})();
 </script>
 </body>
 </html>
