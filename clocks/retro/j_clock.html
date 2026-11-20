@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J Clock</title>
+<style>
+    :root {
+        --bg: #0c100d;
+        --panel: #111712;
+        --rule: #243027;
+        --text: #c9d4c6;
+        --dim: #6f8173;
+        --faint: #3f4d43;
+        --input: #e6b85c;
+        --green: #9fe3a9;
+        --hour: #ffcf6b;
+        --minute: #eef0e6;
+        --second: #ff6f5e;
+        --error: #ff8a7a;
+        --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+    }
+
+    body {
+        min-height: 100vh;
+        padding: clamp(12px, 3vw, 32px);
+    }
+
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.4em 1.2em;
+        margin-bottom: clamp(10px, 2vw, 20px);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: clamp(18px, 2.4vw, 26px);
+        font-weight: 600;
+        color: var(--input);
+        letter-spacing: 0.02em;
+    }
+
+    header p {
+        margin: 0;
+        font-size: clamp(11px, 1.2vw, 13px);
+        color: var(--dim);
+    }
+
+    header a { color: var(--dim); }
+
+    main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(14px, 2.5vw, 28px);
+        align-items: start;
+    }
+
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); }
+    }
+
+    .term {
+        container-type: inline-size;
+        min-width: 0;
+    }
+
+    pre {
+        margin: 0;
+        font-family: var(--mono);
+        white-space: pre;
+    }
+
+    .entry { margin-bottom: 0.9em; }
+
+    .in {
+        color: var(--input);
+        font-size: clamp(12px, 1.3vw, 15px);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    .out {
+        font-size: clamp(12px, 1.3vw, 15px);
+        line-height: 1.35;
+        overflow-x: auto;
+    }
+
+    .nb { color: var(--dim); font-style: italic; }
+
+    /* The face is 41 columns; a monospace column is about 0.6em, so
+       size the font to the column width and set the line height to
+       twice the column width, which is what the J code assumes. */
+    .out.face {
+        font-size: min(17px, calc(100cqw / 25.5));
+        line-height: 1.2;
+        overflow: visible;
+    }
+    .c-rim { color: var(--faint); }
+    .c-mark { color: var(--dim); }
+    .c-hour { color: var(--hour); font-weight: 700; }
+    .c-minute { color: var(--minute); font-weight: 700; }
+    .c-second { color: var(--second); }
+    .c-centre { color: var(--hour); font-weight: 700; }
+
+    /* 64 columns of block glyphs */
+    .out.big {
+        font-size: min(13px, calc(100cqw / 39.5));
+        line-height: 1;
+        color: var(--green);
+        overflow: visible;
+    }
+
+    .out.err { color: var(--error); }
+
+    #status {
+        color: var(--dim);
+        font-size: clamp(12px, 1.3vw, 15px);
+        line-height: 1.5;
+    }
+
+    #repl {
+        margin-top: 1.4em;
+        padding-top: 1em;
+        border-top: 1px dashed var(--rule);
+    }
+
+    #repl-hint {
+        color: var(--dim);
+        font-size: clamp(11px, 1.15vw, 13px);
+        margin: 0 0 0.8em;
+        line-height: 1.5;
+    }
+
+    #repl-hint code { color: var(--input); }
+
+    #history {
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    .prompt {
+        display: flex;
+        align-items: baseline;
+        color: var(--input);
+    }
+
+    .prompt span {
+        white-space: pre;
+        font-size: 16px;
+    }
+
+    #line {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--input);
+        font-family: var(--mono);
+        font-size: 16px; /* 16px stops iOS zooming on focus */
+        caret-color: var(--input);
+        padding: 0.2em 0;
+    }
+
+    #line:disabled { opacity: 0.4; }
+
+    aside {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(12px, 1.8vw, 20px);
+        min-width: 0;
+    }
+
+    aside h2 {
+        margin: 0 0 0.6em;
+        font-size: clamp(12px, 1.25vw, 14px);
+        font-weight: 600;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
+    #source {
+        font-size: clamp(10.5px, 1.05vw, 13px);
+        line-height: 1.55;
+        overflow-x: auto;
+        color: var(--text);
+    }
+
+    #source .str { color: var(--green); }
+    #source .nb { color: var(--dim); }
+
+    aside p {
+        color: var(--dim);
+        font-size: clamp(11px, 1.1vw, 12.5px);
+        line-height: 1.6;
+        margin: 1em 0 0;
+    }
+
+    aside a { color: var(--dim); }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>J Clock</h1>
+    <p id="version">loading the J interpreter (about 5 MB)&hellip;</p>
+</header>
+
+<main>
+    <section class="term" aria-live="off">
+        <div id="session"><div id="status">   loading J&hellip;</div></div>
+
+        <div id="repl">
+            <p id="repl-hint">Your turn. Type J at the prompt and press Enter (&uarr; recalls earlier lines). Try <code>face 3 0 0</code>, <code>R =: 6</code>, <code>big 12 34 56</code> or <code>+/ i. 100</code>. Reload the page to start over.</p>
+            <div id="history"></div>
+            <label class="prompt">
+                <span>   </span>
+                <input id="line" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="J input" disabled>
+            </label>
+        </div>
+    </section>
+
+    <aside>
+        <h2>The program</h2>
+        <pre id="source"></pre>
+        <p>Each second the page sets <code>t</code> to the time and hands the sentences on the left to J, the array language by Kenneth Iverson and Roger Hui. The interpreter is J compiled to WebAssembly by the <a href="https://github.com/jsoftware/j-playground" target="_blank" rel="noopener">J Playground</a> project, and it runs here in your browser. All the page does with J's output is colour it.</p>
+    </aside>
+</main>
+
+<!-- The J program. The page shows this text and runs it, unchanged. -->
+<script type="text/plain" id="jprogram">
+NB. J clock: every character in the session is computed by these lines.
+NB. y is the time of day as  hours minutes seconds
+
+R =: 10                     NB. radius of the face, in rows
+
+NB. x rows out from the centre, y turns clockwise from 12 -> row,col
+pt =: {{ <. 0.5 + (R - x * 2 o. 2p1 * y) ,. (2 * R) + 2 * x * 1 o. 2p1 * y }}
+
+NB. the cells covered by a hand of length x pointing at y turns
+hand =: {{ (x * (i. % ]) 4 * R) pt y }}
+
+face =: {{
+  'hr mn sc' =. y
+  F =. ((>: 2 * R) , >: 4 * R) $ ' '
+  F =. '.' (<"1 R pt (i. % ]) 120) } F
+  F =. 'o' (<"1 R pt 12 %~ i. 12) } F
+  F =. '#' (<"1 (0.5 * R) hand 12 %~ (12 | hr) + mn % 60) } F
+  F =. '*' (<"1 (0.8 * R) hand 60 %~ mn + sc % 60) } F
+  F =. '+' (<"1 (0.9 * R) hand sc % 60) } F
+  '@' (< R , 2 * R) } F
+}}
+
+NB. a 3x5 font for 0-9 and the colon, packed 15 bits per glyph
+G =: 11 5 3 $ , (15 # 2) #: 31599 11415 29671 29647 23497 31183 31215 29257 31727 31695 1040
+big =: {{ (u: 32 9608) {~ 2 #"1 ,./ 0 ,.~"2 (0 1 6 2 3 6 4 5 { 10 ,~ , 10 10 #: y) { G }}
+
+secs =: 60&#.               NB. seconds since midnight
+bar =: {{ '[' , (40 {. '=' #~ <. 40 * y) , '] ' , (": <. 100 * y) , '%' }}
+</script>
+
+<script type="module">
+// J compiled to WebAssembly, from the J Playground, pinned to one commit so
+// the engine can't change under the page.
+const ENGINE = 'https://cdn.jsdelivr.net/gh/jsoftware/j-playground@d33513c687dca4c2f3559b35bd1248e78f9f9908/bin/html2/jamalgam.js';
+
+// The sentences shown each second, after  t =: h m s
+const SENTENCES = [
+    { j: 'face t', kind: 'face' },
+    { j: 'big t', kind: 'big' },
+    { j: 'secs t', nb: 'seconds since midnight' },
+    { j: '24 60 60 #: secs t', nb: 'and back again' },
+    { j: 'bar 86400 %~ secs t', nb: 'how much of today has gone' },
+];
+
+const sessionEl = document.getElementById('session');
+const versionEl = document.getElementById('version');
+const historyEl = document.getElementById('history');
+const lineEl = document.getElementById('line');
+const sourceEl = document.getElementById('source');
+const program = document.getElementById('jprogram').textContent.replace(/^\n/, '');
+
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// --- the source panel, lightly coloured --------------------------------
+sourceEl.innerHTML = program.split('\n').map(line => {
+    // split off an NB. comment that isn't inside a quoted string
+    let inStr = false, cut = -1;
+    for (let i = 0; i < line.length; i++) {
+        if (line[i] === "'") inStr = !inStr;
+        if (!inStr && line.startsWith('NB.', i)) { cut = i; break; }
+    }
+    const code = cut < 0 ? line : line.slice(0, cut);
+    const nb = cut < 0 ? '' : line.slice(cut);
+    const codeHtml = code.split(/('(?:[^']|'')*')/).map((part, i) =>
+        i % 2 ? `<span class="str">${esc(part)}</span>` : esc(part)).join('');
+    return codeHtml + (nb ? `<span class="nb">${esc(nb)}</span>` : '');
+}).join('\n');
+
+// --- starting J ---------------------------------------------------------
+let jdo = null;
+
+// A J noun holding a multi-line string, built from quoted lines joined by LF.
+function jLiteral(text) {
+    return '(' + text.split('\n')
+        .map(l => "'" + l.replace(/'/g, "''") + "'")
+        .join(',(10{a.),') + ')';
+}
+
+async function startJ() {
+    const { default: createModule } = await import(ENGINE);
+    // The engine echoes everything J prints to the console; keep it quiet.
+    const Module = await createModule({ print() {}, printErr() {} });
+    if (Module.cwrap('em_jinit', 'number', [])() !== 0) throw new Error('J did not start');
+    jdo = Module.cwrap('em_jdo', 'string', ['string']);
+    // J's standard library, for whatever gets typed at the prompt.
+    // The clock itself uses only primitives.
+    jdo("(0!:0) <'../jlibrary/system/main/stdlib.ijs'");
+    jdo('jclockprogram =: ' + jLiteral(program));
+    const err = jdo('0!:100 jclockprogram');
+    if (err && err.trim()) console.warn('J program:', err);
+    return jdo("9!:14 ''").split('/')[0];
+}
+
+// --- the live session ---------------------------------------------------
+const FACE_CLASSES = { '.': 'c-rim', 'o': 'c-mark', '#': 'c-hour', '*': 'c-minute', '+': 'c-second', '@': 'c-centre' };
+
+function colourFace(text) {
+    let html = '', run = '', cls = null;
+    const flush = () => {
+        if (!run) return;
+        html += cls ? `<span class="${cls}">${esc(run)}</span>` : esc(run);
+        run = '';
+    };
+    for (const ch of text) {
+        const c = FACE_CLASSES[ch] || null;
+        if (c !== cls) { flush(); cls = c; }
+        run += ch;
+    }
+    flush();
+    return html;
+}
+
+function inputHtml(j, nb) {
+    return `<pre class="in">   ${esc(j)}${nb ? `   <span class="nb">NB. ${esc(nb)}</span>` : ''}</pre>`;
+}
+
+function outputHtml(out, kind) {
+    if (!out) return '';
+    if (out.startsWith('|')) return `<pre class="out err">${esc(out)}</pre>`;
+    if (kind === 'face') return `<pre class="out face" aria-hidden="true">${colourFace(out)}</pre>`;
+    if (kind === 'big') return `<pre class="out big">${esc(out)}</pre>`;
+    return `<pre class="out">${esc(out)}</pre>`;
+}
+
+const pad = n => String(n).padStart(2, '0');
+
+function tick() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    const set = `t =: ${h} ${m} ${s}`;
+    jdo(set);
+    let html = `<div class="entry">${inputHtml(set)}</div>`;
+    for (const { j, kind, nb } of SENTENCES) {
+        html += `<div class="entry">${inputHtml(j, nb)}${outputHtml(jdo(j), kind)}</div>`;
+    }
+    sessionEl.innerHTML = html;
+    sessionEl.setAttribute('aria-label', `The time is ${pad(h)}:${pad(m)}:${pad(s)}`);
+    // run again just after the next second begins
+    setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
+}
+
+// --- the prompt ---------------------------------------------------------
+const recalled = [];
+let recallAt = 0;
+
+lineEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const j = lineEl.value;
+        lineEl.value = '';
+        if (!j.trim()) return;
+        recalled.push(j);
+        recallAt = recalled.length;
+        const entry = document.createElement('div');
+        entry.className = 'entry';
+        let out;
+        try { out = jdo(j); } catch (err) { out = '|' + err.message; }
+        entry.innerHTML = inputHtml(j) + outputHtml(out);
+        historyEl.appendChild(entry);
+        while (historyEl.children.length > 200) historyEl.firstChild.remove();
+        historyEl.scrollTop = historyEl.scrollHeight;
+    } else if (e.key === 'ArrowUp' && recallAt > 0) {
+        e.preventDefault();
+        lineEl.value = recalled[--recallAt];
+    } else if (e.key === 'ArrowDown' && recallAt < recalled.length) {
+        e.preventDefault();
+        recallAt++;
+        lineEl.value = recalled[recallAt] ?? '';
+    }
+});
+
+startJ().then(version => {
+    versionEl.innerHTML = `J ${esc(version)}, compiled to WebAssembly and running in this page`;
+    lineEl.disabled = false;
+    tick();
+}).catch(err => {
+    console.error(err);
+    versionEl.textContent = 'J could not be loaded';
+    sessionEl.innerHTML = `<pre class="out err">|the J interpreter did not load: ${esc(String(err.message || err))}\n|it comes from cdn.jsdelivr.net, so this page needs a network connection</pre>`;
+});
+</script>
+</body>
+</html>
