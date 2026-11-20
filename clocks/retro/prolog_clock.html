@@ -221,23 +221,30 @@
 
 :- use_module(library(lists)).
 
-hour(1) --> [one].    hour(2) --> [two].     hour(3) --> [three].
-hour(4) --> [four].   hour(5) --> [five].    hour(6) --> [six].
-hour(7) --> [seven].  hour(8) --> [eight].   hour(9) --> [nine].
-hour(10) --> [ten].   hour(11) --> [eleven]. hour(12) --> [twelve].
+% word(W) is one word of the sentence. Every rule below is built
+% from it. (Tau Prolog needs fixed words spelled out this way.)
+word(W) --> [W].
 
-amount(5) --> [five].        amount(10) --> [ten].
-amount(15) --> [quarter].    amount(20) --> [twenty].
-amount(25) --> [twenty, five].  amount(30) --> [half].
+hour(1) --> word(one).      hour(2) --> word(two).
+hour(3) --> word(three).    hour(4) --> word(four).
+hour(5) --> word(five).     hour(6) --> word(six).
+hour(7) --> word(seven).    hour(8) --> word(eight).
+hour(9) --> word(nine).     hour(10) --> word(ten).
+hour(11) --> word(eleven).  hour(12) --> word(twelve).
+
+amount(5) --> word(five).       amount(10) --> word(ten).
+amount(15) --> word(quarter).   amount(20) --> word(twenty).
+amount(25) --> word(twenty), word(five).
+amount(30) --> word(half).
 
 % minutes M on the clock that read as "A to"
 to(35, 25).  to(40, 20).  to(45, 15).  to(50, 10).  to(55, 5).
 
 next(H, N) :- between(1, 12, H), N is H mod 12 + 1.
 
-time(H:0) --> hour(H), ['o''clock'].
-time(H:M) --> amount(M), [past], hour(H).
-time(H:M) --> amount(A), [to], hour(N), { to(M, A), next(H, N) }.
+time(H:0) --> hour(H), word('o''clock').
+time(H:M) --> amount(M), word(past), hour(H).
+time(H:M) --> amount(A), word(to), hour(N), { to(M, A), next(H, N) }.
 
 % Round to the nearest five minutes and say how close we are.
 said(H:M:S, Words) :-
@@ -324,8 +331,9 @@ function ask(goal, max = 1) {
 let queue = Promise.resolve();
 const serial = fn => (queue = queue.then(fn, fn));
 
-function answerText({ answers, status, extra }) {
+function answerText({ answers, status, extra }, single) {
     if (status === 'error') return { text: extra, err: true };
+    if (single) return answers.length ? { text: answers[0] + '.' } : { text: 'false.' };
     if (!answers.length) return { text: 'false.' };
     const lines = answers.map((a, i) => a + (i < answers.length - 1 || status === 'more' ? ' ;' : '.'));
     if (status === 'more' && answers.length > 1) lines.push('…');
@@ -333,8 +341,8 @@ function answerText({ answers, status, extra }) {
     return { text: lines.join('\n') };
 }
 
-function entryHtml(goal, result, nb) {
-    const { text, err } = answerText(result);
+function entryHtml(goal, result, nb, single) {
+    const { text, err } = answerText(result, single);
     const printedHtml = result.printed ? `<pre class="out printed">${esc(result.printed)}</pre>` : '';
     return `<div class="entry"><pre class="in"><span class="p">?- </span>${esc(goal)}${nb ? `   <span class="nb">% ${esc(nb)}</span>` : ''}</pre>` +
         printedHtml + `<pre class="out${err ? ' err' : ''}">${esc(text)}</pre></div>`;
@@ -369,9 +377,9 @@ async function tick() {
     r3.answers = r3.answers.map(a => a.replace(/^_Ws = .*?, N = /s, 'N = '));
 
     sessionEl.innerHTML =
-        entryHtml(q1, r1, 'the time, said') +
-        entryHtml(q2, r2, 'and read back again') +
-        entryHtml(q3, r3, 'every phrase the grammar knows');
+        entryHtml(q1, r1, 'the time, said', true) +
+        entryHtml(q2, r2, 'and read back again', true) +
+        entryHtml(q3, r3, 'every phrase the grammar knows', true);
 }
 
 function loop() {
