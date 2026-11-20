@@ -177,6 +177,7 @@
     }
 
     #line:disabled { opacity: 0.4; }
+    #line::placeholder { color: var(--faint); font-style: italic; }
 
     aside {
         background: var(--panel);
@@ -198,8 +199,16 @@
     #source {
         font-size: clamp(10.5px, 1.05vw, 13px);
         line-height: 1.55;
-        overflow-x: auto;
         color: var(--text);
+        /* long J lines wrap, with the continuation indented */
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    #source .ln {
+        display: block;
+        padding-left: 4ch;
+        text-indent: -4ch;
     }
 
     #source .str { color: var(--green); }
@@ -231,7 +240,7 @@
             <div id="history"></div>
             <label class="prompt">
                 <span>   </span>
-                <input id="line" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="J input" disabled>
+                <input id="line" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="J input" placeholder="type J here" disabled>
             </label>
         </div>
     </section>
@@ -310,8 +319,10 @@ sourceEl.innerHTML = program.split('\n').map(line => {
     const nb = cut < 0 ? '' : line.slice(cut);
     const codeHtml = code.split(/('(?:[^']|'')*')/).map((part, i) =>
         i % 2 ? `<span class="str">${esc(part)}</span>` : esc(part)).join('');
-    return codeHtml + (nb ? `<span class="nb">${esc(nb)}</span>` : '');
-}).join('\n');
+    const lead = code.match(/^ */)[0].length;
+    return `<span class="ln" style="padding-left:${lead + 4}ch;text-indent:-${lead + 4}ch">` + codeHtml +
+        (nb ? `<span class="nb">${esc(nb)}</span>` : '') + '\n</span>';
+}).join('');
 
 // --- starting J ---------------------------------------------------------
 let jdo = null;
