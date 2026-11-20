@@ -399,7 +399,7 @@ lineEl.addEventListener('keydown', e => {
         recalled.push(goal);
         recallAt = recalled.length;
         serial(async () => {
-            const result = await ask(goal, 12);
+            const result = await ask(goal, 24);
             const div = document.createElement('div');
             div.innerHTML = entryHtml(goal, result);
             historyEl.appendChild(div.firstChild);

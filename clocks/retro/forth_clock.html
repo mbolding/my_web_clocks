@@ -254,7 +254,7 @@ CREATE DIGITS 6 ALLOT
 
 : BAR  ( secs -- )
   [CHAR] [ EMIT  DUP 40 86400 */  DUP 0 ?DO [CHAR] = EMIT LOOP
-  40 SWAP - SPACES  [CHAR] ] EMIT SPACE  100 86400 */ 0 .R [CHAR] % EMIT ;
+  40 SWAP - SPACES  [CHAR] ] EMIT SPACE  100 86400 */ 0 <# #S #> TYPE [CHAR] % EMIT ;
 
 : .STACK  ( -- )  DEPTH 0 ?DO  DEPTH I - 1- PICK .  LOOP ;
 : CLEAR   ( ... -- )  BEGIN DEPTH WHILE DROP REPEAT ;
@@ -298,11 +298,14 @@ document.getElementById('source').innerHTML = program.split('\n').map(line => {
 }).join('\n');
 
 // --- two Forth machines: one for the clock, one for the prompt ----------
-const { default: WAForth } = await import(ENGINE).catch(err => {
+const engine = await import(ENGINE).catch(err => {
     versionEl.textContent = 'Forth could not be loaded';
     sessionEl.innerHTML = '<pre class="out err">WAForth did not load. It comes from cdn.jsdelivr.net, so this page needs a network connection.</pre>';
     throw err;
 });
+// WAForth is published as a CommonJS module, so jsDelivr's ES-module
+// wrapper puts the class one level down.
+const WAForth = engine.default.default ?? engine.default;
 
 async function makeForth() {
     const forth = new WAForth();

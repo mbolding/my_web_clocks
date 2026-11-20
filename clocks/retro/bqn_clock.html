@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BQN Clock</title>
+<style>
+    /* BQN386, the BQN project's own font, has every BQN glyph */
+    @font-face {
+        font-family: BQN386;
+        src: url(https://cdn.jsdelivr.net/gh/mlochbaum/BQN@0ae87a3763c2023b159410cc2ae1048a1768c184/docs/BQN386.woff2) format('woff2');
+        font-display: swap;
+    }
+
+    :root {
+        --bg: #0f1218;
+        --panel: #141821;
+        --rule: #262c3a;
+        --text: #b9c0c6;
+        --dim: #6b7486;
+        --faint: #3b4252;
+        --value: #c9d0d4;
+        --function: #4cbf5c;
+        --modifier: #c060b6;
+        --modifier2: #c8b330;
+        --number: #e0685c;
+        --string: #4fb4c8;
+        --comment: #7c80d8;
+        --bracket: #a98ed0;
+        --hour: #c8b330;
+        --minute: #eef0e6;
+        --second: #e0685c;
+        --error: #ff7f72;
+        --bqn: BQN386, "DejaVu Sans Mono", Menlo, Consolas, monospace;
+        --mono: "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--bqn); }
+
+    body { min-height: 100vh; padding: clamp(12px, 3vw, 32px); }
+
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.4em 1.2em;
+        margin-bottom: clamp(10px, 2vw, 20px);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+    }
+
+    header h1 { margin: 0; font-size: clamp(18px, 2.4vw, 26px); font-weight: 600; color: var(--function); }
+    header p { margin: 0; font-size: clamp(11px, 1.2vw, 13px); color: var(--dim); font-family: var(--mono); }
+
+    main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(14px, 2.5vw, 28px);
+        align-items: start;
+    }
+
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); }
+    }
+
+    .term { container-type: inline-size; min-width: 0; }
+
+    pre { margin: 0; font-family: var(--bqn); white-space: pre; }
+
+    .entry { margin-bottom: 0.9em; }
+
+    .in {
+        color: var(--value);
+        font-size: clamp(13px, 1.4vw, 16px);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-all;
+        padding-left: 3ch;
+    }
+
+    .out { font-size: clamp(12px, 1.3vw, 15px); line-height: 1.35; overflow-x: auto; color: var(--text); }
+    .out.text { font-family: var(--mono); }
+    .out.err { color: var(--error); white-space: pre-wrap; }
+
+    /* the face: 41 columns, rows twice a column's width, as the code assumes */
+    .out.face {
+        font-family: var(--mono);
+        font-size: min(17px, calc(100cqw / 25.5));
+        line-height: 1.2;
+        overflow: visible;
+    }
+    .c-rim { color: var(--faint); }
+    .c-mark { color: var(--dim); }
+    .c-hour { color: var(--hour); font-weight: 700; }
+    .c-minute { color: var(--minute); font-weight: 700; }
+    .c-second { color: var(--second); }
+    .c-centre { color: var(--hour); font-weight: 700; }
+
+    /* 64 columns of block glyphs */
+    .out.big {
+        font-family: var(--mono);
+        font-size: min(13px, calc(100cqw / 39.5));
+        line-height: 1;
+        color: var(--function);
+        overflow: visible;
+    }
+
+    #status { color: var(--dim); font-size: clamp(12px, 1.3vw, 15px); }
+
+    #repl { margin-top: 1.4em; padding-top: 1em; border-top: 1px dashed var(--rule); }
+
+    #repl-hint {
+        color: var(--dim);
+        font-family: var(--mono);
+        font-size: clamp(11px, 1.15vw, 13px);
+        margin: 0 0 0.8em;
+        line-height: 1.6;
+    }
+
+    #repl-hint code { font-family: var(--bqn); color: var(--value); }
+
+    #history { max-height: 40vh; overflow-y: auto; }
+
+    .prompt { display: flex; align-items: baseline; }
+    .prompt span { white-space: pre; font-size: 16px; }
+
+    #line {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--value);
+        font-family: var(--bqn);
+        font-size: 17px;
+        caret-color: var(--function);
+        padding: 0.2em 0;
+    }
+
+    #line:disabled { opacity: 0.4; }
+    #line::placeholder { color: var(--faint); font-style: italic; font-family: var(--mono); font-size: 15px; }
+
+    #keys {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        margin-top: 0.6em;
+    }
+
+    #keys button {
+        font-family: var(--bqn);
+        font-size: 16px;
+        min-width: 1.9em;
+        padding: 0.15em 0.3em;
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        cursor: pointer;
+        color: var(--value);
+    }
+
+    #keys button:hover { border-color: var(--dim); }
+
+    aside {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(12px, 1.8vw, 20px);
+        min-width: 0;
+    }
+
+    aside h2 {
+        margin: 0 0 0.6em;
+        font-family: var(--mono);
+        font-size: clamp(12px, 1.25vw, 14px);
+        font-weight: 600;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
+    #source {
+        font-size: clamp(11px, 1.1vw, 14px);
+        line-height: 1.55;
+        color: var(--value);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .Function { color: var(--function); }
+    .Modifier { color: var(--modifier); }
+    .Modifier2 { color: var(--modifier2); }
+    .Number { color: var(--number); }
+    .String { color: var(--string); }
+    .Comment { color: var(--comment); font-style: italic; }
+    .Bracket { color: var(--bracket); }
+    .Gets { color: var(--text); }
+
+    aside p { color: var(--dim); font-family: var(--mono); font-size: clamp(11px, 1.1vw, 12.5px); line-height: 1.6; margin: 1em 0 0; }
+    aside a { color: var(--dim); }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>BQN Clock</h1>
+    <p id="version">loading BQN&hellip;</p>
+</header>
+
+<main>
+    <section class="term">
+        <div id="session"><div id="status">   loading BQN&hellip;</div></div>
+
+        <div id="repl">
+            <p id="repl-hint">Your turn. Type BQN and press Enter (&uarr; recalls earlier lines). The buttons type the glyphs. Try <code>Face 3‿0‿0</code>, <code>r ↩ 6</code>, <code>Big 12‿34‿56</code> or <code>+´ ↕100</code>. Reload the page to start over.</p>
+            <div id="history"></div>
+            <label class="prompt">
+                <span>   </span>
+                <input id="line" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="BQN input" placeholder="type BQN here" disabled>
+            </label>
+            <div id="keys" aria-label="BQN glyphs"></div>
+        </div>
+    </section>
+
+    <aside>
+        <h2>The program</h2>
+        <pre id="source"></pre>
+        <p>BQN is Marshall Lochbaum's modern descendant of APL. Each glyph is a primitive, coloured by its role: <span class="Function">functions</span> act on arrays, and <span class="Modifier">1-modifiers</span> and <span class="Modifier2">2-modifiers</span> build new functions from old. Names that start with a capital letter are functions too. Each second the page sets <code>t</code> to the time and runs the lines on the left. The interpreter is BQN's own reference implementation in JavaScript, running here in your browser. Character arrays are shown as plain text, everything else the way BQN's REPL shows it.</p>
+    </aside>
+</main>
+
+<!-- The BQN program. The page shows this text and runs it, unchanged. -->
+<script type="text/plain" id="program">
+# BQN clock: every character in the session is computed by these lines.
+# 𝕩 is the time of day as hours‿minutes‿seconds
+
+r ← 10                       # radius of the face, in rows
+
+# 𝕨 rows out from the centre, 𝕩 turns clockwise from 12 → row‿col
+Pt ← {⌊0.5 + (r - 𝕨 × •math.Cos 2×π×𝕩) ⋈¨ (2×r) + 2 × 𝕨 × •math.Sin 2×π×𝕩}
+
+# the cells covered by a hand of length 𝕨 pointing at 𝕩 turns
+Hand ← {(𝕨 × (↕÷⊢) 4×r) Pt 𝕩}
+
+# draw character c at points p on the grid 𝕩
+Draw ← {c‿p 𝕊 grid: c˙¨⌾(p⊸⊑) grid}
+
+Face ← {𝕊 h‿m‿s:
+  layers ← ⟨
+    '.' ⋈ r Pt (↕÷⊢) 120
+    'o' ⋈ r Pt (↕÷⊢) 12
+    '#' ⋈ (0.5×r) Hand 12 ÷˜ (12|h) + m÷60
+    '*' ⋈ (0.8×r) Hand 60 ÷˜ m + s÷60
+    '+' ⋈ (0.9×r) Hand s÷60
+    '@' ⋈ ⟨r ⋈ 2×r⟩
+  ⟩
+  ((1+2×r)‿(1+4×r) ⥊ ' ') Draw´ ⌽layers
+}
+
+# a 3×5 font for 0-9 and the colon, 15 bits per glyph, plus a blank column
+glyphs ← ∾⟜0˘˘ 11‿5‿3 ⥊ 2 | ⌊ 31599‿11415‿29671‿29647‿23497‿31183‿31215‿29257‿31727‿31695‿1040 ÷⌜ 2⋆⌽↕15
+Big ← {" █" ⊏˜ 2⊸/˘ ⥊˘ 1‿0‿2 ⍉ glyphs ⊏˜ 0‿1‿6‿2‿3‿6‿4‿5 ⊏ 10 ∾˜ ∾ (⌊𝕩÷10) ⋈¨ 10|𝕩}
+
+Secs ← +⟜(60⊸×)´⌽               # seconds since midnight
+Hms ← {60 | ⌊𝕩 ÷ 3600‿60‿1}      # and back
+Bar ← {"[" ∾ (40↑(⌊40×𝕩)⥊'=') ∾ "] " ∾ (•Fmt ⌊100×𝕩) ∾ "%"}
+</script>
+
+<script>
+// BQN's reference implementation, pinned to one commit of the BQN repository.
+// It defines bqn(), str(), fmt() and fmtErr() as globals.
+const BQN_JS = 'https://cdn.jsdelivr.net/gh/mlochbaum/BQN@0ae87a3763c2023b159410cc2ae1048a1768c184/docs/bqn.js';
+
+// The lines shown each second, after  t ← h‿m‿s
+const SENTENCES = [
+    { b: 'Face t', kind: 'face' },
+    { b: 'Big t', kind: 'big' },
+    { b: 'Secs t', nb: 'seconds since midnight' },
+    { b: 'Hms Secs t', nb: 'and back again' },
+    { b: 'Bar 86400 ÷˜ Secs t', nb: 'how much of today has gone' },
+];
+
+const sessionEl = document.getElementById('session');
+const versionEl = document.getElementById('version');
+const historyEl = document.getElementById('history');
+const lineEl = document.getElementById('line');
+const program = document.getElementById('program').textContent.replace(/^\n/, '');
+
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// --- syntax colouring, by BQN's own roles -----------------------------
+const FN = '+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!';
+const M1 = '˙˜˘¨⌜⁼´˝`';
+const M2 = '∘○⊸⟜⌾⊘◶⎉⚇⍟⎊';
+function highlight(src) {
+    const chars = Array.from(src);
+    let html = '';
+    for (let i = 0; i < chars.length; i++) {
+        const c = chars[i];
+        const span = (cls, s) => { html += `<span class="${cls}">${esc(s)}</span>`; };
+        if (c === '#') {                                   // comment to end of line
+            let j = i; while (j < chars.length && chars[j] !== '\n') j++;
+            span('Comment', chars.slice(i, j).join('')); i = j - 1;
+        } else if (c === '"') {                            // string
+            let j = i + 1; while (j < chars.length && chars[j] !== '"') j++;
+            span('String', chars.slice(i, j + 1).join('')); i = j;
+        } else if (c === "'" && chars[i + 2] === "'") {    // character
+            span('String', chars.slice(i, i + 3).join('')); i += 2;
+        } else if (/[0-9¯π∞]/.test(c) && !/[A-Za-z_]/.test(chars[i - 1] || '')) {
+            let j = i; while (j < chars.length && /[0-9.¯π∞e]/.test(chars[j])) j++;
+            span('Number', chars.slice(i, j).join('')); i = j - 1;
+        } else if (/[A-Za-z•𝕊𝕨𝕩𝕗𝕘_]/u.test(c)) {           // a name: role by its first letter
+            let j = i; while (j < chars.length && /[A-Za-z0-9_•.𝕊𝕨𝕩]/u.test(chars[j])) j++;
+            const name = chars.slice(i, j).join('');
+            const first = name.replace(/^•(math\.)?/, '')[0] || '';
+            span(/[A-Z𝕊]/u.test(first) ? 'Function' : 'Value', name); i = j - 1;
+        } else if (FN.includes(c)) span('Function', c);
+        else if (M1.includes(c)) span('Modifier', c);
+        else if (M2.includes(c)) span('Modifier2', c);
+        else if ('⟨⟩{}‿⋄,'.includes(c)) span('Bracket', c);
+        else if ('←↩⇐'.includes(c)) span('Gets', c);
+        else html += esc(c);
+    }
+    return html;
+}
+document.getElementById('source').innerHTML = highlight(program);
+
+// --- glyph buttons for the prompt ----------------------------------------
+const KEYS = '←↩⋈‿⟨⟩·˜˘¨´⌜⊸⟜∘○⌾+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾↑↓↕⌽⍉/⊏⊑∊⊔𝕩𝕨π';
+const keysEl = document.getElementById('keys');
+for (const k of Array.from(KEYS)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = k;
+    b.addEventListener('click', () => {
+        const s = lineEl.selectionStart ?? lineEl.value.length, e = lineEl.selectionEnd ?? s;
+        lineEl.value = lineEl.value.slice(0, s) + k + lineEl.value.slice(e);
+        lineEl.focus();
+        lineEl.setSelectionRange(s + k.length, s + k.length);
+    });
+    keysEl.appendChild(b);
+}
+
+// --- showing values -------------------------------------------------------
+// Character arrays print as plain text; anything else as BQN's REPL shows it.
+function show(v) {
+    const isChars = v && v.sh && v.length > 0 && v.every(c => typeof c === 'string');
+    if (isChars && v.sh.length === 1) return { text: v.join(''), plain: true };
+    if (isChars && v.sh.length === 2) {
+        const [rows, cols] = v.sh;
+        return { text: Array.from({ length: rows }, (_, i) => v.slice(i * cols, (i + 1) * cols).join('')).join('\n'), plain: true };
+    }
+    return { text: fmt(v), plain: false };
+}
+
+const FACE_CLASSES = { '.': 'c-rim', 'o': 'c-mark', '#': 'c-hour', '*': 'c-minute', '+': 'c-second', '@': 'c-centre' };
+function colourFace(text) {
+    let html = '', run = '', cls = null;
+    const flush = () => { if (run) html += cls ? `<span class="${cls}">${esc(run)}</span>` : esc(run); run = ''; };
+    for (const ch of text) {
+        const c = FACE_CLASSES[ch] || null;
+        if (c !== cls) { flush(); cls = c; }
+        run += ch;
+    }
+    flush();
+    return html;
+}
+
+function inputHtml(b, nb) {
+    return `<pre class="in">${highlight(b)}${nb ? `   <span class="Comment">#&nbsp;${esc(nb)}</span>` : ''}</pre>`;
+}
+
+function resultHtml(result, kind) {
+    if (result.err) return `<pre class="out err">${esc(result.err)}</pre>`;
+    const { text, plain } = result;
+    if (kind === 'face' && plain) return `<pre class="out face" aria-hidden="true">${colourFace(text)}</pre>`;
+    if (kind === 'big' && plain) return `<pre class="out big">${esc(text)}</pre>`;
+    return `<pre class="out${plain ? ' text' : ''}">${esc(text)}</pre>`;
+}
+
+// --- starting BQN ---------------------------------------------------------
+let session;
+function run(src) {
+    try { return show(session(str(src))); }
+    catch (e) { return { err: fmtErr(e) }; }
+}
+
+const pad = n => String(n).padStart(2, '0');
+
+function tick() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    const set = `t ← ${h}‿${m}‿${s}`;
+    run(set);
+    let html = `<div class="entry">${inputHtml(set)}</div>`;
+    for (const { b, kind, nb } of SENTENCES) {
+        html += `<div class="entry">${inputHtml(b, nb)}${resultHtml(run(b), kind)}</div>`;
+    }
+    sessionEl.innerHTML = html;
+    sessionEl.setAttribute('aria-label', `The time is ${pad(h)}:${pad(m)}:${pad(s)}`);
+    setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
+}
+
+// --- the prompt -----------------------------------------------------------
+const recalled = [];
+let recallAt = 0;
+
+lineEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const b = lineEl.value;
+        lineEl.value = '';
+        if (!b.trim()) return;
+        recalled.push(b);
+        recallAt = recalled.length;
+        const entry = document.createElement('div');
+        entry.className = 'entry';
+        entry.innerHTML = inputHtml(b) + resultHtml(run(b));
+        historyEl.appendChild(entry);
+        while (historyEl.children.length > 200) historyEl.firstChild.remove();
+        historyEl.scrollTop = historyEl.scrollHeight;
+    } else if (e.key === 'ArrowUp' && recallAt > 0) {
+        e.preventDefault();
+        lineEl.value = recalled[--recallAt];
+    } else if (e.key === 'ArrowDown' && recallAt < recalled.length) {
+        e.preventDefault();
+        recallAt++;
+        lineEl.value = recalled[recallAt] ?? '';
+    }
+});
+
+const script = document.createElement('script');
+script.src = BQN_JS;
+script.onload = () => {
+    // a REPL-style scope, so definitions persist from one line to the next
+    session = bqn('•ReBQN {repl⇐"loose"}');
+    const loaded = run(program);
+    if (loaded.err) {
+        sessionEl.innerHTML = `<pre class="out err">${esc(loaded.err)}</pre>`;
+        return;
+    }
+    versionEl.textContent = "BQN's JavaScript implementation, running in this page";
+    lineEl.disabled = false;
+    tick();
+};
+script.onerror = () => {
+    versionEl.textContent = 'BQN could not be loaded';
+    sessionEl.innerHTML = '<pre class="out err">The BQN interpreter did not load. It comes from cdn.jsdelivr.net, so this page needs a network connection.</pre>';
+};
+document.head.appendChild(script);
+</script>
+</body>
+</html>
