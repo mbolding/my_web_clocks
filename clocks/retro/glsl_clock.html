@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLSL Clock</title>
+<style>
+    :root {
+        --bg: #0b0d12;
+        --panel: #11151d;
+        --rule: #232a37;
+        --text: #c9d1df;
+        --bright: #eef2f8;
+        --dim: #7d8799;
+        --faint: #4a5262;
+        --accent: #7fd1ff;
+        --red: #ff6b5e;
+        --ok: #7ee0a1;
+        --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--mono); }
+
+    /* no ligatures: some monospace fonts draw operators such as -> or >= as glyphs */
+    body, textarea { font-variant-ligatures: none; }
+
+    body { min-height: 100vh; padding: clamp(12px, 3vw, 32px); }
+
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.4em 1.2em;
+        margin-bottom: clamp(10px, 2vw, 20px);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+    }
+
+    header h1 { margin: 0; font-size: clamp(18px, 2.4vw, 26px); font-weight: 600; color: var(--bright); }
+    header p { margin: 0; font-size: clamp(11px, 1.2vw, 13px); color: var(--dim); }
+
+    main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(14px, 2.5vw, 28px);
+        align-items: start;
+    }
+
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1fr) minmax(380px, 1.15fr); }
+    }
+
+    .stage { min-width: 0; }
+
+    #view {
+        display: block;
+        width: min(100%, 560px, 70vh);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: #07090d;
+        touch-action: manipulation;
+    }
+
+    #fallback {
+        display: none;
+        width: min(100%, 560px);
+        padding: 1.2em;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        color: var(--red);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .readout {
+        margin-top: clamp(10px, 2vw, 18px);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.3em 1.4em;
+    }
+
+    #time { font-size: clamp(26px, 4.2vw, 40px); color: var(--bright); letter-spacing: 0.04em; }
+    #utime { font-size: clamp(12px, 1.3vw, 14px); color: var(--dim); }
+    #utime b { color: var(--accent); font-weight: 500; }
+
+    #stats { margin: 0.6em 0 0; font-size: clamp(11.5px, 1.2vw, 13px); color: var(--dim); line-height: 1.6; }
+    #stats b { color: var(--text); font-weight: 500; }
+
+    .views { margin-top: 1em; display: flex; flex-wrap: wrap; gap: 8px; }
+
+    button {
+        font: inherit;
+        font-size: 13px;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 0.45em 0.9em;
+        cursor: pointer;
+    }
+
+    button:hover { border-color: var(--dim); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
+    aside {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(12px, 1.8vw, 20px);
+        min-width: 0;
+    }
+
+    aside h2 {
+        margin: 0 0 0.6em;
+        font-size: clamp(12px, 1.25vw, 14px);
+        font-weight: 600;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1em;
+    }
+
+    aside h2 button { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 12px; padding: 0.3em 0.7em; }
+
+    .editor {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: #0d1017;
+        height: clamp(320px, 62vh, 720px);
+        overflow: hidden;
+    }
+
+    #gutter, #source {
+        margin: 0;
+        padding: 10px 0;
+        font-family: var(--mono);
+        font-size: clamp(11px, 1vw, 13px);
+        line-height: 1.55;
+        tab-size: 4;
+    }
+
+    #gutter {
+        padding-left: 10px;
+        padding-right: 8px;
+        color: var(--faint);
+        text-align: right;
+        user-select: none;
+        overflow: hidden;
+        border-right: 1px solid var(--rule);
+        white-space: pre;
+    }
+
+    #gutter .bad { color: var(--red); }
+
+    #source {
+        padding-left: 10px;
+        padding-right: 10px;
+        width: 100%;
+        height: 100%;
+        resize: none;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: var(--bright);
+        caret-color: var(--accent);
+        white-space: pre;
+        overflow: auto;
+    }
+
+    #log {
+        margin: 0.7em 0 0;
+        min-height: 1.6em;
+        font-size: 12.5px;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        color: var(--ok);
+    }
+
+    #log.err { color: var(--red); }
+
+    aside p { color: var(--dim); font-size: clamp(11px, 1.1vw, 12.5px); line-height: 1.65; margin: 1em 0 0; }
+    aside code { color: var(--text); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>GLSL clock</h1>
+    <p id="version">a fragment shader, run once for every pixel</p>
+</header>
+
+<main>
+    <section class="stage">
+        <canvas id="view" role="img" aria-label="An analog clock drawn by a fragment shader"></canvas>
+        <div id="fallback">This clock needs WebGL, which this browser has turned off or does not have. The time below still runs.</div>
+
+        <div class="readout">
+            <div id="time" role="timer" aria-label="Current time">--:--:--</div>
+            <div id="utime">u_time = <b>0.000</b></div>
+        </div>
+        <p id="stats">&nbsp;</p>
+
+        <div class="views" role="group" aria-label="What the shader shows">
+            <button type="button" data-view="0" aria-pressed="true">the clock</button>
+            <button type="button" data-view="1" aria-pressed="false">the distance field</button>
+        </div>
+    </section>
+
+    <aside>
+        <h2><span>The shader</span><button type="button" id="reset">reset</button></h2>
+        <div class="editor">
+            <pre id="gutter" aria-hidden="true"></pre>
+            <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Fragment shader source, editable"></textarea>
+        </div>
+        <pre id="log" aria-live="polite"></pre>
+        <p>A fragment shader is a small program the graphics card runs once for every pixel, all of them at the same time, with no way for one pixel to ask another what it found. So nothing here draws a hand. Each pixel works out how far it is from each hand, from the time in <code>u_time</code> alone, and colours itself by that distance. Switch to the distance field to see the numbers every pixel computed.</p>
+        <p>The text above is the program the page compiles. Edit it and it recompiles as you type; if it fails, the last good version keeps running and the error is shown. Try changing <code>0.50</code> in the hour hand, or the colours at the end. Reload or press reset to start over.</p>
+    </aside>
+</main>
+
+<!-- The fragment shader. The editor starts with this text and the page compiles it, unchanged. -->
+<script type="text/plain" id="program">
+// GLSL clock. This function runs once for every pixel, on the graphics
+// card, all at once. Each pixel knows only where it is and what time it
+// is, and decides its own colour from its distance to each hand.
+
+precision highp float;
+
+uniform vec2 u_resolution;   // canvas size, in device pixels
+uniform float u_time;        // seconds since local midnight
+uniform float u_view;        // 0 = the clock, 1 = the distance field
+
+const float TAU = 6.28318531;
+
+// distance from p to the line segment from a to b
+float segment(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+
+// a hand pointing at turns of the dial, clockwise from 12
+float hand(vec2 p, float turns, float len, float tail) {
+    vec2 dir = vec2(sin(TAU * turns), cos(TAU * turns));
+    return segment(p, -dir * tail, dir * len);
+}
+
+// sixty marks round the edge: fold p onto the nearest one
+float marks(vec2 p) {
+    float arc = TAU / 60.0;
+    float i = floor(atan(p.x, p.y) / arc + 0.5);
+    float a = i * arc;
+    vec2 q = vec2(cos(a) * p.x - sin(a) * p.y, sin(a) * p.x + cos(a) * p.y);
+    bool major = mod(i, 5.0) == 0.0;
+    float d = segment(q, vec2(0.0, major ? 0.78 : 0.86), vec2(0.0, 0.93));
+    return d - (major ? 0.018 : 0.006);
+}
+
+void main() {
+    // this pixel, in units where the dial has radius 1
+    float side = min(u_resolution.x, u_resolution.y);
+    vec2 p = (2.0 * gl_FragCoord.xy - u_resolution) / side;
+    float px = 2.0 / side;                              // one pixel, in those units
+
+    float s = mod(u_time, 60.0);
+    float m = mod(u_time / 60.0, 60.0);
+    float h = mod(u_time / 3600.0, 12.0);
+
+    // signed distances: negative inside a shape, positive outside
+    float dHour   = hand(p, h / 12.0, 0.50, 0.08) - 0.045;
+    float dMinute = hand(p, m / 60.0, 0.76, 0.10) - 0.028;
+    float dSecond = hand(p, s / 60.0, 0.86, 0.16) - 0.008;
+    float dMarks  = marks(p);
+    float dRim    = abs(length(p) - 0.975) - 0.012;
+    float dPin    = length(p) - 0.04;
+
+    float ink = min(min(dHour, dMinute), min(dMarks, dRim));
+    float red = min(dSecond, dPin);
+
+    // the clock: each shape covers this pixel by how far inside it is
+    vec3 face = vec3(0.085, 0.10, 0.135) * (1.0 - 0.35 * length(p));
+    vec3 clock = face;
+    clock = mix(clock, vec3(0.93, 0.95, 0.98), smoothstep(px, -px, ink));
+    clock = mix(clock, vec3(1.0, 0.42, 0.37), smoothstep(px, -px, red));
+    clock *= smoothstep(1.0 + px, 1.0 - px, length(p));
+
+    // the distance field: the number every pixel worked out, as bands
+    float d = min(ink, red);
+    vec3 field = d > 0.0 ? vec3(0.50, 0.82, 1.0) : vec3(1.0, 0.60, 0.35);
+    field *= 1.0 - exp(-5.0 * abs(d));
+    field *= 0.78 + 0.22 * cos(120.0 * d);
+    field = mix(field, vec3(1.0), smoothstep(1.5 * px, 0.0, abs(d)));
+
+    gl_FragColor = vec4(mix(clock, field, u_view), 1.0);
+}
+</script>
+
+<script>
+(() => {
+    const canvas = document.getElementById('view');
+    const fallback = document.getElementById('fallback');
+    const timeEl = document.getElementById('time');
+    const utimeEl = document.querySelector('#utime b');
+    const statsEl = document.getElementById('stats');
+    const source = document.getElementById('source');
+    const gutter = document.getElementById('gutter');
+    const logEl = document.getElementById('log');
+    const original = document.getElementById('program').textContent.replace(/^\n/, '');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const pad = n => String(n).padStart(2, '0');
+
+    // seconds since local midnight, with the milliseconds
+    function secondsToday(now) {
+        return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000;
+    }
+
+    // --- the editor's line numbers ---------------------------------------
+    let badLines = new Set();
+    function drawGutter() {
+        const n = source.value.split('\n').length;
+        let html = '';
+        for (let i = 1; i <= n; i++) html += (badLines.has(i) ? `<span class="bad">${i}</span>` : i) + '\n';
+        gutter.innerHTML = html;
+        gutter.scrollTop = source.scrollTop;
+    }
+    source.addEventListener('scroll', () => { gutter.scrollTop = source.scrollTop; });
+
+    // Tab indents rather than leaving the editor
+    source.addEventListener('keydown', e => {
+        if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            const a = source.selectionStart, b = source.selectionEnd;
+            source.setRangeText('    ', a, b, 'end');
+            source.dispatchEvent(new Event('input'));
+        }
+    });
+
+    // --- WebGL ------------------------------------------------------------
+    const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false });
+
+    function tickText(now) {
+        timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    if (!gl) {
+        canvas.style.display = 'none';
+        fallback.style.display = 'block';
+        source.value = original;
+        drawGutter();
+        source.readOnly = true;
+        logEl.textContent = 'WebGL is not available, so the shader cannot be compiled here.';
+        logEl.className = 'err';
+        const tick = () => { const now = new Date(); tickText(now); utimeEl.textContent = secondsToday(now).toFixed(3); };
+        tick();
+        setInterval(tick, 1000);
+        return;
+    }
+
+    const vertexSource = 'attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }';
+
+    // a GPU without highp in fragment shaders gets mediump instead
+    const fragHighp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    const hasHighp = fragHighp && fragHighp.precision > 0;
+    const adapt = src => hasHighp ? src : src.replace(/precision\s+highp\s+float\s*;/, 'precision mediump float;');
+
+    let program = null;          // the last program that compiled
+    let uniforms = {};
+    let quad = null;
+
+    function compile(type, src) {
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+            const msg = gl.getShaderInfoLog(sh) || 'the shader did not compile';
+            gl.deleteShader(sh);
+            throw new Error(msg);
+        }
+        return sh;
+    }
+
+    // Build a program from fragment source; on failure keep the old one.
+    function build(fragSource) {
+        let vs, fs, prog;
+        try {
+            vs = compile(gl.VERTEX_SHADER, vertexSource);
+            fs = compile(gl.FRAGMENT_SHADER, adapt(fragSource));
+            prog = gl.createProgram();
+            gl.attachShader(prog, vs);
+            gl.attachShader(prog, fs);
+            gl.bindAttribLocation(prog, 0, 'a_pos');
+            gl.linkProgram(prog);
+            if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog) || 'the program did not link');
+        } catch (err) {
+            if (prog) gl.deleteProgram(prog);
+            return { ok: false, message: err.message };
+        } finally {
+            if (vs) gl.deleteShader(vs);
+            if (fs) gl.deleteShader(fs);
+        }
+        if (program) gl.deleteProgram(program);
+        program = prog;
+        uniforms = {
+            resolution: gl.getUniformLocation(prog, 'u_resolution'),
+            time: gl.getUniformLocation(prog, 'u_time'),
+            view: gl.getUniformLocation(prog, 'u_view'),
+        };
+        return { ok: true };
+    }
+
+    function setupQuad() {
+        quad = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    }
+
+    // Driver messages look like "ERROR: 0:23: 'x' : undeclared identifier".
+    function report(result) {
+        badLines = new Set();
+        if (result.ok) {
+            logEl.className = '';
+            logEl.textContent = 'compiled' + (hasHighp ? '' : ' (this GPU has no highp, so the page asked for mediump)');
+        } else {
+            const lines = result.message.split('\n').map(s => s.trim()).filter(Boolean);
+            const shown = lines.map(line => {
+                const m = /^(?:ERROR|WARNING):\s*\d+:(\d+):\s*(.*)$/.exec(line);
+                if (!m) return line;
+                badLines.add(+m[1]);
+                return `line ${m[1]}: ${m[2]}`;
+            });
+            logEl.className = 'err';
+            logEl.textContent = shown.join('\n') + '\n(the last version that compiled is still running)';
+        }
+        drawGutter();
+    }
+
+    // --- sizing (HiDPI) ---------------------------------------------------
+    const MAX_SIDE = 2048;       // device pixels; keeps phones from drawing millions of pixels
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const cssSide = canvas.getBoundingClientRect().width;
+        const side = Math.max(1, Math.min(MAX_SIDE, Math.round(cssSide * dpr)));
+        if (canvas.width !== side || canvas.height !== side) {
+            canvas.width = side;
+            canvas.height = side;
+        }
+        draw();
+    }
+
+    // --- drawing ----------------------------------------------------------
+    let view = 0;
+    let frames = 0, fpsSince = performance.now(), fps = 0;
+
+    function draw() {
+        if (!program) return;
+        const now = new Date();
+        let t = secondsToday(now);
+        if (reduceMotion.matches) t = Math.floor(t);   // a ticking hand rather than a sweeping one
+
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.useProgram(program);
+        gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
+        gl.uniform1f(uniforms.time, t);
+        gl.uniform1f(uniforms.view, view);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        utimeEl.textContent = t.toFixed(3);
+        frames++;
+    }
+
+    function stats() {
+        const now = performance.now();
+        fps = frames * 1000 / (now - fpsSince);
+        frames = 0;
+        fpsSince = now;
+        const pixels = canvas.width * canvas.height;
+        const perSecond = pixels * fps;
+        const fmt = n => n >= 1e9 ? (n / 1e9).toFixed(1) + ' billion' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' million' : Math.round(n).toLocaleString('en');
+        statsEl.innerHTML = `<b>${canvas.width} &times; ${canvas.height}</b> pixels, each running <b>main()</b> for itself: ` +
+            `<b>${fmt(pixels)}</b> runs a frame, about <b>${fmt(perSecond)}</b> a second.`;
+    }
+
+    // smooth while the visitor allows motion; once a second otherwise
+    function loop() {
+        draw();
+        if (!reduceMotion.matches) requestAnimationFrame(loop);
+    }
+
+    setInterval(() => {
+        const now = new Date();
+        tickText(now);
+        if (reduceMotion.matches) draw();
+        stats();
+    }, 1000);
+
+    reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(loop); });
+
+    // --- the view buttons -------------------------------------------------
+    document.querySelectorAll('.views button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            view = +btn.dataset.view;
+            document.querySelectorAll('.views button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+            canvas.setAttribute('aria-label', view ? 'The distance field the shader computes for every pixel' : 'An analog clock drawn by a fragment shader');
+            draw();
+        });
+    });
+
+    // --- live editing -----------------------------------------------------
+    let pending = 0;
+    source.addEventListener('input', () => {
+        drawGutter();
+        clearTimeout(pending);
+        pending = setTimeout(() => { report(build(source.value)); draw(); }, 350);
+    });
+
+    document.getElementById('reset').addEventListener('click', () => {
+        source.value = original;
+        report(build(original));
+        draw();
+    });
+
+    // --- a lost GPU context (driver reset, too many tabs) -----------------
+    canvas.addEventListener('webglcontextlost', e => {
+        e.preventDefault();
+        program = null;
+        logEl.className = 'err';
+        logEl.textContent = 'the graphics context was lost; waiting for it to come back';
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+        setupQuad();
+        report(build(source.value));
+        resize();
+    });
+
+    // --- start ------------------------------------------------------------
+    source.value = original;
+    setupQuad();
+    report(build(original));
+    tickText(new Date());
+    new ResizeObserver(resize).observe(canvas);
+    window.addEventListener('resize', resize);
+    resize();
+    stats();
+    requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
