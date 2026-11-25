@@ -29,6 +29,9 @@
 
     html, body { margin: 0; background: var(--paper); color: var(--text); font-family: var(--mono); }
 
+    /* no ligatures: some monospace fonts draw -> as an arrow, and ->svg is a name */
+    body, input { font-variant-ligatures: none; }
+
     body { min-height: 100vh; padding: clamp(12px, 3vw, 32px); }
 
     header {
@@ -52,7 +55,7 @@
     }
 
     @media (min-width: 980px) {
-        main { grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1fr); }
+        main { grid-template-columns: minmax(0, 1fr) minmax(320px, 1.25fr); }
     }
 
     .term { min-width: 0; }
@@ -139,7 +142,10 @@
         letter-spacing: 0.12em;
     }
 
-    #source { font-size: clamp(10.5px, 1.05vw, 13px); line-height: 1.55; color: var(--ink); }
+    /* code keeps its own line breaks and indentation, and scrolls sideways if it must */
+    #source { font-size: clamp(10.5px, 1.05vw, 13px); line-height: 1.55; color: var(--ink); white-space: pre; overflow-x: auto; overflow-wrap: normal; }
+
+    aside code, #repl-hint code { white-space: nowrap; }
 
     aside p { color: var(--dim); font-size: clamp(11px, 1.1vw, 12.5px); line-height: 1.6; margin: 1em 0 0; }
     aside a { color: var(--dim); }
@@ -307,6 +313,12 @@ function evaluate(src) {
     let value;
     try { value = scheme.evaluate(src); } catch (e) { failure = e; }
     if (failure) return { printed, err: String(failure.message || failure).replace(/ \[[^\]]*\]$/, '') };
+    // sleep and other asynchronous forms pause the interpreter and resume it
+    // later; the clock evaluates again every second, so cancel the resume
+    if (value instanceof B.Pause) {
+        value.resume = () => {};
+        return { printed, err: 'sleep and timers pause the interpreter, which this page cannot wait for' };
+    }
     return { printed, raw: value, value: value === B.undef || value === undefined ? null : B.to_write(value) };
 }
 
