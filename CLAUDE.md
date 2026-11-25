@@ -10,7 +10,9 @@ This is a collection of creative, self-contained web clock implementations. Each
 
 ```
 /
-├── index.html                 # Landing page: searchable, category-grouped index of all clocks
+├── index.html                 # Landing page: searchable, category-grouped index of all clocks, plus "Other Apps"
+├── README.md                  # Public overview of the repo and the live site
+├── LICENSE                    # MIT
 ├── clocks/
 │   ├── art/                   # Color/visual concept clocks + the literary clock series
 │   ├── nature/                # Sun, moon, circadian, sundial clocks
@@ -28,14 +30,18 @@ This is a collection of creative, self-contained web clock implementations. Each
 ├── dicom/                     # DICOM Explorer: single-file three-plane DICOM viewer + tag browser, listed under "Other Apps"
 ├── desktop_widget/            # Native macOS apps (SwiftUI): desktop clocks, Command Bar, Soma Player, Dial Timer, Month Calendar, Scratch Pad, Text Drawer, SDF Post, Server List, Dock Clock, Dock Load, Map Browser, Text Extractor, Markdown Editor, Reveal Codes, Pilcrow, DICOM Viewer, Stipple, Polyhedra, Gopher Browser, News Reader, Relay Chat, Offsite, Panorama, Widget Bar — not web pages
 ├── games/                     # Standalone games — not clocks, listed only under "Other Apps"
-├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, not in the gallery
+├── plate/                     # Standalone installable PWA (QR code generator) — not a clock, listed under "Other Apps"
 └── wrangler.jsonc             # Cloudflare Workers static-assets config for deployment
 ```
 
 Each clock file lives in exactly one category directory, e.g. `clocks/retro/binary_clock.html`, `clocks/art/dune_clock.html`. There is no build output — the repo root and `clocks/` are served as-is.
 
-`archive/` holds clocks that have been retired from the gallery, currently the
-two expired NeuroGateways '26 event clocks. The files stay in the repo and stay
+Two kinds of clock break the one-file rule. `clocks/simulation/state_machine_clock/` is an installable PWA: a folder with `index.html`, `manifest.webmanifest`, a caching service worker (`sw.js`) and its icons, linked from the gallery as the folder. And `vintage_clock` and `macos_clock` in `clocks/retro/` load image files kept beside them (`old_clock_face.jpg`, `os6.png`). Keep any new assets next to the clock that uses them.
+
+`archive/` holds clocks that have been retired from the gallery: the two
+expired NeuroGateways '26 event clocks, `life_clock` (superseded by
+`life_zoom_clock`) and three flocking variants now folded into
+`flocking_clock` as modes; `archive/README.md` says why for each. The files stay in the repo and stay
 reachable by direct URL, but they are not listed in `index.html`, not counted in
 the collection, and not maintained. Retire a clock by `git mv`-ing it here,
 deleting its `.clock-row` from `index.html`, and adding a short entry to
@@ -172,7 +178,7 @@ are in `desktop_widget/README.md`. Unlike the rest of the repo this does have a
 build step: verify changes by building and running the app, not in a browser.
 Don't apply the clock-file conventions to it.
 
-`plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and isn't part of `index.html`'s gallery. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
+`plate/` is a separate, self-contained installable PWA (manifest + service worker + icons) unrelated to the clock collection; it lives at the repo root rather than under `clocks/` and is listed under "Other Apps" in `index.html`, not among the clocks or in their counts. Treat it as its own project — don't apply the clock-file conventions below to it, and don't fold it into `clocks/`.
 
 ## Development Workflow
 
@@ -188,7 +194,7 @@ python3 -m http.server 8000
 # then visit http://localhost:8000/
 ```
 
-There is no build, lint, or test command in this repo — verify changes by loading the HTML file in a browser and checking the console for errors.
+There is no build, lint, or test command for the web pages — verify changes by loading the HTML file in a browser and checking the console for errors. The one build step in the repo is `desktop_widget/build.sh` for the native macOS apps, described above. The language clocks load their interpreters from jsDelivr, so they need a network connection.
 
 ### Deployment
 The site deploys as static assets via Cloudflare Workers (see `wrangler.jsonc`: `assets.directory` is `.`, `nodejs_compat` flag enabled). `wrangler deploy` serves the repo root as-is; there's no build step to run first.
