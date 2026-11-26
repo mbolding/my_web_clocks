@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factor Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0e1320;
+        --panel: #161d2e;
+        --rule: #2a3550;
+        --ink: #f3ead7;
+        --text: #cdc6b6;
+        --dim: #8a8fa3;
+        --accent: #e8a25c;
+        --serif: "Spectral", Georgia, "Times New Roman", serif;
+        --mono: "IBM Plex Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--serif); }
+
+    body { min-height: 100vh; padding: clamp(14px, 3vw, 36px); }
+
+    main {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(18px, 3vw, 44px);
+        align-items: start;
+    }
+
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); }
+    }
+
+    .stage { min-width: 0; text-align: center; }
+
+    #view {
+        display: block;
+        margin: 0 auto;
+        width: min(100%, 600px, 58vh);
+        aspect-ratio: 1;
+    }
+
+    #time {
+        margin-top: 0.2em;
+        font-family: var(--mono);
+        font-weight: 500;
+        font-size: clamp(30px, 5.4vw, 48px);
+        color: var(--ink);
+        letter-spacing: 0.06em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .label { margin: 0.6em 0 0.1em; font-size: 14px; color: var(--dim); font-style: italic; }
+    .label.exploring { color: var(--accent); font-style: normal; }
+
+    #eq {
+        font-family: var(--mono);
+        font-size: clamp(19px, 3.2vw, 28px);
+        color: var(--ink);
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+    #eq .p { font-weight: 500; }
+    #eq .tag { font-family: var(--serif); font-style: italic; color: var(--accent); }
+
+    #nest { margin: 0.45em 0 0; font-family: var(--mono); font-size: 14px; color: var(--dim); overflow-wrap: anywhere; }
+    #nest .lv { color: var(--ink); }
+
+    #primes { margin: 0.5em auto 0; max-width: 34em; font-size: clamp(15.5px, 1.7vw, 17px); color: var(--text); line-height: 1.45; min-height: 1.45em; }
+    #primes b { color: var(--accent); font-weight: 500; }
+
+    .controls { margin-top: 0.9em; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+
+    button, input {
+        font: inherit;
+        font-size: 16px;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        padding: 0.3em 1em;
+    }
+    button { cursor: pointer; }
+    button:hover { border-color: var(--dim); }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+    button.step { padding: 0.3em 0.75em; font-family: var(--mono); }
+    input[type="number"] { width: 7.2em; text-align: center; font-family: var(--mono); font-size: 15px; border-radius: 6px; padding: 0.35em 0.4em; }
+    .controls label { font-size: 15px; color: var(--dim); font-style: italic; }
+
+    article { min-width: 0; }
+    h1 { margin: 0 0 0.2em; font-size: clamp(28px, 4vw, 40px); font-weight: 500; color: var(--ink); line-height: 1.1; }
+    .sub { margin: 0 0 1.2em; font-style: italic; color: var(--dim); font-size: clamp(16px, 1.8vw, 19px); }
+    article p { font-size: clamp(16px, 1.7vw, 18px); line-height: 1.6; margin: 0 0 1em; }
+    article h2 { margin: 1.4em 0 0.4em; font-size: clamp(20px, 2.4vw, 24px); font-weight: 500; color: var(--ink); }
+    article .m { font-family: var(--mono); font-size: 0.86em; color: var(--ink); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<main>
+    <section class="stage">
+        <canvas id="view" role="img" aria-label="A factorisation diagram of the number of seconds since midnight"></canvas>
+        <div id="time" role="timer" aria-label="Current time">--:--:--</div>
+        <p class="label" id="label">seconds since midnight</p>
+        <div id="eq">&nbsp;</div>
+        <p id="nest">&nbsp;</p>
+        <p id="primes">&nbsp;</p>
+
+        <div class="controls" role="group" aria-label="View">
+            <button type="button" id="outline" aria-pressed="false">show the groups</button>
+        </div>
+        <div class="controls" role="group" aria-label="Look at another number">
+            <label for="pick">look at</label>
+            <button type="button" class="step" id="down" aria-label="one less">&minus;</button>
+            <input type="number" id="pick" min="0" max="86399" step="1" inputmode="numeric">
+            <button type="button" class="step" id="up" aria-label="one more">+</button>
+            <button type="button" id="now">back to now</button>
+        </div>
+        <p class="label" id="status" aria-live="polite"></p>
+    </section>
+
+    <article>
+        <h1>Factor clock</h1>
+        <p class="sub">the fundamental theorem of arithmetic, once a second</p>
+        <p>Every whole number bigger than 1 can be written as a product of primes, and in only one way, apart from the order of the factors. Primes are the numbers that can't be split, like 2, 3, 5, 7 and 11. Euclid had the key step, and Gauss stated and proved the whole theorem in 1801. It is why primes are called the building blocks of the whole numbers: each number has exactly one recipe.</p>
+        <p>This clock counts the seconds since midnight, from 0 to 86,399, and each second factorises the count and draws it. At noon the count is 43,200, which is <span class="m">2⁶ × 3³ × 5²</span>; a whole day is 86,400 seconds, <span class="m">2⁷ × 3³ × 5²</span>.</p>
+
+        <h2>How to read a diagram</h2>
+        <p>A diagram of <i>n</i> = <i>p</i> × <i>m</i> is <i>p</i> copies of the diagram of <i>m</i>, set evenly round a circle; then each copy splits the same way, down to single dots. So there are exactly <i>n</i> dots, and the primes show up as rings inside rings. These pictures were made popular by Brent Yorgey in 2012.</p>
+        <p>Read from the outside in, and count the groups at each layer: the line under the sum lists them. Two copies sit side by side, and a pair of 2s is drawn as a square of four, so powers of 2 become grids. The smallest factors are on the outside and the largest is innermost. That order keeps the most layers big enough to see: a large prime drawn on the outside would shrink everything inside it to specks, but drawn innermost it is just a ring at the bottom of each copy. Press &ldquo;show the groups&rdquo; to outline every copy, coloured by the prime that made it.</p>
+        <p>A prime has nothing to split, so its diagram is a single ring of dots. When there are too many to draw one by one, the dots run together into a fine unbroken ring with the number written inside. Deep inside a big number the copies get smaller than a pixel too, so a group that small is drawn as one soft disc, as bright as its dots would be.</p>
+        <p>Two seconds are special. At midnight the count is 0, which is not a product of primes at all: every number divides it, so there is nothing to draw. One second later it is 1, the product of no primes, drawn as a single dot.</p>
+
+        <h2>Primes in a day</h2>
+        <p>8,403 of the day's 86,400 seconds are prime. They thin out as the day goes on, as the prime number theorem says they should: 17 of the first minute's 60 seconds are prime, but only 9 of the last minute's, and the first hour has 503 against the last hour's 310. The longest wait between two primes is 72 seconds, from 31,397 to 31,469, that is from 08:43:17 to 08:44:29. Use &ldquo;look at&rdquo; to try any number of seconds; the clock keeps time while you do, and &ldquo;back to now&rdquo; returns to it.</p>
+    </article>
+</main>
+
+<script>
+(() => {
+    // @math-begin
+    const DAY = 86400;
+    // smallest prime factor of every number up to a day, by sieve
+    const spf = new Uint32Array(DAY + 1);
+    for (let i = 2; i <= DAY; i++) {
+        if (spf[i]) continue;
+        for (let j = i; j <= DAY; j += i) if (!spf[j]) spf[j] = i;
+    }
+    // primesUpTo[n] = how many primes are <= n
+    const primesUpTo = new Uint32Array(DAY + 1);
+    for (let i = 2; i <= DAY; i++) primesUpTo[i] = primesUpTo[i - 1] + (spf[i] === i ? 1 : 0);
+    const isPrime = n => n >= 2 && spf[n] === n;
+
+    // prime factors in ascending order, with repeats; [] for 0 and 1
+    function factorise(n) {
+        const f = [];
+        while (n > 1) { const p = spf[n]; f.push(p); n /= p; }
+        return f;
+    }
+    // the layers of the diagram, outside in: a leftover 2, then 2 x 2 squares, then the odd primes ascending
+    function layers(n) {
+        const f = factorise(n);
+        const twos = f.filter(p => p === 2).length;
+        const out = [];
+        if (twos % 2) out.push(2);
+        for (let i = 0; i < twos >> 1; i++) out.push(4);
+        for (const p of f) if (p !== 2) out.push(p);
+        return out;
+    }
+    function nextPrimeAfter(n) {
+        for (let m = n + 1; m < DAY; m++) if (isPrime(m)) return m;
+        return -1;
+    }
+    // @math-end
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const canvas = document.getElementById('view');
+    const ctx = canvas.getContext('2d');
+    const $ = id => document.getElementById(id);
+    const timeEl = $('time'), eqEl = $('eq'), nestEl = $('nest'), primesEl = $('primes'), labelEl = $('label');
+    const pick = $('pick'), statusEl = $('status'), outlineBtn = $('outline');
+
+    const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+    const sup = e => String(e).replace(/\d/g, d => SUP[d]);
+    const fmt = n => n.toLocaleString('en-US');
+    const pad = v => String(v).padStart(2, '0');
+    const clockOf = s => `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+    function ordinal(k) {
+        const t = k % 100, u = k % 10;
+        const suf = (t >= 11 && t <= 13) ? 'th' : u === 1 ? 'st' : u === 2 ? 'nd' : u === 3 ? 'rd' : 'th';
+        return fmt(k) + suf;
+    }
+    const secondsToday = d => d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+
+    // a fixed colour for each small prime; larger primes get hues spread round the wheel
+    const PRIME_COLOUR = { 2: '#e8a25c', 3: '#5fc2b0', 5: '#e07fa0', 7: '#93a8ff', 11: '#c4d16a', 13: '#c39bff' };
+    function colourOf(p) {
+        if (p === 4) p = 2;
+        if (PRIME_COLOUR[p]) return PRIME_COLOUR[p];
+        return `hsl(${Math.round((primesUpTo[p] * 137.5) % 360)} 70% 68%)`;
+    }
+
+    // ---- geometry ----
+    // p copies round a circle: each copy's radius, as a fraction of the whole, so neighbours just touch
+    function share(p) {
+        if (p === 2) return 0.5;
+        const s = Math.sin(Math.PI / p);
+        return s / (1 + s);
+    }
+    function offsets(p) {
+        const out = [];
+        if (p === 2) { out.push([-1, 0], [1, 0]); return out; }
+        const start = p === 4 ? -Math.PI * 3 / 4 : -Math.PI / 2;
+        for (let j = 0; j < p; j++) {
+            const a = start + 2 * Math.PI * j / p;
+            out.push([Math.cos(a), Math.sin(a)]);
+        }
+        return out;
+    }
+    const GAP = 0.92;      // each copy a little smaller than its slot, so the groups stay apart
+    const DOT = 0.8;       // a dot's share of its slot
+    const SMALLEST = 1.4;  // CSS px: a copy smaller than this is drawn as one disc
+
+    // centres of the copies, layer by layer from the outside, until they get too small to split
+    function layout(L, cx, cy, R, dpr, outlines) {
+        let xs = [cx], ys = [cy];
+        let r = R;
+        let d = 0;
+        let ringLabel = null; // centres and radius of rings to label with their prime
+        const outlineSets = [];
+        for (; d < L.length; d++) {
+            const p = L[d];
+            const child = r * share(p) * GAP;
+            if (child < SMALLEST * dpr) break;
+            const dist = p === 2 ? r * 0.5 : r * (1 - share(p));
+            if (d === L.length - 1 && p >= 11 && r >= 22 * dpr && xs.length <= 64) ringLabel = { xs, ys, r, p };
+            const off = offsets(p);
+            const nx = new Float64Array(xs.length * p), ny = new Float64Array(xs.length * p);
+            let k = 0;
+            for (let i = 0; i < xs.length; i++) {
+                for (let j = 0; j < p; j++) {
+                    nx[k] = xs[i] + off[j][0] * dist;
+                    ny[k] = ys[i] + off[j][1] * dist;
+                    k++;
+                }
+            }
+            xs = nx; ys = ny; r = child;
+            if (outlines && d < L.length - 1 && r >= 3 * dpr) outlineSets.push({ xs, ys, r, p });
+        }
+        return { xs, ys, r, d, ringLabel, outlineSets };
+    }
+
+    // draw the diagram of n onto a 2D context, centred at (cx, cy) with radius R (device px)
+    function drawDiagram(g, n, cx, cy, R, dpr, outlines) {
+        const ink = '#f3ead7';
+        g.save();
+        // the face
+        g.beginPath();
+        g.arc(cx, cy, R / GAP + 6 * dpr, 0, 2 * Math.PI);
+        g.strokeStyle = 'rgba(243, 234, 215, 0.10)';
+        g.lineWidth = 1 * dpr;
+        g.stroke();
+
+        if (n === 0) {
+            g.setLineDash([4 * dpr, 6 * dpr]);
+            g.beginPath();
+            g.arc(cx, cy, R * 0.5, 0, 2 * Math.PI);
+            g.strokeStyle = 'rgba(243, 234, 215, 0.35)';
+            g.stroke();
+            g.restore();
+            return;
+        }
+
+        const L = layers(n);
+        let lay = layout(L, cx, cy, R, dpr, outlines);
+        if (n > 1) {
+            // zoom so the outermost dots reach the edge: nested squares and rings leave their corners empty
+            const reach = lay.d === L.length ? lay.r * DOT : lay.r;
+            let far = 0;
+            for (let i = 0; i < lay.xs.length; i++) far = Math.max(far, Math.hypot(lay.xs[i] - cx, lay.ys[i] - cy) + reach);
+            const zoom = Math.min(1.6, R / far);
+            if (zoom > 1.01) lay = layout(L, cx, cy, R * zoom, dpr, outlines);
+        }
+        let { xs, ys, r, d, ringLabel } = lay;
+        const outlineSets = lay.outlineSets;
+
+        const rest = L.slice(d);
+        g.fillStyle = ink;
+        if (rest.length === 0) {
+            // every factor drawn: single dots
+            const rd = n === 1 ? r * 0.37 : r * DOT; // 1 drawn the size of 2's dots
+            g.beginPath();
+            for (let i = 0; i < xs.length; i++) { g.moveTo(xs[i] + rd, ys[i]); g.arc(xs[i], ys[i], rd, 0, 2 * Math.PI); }
+            g.fill();
+        } else if (rest.length === 1 && r >= 2.5 * dpr) {
+            // one prime left, too many dots to draw apart: they run together into a ring
+            const p = rest[0];
+            const ringR = r * (1 - share(p));
+            const w = Math.max(2 * r * share(p) * GAP * DOT, 0.9 * dpr);
+            g.strokeStyle = ink;
+            g.lineWidth = w;
+            g.beginPath();
+            for (let i = 0; i < xs.length; i++) { g.moveTo(xs[i] + ringR, ys[i]); g.arc(xs[i], ys[i], ringR, 0, 2 * Math.PI); }
+            g.stroke();
+            if (r >= 22 * dpr && xs.length <= 64) ringLabel = { xs, ys, r, p };
+        } else {
+            // copies smaller than a pixel or so: one disc each, as bright as its dots would cover
+            let cover = DOT * DOT;
+            for (const p of rest) cover *= p * Math.pow(share(p) * GAP, 2);
+            g.globalAlpha = Math.min(1, 0.28 + 1.5 * Math.sqrt(cover));
+            const rd = r * 0.86;
+            g.beginPath();
+            for (let i = 0; i < xs.length; i++) { g.moveTo(xs[i] + rd, ys[i]); g.arc(xs[i], ys[i], rd, 0, 2 * Math.PI); }
+            g.fill();
+            g.globalAlpha = 1;
+        }
+
+        if (ringLabel) {
+            const { xs: lx, ys: ly, r: lr, p } = ringLabel;
+            const size = Math.max(9 * dpr, Math.min(lr * 0.3, 30 * dpr * (5 / Math.max(5, fmt(p).length))));
+            g.font = `500 ${size}px "IBM Plex Mono", Menlo, monospace`;
+            g.textAlign = 'center';
+            g.textBaseline = 'middle';
+            g.fillStyle = 'rgba(243, 234, 215, 0.8)';
+            for (let i = 0; i < lx.length; i++) g.fillText(fmt(p), lx[i], ly[i]);
+        }
+
+        if (outlines) {
+            for (const set of outlineSets) {
+                g.strokeStyle = colourOf(set.p);
+                g.globalAlpha = 0.75;
+                g.lineWidth = Math.max(0.8 * dpr, Math.min(2 * dpr, set.r * 0.02));
+                g.beginPath();
+                const rr = set.r * 0.985;
+                for (let i = 0; i < set.xs.length; i++) { g.moveTo(set.xs[i] + rr, set.ys[i]); g.arc(set.xs[i], set.ys[i], rr, 0, 2 * Math.PI); }
+                g.stroke();
+            }
+        }
+        g.restore();
+    }
+
+    // ---- rendering with a cross-fade ----
+    let shown = -1;          // the number on screen
+    let explore = null;      // a number the visitor chose, or null for the live count
+    let outlines = false;
+    let size = 0, dpr = 1;
+    let front = document.createElement('canvas'), back = document.createElement('canvas');
+    let fadeStart = 0, fading = false;
+    const FADE = 520;
+
+    function renderInto(buf, n) {
+        buf.width = canvas.width; buf.height = canvas.height;
+        const g = buf.getContext('2d');
+        g.clearRect(0, 0, buf.width, buf.height);
+        const half = buf.width / 2;
+        drawDiagram(g, n, half, half, (half - 10 * dpr) * GAP, dpr, outlines);
+    }
+
+    function paint(now) {
+        const W = canvas.width;
+        ctx.clearRect(0, 0, W, W);
+        if (!fading) { ctx.drawImage(front, 0, 0); return; }
+        let t = Math.min(1, (now - fadeStart) / FADE);
+        const e = t * t * (3 - 2 * t);
+        ctx.globalAlpha = 1 - e;
+        ctx.drawImage(back, 0, 0);
+        ctx.globalAlpha = e;
+        const s = 0.97 + 0.03 * e;
+        ctx.setTransform(s, 0, 0, s, W * (1 - s) / 2, W * (1 - s) / 2);
+        ctx.drawImage(front, 0, 0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        if (t >= 1) fading = false;
+        else requestAnimationFrame(paint);
+    }
+
+    function show(n, animate) {
+        [front, back] = [back, front];
+        renderInto(front, n);
+        const wasFading = fading;
+        fading = animate && shown >= 0 && !reduceMotion.matches && !document.hidden;
+        shown = n;
+        if (fading) { fadeStart = performance.now(); if (!wasFading) requestAnimationFrame(paint); }
+        else paint(performance.now());
+        describe(n);
+    }
+
+    function resize() {
+        dpr = window.devicePixelRatio || 1;
+        size = canvas.clientWidth;
+        canvas.width = Math.round(size * dpr);
+        canvas.height = Math.round(size * dpr);
+        if (shown >= 0) { fading = false; renderInto(front, shown); paint(performance.now()); }
+    }
+
+    // ---- text ----
+    function describe(n) {
+        const f = factorise(n);
+        let html;
+        if (n === 0) html = `0 <span class="tag">has no prime factors</span>`;
+        else if (n === 1) html = `1 <span class="tag">is the empty product</span>`;
+        else if (isPrime(n)) html = `${fmt(n)} <span class="tag">is prime</span>`;
+        else {
+            const parts = [];
+            for (let i = 0; i < f.length;) {
+                let j = i;
+                while (j < f.length && f[j] === f[i]) j++;
+                const e = j - i;
+                parts.push(`<span class="p" style="color:${colourOf(f[i])}">${fmt(f[i])}${e > 1 ? sup(e) : ''}</span>`);
+                i = j;
+            }
+            html = `${fmt(n)} = ${parts.join(' × ')}`;
+        }
+        eqEl.innerHTML = html;
+
+        if (n === 0) nestEl.textContent = 'every number divides 0, so nothing to draw';
+        else if (n === 1) nestEl.textContent = 'no primes at all: one dot';
+        else {
+            const L = layers(n);
+            nestEl.innerHTML = 'outside in: ' + L.map(p => `<span class="lv" style="color:${colourOf(p)}">${fmt(p)}</span>`).join(' · ');
+        }
+
+        const live = explore === null;
+        const count = primesUpTo[n];
+        const when = live ? 'so far today' : `by ${clockOf(n)}`;
+        let msg;
+        if (isPrime(n)) msg = `the <b>${ordinal(count)}</b> prime second of the day`;
+        else {
+            const next = nextPrimeAfter(n);
+            const lead = count === 0 ? 'no prime seconds yet' : `${fmt(count)} prime second${count === 1 ? '' : 's'} ${when}`;
+            msg = `${lead}; the next is ${fmt(next)}, at ${clockOf(next)}`;
+        }
+        primesEl.innerHTML = msg;
+
+        canvas.setAttribute('aria-label', n < 2
+            ? `Factorisation diagram of ${n}`
+            : `Factorisation diagram of ${fmt(n)}: ${layers(n).join(', ')} groups, outside in`);
+    }
+
+    // ---- clock ----
+    let lastSecond = -1;
+    function tick() {
+        const s = secondsToday(new Date());
+        if (s === lastSecond) return;
+        lastSecond = s;
+        timeEl.textContent = clockOf(s);
+        if (explore === null) { pick.value = s; show(s, true); }
+    }
+
+    function setExplore(n) {
+        if (!Number.isFinite(n)) return;
+        n = Math.max(0, Math.min(DAY - 1, Math.round(n)));
+        explore = n;
+        pick.value = n;
+        labelEl.textContent = `looking at ${fmt(n)}, the count at ${clockOf(n)}`;
+        labelEl.classList.add('exploring');
+        statusEl.textContent = '';
+        show(n, true);
+        statusEl.textContent = eqEl.textContent;
+    }
+    pick.addEventListener('input', () => { if (pick.value !== '') setExplore(Number(pick.value)); });
+    $('down').addEventListener('click', () => setExplore((explore ?? lastSecond) - 1));
+    $('up').addEventListener('click', () => setExplore((explore ?? lastSecond) + 1));
+    $('now').addEventListener('click', () => {
+        explore = null;
+        labelEl.textContent = 'seconds since midnight';
+        labelEl.classList.remove('exploring');
+        statusEl.textContent = 'back to the live count';
+        lastSecond = -1;
+        tick();
+    });
+    outlineBtn.addEventListener('click', () => {
+        outlines = !outlines;
+        outlineBtn.setAttribute('aria-pressed', String(outlines));
+        fading = false;
+        renderInto(front, shown);
+        paint(performance.now());
+    });
+
+    window.addEventListener('resize', resize);
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+    resize();
+    tick();
+    setInterval(tick, 250);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (shown >= 0) { renderInto(front, shown); paint(performance.now()); } });
+})();
+</script>
+</body>
+</html>
