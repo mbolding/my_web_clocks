@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Clock</title>
+<style>
+    :root {
+        --bg: #0c1424;
+        --panel: #101a2e;
+        --rule: #22314d;
+        --text: #cfdaee;
+        --bright: #f2f6fc;
+        --dim: #7f8fae;
+        --faint: #4b5a78;
+        --box: #5b7bb3;
+        --kw: #79b8ff;
+        --str: #9be0a8;
+        --num: #f5b971;
+        --red: #ff7a6e;
+        --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--mono); }
+
+    /* no ligatures: some monospace fonts join <= or -- into one glyph */
+    body, input { font-variant-ligatures: none; }
+
+    body { min-height: 100vh; padding: clamp(12px, 3vw, 32px); }
+
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.4em 1.2em;
+        margin-bottom: clamp(10px, 2vw, 20px);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+    }
+
+    header h1 { margin: 0; font-size: clamp(18px, 2.4vw, 26px); font-weight: 600; color: var(--bright); }
+    header p { margin: 0; font-size: clamp(11px, 1.2vw, 13px); color: var(--dim); }
+
+    main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(14px, 2.5vw, 28px);
+        align-items: start;
+    }
+
+    @media (min-width: 1000px) {
+        main { grid-template-columns: minmax(0, 0.9fr) minmax(400px, 1.1fr); }
+    }
+
+    .term { min-width: 0; }
+
+    pre { margin: 0; font-family: var(--mono); }
+
+    .entry { margin-bottom: 1em; }
+
+    .in { font-size: clamp(12px, 1.3vw, 14.5px); line-height: 1.5; color: var(--bright); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .in .p { color: var(--dim); }
+
+    /* result tables, drawn the way sqlite3's .mode box draws them */
+    .out {
+        font-size: clamp(11px, 1.25vw, 14px);
+        line-height: 1.05;
+        color: var(--text);
+        white-space: pre;
+        overflow-x: auto;
+    }
+    .out .b { color: var(--box); }
+    .out.err { color: var(--red); white-space: pre-wrap; }
+    .out.note { color: var(--dim); white-space: pre-wrap; }
+
+    /* the face: a column of text whose rows are a picture */
+    .out.face { font-size: clamp(11px, 2.6vw, 17px); line-height: 1.15; color: var(--bright); }
+
+    #status { color: var(--dim); font-size: clamp(12px, 1.3vw, 14px); }
+
+    #repl { margin-top: 1.4em; padding-top: 1em; border-top: 1px dashed var(--rule); }
+
+    #repl-hint { color: var(--dim); font-size: clamp(11px, 1.15vw, 13px); margin: 0 0 0.8em; line-height: 1.6; }
+    #repl-hint code { color: var(--bright); white-space: nowrap; }
+    #repl-hint code.long { white-space: normal; overflow-wrap: anywhere; }
+
+    #history { max-height: 45vh; overflow-y: auto; }
+
+    .prompt { display: flex; align-items: baseline; }
+    .prompt span { white-space: pre; font-size: 16px; color: var(--dim); }
+
+    #line {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--bright);
+        font-family: var(--mono);
+        font-size: 16px;
+        caret-color: var(--kw);
+        padding: 0.2em 0;
+    }
+    #line:disabled { opacity: 0.4; }
+    #line::placeholder { color: var(--faint); font-style: italic; }
+
+    aside {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(12px, 1.8vw, 20px);
+        min-width: 0;
+    }
+
+    aside h2 {
+        margin: 0 0 0.6em;
+        font-size: clamp(12px, 1.25vw, 14px);
+        font-weight: 600;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
+    /* the program keeps its own line breaks and scrolls sideways if it must */
+    #source {
+        font-size: clamp(10.5px, 0.95vw, 12.5px);
+        line-height: 1.55;
+        color: var(--text);
+        white-space: pre;
+        overflow-x: auto;
+    }
+    #source .cm { color: var(--dim); font-style: italic; }
+    #source .kw, .in .kw { color: var(--kw); }
+    #source .str, .in .str { color: var(--str); }
+    #source .num, .in .num { color: var(--num); }
+
+    aside p { color: var(--dim); font-size: clamp(11px, 1.1vw, 12.5px); line-height: 1.65; margin: 1em 0 0; }
+    aside code { color: var(--text); white-space: nowrap; }
+    aside a { color: var(--dim); }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>sql clock</h1>
+    <p id="version">loading SQLite&hellip;</p>
+</header>
+
+<main>
+    <section class="term">
+        <div id="session"><div id="status">loading SQLite&hellip;</div></div>
+
+        <div id="repl">
+            <p id="repl-hint">Your turn. Type SQL and press Enter (&uarr; recalls). Try <code>SELECT * FROM now;</code>, <code>SELECT * FROM hands;</code> or <code>SELECT count(*) FROM face;</code>. The clock is only three views, so you can replace them while it runs: <code class="long">DROP VIEW hands; CREATE VIEW hands AS SELECT 'hour' AS hand, 0.25 AS turns, 0.9 AS len, 1.0 AS thick, '~' AS ch, 1 AS z;</code> stops it at three o'clock. Reload the page to start over.</p>
+            <div id="history"></div>
+            <label class="prompt">
+                <span>sqlite&gt; </span>
+                <input id="line" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="SQL input" placeholder="type SQL here" disabled>
+            </label>
+        </div>
+    </section>
+
+    <aside>
+        <h2>The program</h2>
+        <pre id="source"></pre>
+        <p>SQL describes what a result should contain, not how to work it out, and it has no loops. So the face is a table: a recursive common table expression counts out every cell of a 41 by 21 grid, each cell works out from SQLite's own clock whether it lies on a hand, a numeral or the rim, and <code>group_concat</code> joins each row of cells into a line of text. The 21 rows of that result are the picture.</p>
+        <p>The database is <a href="https://sql.js.org" target="_blank" rel="noopener">sql.js</a>, SQLite compiled to WebAssembly and running in this page. Nothing you type leaves the page; the database lives in memory and is gone when you reload.</p>
+    </aside>
+</main>
+
+<!-- The SQL program. The page shows this text and runs it, unchanged. -->
+<script type="text/plain" id="program">
+-- SQL clock. The clock is three views. Every second the page asks
+-- SELECT face FROM face, and SQLite draws the face as 21 rows of text.
+
+-- the time, from SQLite's own clock
+CREATE VIEW now AS
+SELECT CAST(strftime('%H', 'now', 'localtime') AS INTEGER) AS h,
+       CAST(strftime('%M', 'now', 'localtime') AS INTEGER) AS m,
+       CAST(strftime('%S', 'now', 'localtime') AS INTEGER) AS s;
+
+-- one row per hand: how far round the dial, how long, how thick,
+-- the character it is drawn with, and which hand lies on top
+CREATE VIEW hands AS
+SELECT 'hour' AS hand, ((h % 12) + m / 60.0) / 12.0 AS turns,
+       0.50 AS len, 2.0 AS thick, '#' AS ch, 1 AS z FROM now
+UNION ALL
+SELECT 'minute', (m + s / 60.0) / 60.0, 0.80, 1.0, '*', 2 FROM now
+UNION ALL
+SELECT 'second', s / 60.0, 0.88, 1.0, '+', 3 FROM now;
+
+-- the face: every cell of a 41 x 21 grid picks its own character
+CREATE VIEW face AS
+WITH RECURSIVE
+  xs(x) AS (SELECT 0 UNION ALL SELECT x + 1 FROM xs WHERE x < 40),
+  ys(y) AS (SELECT 0 UNION ALL SELECT y + 1 FROM ys WHERE y < 20),
+  -- u and v run from -1 to 1 across the dial; a row of text is
+  -- about twice as tall as a column is wide, so v steps twice as far
+  cells AS (
+    SELECT x, y, (x - 20) / 20.0 AS u, (10 - y) / 10.0 AS v FROM xs, ys),
+  hours(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM hours WHERE n < 12),
+  numerals AS (
+    SELECT n,
+           20 + CAST(round(16.5 * sin(n * pi() / 6)) AS INTEGER) - length(n) / 2 AS x,
+           10 - CAST(round(8.2 * cos(n * pi() / 6)) AS INTEGER) AS y
+    FROM hours),
+  digits AS (
+    SELECT x, y, substr(n, 1, 1) AS ch FROM numerals
+    UNION ALL
+    SELECT x + 1, y, substr(n, 2, 1) FROM numerals WHERE n >= 10),
+  painted AS (
+    SELECT c.x, c.y, COALESCE(
+      (SELECT d.ch FROM digits d WHERE d.x = c.x AND d.y = c.y),
+      CASE WHEN c.x = 20 AND c.y = 10 THEN '@' END,
+      -- on a hand: ahead of the centre, short of its tip, and no
+      -- further to one side than half a cell, measured across the hand
+      (SELECT h.ch FROM hands h
+        WHERE c.u * sin(2 * pi() * h.turns) + c.v * cos(2 * pi() * h.turns)
+              BETWEEN 0 AND h.len
+          AND abs(c.u * cos(2 * pi() * h.turns) - c.v * sin(2 * pi() * h.turns))
+              <= h.thick * (0.025 * abs(cos(2 * pi() * h.turns))
+                          + 0.05 * abs(sin(2 * pi() * h.turns)))
+        ORDER BY h.z DESC LIMIT 1),
+      CASE WHEN abs(sqrt(c.u * c.u + c.v * c.v) - 0.97)
+                <= 0.025 * abs(c.u) + 0.05 * abs(c.v) THEN '.' END,
+      ' ') AS ch
+    FROM cells c)
+SELECT y AS row, group_concat(ch, '' ORDER BY x) AS face
+FROM painted
+GROUP BY y
+ORDER BY y;
+</script>
+
+<script>
+(() => {
+    // sql.js, pinned to one npm version
+    const ENGINE = 'https://cdn.jsdelivr.net/npm/sql.js@1.15.2/dist/';
+
+    const sessionEl = document.getElementById('session');
+    const versionEl = document.getElementById('version');
+    const historyEl = document.getElementById('history');
+    const lineEl = document.getElementById('line');
+    const program = document.getElementById('program').textContent.replace(/^\n/, '');
+
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // --- colouring: comments, strings, numbers and keywords ---------------
+    const KEYWORDS = new Set(('SELECT FROM WHERE AS AND OR NOT CREATE VIEW TABLE DROP WITH RECURSIVE UNION ALL ' +
+        'CAST INTEGER CASE WHEN THEN ELSE END COALESCE BETWEEN ORDER BY GROUP LIMIT DESC ASC INSERT INTO VALUES ' +
+        'UPDATE SET DELETE IS NULL IN LIKE HAVING JOIN ON DISTINCT IF EXISTS').split(' '));
+
+    function colour(src) {
+        let html = '';
+        const re = /(--[^\n]*)|('(?:[^']|'')*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]+)|([\s\S])/g;
+        let m;
+        while ((m = re.exec(src))) {
+            if (m[1]) html += `<span class="cm">${esc(m[1])}</span>`;
+            else if (m[2]) html += `<span class="str">${esc(m[2])}</span>`;
+            else if (m[3]) html += `<span class="num">${m[3]}</span>`;
+            else if (m[4]) html += KEYWORDS.has(m[4].toUpperCase()) ? `<span class="kw">${m[4]}</span>` : esc(m[4]);
+            else html += esc(m[5]);
+        }
+        return html;
+    }
+    document.getElementById('source').innerHTML = colour(program);
+
+    // --- results as boxes, the way sqlite3's .mode box prints them --------
+    function cell(v) {
+        if (v === null) return 'NULL';
+        if (v instanceof Uint8Array) return `x'${Array.from(v, b => b.toString(16).padStart(2, '0')).join('')}'`;
+        if (typeof v === 'number' && !Number.isInteger(v)) return String(Math.round(v * 1e6) / 1e6);
+        return String(v);
+    }
+
+    function box(result, limit = 200) {
+        const cols = result.columns;
+        const rows = result.values.slice(0, limit).map(r => r.map(cell));
+        const w = cols.map((c, i) => Math.max(c.length, ...rows.map(r => r[i].length)));
+        const numeric = cols.map((c, i) => result.values.length > 0 && result.values.every(r => typeof r[i] === 'number'));
+        const line = (l, m, r) => `<span class="b">${l}${w.map(n => '─'.repeat(n + 2)).join(m)}${r}</span>`;
+        const row = cells => '<span class="b">│</span>' + cells.map((c, i) =>
+            ' ' + esc(numeric[i] ? c.padStart(w[i]) : c.padEnd(w[i])) + ' ').join('<span class="b">│</span>') + '<span class="b">│</span>';
+        let out = [line('┌', '┬', '┐'), row(cols), line('├', '┼', '┤'), ...rows.map(row), line('└', '┴', '┘')].join('\n');
+        if (result.values.length > limit) out += `\n<span class="b">(${result.values.length - limit} more rows not shown)</span>`;
+        return out;
+    }
+
+    // --- starting SQLite --------------------------------------------------
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('could not load ' + src));
+            document.head.appendChild(s);
+        });
+    }
+
+    let db = null;
+
+    function run(sql) {
+        try { return { results: db.exec(sql) }; }
+        catch (e) { return { err: String(e.message || e) }; }
+    }
+
+    function inputHtml(src, nb) {
+        return `<pre class="in"><span class="p">sqlite&gt; </span>${colour(src)}${nb ? `   <span class="cm">-- ${esc(nb)}</span>` : ''}</pre>`;
+    }
+
+    function resultHtml(r, cls = '') {
+        if (r.err) return `<pre class="out err">Error: ${esc(r.err)}</pre>`;
+        if (!r.results.length) return '';
+        return r.results.map(res => `<pre class="out ${cls}">${box(res)}</pre>`).join('');
+    }
+
+    // The face is printed as the bare column, one row per line, so the
+    // picture reads straight down; the boxes would only get in its way.
+    function faceHtml(r) {
+        if (r.err) return `<pre class="out err">Error: ${esc(r.err)}</pre>`;
+        const res = r.results[0];
+        if (!res) return '<pre class="out note">(no rows)</pre>';
+        const i = res.columns.indexOf('face');
+        const col = i >= 0 ? i : res.columns.length - 1;
+        return `<pre class="out face" aria-hidden="true">${esc(res.values.map(row => cell(row[col])).join('\n'))}</pre>`;
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+
+    function tick() {
+        const now = new Date();
+        const t0 = performance.now();
+        const face = run('SELECT face FROM face;');
+        const ms = performance.now() - t0;
+        const hands = run('SELECT hand, round(turns * 360, 1) AS degrees, len, ch FROM hands;');
+        const clock = run("SELECT time('now', 'localtime') AS time;");
+
+        const said = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        sessionEl.innerHTML =
+            `<div class="entry">${inputHtml('SELECT face FROM face;', `21 rows of text, ${ms.toFixed(1)} ms`)}` +
+            `<div role="timer" aria-label="The time is ${said}">${faceHtml(face)}</div></div>` +
+            `<div class="entry">${inputHtml('SELECT hand, round(turns * 360, 1) AS degrees, len, ch FROM hands;', 'the part that moves')}${resultHtml(hands)}</div>` +
+            `<div class="entry">${inputHtml("SELECT time('now', 'localtime') AS time;")}${resultHtml(clock)}</div>`;
+
+        setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
+    }
+
+    // --- the prompt -------------------------------------------------------
+    const recalled = [];
+    let recallAt = 0;
+
+    lineEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const src = lineEl.value;
+            lineEl.value = '';
+            if (!src.trim()) return;
+            recalled.push(src);
+            recallAt = recalled.length;
+            const r = run(src);
+            const entry = document.createElement('div');
+            entry.className = 'entry';
+            entry.innerHTML = inputHtml(src) + (resultHtml(r) || '<pre class="out note">ok</pre>');
+            historyEl.appendChild(entry);
+            while (historyEl.children.length > 100) historyEl.firstChild.remove();
+            historyEl.scrollTop = historyEl.scrollHeight;
+        } else if (e.key === 'ArrowUp' && recallAt > 0) {
+            e.preventDefault();
+            lineEl.value = recalled[--recallAt];
+        } else if (e.key === 'ArrowDown' && recallAt < recalled.length) {
+            e.preventDefault();
+            recallAt++;
+            lineEl.value = recalled[recallAt] ?? '';
+        }
+    });
+
+    loadScript(ENGINE + 'sql-wasm.js')
+        .then(() => initSqlJs({ locateFile: file => ENGINE + file }))
+        .then(SQL => {
+            db = new SQL.Database();
+            const r = run(program);
+            if (r.err) {
+                sessionEl.innerHTML = `<pre class="out err">Error: ${esc(r.err)}</pre>`;
+                return;
+            }
+            const v = run('SELECT sqlite_version();');
+            versionEl.textContent = `SQLite ${v.results ? v.results[0].values[0][0] : ''} through sql.js 1.15.2, running in this page`;
+            lineEl.disabled = false;
+            tick();
+        })
+        .catch(() => {
+            versionEl.textContent = 'SQLite could not be loaded';
+            sessionEl.innerHTML = '<pre class="out err">sql.js did not load. It comes from cdn.jsdelivr.net, so this page needs a network connection.</pre>';
+        });
+})();
+</script>
+</body>
+</html>
