@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Times Table Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0b0d18;
+        --panel: #12152a;
+        --rule: #262b4a;
+        --ink: #f3efe6;
+        --text: #c9c6d8;
+        --dim: #8a88a6;
+        --amber: #ffbf66;
+        --rose: #ff6f9c;
+        --sky: #7fb4ff;
+        --serif: "Newsreader", Georgia, "Times New Roman", serif;
+        --mono: "IBM Plex Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--serif); }
+
+    body { min-height: 100vh; padding: clamp(16px, 3vw, 36px); }
+
+    main {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(18px, 3vw, 44px);
+        align-items: start;
+    }
+
+    @media (min-width: 960px) {
+        main { grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); }
+    }
+
+    .stage { min-width: 0; text-align: center; }
+
+    #dial {
+        display: block;
+        margin: 0 auto;
+        width: min(100%, 640px, 74vh);
+        aspect-ratio: 1;
+        touch-action: none;
+        cursor: crosshair;
+    }
+
+    .readout {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: baseline;
+        gap: 0.2em 0.9em;
+        margin-top: 0.2em;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+    }
+    #time { font-size: clamp(30px, 5vw, 44px); color: var(--ink); font-weight: 500; letter-spacing: 0.02em; }
+    #mult { font-size: clamp(22px, 3.4vw, 30px); color: var(--amber); }
+    #mult small { font-size: 0.55em; color: var(--dim); margin-left: 0.35em; }
+
+    #chord {
+        margin: 0.6em auto 0;
+        max-width: 36em;
+        min-height: 3em;
+        font-family: var(--mono);
+        font-size: clamp(12.5px, 1.5vw, 14px);
+        line-height: 1.55;
+        color: var(--text);
+    }
+    #chord b { color: var(--ink); font-weight: 500; }
+
+    .controls { margin-top: 0.7em; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+    .controls .label { font-style: italic; color: var(--dim); font-size: 16px; margin-right: 0.2em; }
+
+    button {
+        font: inherit;
+        font-size: 16px;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        padding: 0.28em 1em;
+        cursor: pointer;
+    }
+    button:hover { border-color: var(--dim); color: var(--ink); }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+    button[aria-pressed="true"] { color: var(--bg); background: var(--amber); border-color: var(--amber); }
+
+    .slider { width: min(100%, 30em); margin: 0.9em auto 0; display: flex; gap: 0.7em; align-items: center; }
+    .slider label { font-style: italic; color: var(--dim); font-size: 16px; white-space: nowrap; }
+    .slider input { flex: 1; min-width: 0; accent-color: var(--rose); }
+
+    article { min-width: 0; }
+    h1 { margin: 0 0 0.15em; font-size: clamp(30px, 4.2vw, 42px); font-weight: 500; color: var(--ink); line-height: 1.1; }
+    .sub { margin: 0 0 1.2em; font-style: italic; color: var(--dim); font-size: clamp(16px, 1.8vw, 19px); }
+    article p { font-size: clamp(16.5px, 1.7vw, 18.5px); line-height: 1.6; margin: 0 0 1em; }
+    article h2 { margin: 1.3em 0 0.4em; font-size: clamp(20px, 2.4vw, 25px); font-weight: 500; color: var(--ink); }
+    article i { color: var(--ink); }
+    .eq {
+        font-family: var(--mono);
+        font-size: clamp(13px, 1.4vw, 15px);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.8em 1em;
+        line-height: 1.7;
+        color: var(--ink);
+        overflow-x: auto;
+        white-space: pre;
+        margin: 0 0 1em;
+    }
+    .key { white-space: nowrap; }
+    .sw { display: inline-block; width: 0.75em; height: 0.75em; border-radius: 2px; vertical-align: -0.04em; margin-right: 0.25em; }
+</style>
+</head>
+<body>
+
+<main>
+    <section class="stage">
+        <canvas id="dial" role="img" aria-label="Chords joining points round a circle to their multiples"></canvas>
+        <div class="readout">
+            <div id="time" role="timer" aria-label="Current time">--:--:--</div>
+            <div id="mult">&times; -.---<small>multiplier</small></div>
+        </div>
+        <p id="chord">&nbsp;</p>
+
+        <div class="controls" role="group" aria-label="Number of points">
+            <span class="label">points</span>
+            <button type="button" data-n="12" aria-pressed="false">12</button>
+            <button type="button" data-n="60" aria-pressed="false">60</button>
+            <button type="button" data-n="360" aria-pressed="true">360</button>
+        </div>
+        <div class="slider">
+            <label for="scrub">try a multiplier</label>
+            <input type="range" id="scrub" min="0" max="14" step="0.01" value="2">
+            <button type="button" id="follow" aria-pressed="true">follow the clock</button>
+        </div>
+    </section>
+
+    <article>
+        <h1>Times table clock</h1>
+        <p class="sub">multiplication on a circle, in the clock's own arithmetic</p>
+        <p>A clock face already does arithmetic that wraps round. Five hours after nine o'clock is two o'clock, because 9 + 5 = 14, and 14 goes once round the twelve hours with 2 left over. Mathematicians write this 14 &equiv; 2 (mod 12), and call it arithmetic modulo 12.</p>
+        <p>This clock does the same with multiplication. Put <i>N</i> points evenly round a circle, numbered 0 to <i>N</i> &minus; 1 clockwise from the top, and draw a straight line from every point <i>k</i> to the point <i>k</i> &times; <i>m</i>, counting on round the circle and wrapping past <i>N</i> as often as it takes. That is the <i>m</i> times table, modulo <i>N</i>:</p>
+        <div class="eq">k  &rarr;  k &times; m  (mod N)
+7 &times; 2 = 14 &equiv; 2  (mod 12)</div>
+        <p>With enough points the lines crowd together along curves that no single line draws, their <i>envelope</i>. The 2 times table wraps a cardioid, a heart shape with one cusp. The 3 times table wraps a nephroid, a kidney shape with two. For any whole number <i>m</i> the envelope is an epicycloid, the curve traced by a point on a small wheel rolling round the outside of a fixed one, and it has <i>m</i> &minus; 1 cusps. When <i>m</i> is not a whole number the lines no longer close up neatly at point 0, and the figure is caught halfway as one curve melts into the next.</p>
+
+        <h2>How the time drives it</h2>
+        <div class="eq">m = hour + 1 + minutes / 60</div>
+        <p>The hour runs from 1 to 12, so at one o'clock the multiplier is 2 and the chords wrap a cardioid; at two it is 3, a nephroid; at half past three it is 4.5, on its way from three cusps to four. Count the cusps and you have the hour; see how far the figure has melted towards the next and you have the minutes, roughly. At twelve the multiplier reaches 13, and twelve cusps; at one o'clock it falls back to 2. The extra 1 is there because the 1 times table joins every point to itself, so the dial would stand empty for a whole hour. The seconds nudge <i>m</i> on too, so the figure is always moving, very slowly.</p>
+        <p>The second hand points at a point <i>k</i>, and the white line is its chord, from <i>k</i> to <i>k</i> &times; <i>m</i>; once a minute it sweeps out the whole figure. Choose 12 or 60 points to see the single chords: with 12, the points are the hour marks and the arithmetic is modulo 12, like the clock's own. Hover over the dial, or tap it, to follow any point's chord, or move the slider to try a multiplier of your own.</p>
+        <p><span class="key"><span class="sw" style="background:var(--amber)"></span>short chords</span>, <span class="key"><span class="sw" style="background:var(--rose)"></span>middling</span>, <span class="key"><span class="sw" style="background:var(--sky)"></span>long ones</span>; where many lines overlap their light adds up, which is how the envelope shows.</p>
+    </article>
+</main>
+
+<script>
+(() => {
+    const canvas = document.getElementById('dial');
+    const ctx = canvas.getContext('2d');
+    const timeEl = document.getElementById('time');
+    const multEl = document.getElementById('mult');
+    const chordEl = document.getElementById('chord');
+    const scrub = document.getElementById('scrub');
+    const followBtn = document.getElementById('follow');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const TAU = Math.PI * 2;
+    let size = 0;            // canvas side in CSS pixels
+    let N = 360;             // points round the circle
+    let manual = null;       // a multiplier chosen with the slider, or null to follow the clock
+    let hover = null;        // { k, until } when the visitor points at the dial
+
+    // ---- the arithmetic ----
+
+    // hours 1 to 12, so the multiplier runs from 2 (one o'clock) to just under 14
+    function clockMultiplier(d) {
+        const h = (d.getHours() % 12) || 12;
+        return h + 1 + (d.getMinutes() + d.getSeconds() / 60) / 60;
+    }
+    // what the text shows: m cut (not rounded) to three decimals, so 13.9997 never reads 14.000
+    const shown = m => Math.floor(m * 1000 + 1e-6) / 1000;
+    // the clock's multiplier changes every second; the slider's only when it is moved
+    function multiplier(d) { return manual !== null ? manual : clockMultiplier(d); }
+    // a number to at most three decimals, without trailing zeros
+    const fmt = x => String(Math.round(x * 1000) / 1000);
+    // x mod n, always in [0, n)
+    const mod = (x, n) => ((x % n) + n) % n;
+
+    // ---- drawing ----
+
+    const pad = n => String(n).padStart(2, '0');
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        size = canvas.getBoundingClientRect().width || 300;
+        canvas.width = Math.round(size * dpr);
+        canvas.height = Math.round(size * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        draw();
+    }
+
+    // chord colour by length: amber when short, rose in the middle, blue across the circle
+    const STOPS = [[255, 191, 102], [255, 111, 156], [127, 180, 255]];
+    function colour(len, alpha) {
+        const t = Math.min(1, Math.max(0, len)) * 2;
+        const i = t < 1 ? 0 : 1, f = t - i;
+        const a = STOPS[i], b = STOPS[i + 1];
+        return `rgba(${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)},${alpha})`;
+    }
+
+    function draw(now) {
+        if (!size) return;
+        const d = now || new Date();
+        const m = multiplier(d);
+        const c = size / 2;
+        const R = size * 0.405;
+        const at = (x, r = R) => {          // point x (in point units, may be fractional) on a circle of radius r
+            const a = TAU * x / N;
+            return [c + r * Math.sin(a), c - r * Math.cos(a)];
+        };
+
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.clearRect(0, 0, size, size);
+
+        // the disc
+        const g = ctx.createRadialGradient(c, c, 0, c, c, R * 1.08);
+        g.addColorStop(0, '#151936');
+        g.addColorStop(1, '#0e1124');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(c, c, R * 1.06, 0, TAU); ctx.fill();
+
+        // the chords, each stroked alone so overlapping light adds up
+        ctx.globalCompositeOperation = 'lighter';
+        const scale = size / 640;
+        const alpha = N >= 360 ? 0.34 : N >= 60 ? 0.62 : 0.85;
+        ctx.lineWidth = Math.max(0.7, (N >= 360 ? 1.0 : 1.4) * scale);
+        ctx.lineCap = 'round';
+        for (let k = 0; k < N; k++) {
+            const turn = mod((m - 1) * k / N, 1);      // how far round from k to k*m
+            const len = Math.sin(Math.PI * turn);      // chord length over the diameter
+            if (len < 1e-6) continue;
+            const [x0, y0] = at(k), [x1, y1] = at(k * m);
+            ctx.strokeStyle = colour(len, alpha);
+            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+
+        // rim: the circle, 60 minute marks, hour numerals
+        ctx.strokeStyle = 'rgba(201,198,216,0.35)';
+        ctx.lineWidth = Math.max(0.6, 0.8 * scale);
+        ctx.beginPath(); ctx.arc(c, c, R, 0, TAU); ctx.stroke();
+        for (let i = 0; i < 60; i++) {
+            const a = TAU * i / 60, big = i % 5 === 0;
+            const r0 = R * 1.015, r1 = R * (big ? 1.07 : 1.04);
+            ctx.strokeStyle = big ? 'rgba(243,239,230,0.75)' : 'rgba(201,198,216,0.35)';
+            ctx.lineWidth = Math.max(big ? 1.2 : 0.7, (big ? 2 : 1) * scale);
+            ctx.beginPath();
+            ctx.moveTo(c + r0 * Math.sin(a), c - r0 * Math.cos(a));
+            ctx.lineTo(c + r1 * Math.sin(a), c - r1 * Math.cos(a));
+            ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(243,239,230,0.7)';
+        ctx.font = `500 ${Math.max(10, Math.round(size * 0.032))}px "IBM Plex Mono", Menlo, monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let h = 1; h <= 12; h++) {
+            const a = TAU * h / 12, r = R * 1.15;
+            ctx.fillText(String(h), c + r * Math.sin(a), c - r * Math.cos(a));
+        }
+
+        // the points themselves, when there are few enough to see
+        if (N <= 60) {
+            ctx.fillStyle = 'rgba(243,239,230,0.85)';
+            const pr = Math.max(1.6, (N <= 12 ? 4 : 2.2) * scale);
+            for (let k = 0; k < N; k++) {
+                const [x, y] = at(k);
+                ctx.beginPath(); ctx.arc(x, y, pr, 0, TAU); ctx.fill();
+            }
+        }
+
+        // the second hand, smooth unless motion is reduced
+        const ms = reduceMotion.matches ? 0 : d.getMilliseconds();
+        const sec = d.getSeconds() + ms / 1000;
+        const sa = TAU * sec / 60;
+
+        // the highlighted chord: the visitor's point, or the point under the second hand
+        const pointing = hover && hover.until > performance.now();
+        const k = pointing ? hover.k : Math.floor(N * sec / 60) % N;
+        const [hx0, hy0] = at(k), [hx1, hy1] = at(k * m);
+        ctx.strokeStyle = pointing ? '#9ff0e0' : '#ffffff';
+        ctx.lineWidth = Math.max(1.5, 2.2 * scale);
+        ctx.beginPath(); ctx.moveTo(hx0, hy0); ctx.lineTo(hx1, hy1); ctx.stroke();
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.beginPath(); ctx.arc(hx0, hy0, Math.max(3, 5 * scale), 0, TAU); ctx.fill();
+        ctx.lineWidth = Math.max(1.5, 2 * scale);
+        ctx.beginPath(); ctx.arc(hx1, hy1, Math.max(3.5, 6 * scale), 0, TAU); ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(243,239,230,0.9)';
+        ctx.lineWidth = Math.max(1, 1.4 * scale);
+        ctx.beginPath();
+        ctx.moveTo(c - R * 0.12 * Math.sin(sa), c + R * 0.12 * Math.cos(sa));
+        ctx.lineTo(c + R * 1.07 * Math.sin(sa), c - R * 1.07 * Math.cos(sa));
+        ctx.stroke();
+        ctx.fillStyle = '#f3efe6';
+        ctx.beginPath(); ctx.arc(c, c, Math.max(2.5, 4 * scale), 0, TAU); ctx.fill();
+
+        explain(k, m, pointing);
+    }
+
+    // the arithmetic of the highlighted chord, in words
+    let lastExplain = '';
+    function explain(k, m, pointing) {
+        const ms = shown(m);
+        const p = k * ms;
+        const r = mod(p, N);
+        const whole = Math.abs(r - Math.round(r)) < 1e-9;
+        const who = pointing ? `point <b>${k}</b>` : `the second hand is at point <b>${k}</b>`;
+        let s = `${who}: ${k} &times; ${fmt(ms)} = ${fmt(p)}`;
+        if (p >= N) s += `, which is <b>${fmt(r)}</b> (mod ${N})`;
+        s += whole ? ', a point on the circle' : `, between points ${Math.floor(r)} and ${(Math.floor(r) + 1) % N}`;
+        if (s !== lastExplain) { chordEl.innerHTML = s; lastExplain = s; }
+    }
+
+    // ---- text, once a second ----
+
+    function tickText() {
+        const d = new Date();
+        timeEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        const m = multiplier(d);
+        multEl.innerHTML = `&times; ${shown(m).toFixed(3)}<small>${manual !== null ? 'your multiplier' : 'multiplier'}</small>`;
+        canvas.setAttribute('aria-label', `Chords joining each of ${N} points round a circle to the point ${shown(m).toFixed(2)} times as far round`);
+        if (manual === null) scrub.value = Math.min(14, m).toFixed(2);
+        if (reduceMotion.matches) draw(d);
+    }
+
+    // ---- animation ----
+
+    function frame() {
+        draw(new Date());
+        if (!reduceMotion.matches) requestAnimationFrame(frame);
+    }
+    reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(frame); else draw(); });
+
+    // ---- controls ----
+
+    document.querySelectorAll('[data-n]').forEach(btn => btn.addEventListener('click', () => {
+        N = Number(btn.dataset.n);
+        document.querySelectorAll('[data-n]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        hover = null;
+        tickText(); draw();
+    }));
+
+    scrub.addEventListener('input', () => {
+        manual = Number(scrub.value);
+        followBtn.setAttribute('aria-pressed', 'false');
+        tickText(); draw();
+    });
+    followBtn.addEventListener('click', () => {
+        manual = null;
+        followBtn.setAttribute('aria-pressed', 'true');
+        tickText(); draw();
+    });
+
+    // pointing at the dial picks the nearest point by angle
+    function pointAt(e, hold) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        if (Math.hypot(x, y) < rect.width * 0.05) return;
+        const turn = mod(Math.atan2(x, -y) / TAU, 1);
+        hover = { k: Math.round(turn * N) % N, until: performance.now() + hold };
+        draw();
+    }
+    canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') pointAt(e, 1e9); });
+    canvas.addEventListener('pointerdown', e => pointAt(e, e.pointerType === 'mouse' ? 1e9 : 6000));
+    canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { hover = null; draw(); } });
+
+    new ResizeObserver(resize).observe(canvas);
+    window.addEventListener('resize', resize);
+    resize();
+    tickText();
+    setInterval(tickText, 1000);
+    if (!reduceMotion.matches) requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
