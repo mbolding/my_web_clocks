@@ -21,7 +21,7 @@ sizes, much larger than what a page actually downloads.
 - ✅ **Forth** — `clocks/retro/forth_clock.html`, WAForth
 - ✅ **Prolog** — `clocks/retro/prolog_clock.html`, Tau Prolog
 - ✅ **Lisp** — `clocks/retro/lisp_clock.html`, BiwaScheme
-- ✅ **GLSL** — `clocks/retro/glsl_clock.html`, the browser's own WebGL compiler; every pixel computes its signed distance to the hands from `u_time`, with the distance field to view and the shader to edit
+- ✅ **GLSL** — `clocks/retro/glsl_clock.html`, the browser's own WebGL compiler; every pixel computes its signed distance to the hands from `u_time`, with the distance field to view and the shader to edit; four shaders: classic, ink wash, metaballs and a raymarched brass dial
 - ✅ **SQL** — `clocks/retro/sql_clock.html`, sql.js (SQLite in WebAssembly, MIT); three views, the face a recursive CTE over a grid of cells
 - ✅ **6502 assembly** — `clocks/retro/mos6502_clock.html`, an emulator and assembler written in the page; a KIM-1-style six-digit LED display, a once-a-second interrupt counted in decimal mode, and the listing replaying each tick
 - ✅ **Befunge-93** — `clocks/retro/befunge_clock.html`, an interpreter written in the page; the pointer circles a three-row program that writes the time into its own row 1 with `p`, the seconds row read right to left
@@ -152,7 +152,7 @@ Ordered the same way as the tiers above: light and self-contained first.
 11. **Julia sets** — complex dynamics. The constant *c* travels round a circle in
     the complex plane once a day (or once an hour), so the Julia set breathes
     from dust to dendrite and back; the hands are drawn as *c* itself. A natural
-    second shader for the GLSL clock.
+    fifth shader for the GLSL clock.
 12. **The time in π** — where today's HHMMSS first appears in the decimal digits
     of π. Most six-digit strings first turn up within the first few million
     digits, which a page can't compute every second, so this needs a precomputed
