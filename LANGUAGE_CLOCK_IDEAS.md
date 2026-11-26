@@ -22,6 +22,7 @@ sizes, much larger than what a page actually downloads.
 - ✅ **Lisp** — `clocks/retro/lisp_clock.html`, BiwaScheme
 - ✅ **GLSL** — `clocks/retro/glsl_clock.html`, the browser's own WebGL compiler; every pixel computes its signed distance to the hands from `u_time`, with the distance field to view and the shader to edit
 - ✅ **SQL** — `clocks/retro/sql_clock.html`, sql.js (SQLite in WebAssembly, MIT); three views, the face a recursive CTE over a grid of cells
+- ✅ **6502 assembly** — `clocks/retro/mos6502_clock.html`, an emulator and assembler written in the page; a KIM-1-style six-digit LED display, a once-a-second interrupt counted in decimal mode, and the listing replaying each tick
 
 ## Tier 1: light, no licence questions, or an engine written in the page
 
@@ -29,45 +30,40 @@ These are the next to build. An engine written in the page means no download, no
 CDN and nothing to licence, and for the small languages here it is also the best
 way to show the machine working.
 
-1. **6502 assembly** — engine: write it. A small 6502 emulator in the page, with
-   the registers, flags, stack and a strip of memory shown live while a short
-   assembly program counts seconds, minutes and hours in BCD and writes them to a
-   memory-mapped display. The instruction being executed lights up in the listing.
-   Sits naturally beside the Atari 2600 game in `games/`. The favourite.
-2. **Befunge-93** — engine: write it. Watch the instruction pointer walk an ASCII
+1. **Befunge-93** — engine: write it. Watch the instruction pointer walk an ASCII
    grid (`>`, `v`, `<`, `^`) on a torus to count the time. The interpreter is tiny,
    and the page has to draw the moving pointer anyway. npm has `befunge93` (ISC)
    and `befunge` (MIT), but writing one is easier than adapting them.
-3. **Logo** — engine: write it. A turtle draws the dial and hands afresh every
+2. **Logo** — engine: write it. A turtle draws the dial and hands afresh every
    second (`REPEAT 60 [FD 5 BK 5 RT 6]`), with the turtle and its trail visible.
    A small Logo subset is enough.
-4. **K** — engine: [oK](https://aplwiki.com/wiki/OK) by John Earnest, a JavaScript
+3. **K** — engine: [oK](https://aplwiki.com/wiki/OK) by John Earnest, a JavaScript
    K5/K6 interpreter, MIT. Not on npm, so load it from a pinned GitHub commit
    through jsDelivr, as `j_clock` does. The concept: the whole clock and a rolling
    tick log (`09:30:00.000`) in about 40 characters.
-5. **APL** — engine: [ngn/apl](https://aplwiki.com/wiki/Ngn/apl), JavaScript, MIT
+4. **APL** — engine: [ngn/apl](https://aplwiki.com/wiki/Ngn/apl), JavaScript, MIT
    according to the APL Wiki (licence file not seen); main repository
    `abrudz/ngn-apl`. The concept: `24 60 60 ⊤ ⌊ ⎕TS`, `⍳60` reshaped into `12 5 ⍴`,
    with a toggle between blackboard notation and executable APL. Close kin to the
    J and BQN clocks, so it should look different from both.
-6. **Lua** — engine: wasmoon 1.16 (the real Lua compiled to WebAssembly, MIT,
+5. **Lua** — engine: wasmoon 1.16 (the real Lua compiled to WebAssembly, MIT,
    about 0.5 MB) or Fengari (Lua written in JavaScript, MIT). Lua is PICO-8's
    language, so a PICO-8-style 128 x 128 clock suits it.
-7. **Regular expressions** — engine: the browser's own. A clock where the time is
+6. **Regular expressions** — engine: the browser's own. A clock where the time is
    whatever a regex matches in a long string, with the match highlighted, or a
    regex that only accepts valid times. Nothing to load.
-8. **BASIC** — engine: write it. Line numbers, `PRINT`, `GOTO 10`, a cursor
+7. **BASIC** — engine: write it. Line numbers, `PRINT`, `GOTO 10`, a cursor
    blinking on a 40-column screen.
-9. **Brainfuck** — engine: write it. Eight instructions and a tape; the tape cells
+8. **Brainfuck** — engine: write it. Eight instructions and a tape; the tape cells
    holding hours, minutes and seconds are shown as the program runs.
-10. **PostScript** — engine: write a subset (the operand stack, `moveto`, `lineto`,
+9. **PostScript** — engine: write a subset (the operand stack, `moveto`, `lineto`,
     `rotate`, `gsave`/`grestore`, `stroke`) that draws onto a canvas, showing the
     live operand stack and the current transformation matrix for each fresh page.
     The full interpreter, Ghostscript, is AGPL-3.0, so it is not an option.
-11. **AWK** — engine: write a subset of `pattern { action }` rules over a stream of
+10. **AWK** — engine: write a subset of `pattern { action }` rules over a stream of
     timestamp lines, highlighting which rules fire on second, minute and hour
     rollovers. The browser builds of GNU awk (gawk-web, awkjs, webawk) are GPL.
-12. **Factor** — engine: write a small subset. No browser runtime was found. The
+11. **Factor** — engine: write a small subset. No browser runtime was found. The
     concept: quotations and `bi`/`tri`/`cleave` turning stack effects into
     pipelines. The most work in this tier, and it overlaps with the Forth clock.
 
