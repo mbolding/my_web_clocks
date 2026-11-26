@@ -102,6 +102,8 @@ avoid them.
 
 Ordered the same way as the tiers above: light and self-contained first.
 
+Built so far: ✅ **Turing patterns** — `clocks/simulation/turing_clock.html`, reaction–diffusion after Turing's 1952 morphogenesis paper, with stripes, spots or a maze growing only inside the hands.
+
 1. **Times tables on a circle** — modular arithmetic, the clock's own arithmetic.
    Sixty points round the dial; join each point *k* to *k × m* mod 60, where the
    multiplier *m* drifts with the time. At *m* = 2 the chords draw a cardioid, at
