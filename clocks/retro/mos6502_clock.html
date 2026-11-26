@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6502 Clock</title>
+<style>
+    :root {
+        --bg: #0a110c;
+        --panel: #0f1912;
+        --rule: #22362a;
+        --text: #cfe0d2;
+        --bright: #eef6ef;
+        --dim: #7d9584;
+        --faint: #44584a;
+        --silk: #e8efe4;
+        --led: #ff3d2e;
+        --led-off: #2a1411;
+        --hot: #ffcf5a;
+        --red: #ff7a6e;
+        --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--mono); }
+
+    /* no ligatures: some monospace fonts join characters such as <= or -> */
+    body, textarea { font-variant-ligatures: none; }
+
+    body { min-height: 100vh; padding: clamp(12px, 3vw, 32px); }
+
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.4em 1.2em;
+        margin-bottom: clamp(10px, 2vw, 20px);
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 10px;
+    }
+
+    header h1 { margin: 0; font-size: clamp(18px, 2.4vw, 26px); font-weight: 600; color: var(--bright); }
+    header p { margin: 0; font-size: clamp(11px, 1.2vw, 13px); color: var(--dim); }
+
+    main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(14px, 2.5vw, 28px);
+        align-items: start;
+    }
+
+    @media (min-width: 1040px) {
+        main { grid-template-columns: minmax(0, 1fr) minmax(420px, 1.05fr); }
+    }
+
+    .board { min-width: 0; }
+
+    /* the six-digit display, after the KIM-1's */
+    .display {
+        background: #0d0606;
+        border: 1px solid #3a1d18;
+        border-radius: 8px;
+        padding: clamp(12px, 2.5vw, 22px) clamp(10px, 2.5vw, 24px);
+        box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.7);
+    }
+
+    .display svg { display: block; width: 100%; height: auto; }
+    .seg { fill: var(--led-off); transition: fill 60ms linear; }
+    .seg.on { fill: var(--led); filter: drop-shadow(0 0 4px rgba(255, 61, 46, 0.85)); }
+    .colon { fill: var(--led); opacity: 0.85; }
+
+    .silk {
+        margin: 0.5em 0 0;
+        font-size: clamp(10px, 1.1vw, 12px);
+        color: var(--silk);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        opacity: 0.75;
+    }
+
+    .panel {
+        margin-top: clamp(12px, 2vw, 18px);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(10px, 1.6vw, 16px);
+    }
+
+    .panel h2, aside h2 {
+        margin: 0 0 0.6em;
+        font-size: clamp(11px, 1.15vw, 13px);
+        font-weight: 600;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1em;
+        flex-wrap: wrap;
+    }
+
+    .regs { display: flex; flex-wrap: wrap; gap: 0.6em 1.4em; font-size: clamp(13px, 1.5vw, 16px); }
+    .regs span { color: var(--dim); }
+    .regs b { color: var(--bright); font-weight: 500; }
+
+    .flags { margin-top: 0.7em; display: flex; gap: 4px; flex-wrap: wrap; }
+    .flags i {
+        font-style: normal;
+        width: 1.9em;
+        text-align: center;
+        padding: 0.15em 0;
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        color: var(--faint);
+        font-size: 13px;
+    }
+    .flags i.on { color: var(--bg); background: var(--hot); border-color: var(--hot); }
+
+    #state { margin: 0.8em 0 0; font-size: clamp(11.5px, 1.2vw, 13px); color: var(--dim); line-height: 1.6; }
+    #state b { color: var(--text); font-weight: 500; }
+
+    .mem { font-size: clamp(11px, 1.15vw, 13px); line-height: 1.6; white-space: pre; overflow-x: auto; margin: 0; }
+    .mem .lbl { color: var(--dim); }
+    .mem .hot { color: var(--hot); }
+
+    .controls { margin-top: 0.9em; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; }
+
+    button {
+        font: inherit;
+        font-size: 13px;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 0.4em 0.85em;
+        cursor: pointer;
+    }
+    button:hover { border-color: var(--dim); }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--hot); outline-offset: 2px; }
+    button.primary { color: var(--bg); background: var(--hot); border-color: var(--hot); }
+
+    label.check { display: inline-flex; gap: 0.45em; align-items: center; color: var(--dim); cursor: pointer; }
+
+    aside {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: clamp(12px, 1.8vw, 20px);
+        min-width: 0;
+    }
+
+    /* the assembler's listing: address, bytes, source */
+    #listing {
+        margin: 0;
+        height: clamp(320px, 64vh, 760px);
+        overflow: auto;
+        font-size: clamp(10.5px, 0.95vw, 12.5px);
+        line-height: 1.5;
+        white-space: pre;
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: #0b130e;
+        padding: 8px 0;
+    }
+    #listing div { padding: 0 10px; }
+    #listing .addr { color: var(--faint); }
+    #listing .bytes { color: var(--dim); }
+    #listing .cm { color: var(--dim); font-style: italic; }
+    #listing .op { color: #8fd4ff; }
+    #listing .now { background: rgba(255, 207, 90, 0.16); box-shadow: inset 3px 0 0 var(--hot); }
+    #listing .now .op { color: var(--hot); }
+
+    .editor {
+        display: none;
+        grid-template-columns: auto minmax(0, 1fr);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: #0b130e;
+        height: clamp(320px, 64vh, 760px);
+        overflow: hidden;
+    }
+    .editing .editor { display: grid; }
+    .asmbar { display: none; margin-top: 0.7em; gap: 8px; flex-wrap: wrap; }
+    .editing .asmbar { display: flex; }
+    .editing #listing { display: none; }
+
+    #gutter, #source {
+        margin: 0;
+        padding: 8px 0;
+        font-family: var(--mono);
+        font-size: clamp(10.5px, 0.95vw, 12.5px);
+        line-height: 1.5;
+        tab-size: 8;
+    }
+    #gutter { padding: 8px 8px 8px 10px; color: var(--faint); text-align: right; user-select: none; overflow: hidden; border-right: 1px solid var(--rule); white-space: pre; }
+    #gutter .bad { color: var(--red); }
+    #source {
+        padding-left: 10px;
+        padding-right: 10px;
+        width: 100%;
+        height: 100%;
+        resize: none;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: var(--bright);
+        caret-color: var(--hot);
+        white-space: pre;
+        overflow: auto;
+    }
+
+    #log { margin: 0.7em 0 0; min-height: 1.5em; font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; color: var(--dim); }
+    #log.err { color: var(--red); }
+
+    aside p { color: var(--dim); font-size: clamp(11px, 1.1vw, 12.5px); line-height: 1.65; margin: 1em 0 0; }
+    aside code { color: var(--text); white-space: nowrap; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>6502 clock</h1>
+    <p>a 6502 emulated in this page, keeping the time in its decimal mode</p>
+</header>
+
+<main>
+    <section class="board">
+        <div class="display">
+            <svg id="leds" viewBox="0 0 560 110" role="timer" aria-label="The time"></svg>
+        </div>
+        <p class="silk">six-digit display &middot; $D010&ndash;$D015 &middot; one byte of segments each</p>
+
+        <div class="panel">
+            <h2><span>The CPU</span><span id="mode">running</span></h2>
+            <div class="regs">
+                <div><span>PC</span> <b id="rPC">----</b></div>
+                <div><span>A</span> <b id="rA">--</b></div>
+                <div><span>X</span> <b id="rX">--</b></div>
+                <div><span>Y</span> <b id="rY">--</b></div>
+                <div><span>SP</span> <b id="rSP">--</b></div>
+                <div><span>cycles</span> <b id="rCyc">0</b></div>
+            </div>
+            <div class="flags" id="flags"></div>
+            <p id="state">&nbsp;</p>
+            <div class="controls">
+                <label class="check"><input type="checkbox" id="replay" checked> replay each tick</label>
+                <button type="button" id="reset">reset</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2><span>Memory</span></h2>
+            <pre class="mem" id="mem"></pre>
+        </div>
+    </section>
+
+    <aside id="side">
+        <h2><span>The program</span><span><button type="button" id="edit">edit</button></span></h2>
+        <pre id="listing" aria-label="Assembler listing"></pre>
+        <div class="editor">
+            <pre id="gutter" aria-hidden="true"></pre>
+            <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="6502 assembly source, editable"></textarea>
+        </div>
+        <div class="asmbar">
+            <button type="button" id="assemble" class="primary">assemble and run</button>
+            <button type="button" id="cancel">back to the listing</button>
+        </div>
+        <pre id="log" aria-live="polite"></pre>
+        <p>The 6502 ran the Apple II, the Commodore 64, the NES and the Atari 2600. This one is emulated in the page, along with a small assembler that turned the source into the bytes in the listing: address, machine code, then the line it came from.</p>
+        <p>At reset the program reads the time once from a clock chip at <code>$D000</code>. After that the CPU keeps it alone. Once a second an interrupt arrives; the handler sets decimal mode (<code>SED</code>), so adding 1 to <code>$59</code> gives <code>$60</code>, not <code>$5A</code>, and carries seconds into minutes and minutes into hours. Then it splits each byte into two digits and looks up their segments in a table. The rest of the second the CPU spins in <code>IDLE</code>, a million cycles a second, as a real one at 1 MHz would.</p>
+        <p>Press edit to change the program, then assemble and run it from the button under the editor. Try deleting the <code>LDA TIMER</code> that acknowledges the interrupt, and watch the clock race. Reload to start over.</p>
+    </aside>
+</main>
+
+<!-- The 6502 program. The listing shows this text assembled, and the CPU runs it, unchanged. -->
+<script type="text/plain" id="program">
+; 6502 clock. Reset reads the time once from the clock chip, then the
+; CPU keeps it: an interrupt arrives once a second, and the handler adds
+; one second in binary-coded decimal, carrying into minutes and hours.
+
+RTC     = $D000         ; clock chip: hours, minutes, seconds, in BCD
+TIMER   = $D003         ; read it to acknowledge the 1-second interrupt
+LEDS    = $D010         ; six seven-segment digits, left to right
+
+SECS    = $00           ; zero page: the time the CPU keeps, in BCD
+MINS    = $01
+HOURS   = $02
+
+        .org $E000
+
+RESET:  SEI             ; no interrupts while we set up
+        CLD
+        LDX #$FF
+        TXS             ; the stack lives in page 1
+        LDA RTC         ; read the clock chip once
+        STA HOURS
+        LDA RTC+1
+        STA MINS
+        LDA RTC+2
+        STA SECS
+        JSR SHOW
+        CLI             ; now let the once-a-second interrupt in
+IDLE:   JMP IDLE        ; nothing to do until the next tick
+
+; the interrupt handler: one second has passed
+TICK:   PHA
+        TXA
+        PHA
+        TYA
+        PHA
+        LDA TIMER       ; acknowledge, or the interrupt comes straight back
+        SED             ; decimal mode: $09 + 1 = $10, $59 + 1 = $60
+        CLC
+        LDA SECS
+        ADC #$01
+        CMP #$60
+        BNE SAVES
+        LDA #$00        ; sixty seconds: wrap, and carry a minute
+        STA SECS
+        CLC
+        LDA MINS
+        ADC #$01
+        CMP #$60
+        BNE SAVEM
+        LDA #$00        ; sixty minutes: wrap, and carry an hour
+        STA MINS
+        CLC
+        LDA HOURS
+        ADC #$01
+        CMP #$24
+        BNE SAVEH
+        LDA #$00        ; midnight
+SAVEH:  STA HOURS
+        JMP DONE
+SAVEM:  STA MINS
+        JMP DONE
+SAVES:  STA SECS
+DONE:   CLD
+        JSR SHOW
+        PLA
+        TAY
+        PLA
+        TAX
+        PLA
+        RTI
+
+; SHOW: hours, minutes and seconds onto the six digits
+SHOW:   LDX #0          ; X walks along the digits
+        LDA HOURS
+        JSR PAIR
+        LDA MINS
+        JSR PAIR
+        LDA SECS
+        JSR PAIR
+        RTS
+
+; PAIR: one BCD byte in A becomes two digits
+PAIR:   PHA
+        LSR A           ; the tens digit is the high nybble
+        LSR A
+        LSR A
+        LSR A
+        TAY
+        LDA SEGS,Y
+        STA LEDS,X
+        INX
+        PLA
+        AND #$0F        ; the units digit is the low nybble
+        TAY
+        LDA SEGS,Y
+        STA LEDS,X
+        INX
+        RTS
+
+; segment patterns for 0 to 9, one bit per segment: -gfedcba
+SEGS:   .byte $3F,$06,$5B,$4F,$66,$6D,$7D,$07,$7F,$6F
+
+        .org $FFFA      ; the vectors the CPU reads at the top of memory
+        .word RESET     ; NMI
+        .word RESET     ; reset
+        .word TICK      ; IRQ
+</script>
+
+<script>
+(() => {
+    const hex2 = n => n.toString(16).toUpperCase().padStart(2, '0');
+    const hex4 = n => n.toString(16).toUpperCase().padStart(4, '0');
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // =====================================================================
+    // The instruction set: the 151 documented opcodes of the NMOS 6502
+    // =====================================================================
+    const MODES8 = ['imm', 'zp', 'zpx', 'abs', 'absx', 'absy', 'indx', 'indy'];
+    const OPTABLE = {
+        ADC: [0x69, 0x65, 0x75, 0x6D, 0x7D, 0x79, 0x61, 0x71],
+        AND: [0x29, 0x25, 0x35, 0x2D, 0x3D, 0x39, 0x21, 0x31],
+        CMP: [0xC9, 0xC5, 0xD5, 0xCD, 0xDD, 0xD9, 0xC1, 0xD1],
+        EOR: [0x49, 0x45, 0x55, 0x4D, 0x5D, 0x59, 0x41, 0x51],
+        LDA: [0xA9, 0xA5, 0xB5, 0xAD, 0xBD, 0xB9, 0xA1, 0xB1],
+        ORA: [0x09, 0x05, 0x15, 0x0D, 0x1D, 0x19, 0x01, 0x11],
+        SBC: [0xE9, 0xE5, 0xF5, 0xED, 0xFD, 0xF9, 0xE1, 0xF1],
+        STA: [null, 0x85, 0x95, 0x8D, 0x9D, 0x99, 0x81, 0x91],
+    };
+    const OPS = {};          // mnemonic -> { mode: opcode }
+    const DECODE = [];       // opcode -> { m, mode, cyc }
+    function def(m, mode, op) { (OPS[m] = OPS[m] || {})[mode] = op; DECODE[op] = { m, mode }; }
+    for (const [m, ops] of Object.entries(OPTABLE)) ops.forEach((op, i) => op !== null && def(m, MODES8[i], op));
+    const shifts = { ASL: [0x0A, 0x06, 0x16, 0x0E, 0x1E], LSR: [0x4A, 0x46, 0x56, 0x4E, 0x5E], ROL: [0x2A, 0x26, 0x36, 0x2E, 0x3E], ROR: [0x6A, 0x66, 0x76, 0x6E, 0x7E] };
+    for (const [m, ops] of Object.entries(shifts)) ['acc', 'zp', 'zpx', 'abs', 'absx'].forEach((mode, i) => def(m, mode, ops[i]));
+    [['INC', [0xE6, 0xF6, 0xEE, 0xFE]], ['DEC', [0xC6, 0xD6, 0xCE, 0xDE]]].forEach(([m, ops]) => ['zp', 'zpx', 'abs', 'absx'].forEach((mode, i) => def(m, mode, ops[i])));
+    [['LDX', { imm: 0xA2, zp: 0xA6, zpy: 0xB6, abs: 0xAE, absy: 0xBE }], ['LDY', { imm: 0xA0, zp: 0xA4, zpx: 0xB4, abs: 0xAC, absx: 0xBC }],
+     ['STX', { zp: 0x86, zpy: 0x96, abs: 0x8E }], ['STY', { zp: 0x84, zpx: 0x94, abs: 0x8C }],
+     ['CPX', { imm: 0xE0, zp: 0xE4, abs: 0xEC }], ['CPY', { imm: 0xC0, zp: 0xC4, abs: 0xCC }],
+     ['BIT', { zp: 0x24, abs: 0x2C }], ['JMP', { abs: 0x4C, ind: 0x6C }], ['JSR', { abs: 0x20 }]]
+        .forEach(([m, modes]) => Object.entries(modes).forEach(([mode, op]) => def(m, mode, op)));
+    Object.entries({ BCC: 0x90, BCS: 0xB0, BEQ: 0xF0, BMI: 0x30, BNE: 0xD0, BPL: 0x10, BVC: 0x50, BVS: 0x70 }).forEach(([m, op]) => def(m, 'rel', op));
+    Object.entries({ BRK: 0x00, CLC: 0x18, CLD: 0xD8, CLI: 0x58, CLV: 0xB8, DEX: 0xCA, DEY: 0x88, INX: 0xE8, INY: 0xC8, NOP: 0xEA,
+        PHA: 0x48, PHP: 0x08, PLA: 0x68, PLP: 0x28, RTI: 0x40, RTS: 0x60, SEC: 0x38, SED: 0xF8, SEI: 0x78,
+        TAX: 0xAA, TAY: 0xA8, TSX: 0xBA, TXA: 0x8A, TXS: 0x9A, TYA: 0x98 }).forEach(([m, op]) => def(m, 'imp', op));
+
+    // cycle counts, close to the real chip (page-crossing extras left out)
+    const BASE = { imp: 2, acc: 2, imm: 2, zp: 3, zpx: 4, zpy: 4, abs: 4, absx: 4, absy: 4, indx: 6, indy: 5, rel: 2, ind: 5 };
+    const RMW = { zp: 5, zpx: 6, abs: 6, absx: 7 };
+    for (const d of DECODE) {
+        if (!d) continue;
+        d.cyc = BASE[d.mode];
+        if (['ASL', 'LSR', 'ROL', 'ROR', 'INC', 'DEC'].includes(d.m) && RMW[d.mode]) d.cyc = RMW[d.mode];
+        if (d.m === 'STA' && (d.mode === 'absx' || d.mode === 'absy')) d.cyc = 5;
+        if (d.m === 'STA' && d.mode === 'indy') d.cyc = 6;
+        if (d.m === 'JMP') d.cyc = d.mode === 'abs' ? 3 : 5;
+        if (['JSR', 'RTS', 'RTI'].includes(d.m)) d.cyc = 6;
+        if (['PHA', 'PHP'].includes(d.m)) d.cyc = 3;
+        if (['PLA', 'PLP'].includes(d.m)) d.cyc = 4;
+        if (d.m === 'BRK') d.cyc = 7;
+    }
+    const SIZE = { imp: 1, acc: 1, imm: 2, zp: 2, zpx: 2, zpy: 2, indx: 2, indy: 2, rel: 2, abs: 3, absx: 3, absy: 3, ind: 3 };
+
+    // =====================================================================
+    // The assembler: two passes, labels, constants, .org .byte .word
+    // =====================================================================
+    function assemble(src) {
+        const lines = src.split('\n');
+        const errors = [];
+        const symbols = new Map();
+
+        function value(expr, pc, final, lineNo) {
+            let s = expr.trim();
+            let part = null;
+            if (s[0] === '<' || s[0] === '>') { part = s[0]; s = s.slice(1).trim(); }
+            const re = /\s*([+-])?\s*(\$[0-9a-fA-F]+|%[01]+|\d+|[A-Za-z_]\w*|\*)\s*/y;
+            let total = 0, pos = 0, first = true, m;
+            if (!s) throw new Error('missing value');
+            while (pos < s.length) {
+                re.lastIndex = pos;
+                m = re.exec(s);
+                if (!m || (!first && !m[1])) throw new Error(`can't read "${expr.trim()}"`);
+                pos = re.lastIndex;
+                const t = m[2];
+                let v;
+                if (t[0] === '$') v = parseInt(t.slice(1), 16);
+                else if (t[0] === '%') v = parseInt(t.slice(1), 2);
+                else if (/^\d/.test(t)) v = parseInt(t, 10);
+                else if (t === '*') v = pc;
+                else {
+                    const key = t.toUpperCase();
+                    if (!symbols.has(key)) {
+                        if (final) throw new Error(`unknown name ${t}`);
+                        return undefined;
+                    }
+                    v = symbols.get(key);
+                }
+                total += m[1] === '-' ? -v : v;
+                first = false;
+            }
+            if (part === '<') total &= 0xFF;
+            if (part === '>') total = (total >> 8) & 0xFF;
+            return total;
+        }
+
+        function operand(m, arg) {
+            const a = arg.trim();
+            const has = mode => OPS[m] && OPS[m][mode] !== undefined;
+            if (!a) return has('imp') ? { mode: 'imp' } : { mode: 'acc' };
+            if (/^a$/i.test(a)) return { mode: 'acc' };
+            if (a[0] === '#') return { mode: 'imm', expr: a.slice(1) };
+            let r;
+            if ((r = /^\((.+),\s*x\s*\)$/i.exec(a))) return { mode: 'indx', expr: r[1] };
+            if ((r = /^\((.+)\)\s*,\s*y$/i.exec(a))) return { mode: 'indy', expr: r[1] };
+            if ((r = /^\((.+)\)$/.exec(a))) return { mode: 'ind', expr: r[1] };
+            if ((r = /^(.+),\s*x$/i.exec(a))) return { mode: 'x', expr: r[1] };
+            if ((r = /^(.+),\s*y$/i.exec(a))) return { mode: 'y', expr: r[1] };
+            if (has('rel')) return { mode: 'rel', expr: a };
+            return { mode: 'plain', expr: a };
+        }
+
+        // split each line into label, operation and argument
+        const parsed = lines.map((raw, i) => {
+            const noComment = raw.replace(/;.*$/, '');
+            const line = { no: i + 1, raw };
+            let rest = noComment;
+            const k = /^\s*([A-Za-z_]\w*)\s*=\s*(.+?)\s*$/.exec(rest);
+            if (k) { line.constName = k[1].toUpperCase(); line.constExpr = k[2]; return line; }
+            const l = /^\s*([A-Za-z_]\w*):/.exec(rest);
+            if (l) { line.label = l[1].toUpperCase(); rest = rest.slice(l[0].length); }
+            const o = /^\s*(\.?[A-Za-z]+)\s*(.*?)\s*$/.exec(rest);
+            if (o) { line.op = o[1].toUpperCase(); line.arg = o[2]; }
+            else if (rest.trim()) line.bad = `can't read "${rest.trim()}"`;
+            return line;
+        });
+
+        for (const pass of [1, 2]) {
+            let pc = 0;
+            for (const line of parsed) {
+                line.addr = pc;
+                if (pass === 2) line.bytes = [];
+                try {
+                    if (line.bad) throw new Error(line.bad);
+                    if (line.constName) {
+                        const v = value(line.constExpr, pc, pass === 2, line.no);
+                        if (v !== undefined) symbols.set(line.constName, v);
+                        continue;
+                    }
+                    if (line.label) {
+                        if (pass === 1 && symbols.has(line.label)) throw new Error(`${line.label} is defined twice`);
+                        symbols.set(line.label, pc);
+                    }
+                    if (!line.op) continue;
+                    if (line.op === '.ORG') {
+                        const v = value(line.arg, pc, true, line.no);
+                        pc = v & 0xFFFF;
+                        line.addr = pc;
+                        continue;
+                    }
+                    if (line.op === '.BYTE' || line.op === '.WORD') {
+                        const items = line.arg.split(',').map(s => s.trim()).filter(Boolean);
+                        if (!items.length) throw new Error(`${line.op.toLowerCase()} needs at least one value`);
+                        const w = line.op === '.WORD' ? 2 : 1;
+                        if (pass === 2) for (const it of items) {
+                            const v = value(it, pc, true, line.no);
+                            if (w === 1) line.bytes.push(v & 0xFF);
+                            else line.bytes.push(v & 0xFF, (v >> 8) & 0xFF);
+                        }
+                        pc += items.length * w;
+                        continue;
+                    }
+                    const m = line.op;
+                    if (!OPS[m]) throw new Error(`unknown instruction ${m}`);
+                    const opd = operand(m, line.arg || '');
+                    let mode = opd.mode;
+                    let v;
+                    if (opd.expr !== undefined) v = value(opd.expr, pc, pass === 2, line.no);
+                    if (pass === 1) {
+                        // zero page if the value is already known and small, else absolute
+                        if (mode === 'plain' || mode === 'x' || mode === 'y') {
+                            const zp = mode === 'plain' ? 'zp' : mode === 'x' ? 'zpx' : 'zpy';
+                            const ab = mode === 'plain' ? 'abs' : mode === 'x' ? 'absx' : 'absy';
+                            const canZp = OPS[m][zp] !== undefined, canAbs = OPS[m][ab] !== undefined;
+                            mode = (v !== undefined && v >= 0 && v < 256 && canZp) || !canAbs ? zp : ab;
+                        }
+                        if (OPS[m][mode] === undefined) throw new Error(`${m} can't be used this way`);
+                        line.mode = mode;
+                    } else {
+                        mode = line.mode;
+                        const op = OPS[m][mode];
+                        line.bytes.push(op);
+                        if (mode === 'rel') {
+                            const off = v - (pc + 2);
+                            if (off < -128 || off > 127) throw new Error(`branch to ${opd.expr.trim()} is too far (${off} bytes)`);
+                            line.bytes.push(off & 0xFF);
+                        } else if (SIZE[mode] === 2) {
+                            if ((mode !== 'imm') && (v < 0 || v > 255)) throw new Error(`${hex4(v & 0xFFFF)} is not in zero page`);
+                            line.bytes.push(v & 0xFF);
+                        } else if (SIZE[mode] === 3) {
+                            line.bytes.push(v & 0xFF, (v >> 8) & 0xFF);
+                        }
+                    }
+                    pc += SIZE[line.mode];
+                } catch (e) {
+                    if (pass === 2 || line.bad || /twice|unknown instruction|can't be used|can't read/.test(e.message)) {
+                        if (!errors.some(x => x.no === line.no)) errors.push({ no: line.no, msg: e.message });
+                    }
+                    if (pass === 1 && line.op && OPS[line.op] && !line.mode) line.mode = 'abs';
+                    if (pass === 1 && line.mode) pc += SIZE[line.mode];
+                }
+            }
+        }
+        return { errors: errors.sort((a, b) => a.no - b.no), lines: parsed, symbols };
+    }
+
+    // =====================================================================
+    // The CPU, its memory, and the three devices at $D000
+    // =====================================================================
+    const C = 1, Z = 2, I = 4, D = 8, B = 0x10, U = 0x20, V = 0x40, N = 0x80;
+    const mem = new Uint8Array(0x10000);
+    const leds = new Uint8Array(6);
+    const cpu = { pc: 0, a: 0, x: 0, y: 0, sp: 0xFD, p: U | I, cycles: 0, halted: '' };
+    let irqLine = false;           // the timer's interrupt request, held until acknowledged
+    let rtcLatch = [0, 0, 0];
+
+    const bcd = n => ((n / 10) | 0) << 4 | (n % 10);
+
+    function read(a) {
+        a &= 0xFFFF;
+        if ((a & 0xFF00) === 0xD000) {
+            const r = a & 0xFF;
+            if (r === 0x00) {
+                const now = new Date();
+                rtcLatch = [bcd(now.getHours()), bcd(now.getMinutes()), bcd(now.getSeconds())];
+                return rtcLatch[0];
+            }
+            if (r === 0x01 || r === 0x02) return rtcLatch[r];
+            if (r === 0x03) { const was = irqLine; irqLine = false; return was ? 0x80 : 0x00; }
+            if (r >= 0x10 && r < 0x16) return leds[r - 0x10];
+            return 0;
+        }
+        return mem[a];
+    }
+
+    function write(a, v) {
+        a &= 0xFFFF;
+        v &= 0xFF;
+        if ((a & 0xFF00) === 0xD000) {
+            const r = a & 0xFF;
+            if (r >= 0x10 && r < 0x16) leds[r - 0x10] = v;
+            return;
+        }
+        mem[a] = v;
+    }
+
+    const read16 = a => read(a) | (read(a + 1) << 8);
+    const push = v => { write(0x100 | cpu.sp, v); cpu.sp = (cpu.sp - 1) & 0xFF; };
+    const pull = () => { cpu.sp = (cpu.sp + 1) & 0xFF; return read(0x100 | cpu.sp); };
+    const setNZ = v => { cpu.p = (cpu.p & ~(N | Z)) | (v & N) | (v ? 0 : Z); };
+    const flag = (f, on) => { cpu.p = on ? cpu.p | f : cpu.p & ~f; };
+
+    function reset() {
+        cpu.a = cpu.x = cpu.y = 0;
+        cpu.sp = 0xFD;
+        cpu.p = U | I;
+        cpu.pc = read16(0xFFFC);
+        cpu.halted = '';
+        irqLine = false;
+        depth = 0;
+        tracing = null;
+    }
+
+    // tracing: every instruction from an interrupt to its RTI is recorded
+    let depth = 0, tracing = null, lastTrace = null;
+
+    function interrupt() {
+        push(cpu.pc >> 8);
+        push(cpu.pc & 0xFF);
+        push((cpu.p & ~B) | U);
+        cpu.p |= I;
+        cpu.pc = read16(0xFFFE);
+        cpu.cycles += 7;
+        if (depth === 0) tracing = [{ pc: -1, a: cpu.a, x: cpu.x, y: cpu.y, sp: cpu.sp, p: cpu.p, cyc: 7 }];
+        depth++;
+        return 7;
+    }
+
+    function step() {
+        if (irqLine && !(cpu.p & I)) return interrupt();
+        const pc0 = cpu.pc;
+        const op = read(pc0);
+        const d = DECODE[op];
+        if (!d) {
+            cpu.halted = `opcode $${hex2(op)} at $${hex4(pc0)} is not a 6502 instruction; the CPU has stopped`;
+            return 0;
+        }
+        let pc = pc0 + 1, addr = 0, cyc = d.cyc, t;
+        switch (d.mode) {
+            case 'imm': addr = pc++; break;
+            case 'zp': addr = read(pc++); break;
+            case 'zpx': addr = (read(pc++) + cpu.x) & 0xFF; break;
+            case 'zpy': addr = (read(pc++) + cpu.y) & 0xFF; break;
+            case 'abs': addr = read16(pc); pc += 2; break;
+            case 'absx': addr = (read16(pc) + cpu.x) & 0xFFFF; pc += 2; break;
+            case 'absy': addr = (read16(pc) + cpu.y) & 0xFFFF; pc += 2; break;
+            case 'ind': t = read16(pc); pc += 2; addr = read(t) | (read((t & 0xFF00) | ((t + 1) & 0xFF)) << 8); break;  // the page-wrap bug
+            case 'indx': t = (read(pc++) + cpu.x) & 0xFF; addr = read(t) | (read((t + 1) & 0xFF) << 8); break;
+            case 'indy': t = read(pc++); addr = ((read(t) | (read((t + 1) & 0xFF) << 8)) + cpu.y) & 0xFFFF; break;
+            case 'rel': t = read(pc++); addr = (pc + (t < 128 ? t : t - 256)) & 0xFFFF; break;
+        }
+        cpu.pc = pc & 0xFFFF;
+        const acc = d.mode === 'acc';
+        const get = () => acc ? cpu.a : read(addr);
+        const put = v => { v &= 0xFF; if (acc) cpu.a = v; else write(addr, v); setNZ(v); };
+        let v, r;
+        switch (d.m) {
+            case 'ADC': {
+                v = read(addr);
+                const c = cpu.p & C;
+                if (cpu.p & D) {
+                    let lo = (cpu.a & 0x0F) + (v & 0x0F) + c;
+                    let hi = (cpu.a & 0xF0) + (v & 0xF0);
+                    if (lo > 9) { lo = (lo + 6) & 0x0F; hi += 0x10; }
+                    flag(V, ~(cpu.a ^ v) & (cpu.a ^ hi) & 0x80);
+                    if (hi > 0x90) hi += 0x60;
+                    flag(C, hi > 0xFF);
+                    cpu.a = (hi & 0xF0) | lo;
+                } else {
+                    r = cpu.a + v + c;
+                    flag(V, ~(cpu.a ^ v) & (cpu.a ^ r) & 0x80);
+                    flag(C, r > 0xFF);
+                    cpu.a = r & 0xFF;
+                }
+                setNZ(cpu.a);
+                break;
+            }
+            case 'SBC': {
+                v = read(addr);
+                const borrow = 1 - (cpu.p & C);
+                r = cpu.a - v - borrow;
+                flag(V, (cpu.a ^ v) & (cpu.a ^ r) & 0x80);
+                if (cpu.p & D) {
+                    let lo = (cpu.a & 0x0F) - (v & 0x0F) - borrow;
+                    let hi = (cpu.a & 0xF0) - (v & 0xF0);
+                    if (lo < 0) { lo -= 6; hi -= 0x10; }
+                    if (hi < 0) hi -= 0x60;
+                    flag(C, r >= 0);
+                    cpu.a = (hi & 0xF0) | (lo & 0x0F);
+                } else {
+                    flag(C, r >= 0);
+                    cpu.a = r & 0xFF;
+                }
+                setNZ(cpu.a);
+                break;
+            }
+            case 'AND': cpu.a &= read(addr); setNZ(cpu.a); break;
+            case 'ORA': cpu.a |= read(addr); setNZ(cpu.a); break;
+            case 'EOR': cpu.a ^= read(addr); setNZ(cpu.a); break;
+            case 'CMP': case 'CPX': case 'CPY': {
+                const reg = d.m === 'CMP' ? cpu.a : d.m === 'CPX' ? cpu.x : cpu.y;
+                v = read(addr);
+                flag(C, reg >= v);
+                setNZ((reg - v) & 0xFF);
+                break;
+            }
+            case 'BIT': v = read(addr); flag(Z, !(cpu.a & v)); flag(N, v & N); flag(V, v & V); break;
+            case 'ASL': v = get(); flag(C, v & 0x80); put(v << 1); break;
+            case 'LSR': v = get(); flag(C, v & 1); put(v >> 1); break;
+            case 'ROL': v = get(); r = (v << 1) | (cpu.p & C); flag(C, v & 0x80); put(r); break;
+            case 'ROR': v = get(); r = (v >> 1) | ((cpu.p & C) << 7); flag(C, v & 1); put(r); break;
+            case 'INC': put(read(addr) + 1); break;
+            case 'DEC': put(read(addr) - 1); break;
+            case 'INX': cpu.x = (cpu.x + 1) & 0xFF; setNZ(cpu.x); break;
+            case 'INY': cpu.y = (cpu.y + 1) & 0xFF; setNZ(cpu.y); break;
+            case 'DEX': cpu.x = (cpu.x - 1) & 0xFF; setNZ(cpu.x); break;
+            case 'DEY': cpu.y = (cpu.y - 1) & 0xFF; setNZ(cpu.y); break;
+            case 'LDA': cpu.a = read(addr); setNZ(cpu.a); break;
+            case 'LDX': cpu.x = read(addr); setNZ(cpu.x); break;
+            case 'LDY': cpu.y = read(addr); setNZ(cpu.y); break;
+            case 'STA': write(addr, cpu.a); break;
+            case 'STX': write(addr, cpu.x); break;
+            case 'STY': write(addr, cpu.y); break;
+            case 'TAX': cpu.x = cpu.a; setNZ(cpu.x); break;
+            case 'TAY': cpu.y = cpu.a; setNZ(cpu.y); break;
+            case 'TXA': cpu.a = cpu.x; setNZ(cpu.a); break;
+            case 'TYA': cpu.a = cpu.y; setNZ(cpu.a); break;
+            case 'TSX': cpu.x = cpu.sp; setNZ(cpu.x); break;
+            case 'TXS': cpu.sp = cpu.x; break;
+            case 'PHA': push(cpu.a); break;
+            case 'PHP': push(cpu.p | B | U); break;
+            case 'PLA': cpu.a = pull(); setNZ(cpu.a); break;
+            case 'PLP': cpu.p = (pull() & ~B) | U; break;
+            case 'CLC': cpu.p &= ~C; break;
+            case 'SEC': cpu.p |= C; break;
+            case 'CLD': cpu.p &= ~D; break;
+            case 'SED': cpu.p |= D; break;
+            case 'CLI': cpu.p &= ~I; break;
+            case 'SEI': cpu.p |= I; break;
+            case 'CLV': cpu.p &= ~V; break;
+            case 'NOP': break;
+            case 'JMP': cpu.pc = addr; break;
+            case 'JSR': t = (cpu.pc - 1) & 0xFFFF; push(t >> 8); push(t & 0xFF); cpu.pc = addr; break;
+            case 'RTS': t = pull(); t |= pull() << 8; cpu.pc = (t + 1) & 0xFFFF; break;
+            case 'RTI': cpu.p = (pull() & ~B) | U; t = pull(); t |= pull() << 8; cpu.pc = t; break;
+            case 'BRK':
+                t = (cpu.pc + 1) & 0xFFFF;
+                push(t >> 8); push(t & 0xFF); push(cpu.p | B | U);
+                cpu.p |= I;
+                cpu.pc = read16(0xFFFE);
+                break;
+            default: {
+                const taken = { BCC: !(cpu.p & C), BCS: cpu.p & C, BNE: !(cpu.p & Z), BEQ: cpu.p & Z,
+                    BPL: !(cpu.p & N), BMI: cpu.p & N, BVC: !(cpu.p & V), BVS: cpu.p & V }[d.m];
+                if (taken) { cpu.pc = addr; cyc++; }
+            }
+        }
+        cpu.cycles += cyc;
+        if (tracing) {
+            if (tracing.length < 4000) tracing.push({ pc: pc0, a: cpu.a, x: cpu.x, y: cpu.y, sp: cpu.sp, p: cpu.p, cyc });
+            if (d.m === 'RTI' && --depth <= 0) { depth = 0; lastTrace = tracing; tracing = null; startReplay(); }
+        }
+        return cyc;
+    }
+
+    // =====================================================================
+    // The page: display, listing, registers and memory
+    // =====================================================================
+    const ledsSvg = document.getElementById('leds');
+    const listingEl = document.getElementById('listing');
+    const memEl = document.getElementById('mem');
+    const stateEl = document.getElementById('state');
+    const modeEl = document.getElementById('mode');
+    const logEl = document.getElementById('log');
+    const sideEl = document.getElementById('side');
+    const sourceEl = document.getElementById('source');
+    const gutterEl = document.getElementById('gutter');
+    const editBtn = document.getElementById('edit');
+    const replayBox = document.getElementById('replay');
+    const reg = id => document.getElementById(id);
+    const rPC = reg('rPC'), rA = reg('rA'), rX = reg('rX'), rY = reg('rY'), rSP = reg('rSP'), rCyc = reg('rCyc');
+
+    // six seven-segment digits, segments a-g as bits 0-6
+    // each segment a bevelled bar on a 56 x 100 cell: x 6 to 50, y 6, 50, 94
+    const T = 9, G = 2.5;
+    const hBar = (y, x1, x2) => [x1, y, x1 + T / 2, y - T / 2, x2 - T / 2, y - T / 2, x2, y, x2 - T / 2, y + T / 2, x1 + T / 2, y + T / 2];
+    const vBar = (x, y1, y2) => [x, y1, x + T / 2, y1 + T / 2, x + T / 2, y2 - T / 2, x, y2, x - T / 2, y2 - T / 2, x - T / 2, y1 + T / 2];
+    const SEGS = [
+        hBar(6, 6 + G, 50 - G),            // a
+        vBar(50, 6 + G, 50 - G),           // b
+        vBar(50, 50 + G, 94 - G),          // c
+        hBar(94, 6 + G, 50 - G),           // d
+        vBar(6, 50 + G, 94 - G),           // e
+        vBar(6, 6 + G, 50 - G),            // f
+        hBar(50, 6 + G, 50 - G),           // g
+    ];
+    let svg = '';
+    const segEls = [];
+    for (let d = 0; d < 6; d++) {
+        const x0 = 18 + d * 84 + Math.floor(d / 2) * 18;
+        let g = `<g transform="translate(${x0} 5) skewX(-7)">`;
+        for (let s = 0; s < 7; s++) {
+            const pts = SEGS[s].reduce((acc, v, i) => acc + (i % 2 ? `,${v} ` : `${v}`), '');
+            g += `<polygon class="seg" data-d="${d}" data-s="${s}" points="${pts}"></polygon>`;
+        }
+        svg += g + '</g>';
+    }
+    for (const cx of [185, 371]) svg += `<circle class="colon" cx="${cx}" cy="38" r="5"></circle><circle class="colon" cx="${cx - 6}" cy="72" r="5"></circle>`;
+    ledsSvg.innerHTML = svg;
+    ledsSvg.querySelectorAll('.seg').forEach(el => { (segEls[+el.dataset.d] = segEls[+el.dataset.d] || [])[+el.dataset.s] = el; });
+
+    const SEG_DIGIT = { 0x3F: 0, 0x06: 1, 0x5B: 2, 0x4F: 3, 0x66: 4, 0x6D: 5, 0x7D: 6, 0x07: 7, 0x7F: 8, 0x6F: 9 };
+    const shownLeds = new Int16Array(6).fill(-1);
+    function drawLeds() {
+        let changed = false;
+        for (let d = 0; d < 6; d++) {
+            if (leds[d] === shownLeds[d]) continue;
+            shownLeds[d] = leds[d];
+            changed = true;
+            for (let s = 0; s < 7; s++) segEls[d][s].classList.toggle('on', !!(leds[d] & (1 << s)));
+        }
+        if (changed) {
+            const digits = Array.from(leds, b => SEG_DIGIT[b] ?? '?');
+            ledsSvg.setAttribute('aria-label', `The display reads ${digits[0]}${digits[1]}:${digits[2]}${digits[3]}:${digits[4]}${digits[5]}`);
+        }
+    }
+
+    const flagsEl = document.getElementById('flags');
+    flagsEl.innerHTML = ['N', 'V', '-', 'B', 'D', 'I', 'Z', 'C'].map(f => `<i title="${f}">${f}</i>`).join('');
+    const flagEls = [...flagsEl.children];
+    const FLAG_BITS = [N, V, U, B, D, I, Z, C];
+
+    function drawRegs(s) {
+        rPC.textContent = s.pc < 0 ? 'IRQ' : '$' + hex4(s.pc);
+        rA.textContent = '$' + hex2(s.a);
+        rX.textContent = '$' + hex2(s.x);
+        rY.textContent = '$' + hex2(s.y);
+        rSP.textContent = '$' + hex2(s.sp);
+        FLAG_BITS.forEach((bit, i) => flagEls[i].classList.toggle('on', !!(s.p & bit)));
+    }
+
+    // --- the listing ------------------------------------------------------
+    let program = null;            // the last program that assembled
+    let lineOfPc = new Map();
+    let rowEls = [];
+
+    function colourSource(raw) {
+        const m = /^([^;]*)(;.*)?$/.exec(raw);
+        let code = esc(m[1]);
+        code = code.replace(/^(\s*(?:[A-Za-z_]\w*:)?\s*)(\.?[A-Za-z]{2,5})\b/, (all, pre, op) => `${pre}<span class="op">${op}</span>`);
+        return code + (m[2] ? `<span class="cm">${esc(m[2])}</span>` : '');
+    }
+
+    function drawListing() {
+        lineOfPc = new Map();
+        let html = '';
+        program.lines.forEach((ln, i) => {
+            const hasBytes = ln.bytes && ln.bytes.length;
+            const addr = hasBytes ? hex4(ln.addr) : '    ';
+            let bytes = hasBytes ? ln.bytes.slice(0, 3).map(hex2).join(' ') : '';
+            if (hasBytes && ln.bytes.length > 3) bytes += '…';
+            if (hasBytes && OPS[ln.op]) lineOfPc.set(ln.addr, i);
+            html += `<div><span class="addr">${addr}</span>  <span class="bytes">${bytes.padEnd(9)}</span>  ${colourSource(ln.raw)}</div>`;
+        });
+        listingEl.innerHTML = html;
+        rowEls = [...listingEl.children];
+    }
+
+    let nowRow = -1;
+    function highlight(pc) {
+        const i = lineOfPc.has(pc) ? lineOfPc.get(pc) : -1;
+        if (i === nowRow) return;
+        if (nowRow >= 0 && rowEls[nowRow]) rowEls[nowRow].classList.remove('now');
+        nowRow = i;
+        if (i >= 0 && rowEls[i]) {
+            rowEls[i].classList.add('now');
+            const row = rowEls[i], box = listingEl;
+            if (row.offsetTop < box.scrollTop + 20 || row.offsetTop > box.scrollTop + box.clientHeight - 40) {
+                box.scrollTop = row.offsetTop - box.clientHeight / 2;
+            }
+        }
+    }
+
+    // --- memory -----------------------------------------------------------
+    function drawMem(hotSp) {
+        // zero page, without side effects: read memory directly
+        let zp = '<span class="lbl">0000</span> ';
+        for (let i = 0; i < 8; i++) zp += ' ' + (i < 3 ? `<span class="hot">${hex2(mem[i])}</span>` : hex2(mem[i]));
+        zp += `  <span class="lbl">SECS MINS HOURS, in BCD</span>`;
+        let ledRow = '<span class="lbl">D010</span> ';
+        for (let i = 0; i < 6; i++) ledRow += ' ' + hex2(leds[i]);
+        ledRow += '        <span class="lbl">LEDS, segment bits</span>';
+        let stack = '<span class="lbl">01F8</span> ';
+        for (let i = 0xF8; i <= 0xFF; i++) stack += ' ' + (i > hotSp ? `<span class="hot">${hex2(mem[0x100 + i])}</span>` : hex2(mem[0x100 + i]));
+        stack += '  <span class="lbl">top of the stack</span>';
+        const rtc = `<span class="lbl">D000</span>  ${hex2(rtcLatch[0])} ${hex2(rtcLatch[1])} ${hex2(rtcLatch[2])} ${irqLine ? '80' : '00'}              <span class="lbl">RTC h m s, TIMER</span>`;
+        memEl.innerHTML = [zp, stack, rtc, ledRow].join('\n');
+    }
+
+    // =====================================================================
+    // Running: 1 MHz in real time, one interrupt on every real second
+    // =====================================================================
+    const HZ = 1000000;
+    let lastFrame = performance.now(), lastSec = Math.floor(Date.now() / 1000);
+    let cyclesThisSec = 0, cyclesLastSec = 0, ticks = 0;
+    let replay = null;             // { trace, start }
+    let lastUi = 0;
+
+    function startReplay() {
+        ticks++;
+        if (replayBox.checked && !reduceMotion.matches) replay = { trace: lastTrace, start: performance.now() };
+    }
+
+    function load(result) {
+        program = result;
+        mem.fill(0);
+        leds.fill(0);
+        for (const ln of result.lines) if (ln.bytes) ln.bytes.forEach((b, i) => { mem[(ln.addr + i) & 0xFFFF] = b; });
+        drawListing();
+        nowRow = -1;
+        cpu.cycles = 0;
+        lastTrace = null;
+        replay = null;
+        reset();
+    }
+
+    function frame(now) {
+        try { runFrame(now); }
+        finally { requestAnimationFrame(frame); }
+    }
+
+    function runFrame(now) {
+        const sec = Math.floor(Date.now() / 1000);
+        if (sec !== lastSec) {
+            // more than one second missed (a hidden tab): start again from the clock chip
+            if (sec - lastSec > 1) reset();
+            else irqLine = true;
+            lastSec = sec;
+            cyclesLastSec = cyclesThisSec;
+            cyclesThisSec = 0;
+        }
+        let budget = Math.min((now - lastFrame) * HZ / 1000, 60000);
+        lastFrame = now;
+        while (budget > 0 && !cpu.halted) {
+            const c = step();
+            budget -= c;
+            cyclesThisSec += c;
+        }
+        drawLeds();
+
+        // the panel: a replay of the last tick, or the CPU as it is
+        if (now - lastUi > 45) {
+            lastUi = now;
+            let s = cpu, note;
+            if (replay) {
+                const T = replay.trace, k = Math.max(0, Math.min(T.length - 1, Math.floor((now - replay.start) / 850 * T.length)));
+                s = T[k];
+                note = `replaying the last tick: step ${k + 1} of ${T.length}`;
+                if (k >= T.length - 1) replay = null;
+            }
+            drawRegs(s);
+            if (s.pc >= 0) highlight(s.pc);
+            rCyc.textContent = cpu.cycles.toLocaleString('en');
+            modeEl.textContent = cpu.halted ? 'stopped' : replay ? 'replaying' : (cpu.p & I) ? 'interrupts off' : 'running';
+            let text;
+            if (cpu.halted) text = `<b>${esc(cpu.halted)}</b>`;
+            else {
+                const T = lastTrace;
+                const hc = T ? T.reduce((a, e) => a + e.cyc, 0) : 0;
+                text = T ? `The last tick ran <b>${T.length - 1}</b> instructions in <b>${hc}</b> cycles, ${hc} µs at 1 MHz. ` +
+                    `The other <b>${Math.max(0, (cyclesLastSec || HZ) - hc).toLocaleString('en')}</b> cycles of the second went round <b>IDLE</b>.` :
+                    'Waiting for the first tick&hellip;';
+                if (note) text = `<b>${note}</b>. ` + text;
+            }
+            stateEl.innerHTML = text;
+            drawMem(s.sp);
+        }
+    }
+
+    // --- editing and assembling ------------------------------------------
+    const original = document.getElementById('program').textContent.replace(/^\n/, '');
+    let badLines = new Set();
+
+    function drawGutter() {
+        const n = sourceEl.value.split('\n').length;
+        let html = '';
+        for (let i = 1; i <= n; i++) html += (badLines.has(i) ? `<span class="bad">${i}</span>` : i) + '\n';
+        gutterEl.innerHTML = html;
+        gutterEl.scrollTop = sourceEl.scrollTop;
+    }
+    sourceEl.addEventListener('scroll', () => { gutterEl.scrollTop = sourceEl.scrollTop; });
+    sourceEl.addEventListener('input', drawGutter);
+    sourceEl.addEventListener('keydown', e => {
+        if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            sourceEl.setRangeText('\t', sourceEl.selectionStart, sourceEl.selectionEnd, 'end');
+            drawGutter();
+        }
+    });
+
+    function report(result) {
+        badLines = new Set(result.errors.map(e => e.no));
+        if (result.errors.length) {
+            logEl.className = 'err';
+            logEl.textContent = result.errors.slice(0, 8).map(e => `line ${e.no}: ${e.msg}`).join('\n') +
+                (program ? '\n(the last program that assembled is still running)' : '');
+        } else {
+            const used = result.lines.reduce((a, l) => a + (l.bytes ? l.bytes.length : 0), 0);
+            logEl.className = '';
+            logEl.textContent = `assembled: ${used} bytes`;
+        }
+        drawGutter();
+    }
+
+    function setEditing(on) {
+        sideEl.classList.toggle('editing', on);
+        editBtn.hidden = on;
+        if (on) drawGutter();
+    }
+
+    // scroll the editor so a line shows near the top, without opening a phone's keyboard
+    function showLine(no) {
+        const lh = parseFloat(getComputedStyle(sourceEl).lineHeight) || 18;
+        sourceEl.scrollTop = Math.max(0, (no - 3) * lh);
+        gutterEl.scrollTop = sourceEl.scrollTop;
+    }
+
+    editBtn.addEventListener('click', () => {
+        setEditing(true);
+        sideEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    document.getElementById('cancel').addEventListener('click', () => setEditing(false));
+
+    document.getElementById('assemble').addEventListener('click', () => {
+        const result = assemble(sourceEl.value);
+        report(result);
+        if (result.errors.length) {
+            showLine(result.errors[0].no);
+            return;
+        }
+        load(result);
+        logEl.textContent += `, running from reset at ${new Date().toTimeString().slice(0, 8)}`;
+        setEditing(false);
+        document.querySelector('.board').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    document.getElementById('reset').addEventListener('click', () => { reset(); replay = null; });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { reset(); lastFrame = performance.now(); lastSec = Math.floor(Date.now() / 1000); } });
+    replayBox.addEventListener('change', () => { if (!replayBox.checked) replay = null; });
+
+    // --- start ------------------------------------------------------------
+    sourceEl.value = original;
+    const first = assemble(original);
+    report(first);
+    if (!first.errors.length) load(first);
+    requestAnimationFrame(t => { lastFrame = t; frame(t); });
+})();
+</script>
+</body>
+</html>
