@@ -219,7 +219,7 @@
         <h2><span>The shader</span><button type="button" id="reset">reset</button></h2>
         <div class="editor">
             <pre id="gutter" aria-hidden="true"></pre>
-            <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Fragment shader source, editable"></textarea>
+            <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="Fragment shader source, editable"></textarea>
         </div>
         <pre id="log" aria-live="polite"></pre>
         <p>A fragment shader is a small program the graphics card runs once for every pixel, all of them at the same time, with no way for one pixel to ask another what it found. So nothing here draws a hand. Each pixel works out how far it is from each hand, from the time in <code>u_time</code> alone, and colours itself by that distance. Switch to the distance field to see the numbers every pixel computed.</p>

@@ -182,6 +182,8 @@
         overflow: hidden;
     }
     .editing .editor { display: grid; }
+    .asmbar { display: none; margin-top: 0.7em; gap: 8px; flex-wrap: wrap; }
+    .editing .asmbar { display: flex; }
     .editing #listing { display: none; }
 
     #gutter, #source {
@@ -261,12 +263,16 @@
         <pre id="listing" aria-label="Assembler listing"></pre>
         <div class="editor">
             <pre id="gutter" aria-hidden="true"></pre>
-            <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="6502 assembly source, editable"></textarea>
+            <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="6502 assembly source, editable"></textarea>
+        </div>
+        <div class="asmbar">
+            <button type="button" id="assemble" class="primary">assemble and run</button>
+            <button type="button" id="cancel">back to the listing</button>
         </div>
         <pre id="log" aria-live="polite"></pre>
         <p>The 6502 ran the Apple II, the Commodore 64, the NES and the Atari 2600. This one is emulated in the page, along with a small assembler that turned the source into the bytes in the listing: address, machine code, then the line it came from.</p>
         <p>At reset the program reads the time once from a clock chip at <code>$D000</code>. After that the CPU keeps it alone. Once a second an interrupt arrives; the handler sets decimal mode (<code>SED</code>), so adding 1 to <code>$59</code> gives <code>$60</code>, not <code>$5A</code>, and carries seconds into minutes and minutes into hours. Then it splits each byte into two digits and looks up their segments in a table. The rest of the second the CPU spins in <code>IDLE</code>, a million cycles a second, as a real one at 1 MHz would.</p>
-        <p>Press edit to change the program and assemble it. Try deleting the <code>LDA TIMER</code> that acknowledges the interrupt, and watch the clock race. Reload to start over.</p>
+        <p>Press edit to change the program, then assemble and run it from the button under the editor. Try deleting the <code>LDA TIMER</code> that acknowledges the interrupt, and watch the clock race. Reload to start over.</p>
     </aside>
 </main>
 
@@ -957,6 +963,11 @@ SEGS:   .byte $3F,$06,$5B,$4F,$66,$6D,$7D,$07,$7F,$6F
     }
 
     function frame(now) {
+        try { runFrame(now); }
+        finally { requestAnimationFrame(frame); }
+    }
+
+    function runFrame(now) {
         const sec = Math.floor(Date.now() / 1000);
         if (sec !== lastSec) {
             // more than one second missed (a hidden tab): start again from the clock chip
@@ -980,7 +991,7 @@ SEGS:   .byte $3F,$06,$5B,$4F,$66,$6D,$7D,$07,$7F,$6F
             lastUi = now;
             let s = cpu, note;
             if (replay) {
-                const T = replay.trace, k = Math.min(T.length - 1, Math.floor((now - replay.start) / 850 * T.length));
+                const T = replay.trace, k = Math.max(0, Math.min(T.length - 1, Math.floor((now - replay.start) / 850 * T.length)));
                 s = T[k];
                 note = `replaying the last tick: step ${k + 1} of ${T.length}`;
                 if (k >= T.length - 1) replay = null;
@@ -1002,7 +1013,6 @@ SEGS:   .byte $3F,$06,$5B,$4F,$66,$6D,$7D,$07,$7F,$6F
             stateEl.innerHTML = text;
             drawMem(s.sp);
         }
-        requestAnimationFrame(frame);
     }
 
     // --- editing and assembling ------------------------------------------
@@ -1040,22 +1050,37 @@ SEGS:   .byte $3F,$06,$5B,$4F,$66,$6D,$7D,$07,$7F,$6F
         drawGutter();
     }
 
+    function setEditing(on) {
+        sideEl.classList.toggle('editing', on);
+        editBtn.hidden = on;
+        if (on) drawGutter();
+    }
+
+    // scroll the editor so a line shows near the top, without opening a phone's keyboard
+    function showLine(no) {
+        const lh = parseFloat(getComputedStyle(sourceEl).lineHeight) || 18;
+        sourceEl.scrollTop = Math.max(0, (no - 3) * lh);
+        gutterEl.scrollTop = sourceEl.scrollTop;
+    }
+
     editBtn.addEventListener('click', () => {
-        if (!sideEl.classList.contains('editing')) {
-            sideEl.classList.add('editing');
-            editBtn.textContent = 'assemble and run';
-            editBtn.classList.add('primary');
-            drawGutter();
-            sourceEl.focus();
-        } else {
-            const result = assemble(sourceEl.value);
-            report(result);
-            if (result.errors.length) return;
-            load(result);
-            sideEl.classList.remove('editing');
-            editBtn.textContent = 'edit';
-            editBtn.classList.remove('primary');
+        setEditing(true);
+        sideEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    document.getElementById('cancel').addEventListener('click', () => setEditing(false));
+
+    document.getElementById('assemble').addEventListener('click', () => {
+        const result = assemble(sourceEl.value);
+        report(result);
+        if (result.errors.length) {
+            showLine(result.errors[0].no);
+            return;
         }
+        load(result);
+        logEl.textContent += `, running from reset at ${new Date().toTimeString().slice(0, 8)}`;
+        setEditing(false);
+        document.querySelector('.board').scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
 
     document.getElementById('reset').addEventListener('click', () => { reset(); replay = null; });
