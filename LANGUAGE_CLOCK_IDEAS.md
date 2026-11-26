@@ -102,7 +102,11 @@ avoid them.
 
 Ordered the same way as the tiers above: light and self-contained first.
 
-Built so far: ✅ **Turing patterns** — `clocks/simulation/turing_clock.html`, reaction–diffusion after Turing's 1952 morphogenesis paper, with stripes, spots or a maze growing only inside the hands.
+Built so far:
+- ✅ **Turing patterns** — `clocks/simulation/turing_clock.html`, reaction–diffusion after Turing's 1952 morphogenesis paper, with stripes, spots or a maze growing only inside the hands.
+- ✅ **Times tables on a circle** — `clocks/art/times_table_clock.html`; the multiplier is the hour plus one (plus the minutes as a fraction), so the envelope has one cusp per hour: a cardioid at one o'clock, a nephroid at two.
+- ✅ **Tower of Hanoi** — `clocks/simulation/hanoi_clock.html`; seventeen discs, the position computed straight from the move number, with a binary and Gray-code strip.
+- ✅ **Prime factorisation** — `clocks/art/factor_clock.html`; factorisation diagrams of the seconds since midnight, smallest primes outside, with a running count of prime seconds.
 
 1. **Times tables on a circle** — modular arithmetic, the clock's own arithmetic.
    Sixty points round the dial; join each point *k* to *k × m* mod 60, where the
