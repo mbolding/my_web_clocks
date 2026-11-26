@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turing Pattern Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #f1e9d8;
+        --panel: #e9dfca;
+        --rule: #cdbf9f;
+        --ink: #2a2218;
+        --text: #4a3f30;
+        --dim: #857660;
+        --accent: #8a4b22;
+        --serif: "EB Garamond", Georgia, "Times New Roman", serif;
+        --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--serif); }
+
+    body { min-height: 100vh; padding: clamp(14px, 3vw, 36px); }
+
+    main {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(16px, 3vw, 40px);
+        align-items: start;
+    }
+
+    @media (min-width: 960px) {
+        main { grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr); }
+    }
+
+    .stage { min-width: 0; text-align: center; }
+
+    #view {
+        display: block;
+        margin: 0 auto;
+        width: min(100%, 600px, 72vh);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: #e8d9b8;
+        box-shadow: 0 10px 40px rgba(60, 40, 10, 0.22), inset 0 0 0 1px rgba(60, 40, 10, 0.15);
+    }
+
+    #fallback { display: none; max-width: 560px; margin: 0 auto; padding: 1.2em; border: 1px solid var(--rule); border-radius: 6px; color: var(--accent); font-size: 18px; }
+
+    #time { margin-top: 0.4em; font-size: clamp(30px, 5vw, 46px); color: var(--ink); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+
+    .controls { margin-top: 0.8em; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+    button {
+        font: inherit;
+        font-size: 16px;
+        color: var(--text);
+        background: #f7f1e4;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        padding: 0.3em 1em;
+        cursor: pointer;
+    }
+    button:hover { border-color: var(--dim); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button[aria-pressed="true"] { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+    #stats { margin: 0.8em 0 0; font-size: 15px; color: var(--dim); font-style: italic; }
+
+    article { min-width: 0; }
+    h1 { margin: 0 0 0.2em; font-size: clamp(28px, 4vw, 40px); font-weight: 500; color: var(--ink); line-height: 1.1; }
+    .sub { margin: 0 0 1.2em; font-style: italic; color: var(--dim); font-size: clamp(16px, 1.8vw, 19px); }
+    article p { font-size: clamp(16px, 1.7vw, 18.5px); line-height: 1.6; margin: 0 0 1em; }
+    article code { font-family: var(--mono); font-size: 0.82em; color: var(--ink); background: rgba(60, 40, 10, 0.06); padding: 0 0.25em; border-radius: 3px; white-space: nowrap; }
+    article h2 { margin: 1.4em 0 0.4em; font-size: clamp(20px, 2.4vw, 25px); font-weight: 500; color: var(--ink); }
+    #legend { margin: 0.7em auto 0; max-width: 34em; font-size: 15.5px; color: var(--text); line-height: 1.5; min-height: 1.5em; }
+    #legend .sw { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 2px; vertical-align: -0.05em; margin: 0 0.25em 0 0.6em; }
+    #rules-src {
+        display: block; width: 100%; height: clamp(300px, 46vh, 440px); resize: vertical;
+        font-family: var(--mono); font-size: clamp(11.5px, 1.1vw, 13px); line-height: 1.55;
+        white-space: pre; overflow: auto; color: var(--ink);
+        background: #f7f1e4; border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px;
+        font-variant-ligatures: none;
+    }
+    #rules-src:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    article .row { display: flex; flex-wrap: wrap; gap: 0.6em 1em; align-items: baseline; margin-top: 0.6em; }
+    #rules-log { font-family: var(--mono); font-size: 13px; color: var(--dim); white-space: pre-wrap; }
+    #rules-log.err { color: #a3321f; }
+    .eq { font-family: var(--mono); font-size: clamp(13px, 1.4vw, 15px); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.8em 1em; line-height: 1.7; color: var(--ink); overflow-x: auto; white-space: pre; margin: 0 0 1em; }
+</style>
+</head>
+<body>
+
+<main>
+    <section class="stage">
+        <canvas id="view" role="img" aria-label="A reaction-diffusion pattern growing in the shape of a clock's hands"></canvas>
+        <div id="fallback">This clock needs WebGL, which this browser has turned off or does not have. The time below still runs.</div>
+        <div id="time" role="timer" aria-label="Current time">--:--:--</div>
+
+        <div class="controls" role="group" aria-label="Pattern">
+            <button type="button" data-coat="0" aria-pressed="true">stripes</button>
+            <button type="button" data-coat="1" aria-pressed="false">spots</button>
+            <button type="button" data-coat="2" aria-pressed="false">maze</button>
+        </div>
+        <div class="controls" role="group" aria-label="View">
+            <button type="button" data-view="0" aria-pressed="true">the coat</button>
+            <button type="button" data-view="1" aria-pressed="false">where patterns can live</button>
+            <button type="button" id="reseed">start again</button>
+        </div>
+        <p id="legend"></p>
+        <p id="stats">&nbsp;</p>
+    </section>
+
+    <article>
+        <h1>Turing pattern clock</h1>
+        <p class="sub">after Alan Turing, &ldquo;The Chemical Basis of Morphogenesis&rdquo;, 1952</p>
+        <p>In 1952 Alan Turing asked how a ball of identical cells could ever become a striped or spotted animal. His answer was two chemicals, each made and used up by reactions in the cells, and each spreading out by diffusion, one faster than the other. Left alone, the mixture does not stay even: small random differences grow into a steady pattern of spots or stripes, with a spacing set by the chemistry, not by any plan.</p>
+        <p>This clock runs a later model of the same kind, from Peter Gray and Stephen Scott in the 1980s, which is easy to compute and makes clean Turing patterns. Chemical <i>U</i> is fed in everywhere; chemical <i>V</i> turns <i>U</i> into more of itself and is slowly removed. Every cell of a 400 by 400 grid follows the same two rules, many times a second:</p>
+        <div class="eq">U += 1.0·∇²U − U·V² + F·(1 − U)
+V += 0.5·∇²V + U·V² − (F + k)·V</div>
+        <p>Only the two numbers <i>F</i> and <i>k</i> differ from place to place. Inside the shapes of the hands and the hour marks they are set where patterns can live; everywhere else <i>V</i> dies away. Nothing draws the hands. As they turn, the pattern grows into the new ground ahead of them and fades from the ground behind, organising itself afresh every moment. The second dot carries a little of the same pattern round the dial, and leaves a short trail as it goes.</p>
+        <p>Choose stripes, spots or a maze to change the chemistry in the hands, the marks and the second dot, and switch to &ldquo;where patterns can live&rdquo; to see the map of <i>F</i> and <i>k</i> that the time draws.</p>
+        <h2>Change the rules</h2>
+        <p>This is the part of the program every cell runs, in GLSL, the graphics card's language. Change a number or a line and it recompiles as you type; if it won't compile, the last rules that did keep running and the error is shown. Try a <i>k</i> of <code>0.062</code> in <code>DEAD</code> and watch the pattern escape the hands and spread over the whole dial, or swap the <code>1.0</code> and <code>0.5</code> diffusion rates, which is the change Turing's idea depends on. If a pattern fills the dial or vanishes, press &ldquo;start again&rdquo;.</p>
+        <textarea id="rules-src" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="The rules every cell follows, in GLSL, editable"></textarea>
+        <div class="row"><button type="button" id="rules-reset">put the rules back</button><span id="rules-log" aria-live="polite"></span></div>
+    </article>
+</main>
+
+<!-- One step of the reaction and diffusion, run for every cell of the grid. -->
+<script type="text/plain" id="step-shader">
+precision highp float;
+
+uniform sampler2D u_state;   // U in red and green, V in blue and alpha, 16 bits each
+uniform vec2 u_texel;        // one cell, in texture units
+uniform float u_time;        // seconds since local midnight
+uniform float u_coat;        // 0 stripes, 1 spots, 2 maze
+uniform float u_seed;        // changes every step, for the seeding noise
+uniform float u_sow;         // how often to sow V where there is none
+
+const float TAU = 6.28318531;
+
+vec2 unpack(vec4 t) { return vec2(t.r + t.g / 255.0, t.b + t.a / 255.0); }
+vec4 pack(vec2 v) {
+    v = clamp(v, 0.0, 0.9999);
+    vec2 hi = floor(v * 255.0) / 255.0;
+    return vec4(hi.x, (v.x - hi.x) * 255.0, hi.y, (v.y - hi.y) * 255.0);
+}
+vec2 cell(vec2 uv) { return unpack(texture2D(u_state, uv)); }
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+
+float segment(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+vec2 dir(float turns) { return vec2(sin(TAU * turns), cos(TAU * turns)); }
+
+// where the stripes, spots or coral may live: the hour and minute hands
+float hands(vec2 p) {
+    float h = mod(u_time / 3600.0, 12.0) / 12.0;
+    float m = mod(u_time / 60.0, 60.0) / 60.0;
+    return min(segment(p, vec2(0.0), dir(h) * 0.48) - 0.095,
+               segment(p, vec2(0.0), dir(m) * 0.76) - 0.072);
+}
+// where spots always live: twelve hour marks and the second dot
+float dots(vec2 p) {
+    float arc = TAU / 12.0;
+    float a = floor(atan(p.x, p.y) / arc + 0.5) * arc;
+    float marks = length(p - 0.86 * vec2(sin(a), cos(a))) - 0.07;
+    float second = length(p - 0.62 * dir(mod(u_time, 60.0) / 60.0)) - 0.075;
+    return min(marks, second);
+}
+
+void main() {
+    vec2 uv = gl_FragCoord.xy * u_texel;
+    vec2 p = uv * 2.0 - 1.0;
+
+    // the time draws the shapes: how far this cell is inside a hand, or a dot
+    float inHands = smoothstep(0.015, -0.015, hands(p));
+    float inDots = smoothstep(0.015, -0.015, dots(p));
+    // F and k of the pattern chosen under the clock
+    vec2 PATTERN = u_coat < 0.5 ? vec2(0.055, 0.062)     // stripes, across the hands
+                 : u_coat < 1.5 ? vec2(0.030, 0.062)     // spots
+                 : vec2(0.029, 0.057);                   // a maze of worms
+
+    // diffusion: the 3 x 3 Laplacian
+    vec2 c = cell(uv);
+    vec2 lap = 0.2 * (cell(uv + vec2(u_texel.x, 0.0)) + cell(uv - vec2(u_texel.x, 0.0))
+                    + cell(uv + vec2(0.0, u_texel.y)) + cell(uv - vec2(0.0, u_texel.y)))
+             + 0.05 * (cell(uv + u_texel) + cell(uv - u_texel)
+                     + cell(uv + vec2(u_texel.x, -u_texel.y)) + cell(uv + vec2(-u_texel.x, u_texel.y)))
+             - c;
+
+    float u = c.x, v = c.y, lapU = lap.x, lapV = lap.y;
+
+    // the rules: the visitor's text from the page goes here
+#line 1
+//@RULES@
+    if (u != u) u = 1.0;                 // a rule that made nonsense is undone
+    if (v != v) v = 0.0;
+
+    // a little V sown where a pattern could live but has not reached yet,
+    // in patches six cells across: a single cell of V just diffuses away
+    float live = max(inHands, inDots);
+    if (live > 0.5 && v < 0.02 && hash(floor(gl_FragCoord.xy / 6.0) + u_seed) < u_sow) { u = 0.5; v = 0.25; }
+
+    gl_FragColor = pack(vec2(u, v));
+}
+</script>
+
+<!-- The rules every cell follows. The editor starts with this text and the page compiles it into the step above. -->
+<script type="text/plain" id="rules">
+// The rules every cell follows, once a step, about 600 times a second.
+// Given: u and v, the two chemicals in this cell; lapU and lapV, how much
+// more of each its neighbours hold (that is diffusion); PATTERN, the F and k
+// of the pattern chosen under the clock; inHands and inDots, from 0 to 1,
+// whether this cell lies in a hand, or in an hour mark or the second dot.
+
+// F (feed) and k (kill) for each kind of place: the hands, the hour
+// marks and the second dot all take the pattern chosen under the clock
+vec2 DEAD = vec2(0.030, 0.072);     // everywhere else: V dies away
+vec2 fk = mix(DEAD, PATTERN, max(inHands, inDots));
+float F = fk.x, k = fk.y;
+
+// reaction and diffusion, after Gray and Scott
+float uvv = u * v * v;
+u += 1.0 * lapU - uvv + F * (1.0 - u);
+v += 0.5 * lapV + uvv - (F + k) * v;
+</script>
+
+<!-- Painting the chemicals as a coat, for every pixel of the canvas. -->
+<script type="text/plain" id="paint-shader">
+precision highp float;
+
+uniform sampler2D u_state;
+uniform vec2 u_resolution;
+uniform float u_grid;        // cells along each side
+uniform float u_view;        // 0 the coat, 1 where patterns can live
+uniform float u_time;
+uniform float u_coat;
+
+const float TAU = 6.28318531;
+
+vec2 unpack(vec4 t) { return vec2(t.r + t.g / 255.0, t.b + t.a / 255.0); }
+
+// the grid holds packed numbers, which the GPU can't blend, so blend by hand
+vec2 sampleV(vec2 uv) {
+    vec2 g = uv * u_grid - 0.5;
+    vec2 i = floor(g), f = fract(g);
+    vec2 a = unpack(texture2D(u_state, (i + vec2(0.5, 0.5)) / u_grid));
+    vec2 b = unpack(texture2D(u_state, (i + vec2(1.5, 0.5)) / u_grid));
+    vec2 c = unpack(texture2D(u_state, (i + vec2(0.5, 1.5)) / u_grid));
+    vec2 d = unpack(texture2D(u_state, (i + vec2(1.5, 1.5)) / u_grid));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float segment(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+vec2 dir(float turns) { return vec2(sin(TAU * turns), cos(TAU * turns)); }
+
+void main() {
+    float side = min(u_resolution.x, u_resolution.y);
+    vec2 p = (2.0 * gl_FragCoord.xy - u_resolution) / side;
+    vec2 uv = p * 0.5 + 0.5;
+    vec2 s = sampleV(uv);
+    float v = s.y;
+
+    // fur: pale where there is no V, dark where the pattern formed
+    vec3 pale = vec3(0.91, 0.83, 0.66);
+    vec3 dark = u_coat < 0.5 ? vec3(0.14, 0.10, 0.07) : u_coat < 1.5 ? vec3(0.36, 0.20, 0.08) : vec3(0.42, 0.16, 0.10);
+    float ink = smoothstep(0.10, 0.28, v);
+    vec3 col = mix(pale, dark, ink);
+    col *= 0.92 + 0.08 * smoothstep(0.2, 0.5, s.x);      // a little depth from U
+    col *= 1.0 - 0.18 * smoothstep(0.75, 1.05, length(p));
+
+    // the map: where the time lets each pattern live
+    float h = mod(u_time / 3600.0, 12.0) / 12.0;
+    float m = mod(u_time / 60.0, 60.0) / 60.0;
+    float hands = min(segment(p, vec2(0.0), dir(h) * 0.48) - 0.095, segment(p, vec2(0.0), dir(m) * 0.76) - 0.072);
+    float arc = TAU / 12.0;
+    float a = floor(atan(p.x, p.y) / arc + 0.5) * arc;
+    float dots = min(length(p - 0.86 * vec2(sin(a), cos(a))) - 0.07, length(p - 0.62 * dir(mod(u_time, 60.0) / 60.0)) - 0.075);
+    vec3 map = vec3(0.86, 0.80, 0.70);
+    map = mix(map, vec3(0.55, 0.30, 0.15), smoothstep(0.01, -0.01, dots));
+    map = mix(map, vec3(0.55, 0.30, 0.15), smoothstep(0.01, -0.01, hands));
+    map = mix(map, dark, 0.55 * ink);
+
+    gl_FragColor = vec4(mix(col, map, u_view), 1.0);
+}
+</script>
+
+<script>
+(() => {
+    const N = 400;                     // cells along each side of the grid
+    const canvas = document.getElementById('view');
+    const timeEl = document.getElementById('time');
+    const statsEl = document.getElementById('stats');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const pad = n => String(n).padStart(2, '0');
+
+    function secondsToday(now) {
+        return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000;
+    }
+    function tickText() {
+        const now = new Date();
+        timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    tickText();
+    setInterval(tickText, 1000);
+
+    const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false });
+    if (!gl) {
+        canvas.style.display = 'none';
+        document.getElementById('fallback').style.display = 'block';
+        return;
+    }
+
+    // highp in fragment shaders where the GPU has it
+    const hp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    const adapt = src => hp && hp.precision > 0 ? src : src.replace('precision highp float;', 'precision mediump float;');
+
+    function program(fragSource) {
+        const vs = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vs, 'attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }');
+        gl.compileShader(vs);
+        const fs = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fs, adapt(fragSource));
+        gl.compileShader(fs);
+        if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) { const log = gl.getShaderInfoLog(fs); gl.deleteShader(fs); throw new Error(log); }
+        const p = gl.createProgram();
+        gl.attachShader(p, vs);
+        gl.attachShader(p, fs);
+        gl.bindAttribLocation(p, 0, 'a_pos');
+        gl.linkProgram(p);
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+        const u = {};
+        const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+        for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(p, i); u[info.name] = gl.getUniformLocation(p, info.name); }
+        return { p, u };
+    }
+
+    let stepProg, paintProg, quad, tex = [], fbo = [], cur = 0;
+
+    // the step shader is a fixed frame with the visitor's rules inside it
+    const frameText = document.getElementById('step-shader').textContent;
+    const rulesOriginal = document.getElementById('rules').textContent.replace(/^\n/, '').replace(/\n$/, '');
+    const rulesEl = document.getElementById('rules-src');
+    const rulesLog = document.getElementById('rules-log');
+    rulesEl.value = rulesOriginal;
+    const stepSource = rules => frameText.replace('//@RULES@', rules);
+
+    // #line 1 in the frame numbers the rules from 1, so errors point at the visitor's text
+    function rebuildRules() {
+        try {
+            const next = program(stepSource(rulesEl.value));
+            if (stepProg) gl.deleteProgram(stepProg.p);
+            stepProg = next;
+            rulesLog.className = '';
+            rulesLog.textContent = 'compiled';
+        } catch (err) {
+            rulesLog.className = 'err';
+            rulesLog.textContent = String(err.message).split('\n').map(l => l.trim()).filter(Boolean)
+                .map(l => l.replace(/^(?:ERROR|WARNING):\s*\d+:(\d+):\s*/, 'line $1: ')).slice(0, 4).join('\n') +
+                '\n(the last rules that compiled are still running)';
+        }
+    }
+    let rulesTimer = 0;
+    rulesEl.addEventListener('input', () => { clearTimeout(rulesTimer); rulesTimer = setTimeout(rebuildRules, 400); });
+    document.getElementById('rules-reset').addEventListener('click', () => { rulesEl.value = rulesOriginal; rebuildRules(); });
+
+    function setup() {
+        stepProg = program(stepSource(rulesEl.value));
+        paintProg = program(document.getElementById('paint-shader').textContent);
+        quad = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        tex = []; fbo = [];
+        for (let i = 0; i < 2; i++) {
+            const t = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, t);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, N, N, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            const f = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+            tex.push(t); fbo.push(f);
+        }
+        clearGrid();
+    }
+
+    // U = 1 and V = 0 everywhere: packed, U's high byte is 255/255 - a hair
+    function clearGrid() {
+        const data = new Uint8Array(N * N * 4);
+        for (let i = 0; i < N * N; i++) { data[i * 4] = 254; data[i * 4 + 1] = 255; }
+        for (const t of tex) {
+            gl.bindTexture(gl.TEXTURE_2D, t);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, N, N, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+        }
+    }
+
+    let coat = 0, view = 0, seed = 0, totalSteps = 0;
+
+    function steps(n, t, sow) {
+        gl.useProgram(stepProg.p);
+        gl.viewport(0, 0, N, N);
+        gl.uniform2f(stepProg.u.u_texel, 1 / N, 1 / N);
+        gl.uniform1f(stepProg.u.u_time, t);
+        gl.uniform1f(stepProg.u.u_coat, coat);
+        gl.uniform1f(stepProg.u.u_sow, sow);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.uniform1i(stepProg.u.u_state, 0);
+        for (let i = 0; i < n; i++) {
+            gl.bindTexture(gl.TEXTURE_2D, tex[cur]);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo[1 - cur]);
+            gl.uniform1f(stepProg.u.u_seed, (seed = (seed + 17.31) % 1000));
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            cur = 1 - cur;
+        }
+        totalSteps += n;
+    }
+
+    function paint(t) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.useProgram(paintProg.p);
+        gl.bindTexture(gl.TEXTURE_2D, tex[cur]);
+        gl.uniform1i(paintProg.u.u_state, 0);
+        gl.uniform2f(paintProg.u.u_resolution, canvas.width, canvas.height);
+        gl.uniform1f(paintProg.u.u_grid, N);
+        gl.uniform1f(paintProg.u.u_view, view);
+        gl.uniform1f(paintProg.u.u_time, t);
+        gl.uniform1f(paintProg.u.u_coat, coat);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const side = Math.max(1, Math.min(1400, Math.round(canvas.getBoundingClientRect().width * dpr)));
+        if (canvas.width !== side) { canvas.width = side; canvas.height = side; }
+    }
+
+    // grow a pattern quickly at the start: 3,000 extra steps, spread over the
+    // first frames so the coat is seen growing in (all at once under reduced motion)
+    let warm = 0;
+    function warmUp() {
+        warm = 3000;
+        if (reduceMotion.matches) { steps(warm, secondsToday(new Date()), 0.01); warm = 0; }
+    }
+
+    // the chemistry runs a fixed number of steps for each second of real time
+    const STEPS_PER_SECOND = 600;
+    let last = performance.now(), owed = 0, frames = 0, statSince = performance.now();
+
+    function frame(now) {
+        try {
+            const dt = Math.min(now - last, 200);
+            last = now;
+            owed += dt * STEPS_PER_SECOND / 1000;
+            const n = Math.min(Math.floor(owed), 40);
+            owed -= n;
+            const t = secondsToday(new Date());
+            if (warm > 0) { const w = Math.min(warm, 250); steps(w, t, 0.01); warm -= w; }
+            if (n > 0) steps(n, t, 0.002);
+            paint(t);
+            frames++;
+        } finally {
+            if (!reduceMotion.matches) requestAnimationFrame(frame);
+        }
+    }
+
+    // under reduced motion the pattern still follows the hands, a second at a time
+    setInterval(() => {
+        if (reduceMotion.matches) {
+            const t = secondsToday(new Date());
+            steps(STEPS_PER_SECOND, t, 0.002);
+            paint(t);
+        }
+        const secs = (performance.now() - statSince) / 1000;
+        statsEl.textContent = `${N} × ${N} cells, ${totalSteps.toLocaleString('en')} steps of the chemistry so far` +
+            (reduceMotion.matches ? '' : `, ${Math.round(frames / secs)} frames a second`);
+        frames = 0; statSince = performance.now();
+    }, 1000);
+    reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) { last = performance.now(); requestAnimationFrame(frame); } });
+
+    document.querySelectorAll('[data-coat]').forEach(btn => btn.addEventListener('click', () => {
+        coat = +btn.dataset.coat;
+        document.querySelectorAll('[data-coat]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    }));
+    const legendEl = document.getElementById('legend');
+    const LEGENDS = [
+        '<span class="sw" style="background:#2a1d12"></span>dark: plenty of chemical <i>V</i>, the pattern <span class="sw" style="background:#e8d4a8"></span>pale: almost none, only <i>U</i>',
+        '<span class="sw" style="background:#8c4d26"></span>the hands, marks and second dot: the pattern you chose may grow <span class="sw" style="background:#dbccb3"></span>everywhere else: <i>V</i> dies away',
+    ];
+    const showLegend = () => { legendEl.innerHTML = LEGENDS[view]; };
+    showLegend();
+    document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => {
+        view = +btn.dataset.view;
+        document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        showLegend();
+    }));
+    document.getElementById('reseed').addEventListener('click', () => { clearGrid(); warmUp(); });
+
+    canvas.addEventListener('webglcontextlost', e => e.preventDefault());
+    canvas.addEventListener('webglcontextrestored', () => { setup(); warmUp(); });
+
+    setup();
+    resize();
+    new ResizeObserver(resize).observe(canvas);
+    warmUp();
+    last = performance.now();
+    if (reduceMotion.matches) paint(secondsToday(new Date()));
+    else requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
