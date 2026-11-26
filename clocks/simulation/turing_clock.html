@@ -124,10 +124,10 @@
         <p>This clock runs a later model of the same kind, from Peter Gray and Stephen Scott in the 1980s, which is easy to compute and makes clean Turing patterns. Chemical <i>U</i> is fed in everywhere; chemical <i>V</i> turns <i>U</i> into more of itself and is slowly removed. Every cell of a 400 by 400 grid follows the same two rules, many times a second:</p>
         <div class="eq">U += 1.0·∇²U − U·V² + F·(1 − U)
 V += 0.5·∇²V + U·V² − (F + k)·V</div>
-        <p>Only the two numbers <i>F</i> and <i>k</i> differ from place to place. Inside the shapes of the hands and the hour marks they are set where patterns can live; everywhere else <i>V</i> dies away. Nothing draws the hands. As they turn, the pattern grows into the new ground ahead of them and fades from the ground behind, organising itself afresh every moment. The second dot runs with spots, and leaves a short trail of them as it goes.</p>
-        <p>Choose stripes, spots or a maze to change the chemistry inside the hands, and switch to &ldquo;where patterns can live&rdquo; to see the map of <i>F</i> and <i>k</i> that the time draws.</p>
+        <p>Only the two numbers <i>F</i> and <i>k</i> differ from place to place. Inside the shapes of the hands and the hour marks they are set where patterns can live; everywhere else <i>V</i> dies away. Nothing draws the hands. As they turn, the pattern grows into the new ground ahead of them and fades from the ground behind, organising itself afresh every moment. The second dot carries a little of the same pattern round the dial, and leaves a short trail as it goes.</p>
+        <p>Choose stripes, spots or a maze to change the chemistry in the hands, the marks and the second dot, and switch to &ldquo;where patterns can live&rdquo; to see the map of <i>F</i> and <i>k</i> that the time draws.</p>
         <h2>Change the rules</h2>
-        <p>This is the part of the program every cell runs, in GLSL, the graphics card's language. Change a number or a line and it recompiles as you type; if it won't compile, the last rules that did keep running and the error is shown. Try a <i>k</i> of <code>0.060</code> in <code>SPOTS</code>, or swap the <code>1.0</code> and <code>0.5</code> diffusion rates, which is the change Turing's idea depends on. If a pattern fills the dial or vanishes, press &ldquo;start again&rdquo;.</p>
+        <p>This is the part of the program every cell runs, in GLSL, the graphics card's language. Change a number or a line and it recompiles as you type; if it won't compile, the last rules that did keep running and the error is shown. Try a <i>k</i> of <code>0.062</code> in <code>DEAD</code> and watch the pattern escape the hands and spread over the whole dial, or swap the <code>1.0</code> and <code>0.5</code> diffusion rates, which is the change Turing's idea depends on. If a pattern fills the dial or vanishes, press &ldquo;start again&rdquo;.</p>
         <textarea id="rules-src" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="The rules every cell follows, in GLSL, editable"></textarea>
         <div class="row"><button type="button" id="rules-reset">put the rules back</button><span id="rules-log" aria-live="polite"></span></div>
     </article>
@@ -224,11 +224,10 @@ void main() {
 // of the pattern chosen under the clock; inHands and inDots, from 0 to 1,
 // whether this cell lies in a hand, or in an hour mark or the second dot.
 
-// F (feed) and k (kill) for each kind of place
-vec2 DEAD  = vec2(0.030, 0.072);    // everywhere else: V dies away
-vec2 SPOTS = vec2(0.030, 0.062);    // the hour marks and the second dot
-vec2 fk = mix(DEAD, PATTERN, inHands);
-fk = mix(fk, SPOTS, inDots * (1.0 - inHands));
+// F (feed) and k (kill) for each kind of place: the hands, the hour
+// marks and the second dot all take the pattern chosen under the clock
+vec2 DEAD = vec2(0.030, 0.072);     // everywhere else: V dies away
+vec2 fk = mix(DEAD, PATTERN, max(inHands, inDots));
 float F = fk.x, k = fk.y;
 
 // reaction and diffusion, after Gray and Scott
@@ -293,7 +292,7 @@ void main() {
     float a = floor(atan(p.x, p.y) / arc + 0.5) * arc;
     float dots = min(length(p - 0.86 * vec2(sin(a), cos(a))) - 0.07, length(p - 0.62 * dir(mod(u_time, 60.0) / 60.0)) - 0.075);
     vec3 map = vec3(0.86, 0.80, 0.70);
-    map = mix(map, vec3(0.80, 0.55, 0.30), smoothstep(0.01, -0.01, dots));
+    map = mix(map, vec3(0.55, 0.30, 0.15), smoothstep(0.01, -0.01, dots));
     map = mix(map, vec3(0.55, 0.30, 0.15), smoothstep(0.01, -0.01, hands));
     map = mix(map, dark, 0.55 * ink);
 
@@ -506,7 +505,7 @@ void main() {
     const legendEl = document.getElementById('legend');
     const LEGENDS = [
         '<span class="sw" style="background:#2a1d12"></span>dark: plenty of chemical <i>V</i>, the pattern <span class="sw" style="background:#e8d4a8"></span>pale: almost none, only <i>U</i>',
-        '<span class="sw" style="background:#8c4d26"></span>the hands: the pattern you chose may grow <span class="sw" style="background:#cc8c4d"></span>the marks and second dot: spots may grow <span class="sw" style="background:#dbccb3"></span>everywhere else: <i>V</i> dies away',
+        '<span class="sw" style="background:#8c4d26"></span>the hands, marks and second dot: the pattern you chose may grow <span class="sw" style="background:#dbccb3"></span>everywhere else: <i>V</i> dies away',
     ];
     const showLegend = () => { legendEl.innerHTML = LEGENDS[view]; };
     showLegend();
