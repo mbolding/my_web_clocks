@@ -209,9 +209,15 @@
         </div>
         <p id="stats">&nbsp;</p>
 
+        <div class="views" role="group" aria-label="Which shader">
+            <button type="button" data-theme="classic" aria-pressed="true">classic</button>
+            <button type="button" data-theme="ink" aria-pressed="false">ink wash</button>
+            <button type="button" data-theme="meta" aria-pressed="false">metaballs</button>
+            <button type="button" data-theme="brass" aria-pressed="false">brass</button>
+        </div>
         <div class="views" role="group" aria-label="What the shader shows">
             <button type="button" data-view="0" aria-pressed="true">the clock</button>
-            <button type="button" data-view="1" aria-pressed="false">the distance field</button>
+            <button type="button" data-view="1" aria-pressed="false" id="fieldBtn">the distance field</button>
         </div>
     </section>
 
@@ -223,7 +229,8 @@
         </div>
         <pre id="log" aria-live="polite"></pre>
         <p>A fragment shader is a small program the graphics card runs once for every pixel, all of them at the same time, with no way for one pixel to ask another what it found. So nothing here draws a hand. Each pixel works out how far it is from each hand, from the time in <code>u_time</code> alone, and colours itself by that distance. Switch to the distance field to see the numbers every pixel computed.</p>
-        <p>The text above is the program the page compiles. Edit it and it recompiles as you type; if it fails, the last good version keeps running and the error is shown. Try changing <code>0.50</code> in the hour hand, or the colours at the end. Reload or press reset to start over.</p>
+        <p>The text above is the program the page compiles. Edit it and it recompiles as you type; if it fails, the last good version keeps running and the error is shown. Try changing <code>0.50</code> in the hour hand, or the colours at the end. Reset puts the shader back.</p>
+        <p>The other shaders keep the same inputs and the same idea. Ink wash roughens each distance with noise and lets it soak into paper. Metaballs joins the hands with a smooth minimum, so they merge as they pass. Brass is 3D: each pixel marches a ray through a scene made of distance functions and lights whatever it lands on; its second view shows how many steps each ray took.</p>
     </aside>
 </main>
 
@@ -304,6 +311,338 @@ void main() {
 }
 </script>
 
+<!-- Ink wash. The editor starts with this text and the page compiles it, unchanged. -->
+<script type="text/plain" id="program-ink">
+// GLSL clock, ink wash. The same distances to the hands as the classic
+// face, but each pixel decides how much ink has soaked into the paper:
+// the edges of every stroke are roughened with noise, darker where the
+// ink pooled, and a faint grey wash bleeds out around them.
+
+precision highp float;
+
+uniform vec2 u_resolution;   // canvas size, in device pixels
+uniform float u_time;        // seconds since local midnight
+uniform float u_view;        // 0 = the clock, 1 = the distance field
+
+const float TAU = 6.28318531;
+
+// value noise, and fractal noise built from five octaves of it
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
+    return v;
+}
+
+// a brush stroke from a to b, r0 thick at a and r1 thick at b
+float stroke(vec2 p, vec2 a, vec2 b, float r0, float r1) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h) - mix(r0, r1, h);
+}
+
+// a hand pointing at turns of the dial, clockwise from 12, tapering to its tip
+float hand(vec2 p, float turns, float len, float r0, float r1) {
+    vec2 dir = vec2(sin(TAU * turns), cos(TAU * turns));
+    return stroke(p, -dir * 0.06, dir * len, r0, r1);
+}
+
+// twelve dabs of ink, one at each hour, each a slightly different size
+float dabs(vec2 p) {
+    float arc = TAU / 12.0;
+    float i = floor(atan(p.x, p.y) / arc + 0.5);
+    float a = i * arc;
+    vec2 c = 0.80 * vec2(sin(a), cos(a));
+    float r = 0.026 + 0.02 * hash(vec2(i, 7.0)) + (mod(i, 3.0) == 0.0 ? 0.016 : 0.0);
+    return length(p - c) - r;
+}
+
+void main() {
+    float side = min(u_resolution.x, u_resolution.y);
+    vec2 p = (2.0 * gl_FragCoord.xy - u_resolution) / side;
+    float px = 2.0 / side;
+
+    float s = mod(u_time, 60.0);
+    float m = mod(u_time / 60.0, 60.0);
+    float h = mod(u_time / 3600.0, 12.0);
+
+    // the paper pushes every edge in and out a little
+    float wobble = 0.035 * (fbm(p * 7.0) - 0.5);
+
+    float ink = min(hand(p, h / 12.0, 0.50, 0.075, 0.025), hand(p, m / 60.0, 0.78, 0.05, 0.012));
+    ink = min(min(ink, dabs(p)), length(p) - 0.06) + wobble;
+    float seal = hand(p, s / 60.0, 0.86, 0.012, 0.004) + 0.4 * wobble;
+
+    // paper: warm, with fibres, darker towards the edges
+    vec3 paper = vec3(0.95, 0.92, 0.85) * (0.94 + 0.06 * fbm(p * 60.0 + 3.0));
+    paper *= 1.0 - 0.18 * smoothstep(0.7, 1.4, length(p));
+
+    // how much ink soaked in: full inside, darker where it pooled at the
+    // edge, and a thin grey wash that bled out into the paper
+    float body = smoothstep(1.5 * px, -1.5 * px, ink);
+    float pool = smoothstep(0.03, 0.0, abs(ink + 0.012)) * body;
+    float wash = exp(-max(ink, 0.0) * 28.0) * 0.16 * (0.6 + 0.8 * fbm(p * 18.0));
+    float density = clamp(body * (0.72 + 0.28 * pool) + wash, 0.0, 1.0);
+    vec3 col = mix(paper, vec3(0.07, 0.07, 0.09), density);
+
+    // the second hand in vermilion, the red of a seal
+    col = mix(col, vec3(0.80, 0.20, 0.12), 0.9 * smoothstep(1.5 * px, -1.5 * px, seal));
+
+    // the distance field: the roughened distance, as bands of diluted ink
+    float d = min(ink, seal);
+    vec3 field = mix(vec3(0.95, 0.92, 0.85), vec3(0.15, 0.15, 0.18), 0.5 + 0.5 * cos(90.0 * d));
+    field = mix(field, vec3(0.80, 0.20, 0.12), smoothstep(1.5 * px, 0.0, abs(d)));
+
+    gl_FragColor = vec4(mix(col, field, u_view), 1.0);
+}
+</script>
+
+<!-- Metaballs. The editor starts with this text and the page compiles it, unchanged. -->
+<script type="text/plain" id="program-meta">
+// GLSL clock, metaballs. Each hand is a blob of liquid, and the blobs are
+// joined with a smooth minimum instead of a plain one, so when two hands
+// come close they reach for each other and merge, and their tips bulge as
+// they pass the twelve drops round the edge.
+
+precision highp float;
+
+uniform vec2 u_resolution;   // canvas size, in device pixels
+uniform float u_time;        // seconds since local midnight
+uniform float u_view;        // 0 = the clock, 1 = the blended field
+
+const float TAU = 6.28318531;
+float gH, gM, gS;            // the hands, in turns of the dial, set in main()
+
+float segment(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h);
+}
+
+// the smooth minimum: min(a, b), but blended wherever the two are within k
+float smin(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+float hand(vec2 p, float turns, float len, float r) {
+    vec2 dir = vec2(sin(TAU * turns), cos(TAU * turns));
+    return segment(p, vec2(0.0), dir * len) - r;
+}
+
+float drops(vec2 p) {
+    float arc = TAU / 12.0;
+    float a = floor(atan(p.x, p.y) / arc + 0.5) * arc;
+    return length(p - 0.82 * vec2(sin(a), cos(a))) - 0.045;
+}
+
+// the whole liquid, and the colour mixed from whichever parts are nearest
+float scene(vec2 p, out vec3 tint) {
+    float dH = hand(p, gH, 0.48, 0.07);
+    float dM = hand(p, gM, 0.74, 0.05);
+    float dS = hand(p, gS, 0.84, 0.024);
+    float dC = length(p) - 0.11;
+    float dD = drops(p);
+    float d = smin(smin(smin(dH, dM, 0.18), dS, 0.12), dC, 0.12);
+    d = smin(d, dD, 0.10);
+
+    float wH = exp(-18.0 * dH), wM = exp(-18.0 * dM), wS = exp(-18.0 * dS), wR = exp(-18.0 * min(dC, dD));
+    tint = (wH * vec3(1.0, 0.55, 0.15) + wM * vec3(0.15, 0.75, 0.80)
+          + wS * vec3(0.95, 0.25, 0.55) + wR * vec3(0.75, 0.78, 0.85)) / (wH + wM + wS + wR);
+    return d;
+}
+
+// a rounded dome over the liquid, so it catches the light
+float height(vec2 p) {
+    vec3 t;
+    return 0.06 * smoothstep(0.0, -0.07, scene(p, t));
+}
+
+void main() {
+    float side = min(u_resolution.x, u_resolution.y);
+    vec2 p = (2.0 * gl_FragCoord.xy - u_resolution) / side;
+    float px = 2.0 / side;
+
+    gS = mod(u_time, 60.0) / 60.0;
+    gM = mod(u_time / 60.0, 60.0) / 60.0;
+    gH = mod(u_time / 3600.0, 12.0) / 12.0;
+
+    vec3 tint;
+    float d = scene(p, tint);
+
+    // the dome's slope gives a normal; light it from the top left
+    float e = 2.0 * px;
+    vec3 n = normalize(vec3(height(p - vec2(e, 0.0)) - height(p + vec2(e, 0.0)),
+                            height(p - vec2(0.0, e)) - height(p + vec2(0.0, e)), 2.0 * e));
+    vec3 L = normalize(vec3(-0.4, 0.5, 0.75));
+    float dif = max(dot(n, L), 0.0);
+    float spe = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 60.0);
+    vec3 liquid = tint * (0.22 + 0.78 * dif) + 0.9 * spe;
+
+    // a dark table, with the liquid's soft shadow on it
+    vec3 t2;
+    vec3 table = vec3(0.06, 0.07, 0.09) * (1.0 - 0.35 * length(p));
+    table *= 1.0 - 0.45 * smoothstep(0.09, -0.02, scene(p + vec2(0.035, 0.045), t2));
+
+    vec3 col = mix(table, liquid, smoothstep(px, -px, d));
+
+    // the blended field: contours of the smooth minimum, in each part's colour
+    vec3 field = tint * (0.35 + 0.65 * (0.5 + 0.5 * cos(110.0 * d))) * (1.0 - 0.6 * smoothstep(0.0, 0.6, d));
+    field = mix(field, vec3(1.0), smoothstep(1.5 * px, 0.0, abs(d)));
+
+    gl_FragColor = vec4(mix(col, field, u_view), 1.0);
+}
+</script>
+
+<!-- Brass. The editor starts with this text and the page compiles it, unchanged. -->
+<script type="text/plain" id="program-brass">
+// GLSL clock, brass. A raymarched dial: for every pixel a ray leaves the
+// eye and steps through a 3D scene described only by distance functions
+// (a disc, a rim, twelve studs, three hands, a cap), each step as long as
+// the nearest surface is far, until it lands on one. Then the pixel lights
+// itself, and marches towards the light to see whether it is in shadow.
+
+precision highp float;
+
+uniform vec2 u_resolution;   // canvas size, in device pixels
+uniform float u_time;        // seconds since local midnight
+uniform float u_view;        // 0 = the clock, 1 = how many steps each ray took
+
+const float TAU = 6.28318531;
+float gH, gM, gS;            // the hands, in turns of the dial, set in main()
+
+float sdBox(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+// a cylinder standing on the z axis, radius r, half-height h
+float sdCyl(vec3 p, float r, float h) {
+    vec2 d = abs(vec2(length(p.xy), p.z)) - vec2(r, h);
+    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+// turn a point so that a direction turns of the dial from 12 lies along +y
+vec2 rot(vec2 p, float turns) {
+    float c = cos(TAU * turns), s = sin(TAU * turns);
+    return vec2(c * p.x - s * p.y, s * p.x + c * p.y);
+}
+
+vec2 nearer(vec2 a, vec2 b) { return a.x < b.x ? a : b; }
+
+// the scene: distance to the nearest surface, and which material it is
+// (1 the dial's face, 2 polished brass, 3 blued steel)
+vec2 map(vec3 p) {
+    vec2 r = vec2(sdCyl(p - vec3(0.0, 0.0, -0.06), 1.0, 0.06), 1.0);
+    vec2 q = vec2(length(p.xy) - 1.0, p.z - 0.01);
+    r = nearer(r, vec2(length(q) - 0.055, 2.0));
+
+    // twelve studs: fold the point onto the nearest hour
+    float i = floor(atan(p.x, p.y) / (TAU / 12.0) + 0.5);
+    vec3 sp = vec3(rot(p.xy, i / 12.0), p.z);
+    vec3 size = mod(i, 3.0) == 0.0 ? vec3(0.035, 0.075, 0.014) : vec3(0.018, 0.05, 0.01);
+    r = nearer(r, vec2(sdBox(sp - vec3(0.0, 0.82, 0.012), size) - 0.004, 2.0));
+
+    // three hands, stacked at different heights above the face
+    vec3 hp = vec3(rot(p.xy, gH), p.z);
+    r = nearer(r, vec2(sdBox(hp - vec3(0.0, 0.20, 0.035), vec3(0.03, 0.27, 0.008)) - 0.004, 2.0));
+    vec3 mp = vec3(rot(p.xy, gM), p.z);
+    r = nearer(r, vec2(sdBox(mp - vec3(0.0, 0.32, 0.06), vec3(0.02, 0.40, 0.006)) - 0.003, 2.0));
+    vec3 ssp = vec3(rot(p.xy, gS), p.z);
+    r = nearer(r, vec2(sdBox(ssp - vec3(0.0, 0.34, 0.085), vec3(0.007, 0.50, 0.004)) - 0.002, 3.0));
+
+    // the cap over the arbor
+    r = nearer(r, vec2(sdCyl(p - vec3(0.0, 0.0, 0.05), 0.055, 0.05) - 0.006, 2.0));
+    return r;
+}
+
+vec3 normal(vec3 p) {
+    vec2 e = vec2(0.001, -0.001);
+    return normalize(e.xyy * map(p + e.xyy).x + e.yyx * map(p + e.yyx).x
+                   + e.yxy * map(p + e.yxy).x + e.xxx * map(p + e.xxx).x);
+}
+
+// march towards the light; the nearer a miss, the darker the shadow
+float shadow(vec3 ro, vec3 rd) {
+    float res = 1.0, t = 0.01;
+    for (int i = 0; i < 28; i++) {
+        float h = map(ro + rd * t).x;
+        res = min(res, 10.0 * h / t);
+        t += clamp(h, 0.01, 0.2);
+        if (res < 0.002 || t > 3.0) break;
+    }
+    return clamp(res, 0.0, 1.0);
+}
+
+void main() {
+    float side = min(u_resolution.x, u_resolution.y);
+    vec2 p = (2.0 * gl_FragCoord.xy - u_resolution) / side;
+
+    gS = mod(u_time, 60.0) / 60.0;
+    gM = mod(u_time / 60.0, 60.0) / 60.0;
+    gH = mod(u_time / 3600.0, 12.0) / 12.0;
+
+    // the eye: below the dial and in front of it, looking up at it
+    vec3 ro = vec3(0.0, -1.55, 2.35);
+    vec3 f = normalize(vec3(0.0, -0.08, 0.0) - ro);
+    vec3 rgt = normalize(cross(f, vec3(0.0, 1.0, 0.0)));
+    vec3 up = cross(rgt, f);
+    vec3 rd = normalize(p.x * rgt + p.y * up + 1.9 * f);
+
+    // march: step as far as the nearest surface, until close enough
+    float t = 0.0, mat = 0.0, steps = 0.0;
+    for (int i = 0; i < 96; i++) {
+        vec2 h = map(ro + rd * t);
+        if (h.x < 0.0005 * t) { mat = h.y; break; }
+        t += h.x;
+        steps += 1.0;
+        if (t > 8.0) break;
+    }
+
+    vec3 col = vec3(0.07, 0.05, 0.04) * (1.2 - 0.5 * length(p));
+    if (mat > 0.0) {
+        vec3 pos = ro + rd * t;
+        vec3 n = normal(pos);
+        vec3 L = normalize(vec3(-0.5, 0.45, 0.85));
+        float dif = max(dot(n, L), 0.0) * shadow(pos + n * 0.002, L);
+        vec3 hv = normalize(L - rd);
+        float fre = pow(1.0 - max(dot(n, -rd), 0.0), 5.0);
+        vec3 refl = reflect(rd, n);
+        vec3 env = mix(vec3(0.10, 0.08, 0.06), vec3(1.0, 0.9, 0.7), smoothstep(-0.3, 0.9, 0.5 * refl.y + 0.5 * refl.z));
+
+        vec3 base;
+        float shine;
+        if (mat < 1.5) {
+            // the face: satin brass, turned in fine rings
+            base = vec3(0.55, 0.40, 0.18) * (0.92 + 0.08 * sin(length(pos.xy) * 220.0));
+            shine = 24.0;
+        } else if (mat < 2.5) {
+            base = vec3(0.90, 0.68, 0.30);
+            shine = 70.0;
+        } else {
+            base = vec3(0.10, 0.18, 0.45);
+            shine = 90.0;
+        }
+        float spe = pow(max(dot(n, hv), 0.0), shine) * dif;
+        col = base * (0.10 + 0.80 * dif) + base * env * (0.35 + 0.65 * fre) * 0.6 + vec3(1.0, 0.92, 0.75) * spe;
+    }
+    col = pow(col, vec3(0.4545));
+
+    // the work: how many steps each pixel's ray took, cool to hot
+    float w = steps / 96.0;
+    vec3 work = mix(vec3(0.05, 0.08, 0.20), vec3(0.2, 0.7, 0.9), smoothstep(0.0, 0.35, w));
+    work = mix(work, vec3(1.0, 0.55, 0.1), smoothstep(0.35, 1.0, w));
+
+    gl_FragColor = vec4(mix(col, work, u_view), 1.0);
+}
+</script>
+
 <script>
 (() => {
     const canvas = document.getElementById('view');
@@ -314,7 +653,16 @@ void main() {
     const source = document.getElementById('source');
     const gutter = document.getElementById('gutter');
     const logEl = document.getElementById('log');
-    const original = document.getElementById('program').textContent.replace(/^\n/, '');
+    const textOf = id => document.getElementById(id).textContent.replace(/^\n/, '');
+    const THEMES = {
+        classic: { id: 'program', field: 'the distance field', maxSide: 2048, label: 'An analog clock drawn by a fragment shader' },
+        ink: { id: 'program-ink', field: 'the distance field', maxSide: 2048, label: 'An ink-wash clock drawn by a fragment shader' },
+        meta: { id: 'program-meta', field: 'the blended field', maxSide: 1600, label: 'A clock of liquid metaballs drawn by a fragment shader' },
+        brass: { id: 'program-brass', field: 'the ray steps', maxSide: 1100, label: 'A raymarched brass clock dial drawn by a fragment shader' },
+    };
+    for (const t of Object.values(THEMES)) { t.original = textOf(t.id); t.text = t.original; }
+    let theme = THEMES[location.hash.slice(1)] ? location.hash.slice(1) : 'classic';
+    const original = THEMES.classic.original;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const pad = n => String(n).padStart(2, '0');
@@ -447,11 +795,12 @@ void main() {
     }
 
     // --- sizing (HiDPI) ---------------------------------------------------
-    const MAX_SIDE = 2048;       // device pixels; keeps phones from drawing millions of pixels
+    // device pixels; keeps phones from drawing millions of pixels (fewer for the heavier shaders)
+    const maxSide = () => THEMES[theme].maxSide;
     function resize() {
         const dpr = window.devicePixelRatio || 1;
         const cssSide = canvas.getBoundingClientRect().width;
-        const side = Math.max(1, Math.min(MAX_SIDE, Math.round(cssSide * dpr)));
+        const side = Math.max(1, Math.min(maxSide(), Math.round(cssSide * dpr)));
         if (canvas.width !== side || canvas.height !== side) {
             canvas.width = side;
             canvas.height = side;
@@ -508,11 +857,11 @@ void main() {
     reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(loop); });
 
     // --- the view buttons -------------------------------------------------
-    document.querySelectorAll('.views button').forEach(btn => {
+    document.querySelectorAll('[data-view]').forEach(btn => {
         btn.addEventListener('click', () => {
             view = +btn.dataset.view;
-            document.querySelectorAll('.views button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
-            canvas.setAttribute('aria-label', view ? 'The distance field the shader computes for every pixel' : 'An analog clock drawn by a fragment shader');
+            document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+            canvas.setAttribute('aria-label', view ? `The shader's view: ${THEMES[theme].field}` : THEMES[theme].label);
             draw();
         });
     });
@@ -526,10 +875,27 @@ void main() {
     });
 
     document.getElementById('reset').addEventListener('click', () => {
-        source.value = original;
-        report(build(original));
+        source.value = THEMES[theme].original;
+        report(build(source.value));
         draw();
     });
+
+    // --- the shaders ------------------------------------------------------
+    // each keeps its own edits while another is showing
+    function showTheme(name) {
+        THEMES[theme].text = source.value;
+        theme = name;
+        const t = THEMES[theme];
+        source.value = t.text;
+        document.querySelectorAll('[data-theme]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === theme)));
+        document.getElementById('fieldBtn').textContent = t.field;
+        canvas.setAttribute('aria-label', view ? `The shader's view: ${t.field}` : t.label);
+        history.replaceState(null, '', theme === 'classic' ? location.pathname + location.search : '#' + theme);
+        report(build(source.value));
+        source.scrollTop = 0;
+        resize();
+    }
+    document.querySelectorAll('[data-theme]').forEach(btn => btn.addEventListener('click', () => showTheme(btn.dataset.theme)));
 
     // --- a lost GPU context (driver reset, too many tabs) -----------------
     canvas.addEventListener('webglcontextlost', e => {
@@ -545,9 +911,12 @@ void main() {
     });
 
     // --- start ------------------------------------------------------------
-    source.value = original;
+    source.value = THEMES[theme].text;
+    document.querySelectorAll('[data-theme]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === theme)));
+    document.getElementById('fieldBtn').textContent = THEMES[theme].field;
+    canvas.setAttribute('aria-label', THEMES[theme].label);
     setupQuad();
-    report(build(original));
+    report(build(source.value));
     tickText(new Date());
     new ResizeObserver(resize).observe(canvas);
     window.addEventListener('resize', resize);
