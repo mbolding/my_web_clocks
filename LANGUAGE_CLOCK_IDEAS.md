@@ -1,6 +1,7 @@
 # Language Clock Ideas
 
-A ranked backlog of programming-language clocks: clocks where a language's own way
+A ranked backlog of programming-language clocks, and below them of clocks that
+illustrate mathematical concepts. The language clocks are clocks where a language's own way
 of running, or its notation, decides how the time is worked out and shown. Each one
 runs real code in the page, shows the program beside its output, and gives the
 visitor a way to type in that language. The house rules are in `CLAUDE.md` under
@@ -90,6 +91,76 @@ Worth doing for the right concept, after a proper trial of the engine.
   The concept (time as a signal, `Time.every 1000`, piped through pure functions
   into SVG, with a live dataflow graph) would have to be imitated in JavaScript.
 - **Ruby** — ruby.wasm is over 100 MB unpacked.
+
+## Mathematical concept clocks
+
+Clocks that show a piece of mathematics working, with the time as its input. They
+are not language clocks: most need nothing but plain JavaScript and a canvas, so
+they would go in `clocks/simulation/` or `clocks/art/` rather than beside the
+interpreters. Several would pair well with a language clock, noted where it fits.
+The gallery already covers Fourier series (`epicycle_clock`), differential
+equations (`ode_clock`), chaos (`pendulum_clock`), binary (`binary_clock`) and
+polar and Cartesian coordinates (`polar_clock`, `coordinate_clock`), so these
+avoid them.
+
+Ordered the same way as the tiers above: light and self-contained first.
+
+1. **Times tables on a circle** — modular arithmetic, the clock's own arithmetic.
+   Sixty points round the dial; join each point *k* to *k × m* mod 60, where the
+   multiplier *m* drifts with the time. At *m* = 2 the chords draw a cardioid, at
+   3 a nephroid, and between whole numbers they melt from one into the next. The
+   hour sets the multiplier and the minute its fractional part; a sweeping second
+   hand still tells the time on top.
+2. **Tower of Hanoi** — recursion and the binary reflected Gray code. Seventeen
+   discs need 2^17 − 1 = 131,071 moves, the smallest tower that outlasts the day's
+   86,400 seconds (sixteen discs run out at 65,535). Move one disc each second
+   from midnight. The disc to move on step *k* is given by the trailing zeros of
+   *k*, and the whole position can be read off the Gray code of the seconds since
+   midnight, so the puzzle's state is the time. A Prolog or Lisp version of the
+   recursive solution would fit beside it.
+3. **Prime factorisation** — the fundamental theorem of arithmetic. Seconds since
+   midnight, factorised every second and drawn as a factorisation diagram: primes
+   as rings of dots nested inside each other, so noon, 43,200 seconds, is
+   2^6 × 3^3 × 5^2 nested rings, while a prime second is one plain circle of dots. A small counter of the primes passed so far today.
+4. **Fibonacci and Zeckendorf** — every whole number is a sum of non-consecutive
+   Fibonacci numbers, in exactly one way. Squares of side 1, 1, 2, 3 and 5, after
+   Philippe Chrétien's Fibonacci Clock, coloured by whether they count towards the
+   hours, the minutes, or both; a strip below writes the seconds since midnight in
+   Zeckendorf form.
+5. **Permutations and the factorial number system** — 9! = 362,880 is the first
+   factorial above 86,400, so every second of the day is a different ordering of
+   nine cards. The seconds since midnight, written in factorial base, is the
+   Lehmer code of that ordering; the cards reshuffle by the fewest swaps each
+   second.
+6. **Babylonian sexagesimal** — base 60, the reason there are sixty minutes. The
+   time in cuneiform-style wedges, with the place-value columns marked, and the
+   same positional idea applied to the fraction of the day elapsed (the
+   Babylonians wrote fractions in base 60 too).
+7. **Space-filling curve** — the day as one unbroken path through a square. A
+   Hilbert curve of order 9 has 4^9 = 262,144 cells, the first order with more
+   than 86,400 (order 8 has 65,536), so each second fills a cell and the day fills
+   a third of the square, with nearby times always nearby on the page. A Logo
+   version, a turtle following the curve's L-system, would pair with it.
+8. **Collatz sequences** — the 3n + 1 problem. Start from the seconds since
+   midnight and follow the sequence down to 1, drawn as a branching path that
+   grows a new twig every second; show the number of steps and the highest value
+   reached. Unproved, which is the point.
+9. **Continued fractions** — the fraction of the day elapsed, expanded as a
+   continued fraction, with its best rational approximations converging on it and
+   its path down the Stern–Brocot tree drawn as a sequence of left and right
+   turns.
+10. **Ulam spiral** — the whole numbers wound outwards in a square spiral, with
+    the primes lit. The seconds since midnight walk outwards along it, and the
+    diagonal streaks of primes emerge as the day goes on.
+11. **Julia sets** — complex dynamics. The constant *c* travels round a circle in
+    the complex plane once a day (or once an hour), so the Julia set breathes
+    from dust to dendrite and back; the hands are drawn as *c* itself. A natural
+    second shader for the GLSL clock.
+12. **The time in π** — where today's HHMMSS first appears in the decimal digits
+    of π. Most six-digit strings first turn up within the first few million
+    digits, which a page can't compute every second, so this needs a precomputed
+    table of first positions for all 86,400 times, a data file of a few hundred
+    kilobytes beside the clock. The heaviest here.
 
 ## Before building one
 

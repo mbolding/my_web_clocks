@@ -20,7 +20,7 @@ This is a collection of creative, self-contained web clock implementations. Each
 │   ├── simulation/            # Physics/particle/agent simulation clocks
 │   └── utility/                # Countdown timers, dial/desktop clocks, pomodoro
 ├── LITERARY_CLOCK_IDEAS.md    # Backlog + tracker of literary/thematic clock concepts
-├── LANGUAGE_CLOCK_IDEAS.md    # Ranked backlog of programming-language clocks and the engine each would need
+├── LANGUAGE_CLOCK_IDEAS.md    # Ranked backlog of programming-language clocks (and the engine each needs) and of maths-concept clocks
 ├── CLOCK_AUDIT.md             # Collection-wide review: what to improve, archive, add
 ├── CLAUDE.md                  # Equivalent guidance file for Claude Code (keep in sync with this file)
 ├── archive/                   # Clocks retired from the gallery, kept but unmaintained
