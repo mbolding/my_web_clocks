@@ -78,6 +78,20 @@
     .sub { margin: 0 0 1.2em; font-style: italic; color: var(--dim); font-size: clamp(16px, 1.8vw, 19px); }
     article p { font-size: clamp(16px, 1.7vw, 18.5px); line-height: 1.6; margin: 0 0 1em; }
     article code { font-family: var(--mono); font-size: 0.82em; color: var(--ink); background: rgba(60, 40, 10, 0.06); padding: 0 0.25em; border-radius: 3px; white-space: nowrap; }
+    article h2 { margin: 1.4em 0 0.4em; font-size: clamp(20px, 2.4vw, 25px); font-weight: 500; color: var(--ink); }
+    #legend { margin: 0.7em auto 0; max-width: 34em; font-size: 15.5px; color: var(--text); line-height: 1.5; min-height: 1.5em; }
+    #legend .sw { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 2px; vertical-align: -0.05em; margin: 0 0.25em 0 0.6em; }
+    #rules-src {
+        display: block; width: 100%; height: clamp(300px, 46vh, 440px); resize: vertical;
+        font-family: var(--mono); font-size: clamp(11.5px, 1.1vw, 13px); line-height: 1.55;
+        white-space: pre; overflow: auto; color: var(--ink);
+        background: #f7f1e4; border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px;
+        font-variant-ligatures: none;
+    }
+    #rules-src:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    article .row { display: flex; flex-wrap: wrap; gap: 0.6em 1em; align-items: baseline; margin-top: 0.6em; }
+    #rules-log { font-family: var(--mono); font-size: 13px; color: var(--dim); white-space: pre-wrap; }
+    #rules-log.err { color: #a3321f; }
     .eq { font-family: var(--mono); font-size: clamp(13px, 1.4vw, 15px); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.8em 1em; line-height: 1.7; color: var(--ink); overflow-x: auto; white-space: pre; margin: 0 0 1em; }
 </style>
 </head>
@@ -99,6 +113,7 @@
             <button type="button" data-view="1" aria-pressed="false">where patterns can live</button>
             <button type="button" id="reseed">start again</button>
         </div>
+        <p id="legend"></p>
         <p id="stats">&nbsp;</p>
     </section>
 
@@ -111,6 +126,10 @@
 V += 0.5·∇²V + U·V² − (F + k)·V</div>
         <p>Only the two numbers <i>F</i> and <i>k</i> differ from place to place. Inside the shapes of the hands and the hour marks they are set where patterns can live; everywhere else <i>V</i> dies away. Nothing draws the hands. As they turn, the pattern grows into the new ground ahead of them and fades from the ground behind, organising itself afresh every moment. The second dot runs with spots, and leaves a short trail of them as it goes.</p>
         <p>Choose stripes, spots or a maze to change the chemistry inside the hands, and switch to &ldquo;where patterns can live&rdquo; to see the map of <i>F</i> and <i>k</i> that the time draws.</p>
+        <h2>Change the rules</h2>
+        <p>This is the part of the program every cell runs, in GLSL, the graphics card's language. Change a number or a line and it recompiles as you type; if it won't compile, the last rules that did keep running and the error is shown. Try a <i>k</i> of <code>0.060</code> in <code>SPOTS</code>, or swap the <code>1.0</code> and <code>0.5</code> diffusion rates, which is the change Turing's idea depends on. If a pattern fills the dial or vanishes, press &ldquo;start again&rdquo;.</p>
+        <textarea id="rules-src" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="The rules every cell follows, in GLSL, editable"></textarea>
+        <div class="row"><button type="button" id="rules-reset">put the rules back</button><span id="rules-log" aria-live="polite"></span></div>
     </article>
 </main>
 
@@ -164,16 +183,13 @@ void main() {
     vec2 uv = gl_FragCoord.xy * u_texel;
     vec2 p = uv * 2.0 - 1.0;
 
-    // the time chooses the chemistry: F and k for each kind of place
-    vec2 dead = vec2(0.030, 0.072);                  // V dies away here
-    vec2 coat = u_coat < 0.5 ? vec2(0.055, 0.062)    // stripes, across the hands
-              : u_coat < 1.5 ? vec2(0.030, 0.062)    // spots
-              : vec2(0.029, 0.057);                  // a maze of worms
-    vec2 spots = vec2(0.030, 0.062);
+    // the time draws the shapes: how far this cell is inside a hand, or a dot
     float inHands = smoothstep(0.015, -0.015, hands(p));
     float inDots = smoothstep(0.015, -0.015, dots(p));
-    vec2 fk = mix(dead, coat, inHands);
-    fk = mix(fk, spots, inDots * (1.0 - inHands));
+    // F and k of the pattern chosen under the clock
+    vec2 PATTERN = u_coat < 0.5 ? vec2(0.055, 0.062)     // stripes, across the hands
+                 : u_coat < 1.5 ? vec2(0.030, 0.062)     // spots
+                 : vec2(0.029, 0.057);                   // a maze of worms
 
     // diffusion: the 3 x 3 Laplacian
     vec2 c = cell(uv);
@@ -183,10 +199,13 @@ void main() {
                      + cell(uv + vec2(u_texel.x, -u_texel.y)) + cell(uv + vec2(-u_texel.x, u_texel.y)))
              - c;
 
-    // reaction
-    float u = c.x, v = c.y, uvv = u * v * v;
-    u += 1.0 * lap.x - uvv + fk.x * (1.0 - u);
-    v += 0.5 * lap.y + uvv - (fk.x + fk.y) * v;
+    float u = c.x, v = c.y, lapU = lap.x, lapV = lap.y;
+
+    // the rules: the visitor's text from the page goes here
+#line 1
+//@RULES@
+    if (u != u) u = 1.0;                 // a rule that made nonsense is undone
+    if (v != v) v = 0.0;
 
     // a little V sown where a pattern could live but has not reached yet,
     // in patches six cells across: a single cell of V just diffuses away
@@ -195,6 +214,27 @@ void main() {
 
     gl_FragColor = pack(vec2(u, v));
 }
+</script>
+
+<!-- The rules every cell follows. The editor starts with this text and the page compiles it into the step above. -->
+<script type="text/plain" id="rules">
+// The rules every cell follows, once a step, about 600 times a second.
+// Given: u and v, the two chemicals in this cell; lapU and lapV, how much
+// more of each its neighbours hold (that is diffusion); PATTERN, the F and k
+// of the pattern chosen under the clock; inHands and inDots, from 0 to 1,
+// whether this cell lies in a hand, or in an hour mark or the second dot.
+
+// F (feed) and k (kill) for each kind of place
+vec2 DEAD  = vec2(0.030, 0.072);    // everywhere else: V dies away
+vec2 SPOTS = vec2(0.030, 0.062);    // the hour marks and the second dot
+vec2 fk = mix(DEAD, PATTERN, inHands);
+fk = mix(fk, SPOTS, inDots * (1.0 - inHands));
+float F = fk.x, k = fk.y;
+
+// reaction and diffusion, after Gray and Scott
+float uvv = u * v * v;
+u += 1.0 * lapU - uvv + F * (1.0 - u);
+v += 0.5 * lapV + uvv - (F + k) * v;
 </script>
 
 <!-- Painting the chemicals as a coat, for every pixel of the canvas. -->
@@ -291,14 +331,14 @@ void main() {
     const hp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
     const adapt = src => hp && hp.precision > 0 ? src : src.replace('precision highp float;', 'precision mediump float;');
 
-    function program(fragId) {
+    function program(fragSource) {
         const vs = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vs, 'attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }');
         gl.compileShader(vs);
         const fs = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fs, adapt(document.getElementById(fragId).textContent));
+        gl.shaderSource(fs, adapt(fragSource));
         gl.compileShader(fs);
-        if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(fs));
+        if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) { const log = gl.getShaderInfoLog(fs); gl.deleteShader(fs); throw new Error(log); }
         const p = gl.createProgram();
         gl.attachShader(p, vs);
         gl.attachShader(p, fs);
@@ -313,9 +353,36 @@ void main() {
 
     let stepProg, paintProg, quad, tex = [], fbo = [], cur = 0;
 
+    // the step shader is a fixed frame with the visitor's rules inside it
+    const frameText = document.getElementById('step-shader').textContent;
+    const rulesOriginal = document.getElementById('rules').textContent.replace(/^\n/, '').replace(/\n$/, '');
+    const rulesEl = document.getElementById('rules-src');
+    const rulesLog = document.getElementById('rules-log');
+    rulesEl.value = rulesOriginal;
+    const stepSource = rules => frameText.replace('//@RULES@', rules);
+
+    // #line 1 in the frame numbers the rules from 1, so errors point at the visitor's text
+    function rebuildRules() {
+        try {
+            const next = program(stepSource(rulesEl.value));
+            if (stepProg) gl.deleteProgram(stepProg.p);
+            stepProg = next;
+            rulesLog.className = '';
+            rulesLog.textContent = 'compiled';
+        } catch (err) {
+            rulesLog.className = 'err';
+            rulesLog.textContent = String(err.message).split('\n').map(l => l.trim()).filter(Boolean)
+                .map(l => l.replace(/^(?:ERROR|WARNING):\s*\d+:(\d+):\s*/, 'line $1: ')).slice(0, 4).join('\n') +
+                '\n(the last rules that compiled are still running)';
+        }
+    }
+    let rulesTimer = 0;
+    rulesEl.addEventListener('input', () => { clearTimeout(rulesTimer); rulesTimer = setTimeout(rebuildRules, 400); });
+    document.getElementById('rules-reset').addEventListener('click', () => { rulesEl.value = rulesOriginal; rebuildRules(); });
+
     function setup() {
-        stepProg = program('step-shader');
-        paintProg = program('paint-shader');
+        stepProg = program(stepSource(rulesEl.value));
+        paintProg = program(document.getElementById('paint-shader').textContent);
         quad = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, quad);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
@@ -436,9 +503,17 @@ void main() {
         coat = +btn.dataset.coat;
         document.querySelectorAll('[data-coat]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
     }));
+    const legendEl = document.getElementById('legend');
+    const LEGENDS = [
+        '<span class="sw" style="background:#2a1d12"></span>dark: plenty of chemical <i>V</i>, the pattern <span class="sw" style="background:#e8d4a8"></span>pale: almost none, only <i>U</i>',
+        '<span class="sw" style="background:#8c4d26"></span>the hands: the pattern you chose may grow <span class="sw" style="background:#cc8c4d"></span>the marks and second dot: spots may grow <span class="sw" style="background:#dbccb3"></span>everywhere else: <i>V</i> dies away',
+    ];
+    const showLegend = () => { legendEl.innerHTML = LEGENDS[view]; };
+    showLegend();
     document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => {
         view = +btn.dataset.view;
         document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        showLegend();
     }));
     document.getElementById('reseed').addEventListener('click', () => { clearGrid(); warmUp(); });
 
