@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tower of Hanoi Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #f3efe6;
+        --panel: #e9e3d6;
+        --cell: #faf7f0;
+        --rule: #d3cab8;
+        --ink: #1d2330;
+        --text: #3b4150;
+        --dim: #737783;
+        --wood: #8c7a5e;
+        --odd-h: 14;  --odd-s: 62%;  --odd-l0: 40%; --odd-l1: 64%;
+        --even-h: 205; --even-s: 46%; --even-l0: 34%; --even-l1: 60%;
+        --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+        --mono: "IBM Plex Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #15181e;
+            --panel: #1d2129;
+            --cell: #20252e;
+            --rule: #343a46;
+            --ink: #ece7dc;
+            --text: #c9c6be;
+            --dim: #8d909a;
+            --wood: #8a7b63;
+            --odd-l0: 46%; --odd-l1: 70%;
+            --even-l0: 44%; --even-l1: 70%;
+        }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+    body { min-height: 100vh; padding: clamp(16px, 3vw, 36px); }
+
+    main {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(20px, 3vw, 44px);
+        align-items: start;
+    }
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); }
+    }
+
+    .stage { min-width: 0; }
+
+    #time {
+        margin: 0;
+        font-family: var(--mono);
+        font-weight: 500;
+        font-size: clamp(40px, 8vw, 68px);
+        line-height: 1;
+        color: var(--ink);
+        letter-spacing: 0.02em;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+    }
+
+    #tower {
+        display: block;
+        width: 100%;
+        margin: clamp(10px, 2vw, 20px) 0 0;
+    }
+
+    .readout { text-align: center; margin-top: 0.5em; }
+    #move { font-family: var(--mono); font-size: clamp(16px, 2.4vw, 20px); color: var(--ink); font-variant-numeric: tabular-nums; }
+    #move b { font-weight: 600; }
+    #what { margin-top: 0.25em; font-size: clamp(15px, 2vw, 17px); color: var(--text); min-height: 1.4em; }
+    #what .sw { display: inline-block; width: 0.75em; height: 0.75em; border-radius: 2px; vertical-align: -0.04em; margin-right: 0.3em; }
+    #where { margin-top: 0.15em; font-size: 14px; color: var(--dim); font-style: italic; min-height: 1.3em; }
+
+    .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.2em 1.4em; margin: 0.7em 0 0; font-size: 14px; color: var(--dim); }
+    .legend .sw { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 2px; vertical-align: -0.06em; margin-right: 0.35em; }
+
+    .bits {
+        margin: clamp(14px, 2.4vw, 22px) auto 0;
+        max-width: 640px;
+        padding: 10px clamp(8px, 1.6vw, 14px) 12px;
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+    }
+    .bits .label { display: flex; justify-content: space-between; gap: 1em; font-size: 13px; color: var(--dim); margin: 6px 0 3px; }
+    .bits .label span:last-child { font-family: var(--mono); font-size: 12px; }
+    .row { display: grid; grid-template-columns: repeat(17, minmax(0, 1fr)); gap: 2px; }
+    .row span {
+        display: block;
+        text-align: center;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+    }
+    .row.head span { font-size: clamp(9px, 1.4vw, 11px); color: var(--dim); padding-bottom: 3px; border-bottom: 3px solid; }
+    .row.b span {
+        font-size: clamp(13px, 2.2vw, 16px);
+        line-height: 1.75;
+        color: var(--ink);
+        background: var(--cell);
+        border-radius: 3px;
+        border: 1px solid transparent;
+    }
+    .row.b span.z { color: var(--dim); }
+    .row.b span.on { color: #fff; font-weight: 600; }
+    .row.b span.carry { border: 1px dashed var(--dim); }
+    .bits .note { margin: 8px 0 0; font-size: 13px; color: var(--dim); line-height: 1.45; }
+
+    .controls { max-width: 640px; margin: 16px auto 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+    .controls label { font-size: 14px; color: var(--dim); }
+    #scrub { flex: 1 1 220px; min-width: 0; accent-color: var(--ink); }
+    button {
+        font: inherit;
+        font-size: 15px;
+        color: var(--text);
+        background: var(--cell);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        padding: 0.3em 1em;
+        cursor: pointer;
+    }
+    button:hover:not(:disabled) { border-color: var(--dim); }
+    button:disabled { opacity: 0.45; cursor: default; }
+    button:focus-visible, #scrub:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+    article { min-width: 0; }
+    h1 { margin: 0 0 0.2em; font-size: clamp(27px, 3.6vw, 38px); font-weight: 600; color: var(--ink); line-height: 1.1; letter-spacing: -0.01em; }
+    .sub { margin: 0 0 1.2em; font-style: italic; color: var(--dim); font-size: clamp(15px, 1.7vw, 18px); }
+    article p { font-size: clamp(15.5px, 1.55vw, 17.5px); line-height: 1.62; margin: 0 0 1em; }
+    article h2 { margin: 1.4em 0 0.4em; font-size: clamp(19px, 2.1vw, 23px); font-weight: 600; color: var(--ink); }
+    article code { font-family: var(--mono); font-size: 0.86em; color: var(--ink); }
+    .eq {
+        font-family: var(--mono);
+        font-size: clamp(13px, 1.4vw, 15px);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.7em 1em;
+        line-height: 1.7;
+        color: var(--ink);
+        overflow-x: auto;
+        white-space: normal;
+        padding-left: 2.2em;
+        text-indent: -1.2em;
+        margin: 0 0 1em;
+    }
+</style>
+</head>
+<body>
+
+<main>
+    <section class="stage">
+        <p id="time" role="timer" aria-label="Current time">--:--:--</p>
+
+        <canvas id="tower" role="img" aria-label="Three pegs holding seventeen discs"></canvas>
+
+        <div class="readout">
+            <div id="move">move <b>0</b> of 131,071</div>
+            <div id="what">&nbsp;</div>
+            <div id="where">&nbsp;</div>
+        </div>
+        <div class="legend">
+            <span><i class="sw" id="sw-odd"></i>odd discs turn A &rarr; C &rarr; B &rarr; A</span>
+            <span><i class="sw" id="sw-even"></i>even discs turn A &rarr; B &rarr; C &rarr; A</span>
+        </div>
+
+        <div class="bits" aria-label="The move number in binary and in Gray code">
+            <div class="row head" id="head" aria-hidden="true"></div>
+            <div class="label"><span>move number in binary</span><span id="kdec">0</span></div>
+            <div class="row b" id="bin"></div>
+            <div class="label"><span>Gray code: <i>k</i> XOR (<i>k</i> &gt;&gt; 1)</span><span id="gdec">0</span></div>
+            <div class="row b" id="gray"></div>
+            <p class="note">Column <i>d</i> belongs to disc <i>d</i>. Counting up in binary sets one bit and clears the ones below it (dashed); Gray code changes only one bit. Both point at the disc that just moved.</p>
+        </div>
+
+        <div class="controls">
+            <label for="scrub">explore the day</label>
+            <input type="range" id="scrub" min="0" max="86399" step="1" value="0">
+            <button type="button" id="now" disabled>back to now</button>
+        </div>
+    </section>
+
+    <article>
+        <h1>Tower of Hanoi clock</h1>
+        <p class="sub">seventeen discs, one move a second since midnight</p>
+        <p>The Tower of Hanoi is a puzzle published by the French mathematician &Eacute;douard Lucas in 1883. A tower of discs, smallest on top, must move to another peg, one disc at a time, and a disc may never sit on a smaller one. To move <i>n</i> discs you have to move the <i>n</i>&nbsp;&minus;&nbsp;1 above the largest out of the way, move the largest, then stack the <i>n</i>&nbsp;&minus;&nbsp;1 back on top of it. So the shortest solution takes 2<sup><i>n</i></sup>&nbsp;&minus;&nbsp;1 moves, and there is only one way to do it in that many.</p>
+        <p>This clock plays that shortest solution for seventeen discs, from peg A towards peg C, at one move a second counted from midnight. The tower is a picture of the number of seconds since midnight: at 09:15:30 it has made 9&nbsp;&times;&nbsp;3600 + 15&nbsp;&times;&nbsp;60 + 30 = 33,330 moves.</p>
+
+        <h2>A binary counter in disguise</h2>
+        <p>Write the move number <i>k</i> in binary. The disc that moves is one more than the number of zeros at the end of <i>k</i>: every odd move is disc&nbsp;1, moves 2, 6, 10 and so on are disc&nbsp;2, and disc <i>d</i> moves every 2<sup><i>d</i></sup> moves, first at move 2<sup><i>d</i>&minus;1</sup>. Each disc also always travels round the pegs the same way. With seventeen discs the odd-numbered ones step A&nbsp;&rarr;&nbsp;C&nbsp;&rarr;&nbsp;B&nbsp;&rarr;&nbsp;A and the even ones A&nbsp;&rarr;&nbsp;B&nbsp;&rarr;&nbsp;C&nbsp;&rarr;&nbsp;A, which is what the two colours show. Put together, after <i>k</i> moves:</p>
+        <div class="eq"><div>moves of disc d = &lfloor;(k + 2<sup>d&minus;1</sup>) / 2<sup>d</sup>&rfloor;</div><div>its peg = that many steps round its cycle, mod 3</div></div>
+        <p>That is how this page draws the tower: straight from the move number, without replaying the day. Bit <i>d</i>&nbsp;&minus;&nbsp;1 of the Gray code is 1 exactly when disc <i>d</i> has moved an odd number of times, so each move flips one Gray bit, the moved disc's own.</p>
+
+        <h2>Why seventeen</h2>
+        <p>A day has 86,400 seconds. Sixteen discs would need 2<sup>16</sup>&nbsp;&minus;&nbsp;1 = 65,535 moves and be finished at 18:12:15. Seventeen need 131,071, so the tower is never finished: the day ends at move 86,399, about 66% of the way, and at midnight the discs start again on peg A. At 18:12:15 the sixteen smaller discs stand together on peg B, and at 18:12:16 the largest disc makes its only move of the day, from A to C.</p>
+        <p>Drag the slider to see the tower at any second of the day. With the slider focused, the arrow keys step one move forwards or back.</p>
+    </article>
+</main>
+
+<script>
+(() => {
+    const N = 17;
+    const TOTAL = 2 ** N - 1;          // 131,071
+    const DAY = 86400;
+    const PEGS = ['A', 'B', 'C'];
+
+    // ---- the mathematics --------------------------------------------------
+    // Disc d (1 = smallest) always steps the same way round the pegs: when
+    // N - d is even it goes 0 -> 2 -> 1 -> 0 (a step of 2, mod 3), otherwise
+    // 0 -> 1 -> 2 -> 0. It moves on moves 2^(d-1), 3 * 2^(d-1), 5 * 2^(d-1), ...
+    const step = d => ((N - d) % 2 === 0 ? 2 : 1);
+    const timesMoved = (k, d) => Math.floor((k + 2 ** (d - 1)) / 2 ** d);
+    const pegOf = (k, d) => (step(d) * timesMoved(k, d)) % 3;
+    const trailingZeros = k => { let z = 0; while (k % 2 === 0) { k /= 2; z++; } return z; };
+    // move k (k >= 1): which disc, from which peg, to which
+    function moveOf(k) {
+        const d = trailingZeros(k) + 1, m = timesMoved(k, d);
+        return { d, from: (step(d) * (m - 1)) % 3, to: (step(d) * m) % 3 };
+    }
+    // the whole tower after k moves: three stacks, bottom first
+    function towerAt(k) {
+        const stacks = [[], [], []];
+        for (let d = N; d >= 1; d--) stacks[pegOf(k, d)].push(d);
+        return stacks;
+    }
+    const gray = k => k ^ (k >> 1);
+
+    // ---- page state -------------------------------------------------------
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const dark = window.matchMedia('(prefers-color-scheme: dark)');
+    const $ = id => document.getElementById(id);
+    const timeEl = $('time'), moveEl = $('move'), whatEl = $('what'), whereEl = $('where');
+    const scrub = $('scrub'), nowBtn = $('now'), canvas = $('tower'), ctx = canvas.getContext('2d');
+
+    let liveK = 0;          // moves made by the real clock
+    let shownK = -1;        // moves shown in the picture
+    let exploring = false;
+    let anim = null;        // { d, p0, l0, p1, l1, start, dur }
+
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = n => n.toLocaleString('en-US');
+    const clockOf = k => `${pad(Math.floor(k / 3600))}:${pad(Math.floor(k / 60) % 60)}:${pad(k % 60)}`;
+    const secondsToday = t => t.getHours() * 3600 + t.getMinutes() * 60 + t.getSeconds();
+
+    // ---- colours ----------------------------------------------------------
+    let pal = {};
+    function readPalette() {
+        const cs = getComputedStyle(document.documentElement);
+        const v = name => cs.getPropertyValue(name).trim();
+        pal = {
+            ink: v('--ink'), dim: v('--dim'), wood: v('--wood'), rule: v('--rule'), bg: v('--bg'),
+            odd: [v('--odd-h'), v('--odd-s'), parseFloat(v('--odd-l0')), parseFloat(v('--odd-l1'))],
+            even: [v('--even-h'), v('--even-s'), parseFloat(v('--even-l0')), parseFloat(v('--even-l1'))],
+        };
+    }
+    function discLightness(d) {
+        const [, , l0, l1] = step(d) === 2 ? pal.odd : pal.even;
+        return l1 + (l0 - l1) * (d - 1) / (N - 1);  // small discs light, big discs deep
+    }
+    function discColour(d) {
+        const [h, s] = step(d) === 2 ? pal.odd : pal.even;
+        return `hsl(${h}, ${s}, ${discLightness(d).toFixed(1)}%)`;
+    }
+
+    // ---- the bit strip ----------------------------------------------------
+    const head = $('head'), binRow = $('bin'), grayRow = $('gray');
+    const binCells = [], grayCells = [], headCells = [];
+    for (let i = N - 1; i >= 0; i--) {          // most significant bit (disc 17) on the left
+        const h = document.createElement('span'); h.textContent = i + 1; head.appendChild(h); headCells[i] = h;
+        const b = document.createElement('span'); binRow.appendChild(b); binCells[i] = b;
+        const g = document.createElement('span'); grayRow.appendChild(g); grayCells[i] = g;
+    }
+    function paintStrip(k) {
+        const g = gray(k);
+        const moved = k > 0 ? moveOf(k).d - 1 : -1;
+        for (let i = 0; i < N; i++) {
+            const bb = Math.floor(k / 2 ** i) % 2, gb = Math.floor(g / 2 ** i) % 2;
+            const bc = binCells[i], gc = grayCells[i];
+            bc.textContent = bb; gc.textContent = gb;
+            bc.className = (bb ? '' : 'z') + (i === moved ? ' on' : '') + (i < moved ? ' carry' : '');
+            gc.className = (gb ? '' : 'z') + (i === moved ? ' on' : '');
+            const col = i === moved ? discColour(i + 1) : '';
+            const fg = i === moved ? (discLightness(i + 1) > 52 ? '#14171d' : '#fff') : '';
+            bc.style.background = col; gc.style.background = col;
+            bc.style.color = fg; gc.style.color = fg;
+        }
+        $('kdec').textContent = fmt(k);
+        $('gdec').textContent = fmt(g);
+    }
+    function paintSwatches() {
+        for (let i = 0; i < N; i++) headCells[i].style.borderBottomColor = discColour(i + 1);
+        $('sw-odd').style.background = discColour(9);
+        $('sw-even').style.background = discColour(8);
+    }
+
+    // ---- canvas -----------------------------------------------------------
+    let W = 0, H = 0, G = {};
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        W = canvas.clientWidth;
+        const discH = Math.max(7, Math.min(13, W * 0.028));
+        const rodH = N * discH + discH * 1.6;
+        const liftY = discH * 3.4;                   // room above the rods for a lifted disc
+        const baseH = Math.max(5, discH * 0.7);
+        const labelH = 22;
+        H = Math.round(liftY + rodH + baseH + labelH);
+        canvas.style.height = H + 'px';
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const rodW = Math.max(3, discH * 0.42);
+        const maxW = W / 3 - Math.max(8, W * 0.02);
+        const minW = rodW + Math.max(10, maxW * 0.12);
+        G = {
+            discH, rodW, baseH, maxW, minW,
+            baseY: liftY + rodH,                      // top of the base
+            rodTop: liftY,
+            carryY: liftY - discH * 1.25,             // centre of a disc being carried
+            pegX: [W / 6, W / 2, 5 * W / 6],
+        };
+        draw();
+    }
+    const discW = d => G.minW + (G.maxW - G.minW) * (d - 1) / (N - 1);
+    const levelY = l => G.baseY - (l + 0.5) * G.discH;   // centre of the disc at level l
+
+    function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+    function drawDisc(d, cx, cy, outline) {
+        const w = discW(d), h = G.discH - 1;
+        roundRect(cx - w / 2, cy - h / 2, w, h, Math.min(h / 2, G.discH * 0.38));
+        ctx.fillStyle = discColour(d);
+        ctx.fill();
+        if (outline) {
+            ctx.lineWidth = 1.6;
+            ctx.strokeStyle = pal.ink;
+            ctx.stroke();
+        }
+    }
+    // position of the disc being carried, t from 0 to 1: up, across in an arc, down
+    function carried(a, t) {
+        const x0 = G.pegX[a.p0], x1 = G.pegX[a.p1];
+        const y0 = levelY(a.l0), y1 = levelY(a.l1), yc = G.carryY;
+        const up = y0 - yc, across = Math.abs(x1 - x0), down = y1 - yc;
+        const L = up + across + down;
+        const e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+        const s = e * L;
+        if (s < up) return [x0, y0 - s];
+        if (s < up + across) {
+            const u = (s - up) / across;
+            return [x0 + (x1 - x0) * u, yc - Math.sin(Math.PI * u) * G.discH * 0.9];
+        }
+        return [x1, yc + (s - up - across)];
+    }
+
+    function draw(now) {
+        if (!W || shownK < 0) return;
+        ctx.clearRect(0, 0, W, H);
+        const stacks = towerAt(shownK);
+        // rods and base
+        ctx.fillStyle = pal.wood;
+        for (const x of G.pegX) {
+            roundRect(x - G.rodW / 2, G.rodTop, G.rodW, G.baseY - G.rodTop + 1, G.rodW / 2);
+            ctx.fill();
+        }
+        roundRect(W * 0.02, G.baseY, W * 0.96, G.baseH, G.baseH / 2);
+        ctx.fill();
+        // labels
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        const ly = G.baseY + G.baseH + 16;
+        for (let p = 0; p < 3; p++) {
+            ctx.font = `600 14px ${getComputedStyle(document.body).getPropertyValue('--sans') || 'sans-serif'}`;
+            ctx.fillStyle = pal.ink;
+            ctx.fillText(PEGS[p], G.pegX[p] - 9, ly);
+            ctx.font = `400 12px ${getComputedStyle(document.body).getPropertyValue('--mono') || 'monospace'}`;
+            ctx.fillStyle = pal.dim;
+            ctx.fillText(String(stacks[p].length), G.pegX[p] + 9, ly);
+        }
+        // discs at rest
+        const lastMoved = shownK > 0 ? moveOf(shownK).d : 0;
+        let t = 1;
+        if (anim) t = Math.min(1, (now - anim.start) / anim.dur);
+        for (let p = 0; p < 3; p++) {
+            stacks[p].forEach((d, l) => {
+                if (anim && t < 1 && d === anim.d) return;
+                drawDisc(d, G.pegX[p], levelY(l), d === lastMoved && !(anim && t < 1 && anim.back));
+            });
+        }
+        if (anim && t < 1) {
+            const [x, y] = carried(anim, t);
+            drawDisc(anim.d, x, y, !anim.back);
+        }
+    }
+
+    function frame(now) {
+        draw(now);
+        if (anim && now - anim.start < anim.dur) requestAnimationFrame(frame);
+        else { anim = null; draw(); }
+    }
+
+    // ---- showing a move number ---------------------------------------------
+    function show(k) {
+        const prev = shownK;
+        if (k === prev) return;
+        shownK = k;
+        anim = null;
+        if (!reduceMotion.matches && prev >= 0 && Math.abs(k - prev) === 1) {
+            const fwd = k > prev;
+            const m = moveOf(fwd ? k : prev);           // the move being made, or unmade
+            const before = towerAt(fwd ? prev : k);      // the tower with the disc on its "from" peg
+            const after = towerAt(fwd ? k : prev);
+            const lFrom = before[m.from].length - 1, lTo = after[m.to].length - 1;
+            anim = fwd
+                ? { d: m.d, p0: m.from, l0: lFrom, p1: m.to, l1: lTo, back: false }
+                : { d: m.d, p0: m.to, l0: lTo, p1: m.from, l1: lFrom, back: true };
+            anim.start = performance.now();
+            anim.dur = exploring ? 380 : 700;
+            requestAnimationFrame(frame);
+        } else {
+            draw();
+        }
+        paintStrip(k);
+        moveEl.innerHTML = `move <b>${fmt(k)}</b> of ${fmt(TOTAL)}`;
+        if (k === 0) {
+            whatEl.textContent = 'all seventeen discs start on peg A';
+        } else {
+            const m = moveOf(k);
+            whatEl.innerHTML = `<i class="sw" style="background:${discColour(m.d)}"></i>disc ${m.d} moved from peg ${PEGS[m.from]} to peg ${PEGS[m.to]}`;
+        }
+        const st = towerAt(k);
+        canvas.setAttribute('aria-label',
+            `Tower after ${fmt(k)} moves: ${st.map((x, p) => `peg ${PEGS[p]} holds ${x.length} disc${x.length === 1 ? '' : 's'}`).join(', ')}`);
+        whereEl.textContent = exploring
+            ? `exploring: the tower at ${clockOf(k)}`
+            : `${(100 * k / TOTAL).toFixed(1)}% of the way to peg C`;
+    }
+
+    function setScrub(k) {
+        scrub.value = k;
+        scrub.setAttribute('aria-valuetext', `move ${fmt(k)}, at ${clockOf(k)}`);
+    }
+
+    // ---- the clock ------------------------------------------------------------
+    function tick() {
+        const t = new Date();
+        timeEl.textContent = `${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
+        liveK = secondsToday(t);                     // 0 to 86,399: always short of 131,071
+        if (!exploring) { setScrub(liveK); show(liveK); }
+    }
+    function schedule() {
+        tick();
+        setTimeout(schedule, 1000 - (Date.now() % 1000) + 5);
+    }
+
+    scrub.addEventListener('input', () => {
+        const k = Number(scrub.value);
+        exploring = k !== liveK;
+        nowBtn.disabled = !exploring;
+        setScrub(k);
+        show(k);
+    });
+    nowBtn.addEventListener('click', () => {
+        exploring = false;
+        nowBtn.disabled = true;
+        setScrub(liveK);
+        const k = liveK; shownK = -1; show(k);
+        scrub.focus();
+    });
+
+    function restyle() { readPalette(); paintSwatches(); if (shownK >= 0) { const k = shownK; shownK = -1; show(k); } }
+    dark.addEventListener('change', restyle);
+    reduceMotion.addEventListener('change', () => { anim = null; draw(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { anim = null; tick(); draw(); } });
+
+    readPalette();
+    paintSwatches();
+    new ResizeObserver(resizeCanvas).observe(canvas);
+    window.addEventListener('resize', resizeCanvas);
+    schedule();
+    resizeCanvas();
+    if (document.fonts) document.fonts.ready.then(() => draw());
+})();
+</script>
+</body>
+</html>
