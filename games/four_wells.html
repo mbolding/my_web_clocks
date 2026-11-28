@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Four Wells: a patience duel</title>
+<style>
+    :root {
+        --bg: #14181d;
+        --panel: #1d232b;
+        --line: #2f3944;
+        --ink: #e8e4d8;
+        --dim: #97a0aa;
+        --paper: #f4ecd8;
+        --paper-ink: #2a2620;
+        --ember: #c8372d;
+        --dawn: #b97a08;
+        --grove: #2c7a4b;
+        --tide: #2a62b8;
+        --gold: #e2b94a;
+        --bad: #e06a5a;
+        --gap: clamp(3px, 0.9vw, 8px);
+        --cw: calc((min(100vw, 820px) - 20px - 6 * var(--gap)) / 7);
+        --ch: calc(var(--cw) * 1.4);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); }
+    body {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size: clamp(12px, 1.6vw, 14px);
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+    #app { max-width: 820px; margin: 0 auto; padding: 8px 10px 40px; }
+    header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    h1 { font-family: Georgia, serif; font-size: clamp(17px, 3vw, 22px); font-weight: 600; margin: 0; }
+    h1 small { font-weight: 400; font-size: 0.6em; color: var(--dim); font-style: italic; }
+    #clock { color: var(--dim); font-variant-numeric: tabular-nums; margin-left: auto; }
+    button, select {
+        font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+        border-radius: 6px; padding: 4px 10px; cursor: pointer;
+    }
+    button:hover:not(:disabled) { border-color: var(--dim); }
+    button:disabled { opacity: 0.45; cursor: default; }
+    button.primary { background: #3a4a2c; border-color: #6c8a4c; }
+    button.go { background: #4a3a1c; border-color: var(--gold); }
+
+    .side { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+    .bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .bar .who { font-family: Georgia, serif; font-weight: 600; }
+    .bar .stat b { font-size: 1.25em; font-variant-numeric: tabular-nums; }
+    .bar .life b { color: var(--bad); }
+    .bar .mana b { color: var(--gold); }
+    .bar .sp { margin-left: auto; }
+    #foeBar.targetable { outline: 2px dashed var(--gold); outline-offset: 3px; border-radius: 4px; cursor: crosshair; }
+    .field { display: flex; gap: 4px; min-height: clamp(58px, 9vw, 74px); margin-top: 6px; }
+    .field:empty::after { content: attr(data-empty); color: var(--dim); font-style: italic; align-self: center; opacity: 0.7; }
+    .unit {
+        flex: 1 1 0; min-width: 0; max-width: 110px; border-radius: 6px; padding: 3px 4px;
+        background: #2a323c; border: 2px solid #46525f; cursor: pointer; text-align: center;
+        display: flex; flex-direction: column; justify-content: space-between; position: relative;
+        transition: transform 0.15s, opacity 0.15s;
+    }
+    .unit .nm { font-size: clamp(9px, 1.5vw, 12px); line-height: 1.1; overflow: hidden; }
+    .unit .pt { font-size: clamp(15px, 2.6vw, 20px); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .unit .pt .hurt { color: var(--bad); }
+    .unit .kw { font-size: clamp(8px, 1.3vw, 11px); color: var(--dim); min-height: 1.1em; }
+    .unit.ember { border-color: var(--ember); } .unit.dawn { border-color: var(--dawn); }
+    .unit.grove { border-color: var(--grove); } .unit.tide { border-color: var(--tide); }
+    .unit.tapped { transform: rotate(7deg) scale(0.94); opacity: 0.6; }
+    .unit.frozen { background: #22384f; border-style: dashed; }
+    .unit.sel { box-shadow: 0 0 0 2px var(--gold); }
+    .unit.attacking { box-shadow: 0 0 0 2px var(--bad); transform: translateY(6px); opacity: 1; }
+    .unit.can { box-shadow: 0 0 0 1px var(--gold) inset; }
+    .unit.targetable { outline: 2px dashed var(--gold); cursor: crosshair; }
+    .unit .badge {
+        position: absolute; top: -7px; right: -5px; background: var(--gold); color: #222; border-radius: 9px;
+        font-size: 10px; font-weight: 700; padding: 0 5px; line-height: 16px;
+    }
+
+    #info {
+        min-height: 3.6em; padding: 6px 8px; margin-bottom: 6px; border-left: 3px solid var(--gold);
+        background: #191e25; border-radius: 0 6px 6px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    #info .txt { flex: 1 1 220px; line-height: 1.35; }
+    #info .txt .why { color: var(--dim); font-style: italic; }
+    #info .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .row7 { display: grid; grid-template-columns: repeat(7, var(--cw)); gap: var(--gap); justify-content: center; }
+    #top { margin-bottom: 1.9em; }
+    #cols { align-items: start; min-height: calc(var(--ch) * 2.2); }
+    .slot {
+        width: var(--cw); height: var(--ch); border: 1px dashed #445160; border-radius: calc(var(--cw) * 0.09);
+        display: flex; align-items: center; justify-content: center; color: #56636f; position: relative;
+        font-size: clamp(8px, 1.4vw, 11px); text-align: center; cursor: pointer;
+    }
+    .slot > svg { width: 45%; height: 45%; opacity: 0.35; }
+    .slot > .card { position: absolute; inset: -1px; margin: 0; }
+    .slot .count { position: absolute; bottom: -1.35em; left: 0; right: 0; color: var(--dim); font-size: clamp(8px, 1.3vw, 11px); }
+    .col { min-height: var(--ch); border-radius: calc(var(--cw) * 0.09); cursor: pointer; }
+    .col:empty { border: 1px dashed #445160; height: var(--ch); }
+    .card {
+        width: var(--cw); height: var(--ch); border-radius: calc(var(--cw) * 0.09);
+        position: relative; cursor: pointer; overflow: hidden;
+    }
+    .card.down {
+        background: repeating-linear-gradient(45deg, #3b2c50, #3b2c50 4px, #46365e 4px, #46365e 8px);
+        border: 2px solid #5b4a78;
+    }
+    .card.up {
+        background: var(--paper); color: var(--paper-ink); border: 1px solid #7d745f;
+        box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column;
+    }
+    .col .card.down + .card { margin-top: calc(var(--ch) * -0.87); }
+    .col .card.up + .card { margin-top: calc(var(--ch) * -0.70); }
+    .card.ember { --c: var(--ember); } .card.dawn { --c: var(--dawn); }
+    .card.grove { --c: var(--grove); } .card.tide { --c: var(--tide); }
+    .card .strip {
+        height: calc(var(--ch) * 0.3); display: flex; align-items: center; gap: 1px;
+        padding: 0 calc(var(--cw) * 0.07); color: var(--c); flex: none;
+        font-size: calc(var(--cw) * 0.3); font-weight: 700; font-family: Georgia, serif; line-height: 1;
+    }
+    .card .strip svg { width: calc(var(--cw) * 0.26); height: calc(var(--cw) * 0.26); }
+    .card .coin {
+        margin-left: auto; font-style: normal; font-family: system-ui, sans-serif;
+        width: calc(var(--cw) * 0.27); height: calc(var(--cw) * 0.27); border-radius: 50%;
+        background: #d9cfb4; color: #4a4334; font-size: calc(var(--cw) * 0.19);
+        display: flex; align-items: center; justify-content: center; border: 1px solid #a89c7c;
+    }
+    .card.ready .coin { background: var(--gold); color: #1c1708; border-color: #8b6c13; box-shadow: 0 0 5px var(--gold); }
+    .card .mid {
+        flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; color: var(--c);
+        font-size: calc(var(--cw) * 0.3); font-weight: 700;
+    }
+    .card .mid svg { width: calc(var(--cw) * 0.4); height: calc(var(--cw) * 0.4); opacity: 0.85; }
+    .card .foot {
+        flex: none; text-align: center; font-size: clamp(7.5px, calc(var(--cw) * 0.15), 12px); line-height: 1.05;
+        padding: 0 1px calc(var(--cw) * 0.05); color: #4a4334; min-height: 2.2em;
+    }
+    .card.sel { box-shadow: 0 0 0 2px var(--gold), 0 -1px 2px rgba(0, 0, 0, 0.35); border-color: var(--gold); }
+    .card.sel ~ .card { box-shadow: 2px 0 0 var(--gold), -2px 0 0 var(--gold), 0 2px 0 var(--gold); }
+
+    #log { margin-top: 14px; color: var(--dim); max-height: 9.5em; overflow-y: auto; line-height: 1.45; user-select: text; }
+    #log div:first-child { color: var(--ink); }
+    #log .t { border-top: 1px solid var(--line); margin-top: 2px; padding-top: 2px; }
+
+    dialog {
+        background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px;
+        max-width: min(92vw, 560px); padding: 16px 20px; line-height: 1.45;
+    }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+    dialog h2 { font-family: Georgia, serif; margin: 0 0 8px; }
+    dialog h3 { font-size: 1em; margin: 12px 0 2px; color: var(--gold); }
+    dialog p, dialog ul { margin: 4px 0; }
+    dialog ul { padding-left: 1.2em; }
+    dialog .end { text-align: right; margin-top: 12px; }
+    .e { color: #ef7b6f; } .d { color: #e2b94a; } .g { color: #6cc48e; } .t2 { color: #7fb0f5; }
+    @media (prefers-reduced-motion: reduce) { .unit { transition: none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="g-ember" viewBox="0 0 24 24"><path fill="currentColor" d="M13 2c.5 4 5 6.500 5 12a6 6 0 0 1-12 0c0-2.500 1-4 2.500-5.500 0 2 .8 3 1.800 3.500C11.500 9 10 6 13 2z"/></symbol>
+    <symbol id="g-dawn" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.500" fill="currentColor"/><path stroke="currentColor" stroke-width="2.200" stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3M4.900 4.900l2.100 2.100M17 17l2.100 2.100M4.900 19.100L7 17M17 7l2.100-2.100"/></symbol>
+    <symbol id="g-grove" viewBox="0 0 24 24"><path fill="currentColor" d="M4 20C3 10 9 3 21 3c0 12-7 18-17 17z"/><path stroke="#f4ecd8" stroke-width="1.400" fill="none" d="M5 19L15 9"/></symbol>
+    <symbol id="g-tide" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c4 6 7 9.500 7 13a7 7 0 0 1-14 0c0-3.500 3-7 7-13z"/></symbol>
+</svg>
+
+<div id="app">
+    <header>
+        <h1>Four Wells <small>a patience duel</small></h1>
+        <span id="clock"></span>
+        <select id="level" aria-label="Difficulty">
+            <option value="0">Gentle</option>
+            <option value="1" selected>Fair</option>
+            <option value="2">Cruel</option>
+        </select>
+        <button id="new">New game</button>
+        <button id="help">Rules</button>
+    </header>
+
+    <section class="side">
+        <div class="bar" id="foeBar" data-z="foeface"></div>
+        <div class="field" id="foeField" data-empty="The House has no creatures."></div>
+    </section>
+    <section class="side">
+        <div class="field" id="myField" data-empty="You have no creatures. Cast a Knave, Queen, King or a Grove spell."></div>
+        <div class="bar" id="myBar"></div>
+    </section>
+
+    <div id="info"></div>
+
+    <div class="row7" id="top"></div>
+    <div class="row7" id="cols"></div>
+
+    <div id="log"></div>
+</div>
+
+<dialog id="rules">
+    <h2>Four Wells</h2>
+    <p>Klondike patience, played as a duel. You start at 30 life. Bring the House to 0 before it does the same to you.</p>
+    <h3>The patience</h3>
+    <ul>
+        <li>Build columns downward, alternating warm schools (<span class="e">Ember</span>, <span class="d">Dawn</span>) with cool ones (<span class="g">Grove</span>, <span class="t2">Tide</span>). Any card or run may fill an empty column.</li>
+        <li>The four Wells build upward by school from the Ace. Tap a card, then tap where it should go. Double-tap sends a card to its Well.</li>
+        <li>Moves are free. Tapping the stock <b>ends your turn</b>: the House plays, then you draw one card.</li>
+        <li>When the stock runs out the waste is turned over, and it costs you 2 life the first time, 4 the next, and so on.</li>
+    </ul>
+    <h3>The sorcery</h3>
+    <ul>
+        <li>Every card in a Well is one mana each turn, of any school. A card put in a Well gives its mana at once.</li>
+        <li>An uncovered card (the last in a column, or the top of the waste) can be <b>cast</b> instead of moved, if its school's Well is open. It leaves the game. The number in the coin is its cost.</li>
+        <li><span class="e">Ember</span> 2 to 10 burn a target. <span class="d">Dawn</span> mends your life. <span class="g">Grove</span> grows a Sprout creature. <span class="t2">Tide</span> freezes the House's strongest creatures, so they can't block now or attack next turn.</li>
+        <li>Knaves (2/2), Queens (3/3) and Kings (4/4) are creatures. Ember ones have Haste, Dawn ones Vigil (attacking doesn't tap them), Grove ones are Sturdy (+2 toughness) and Tide ones are Elusive (can't be blocked).</li>
+    </ul>
+    <h3>The fighting</h3>
+    <ul>
+        <li>Tap one of your creatures and press Attack. It can't attack the turn it arrives, and attacking taps it, so it can't block until your next turn.</li>
+        <li>The House's Guards never attack and always block. Its other creatures attack every turn, and block only when they'd win.</li>
+        <li>When the House attacks, choose blockers: tap your untapped creature, then the attacker. Unblocked damage comes off your life. Damage on creatures heals at the end of each turn.</li>
+    </ul>
+    <div class="end"><button id="closeRules" class="primary">Play</button></div>
+</dialog>
+
+<dialog id="over">
+    <h2 id="overTitle"></h2>
+    <p id="overText"></p>
+    <div class="end"><button id="again" class="primary">New game</button></div>
+</dialog>
+
+<script>
+(function () {
+    'use strict';
+
+    const SCHOOLS = [
+        { id: 'ember', name: 'Ember', warm: true },
+        { id: 'dawn', name: 'Dawn', warm: true },
+        { id: 'grove', name: 'Grove', warm: false },
+        { id: 'tide', name: 'Tide', warm: false }
+    ];
+    const RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const RANKNAME = ['', 'Ace', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Knave', 'Queen', 'King'];
+    const FACE = { 11: [2, 2, 2], 12: [3, 3, 3], 13: [4, 4, 4] };   // cost, power, toughness
+    const KW = {
+        ember: ['Haste', 'it can attack the turn it arrives'],
+        dawn: ['Vigil', 'attacking does not tap it, so it can still block'],
+        grove: ['Sturdy', 'it has 2 extra toughness'],
+        tide: ['Elusive', 'it cannot be blocked']
+    };
+    // The House's deck. g: a Guard, which never attacks and always blocks.
+    const FOE = [
+        { n: 'Gutter Rat', c: 1, p: 1, t: 1, q: 3 },
+        { n: 'Ash Hound', c: 2, p: 2, t: 1, q: 3 },
+        { n: 'Bog Lurker', c: 3, p: 2, t: 3, q: 3 },
+        { n: 'Iron Reaver', c: 4, p: 4, t: 3, q: 2 },
+        { n: 'Dread Colossus', c: 6, p: 6, t: 6, q: 1 },
+        { n: 'Shield Wall', c: 2, p: 0, t: 4, g: true, q: 2 },
+        { n: 'Bone Sentry', c: 3, p: 1, t: 5, g: true, q: 2 },
+        { n: 'Hex Bolt', c: 2, sp: 'bolt', q: 2 },
+        { n: 'Leech', c: 3, sp: 'leech', q: 2 }
+    ];
+    // Per difficulty: the House's life, turns per extra mana, its mana cap.
+    const LEVELS = [
+        { you: 30, life: 25, ramp: 6, cap: 5, every: 2, hand: 0 },
+        { you: 30, life: 30, ramp: 5, cap: 6, every: 2, hand: 2 },
+        { you: 25, life: 35, ramp: 4, cap: 6, every: 1, hand: 2 }
+    ];
+    const BOARD_MAX = 6;
+
+    const $ = id => document.getElementById(id);
+    let S = null;          // the game state; replaced wholesale by newGame()
+    let uid = 0;
+    let fast = false;      // tests set this to skip the pauses
+    const wait = ms => fast ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+
+    function shuffle(a) {
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    // What a card does when cast.
+    function info(c) {
+        const sc = SCHOOLS[c.s];
+        const title = RANKNAME[c.r] + ' of ' + sc.name;
+        if (c.r === 1) {
+            return { type: 'ace', title, cost: 0, short: 'Well', text: 'Opens the ' + sc.name + ' Well. It cannot be cast.' };
+        }
+        if (c.r >= 11) {
+            const [cost, p, t0] = FACE[c.r];
+            const t = t0 + (sc.id === 'grove' ? 2 : 0);
+            const kw = KW[sc.id];
+            return {
+                type: 'creature', title, cost, p, t, kw: kw[0], short: p + '/' + t + ' ' + kw[0],
+                text: 'A ' + p + '/' + t + ' creature with ' + kw[0] + ': ' + kw[1] + '.'
+            };
+        }
+        const n = c.r >> 1;   // 2,3 cost 1 ... 10 costs 5
+        if (sc.id === 'ember') {
+            return { type: 'spell', title, cost: n, n: n + 1, short: 'Burn ' + (n + 1), text: 'Deal ' + (n + 1) + ' damage to the House or to one of its creatures.' };
+        }
+        if (sc.id === 'dawn') {
+            return { type: 'spell', title, cost: n, n: n + 2, short: 'Mend ' + (n + 2), text: 'Gain ' + (n + 2) + ' life.' };
+        }
+        if (sc.id === 'grove') {
+            return { type: 'spell', title, cost: n, n, short: 'Sprout ' + n + '/' + (n + 1), text: 'Grow a ' + n + '/' + (n + 1) + ' Sprout creature.' };
+        }
+        return {
+            type: 'spell', title, cost: n, n, short: 'Frost ' + n,
+            text: 'Freeze the House\'s ' + (n === 1 ? 'strongest creature' : n + ' strongest creatures') + ': no blocking this turn, no attacking on its next.'
+        };
+    }
+
+    function newGame() {
+        const lv = LEVELS[+$('level').value] || LEVELS[1];
+        const deck = [];
+        for (let s = 0; s < 4; s++) for (let r = 1; r <= 13; r++) deck.push({ id: s * 13 + r, s, r, up: false });
+        shuffle(deck);
+        const cols = [];
+        for (let i = 0; i < 7; i++) {
+            cols.push(deck.splice(0, i + 1));
+            cols[i][i].up = true;
+        }
+        S = {
+            cols, stock: deck, waste: [], wells: [[], [], [], []],
+            life: lv.you, mana: 0, board: [], turn: 0, passes: 0,
+            foe: { life: lv.life, mana: 0, deck: [], hand: [], board: [], lv },
+            phase: 'play', sel: null, target: null, attackers: [], blocks: {}, pick: null, resolve: null,
+            log: []
+        };
+        for (let i = 0; i < lv.hand; i++) foeDraw();
+        $('over').close();
+        log('A new game. The House has ' + lv.life + ' life.', true);
+        startTurn();
+    }
+
+    function log(msg, head) {
+        S.log.unshift({ msg, head: !!head });
+        if (S.log.length > 60) S.log.pop();
+    }
+
+    // ---------- the patience ----------
+
+    const stacks = (card, onto) => onto.r === card.r + 1 && SCHOOLS[onto.s].warm !== SCHOOLS[card.s].warm;
+    const canWell = card => S.wells[card.s].length === card.r - 1;
+    const maxMana = () => S.wells.reduce((n, w) => n + w.length, 0);
+
+    function validRun(i, k) {
+        const col = S.cols[i];
+        if (!col[k] || !col[k].up) return false;
+        for (let j = k + 1; j < col.length; j++) if (!stacks(col[j], col[j - 1])) return false;
+        return true;
+    }
+
+    // The cards a selection refers to, and whether it is a single uncovered card.
+    function selCards(sel) {
+        if (!sel) return [];
+        if (sel.zone === 'waste') return S.waste.slice(-1);
+        if (sel.zone === 'col') return S.cols[sel.i].slice(sel.k);
+        return [];
+    }
+    const uncovered = sel => selCards(sel).length === 1;
+
+    function take(sel) {
+        let cards;
+        if (sel.zone === 'waste') cards = [S.waste.pop()];
+        else {
+            const col = S.cols[sel.i];
+            cards = col.splice(sel.k);
+            if (col.length) col[col.length - 1].up = true;
+        }
+        return cards;
+    }
+
+    function canMove(sel, j) {
+        const cards = selCards(sel);
+        if (!cards.length || (sel.zone === 'col' && sel.i === j)) return false;
+        const dest = S.cols[j];
+        return !dest.length || stacks(cards[0], dest[dest.length - 1]);
+    }
+
+    function move(sel, j) {
+        if (S.phase !== 'play' || !canMove(sel, j)) return false;
+        S.cols[j].push(...take(sel));
+        S.sel = null;
+        return true;
+    }
+
+    function toWell(sel) {
+        if (S.phase !== 'play' || !uncovered(sel)) return false;
+        const card = selCards(sel)[0];
+        if (!canWell(card)) return false;
+        take(sel);
+        S.wells[card.s].push(card);
+        S.mana++;
+        S.sel = null;
+        return true;
+    }
+
+    // ---------- the sorcery ----------
+
+    // Why a card can't be cast right now, or '' if it can.
+    function castBlock(sel) {
+        const cards = selCards(sel);
+        if (!cards.length) return 'Nothing is selected.';
+        const card = cards[0], i = info(card), sc = SCHOOLS[card.s];
+        if (i.type === 'ace') return 'Aces only open Wells.';
+        if (cards.length > 1) return 'Only an uncovered card can be cast.';
+        if (!S.wells[card.s].length) return 'The ' + sc.name + ' Well is not open yet: find its Ace.';
+        if (S.mana < i.cost) return 'It costs ' + i.cost + ' mana and you have ' + S.mana + '.';
+        if ((i.type === 'creature' || sc.id === 'grove') && S.board.length >= BOARD_MAX) return 'Your side of the field is full.';
+        return '';
+    }
+
+    function unit(o) {
+        return Object.assign({ uid: ++uid, dmg: 0, tapped: false, sick: true, frozen: false, kw: '' }, o);
+    }
+    const rem = u => u.t - u.dmg;
+
+    // Cast the selected card. Burn needs a target: a House creature's uid, or 'face'.
+    function cast(sel, target) {
+        if (S.phase !== 'play' || castBlock(sel)) return false;
+        const card = selCards(sel)[0], i = info(card), sc = SCHOOLS[card.s];
+        if (i.type === 'spell' && sc.id === 'ember' && target == null) {
+            if (S.foe.board.length) {
+                S.target = sel;
+                return true;
+            }
+            target = 'face';
+        }
+        take(sel);
+        S.mana -= i.cost;
+        S.sel = null;
+        S.target = null;
+        if (i.type === 'creature') {
+            S.board.push(unit({ name: i.title, p: i.p, t: i.t, kw: i.kw, c: i.cost, school: sc.id }));
+            log('You cast the ' + i.title + ', ' + i.p + '/' + i.t + ' ' + i.kw + '.');
+        } else if (sc.id === 'ember') {
+            if (target === 'face') {
+                S.foe.life -= i.n;
+                log('You burn the House for ' + i.n + '.');
+            } else {
+                const u = S.foe.board.find(x => x.uid === target);
+                if (u) {
+                    u.dmg += i.n;
+                    log('You burn the ' + u.name + ' for ' + i.n + '.');
+                    bury();
+                }
+            }
+        } else if (sc.id === 'dawn') {
+            S.life += i.n;
+            log('You mend ' + i.n + ' life.');
+        } else if (sc.id === 'grove') {
+            S.board.push(unit({ name: 'Sprout', p: i.n, t: i.n + 1, c: i.cost, school: 'grove' }));
+            log('You grow a ' + i.n + '/' + (i.n + 1) + ' Sprout.');
+        } else {
+            const pool = S.foe.board.filter(u => !u.frozen).sort((a, b) => b.p - a.p || b.t - a.t).slice(0, i.n);
+            pool.forEach(u => { u.frozen = true; });
+            log(pool.length ? 'You freeze ' + pool.map(u => 'the ' + u.name).join(', ') + '.' : 'Your frost finds nothing to freeze.');
+        }
+        checkEnd();
+        return true;
+    }
+
+    // Remove the dead from both sides.
+    function bury() {
+        for (const side of [S.board, S.foe.board]) {
+            for (let i = side.length - 1; i >= 0; i--) {
+                if (rem(side[i]) <= 0) {
+                    log((side === S.board ? 'Your ' : 'The ') + side[i].name + ' dies.');
+                    side.splice(i, 1);
+                }
+            }
+        }
+    }
+    function heal() {
+        S.board.forEach(u => { u.dmg = 0; });
+        S.foe.board.forEach(u => { u.dmg = 0; });
+    }
+
+    function checkEnd() {
+        if (S.phase === 'over') return true;
+        let title = '', text = '';
+        if (S.foe.life <= 0) {
+            title = 'The House folds';
+            text = 'You won on turn ' + S.turn + ' with ' + Math.max(S.life, 0) + ' life left and ' + maxMana() + ' cards in the Wells.';
+        } else if (S.life <= 0) {
+            title = 'The House wins';
+            text = 'You fell on turn ' + S.turn + ', with the House at ' + S.foe.life + ' life.';
+        } else return false;
+        S.phase = 'over';
+        S.sel = S.target = null;
+        if (S.resolve) S.resolve();
+        log(title + '.', true);
+        $('overTitle').textContent = title;
+        $('overText').textContent = text;
+        if (!fast) setTimeout(() => { if (S.phase === 'over' && !$('over').open) $('over').showModal(); }, 600);
+        return true;
+    }
+
+    // ---------- the fighting ----------
+
+    function attackBlock(u) {
+        if (u.tapped) return 'It is tapped until your next turn.';
+        if (u.sick && u.kw !== 'Haste') return 'It only just arrived. It can attack next turn.';
+        if (u.p <= 0) return 'It has no power.';
+        return '';
+    }
+
+    // Which House creature steps in front of your attacker, if any.
+    function foeBlocker(a) {
+        if (a.kw === 'Elusive') return null;
+        const c = S.foe.board.filter(x => !x.tapped && !x.frozen);
+        if (!c.length) return null;
+        const kills = x => x.p >= rem(a), lives = x => rem(x) > a.p;
+        const winner = c.filter(x => kills(x) && lives(x)).sort((x, y) => x.c - y.c)[0];
+        if (winner) return winner;
+        const guards = c.filter(x => x.g).sort((x, y) => rem(y) - rem(x));
+        if (guards.length) return guards[0];
+        if (a.p >= S.foe.life) return c.sort((x, y) => x.c - y.c)[0];
+        return null;
+    }
+
+    function attack(id) {
+        if (S.phase !== 'play') return false;
+        const a = S.board.find(u => u.uid === id);
+        if (!a || attackBlock(a)) return false;
+        if (a.kw !== 'Vigil') a.tapped = true;
+        S.sel = null;
+        const b = foeBlocker(a);
+        if (b) {
+            b.dmg += a.p;
+            a.dmg += b.p;
+            log('Your ' + a.name + ' attacks and the ' + b.name + ' blocks it.');
+            bury();
+        } else {
+            S.foe.life -= a.p;
+            log('Your ' + a.name + ' hits the House for ' + a.p + '.');
+        }
+        checkEnd();
+        return true;
+    }
+
+    function foeDraw() {
+        const f = S.foe;
+        if (!f.deck.length) {
+            FOE.forEach(c => { for (let i = 0; i < c.q; i++) f.deck.push(c); });
+            shuffle(f.deck);
+        }
+        f.hand.push(f.deck.pop());
+    }
+
+    function foePlay(c) {
+        const f = S.foe;
+        f.mana -= c.c;
+        f.hand.splice(f.hand.indexOf(c), 1);
+        if (c.sp === 'bolt') {
+            const prey = S.board.filter(u => rem(u) <= 3).sort((a, b) => b.p - a.p)[0];
+            if (prey) {
+                prey.dmg += 3;
+                log('The House casts Hex Bolt at your ' + prey.name + '.');
+                bury();
+            } else {
+                S.life -= 3;
+                log('The House casts Hex Bolt at you for 3.');
+            }
+        } else if (c.sp === 'leech') {
+            S.life -= 2;
+            f.life += 2;
+            log('The House casts Leech: you lose 2 life and it gains 2.');
+        } else {
+            f.board.push(unit({ name: c.n, p: c.p, t: c.t, c: c.c, g: !!c.g, kw: c.g ? 'Guard' : '' }));
+            log('The House plays ' + c.n + ', ' + c.p + '/' + c.t + (c.g ? ' Guard' : '') + '.');
+        }
+    }
+
+    async function endTurn() {
+        if (S.phase !== 'play') return;
+        const game = S, f = S.foe;
+        S.phase = 'foe';
+        S.sel = S.target = null;
+        heal();
+        render();
+        await wait(350);
+        if (S !== game) return;
+
+        f.board.forEach(u => { u.tapped = false; u.sick = false; });
+        f.mana = Math.min(f.lv.cap, 1 + Math.floor((S.turn - 1) / f.lv.ramp));
+        if (S.turn % f.lv.every === 0) foeDraw();
+        for (;;) {
+            const c = f.hand
+                .filter(x => x.c <= f.mana && (x.sp || f.board.length < BOARD_MAX))
+                .sort((a, b) => b.c - a.c)[0];
+            if (!c) break;
+            foePlay(c);
+            if (checkEnd()) return render();
+            render();
+            await wait(550);
+            if (S !== game) return;
+        }
+
+        const att = f.board.filter(u => !u.g && !u.sick && !u.frozen && u.p > 0);
+        if (att.length) {
+            att.forEach(u => { u.tapped = true; });
+            S.attackers = att.map(u => u.uid);
+            S.blocks = {};
+            S.pick = null;
+            log('The House attacks with ' + att.map(u => u.name).join(', ') + '.');
+            if (S.board.some(u => !u.tapped)) {
+                S.phase = 'block';
+                render();
+                await new Promise(r => { S.resolve = r; });
+                if (S !== game || S.phase === 'over') return;
+                S.resolve = null;
+                S.phase = 'foe';
+            } else {
+                render();
+                await wait(550);
+                if (S !== game) return;
+            }
+            let hit = 0;
+            for (const a of att) {
+                const b = S.board.find(u => u.uid === S.blocks[a.uid]);
+                if (b) {
+                    b.dmg += a.p;
+                    a.dmg += b.p;
+                    log('Your ' + b.name + ' blocks the ' + a.name + '.');
+                } else hit += a.p;
+            }
+            bury();
+            if (hit) {
+                S.life -= hit;
+                log('You take ' + hit + ' damage.');
+            }
+            S.attackers = [];
+            S.blocks = {};
+        }
+        heal();
+        f.board.forEach(u => { u.frozen = false; });
+        if (checkEnd()) return render();
+        render();
+        await wait(350);
+        if (S !== game) return;
+        startTurn();
+    }
+
+    function startTurn() {
+        S.turn++;
+        S.phase = 'play';
+        S.board.forEach(u => { u.tapped = false; u.sick = false; });
+        S.mana = maxMana();
+        log('Turn ' + S.turn + '.', true);
+        if (!S.stock.length && S.waste.length) {
+            S.passes++;
+            const cost = 2 * S.passes;
+            S.stock = S.waste.reverse();
+            S.stock.forEach(c => { c.up = false; });
+            S.waste = [];
+            S.life -= cost;
+            log('The stock is spent. Turning the waste over costs you ' + cost + ' life.');
+            if (checkEnd()) return render();
+        }
+        if (S.stock.length) {
+            const c = S.stock.pop();
+            c.up = true;
+            S.waste.push(c);
+            log('You draw the ' + info(c).title + '.');
+        }
+        render();
+    }
+
+    // ---------- input ----------
+
+    function click(z, d) {
+        if (S.phase === 'block') return blockClick(z, d);
+        if (S.phase !== 'play') return;
+        if (S.target) {
+            if (z === 'foe') cast(S.target, +d.u);
+            else if (z === 'foeface') cast(S.target, 'face');
+            else S.target = null;
+            return;
+        }
+        const sel = S.sel;
+        if (z === 'stock') return void endTurn();
+        if (z === 'waste') {
+            S.sel = S.waste.length && !(sel && sel.zone === 'waste') ? { zone: 'waste' } : null;
+        } else if (z === 'card') {
+            const i = +d.i, k = +d.k;
+            if (sel && sel.zone === 'col' && sel.i === i && sel.k === k) S.sel = null;
+            else if (sel && (sel.zone === 'waste' || sel.zone === 'col') && move(sel, i)) { /* moved */ }
+            else S.sel = validRun(i, k) ? { zone: 'col', i, k } : null;
+        } else if (z === 'col') {
+            if (!(sel && move(sel, +d.i))) S.sel = null;
+        } else if (z === 'well') {
+            if (!(sel && toWell(sel))) S.sel = null;
+        } else if (z === 'mine' || z === 'foe') {
+            S.sel = sel && sel.u === +d.u ? null : { zone: z, u: +d.u };
+        } else {
+            S.sel = null;
+        }
+    }
+
+    function blockClick(z, d) {
+        const id = +d.u;
+        if (z === 'mine') {
+            const u = S.board.find(x => x.uid === id);
+            if (!u || u.tapped) return;
+            for (const a in S.blocks) if (S.blocks[a] === id) delete S.blocks[a];
+            S.pick = S.pick === id ? null : id;
+        } else if (z === 'foe' && S.attackers.includes(id)) {
+            if (S.pick) {
+                S.blocks[id] = S.pick;
+                S.pick = null;
+            } else delete S.blocks[id];
+        }
+    }
+
+    document.addEventListener('click', e => {
+        const b = e.target.closest('[data-do]');
+        if (b) {
+            const act = b.dataset.do;
+            if (act === 'cast') cast(S.sel);
+            else if (act === 'well') toWell(S.sel);
+            else if (act === 'attack') attack(S.sel.u);
+            else if (act === 'cancel') S.target = null;
+            else if (act === 'end') return void endTurn();
+            else if (act === 'fight' && S.resolve) return S.resolve();
+            return render();
+        }
+        const el = e.target.closest('[data-z]');
+        if (!el) {
+            if (!e.target.closest('button, select, dialog, #info') && S.phase === 'play') {
+                S.sel = S.target = null;
+                render();
+            }
+            return;
+        }
+        click(el.dataset.z, el.dataset);
+        render();
+    });
+
+    document.addEventListener('dblclick', e => {
+        const el = e.target.closest('[data-z]');
+        if (!el || S.phase !== 'play' || S.target) return;
+        let sel = null;
+        if (el.dataset.z === 'waste') sel = { zone: 'waste' };
+        else if (el.dataset.z === 'card') sel = { zone: 'col', i: +el.dataset.i, k: +el.dataset.k };
+        if (sel && toWell(sel)) render();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && S.phase === 'play') {
+            S.sel = S.target = null;
+            render();
+        }
+    });
+
+    // ---------- drawing ----------
+
+    const glyph = id => '<svg><use href="#g-' + id + '"/></svg>';
+
+    function cardHTML(c, attrs, cls) {
+        if (!c.up) return '<div class="card down" ' + attrs + '></div>';
+        const i = info(c), sc = SCHOOLS[c.s];
+        return '<div class="card up ' + sc.id + ' ' + cls + '" ' + attrs + '>' +
+            '<div class="strip"><span>' + RANK[c.r] + '</span>' + glyph(sc.id) +
+            (i.cost ? '<i class="coin">' + i.cost + '</i>' : '') + '</div>' +
+            '<div class="mid">' + (i.type === 'creature' ? i.p + '/' + i.t : glyph(sc.id)) + '</div>' +
+            '<div class="foot">' + (i.type === 'creature' ? i.kw : i.short) + '</div></div>';
+    }
+
+    function unitHTML(u, mine) {
+        const sel = S.sel && S.sel.u === u.uid;
+        const cls = ['unit', u.school || ''];
+        let badge = '';
+        if (u.tapped) cls.push('tapped');
+        if (u.frozen) cls.push('frozen');
+        if (sel || S.pick === u.uid) cls.push('sel');
+        if (S.attackers.includes(u.uid)) {
+            cls.push('attacking');
+            badge = String(S.attackers.indexOf(u.uid) + 1);
+        }
+        if (mine) {
+            for (const a in S.blocks) if (S.blocks[a] === u.uid) badge = 'blocks ' + (S.attackers.indexOf(+a) + 1);
+            if (S.phase === 'play' && !attackBlock(u)) cls.push('can');
+        } else if (S.target) cls.push('targetable');
+        const state = u.frozen ? 'Frozen' : u.kw || (mine && u.sick ? 'New' : '');
+        return '<div class="' + cls.join(' ') + '" data-z="' + (mine ? 'mine' : 'foe') + '" data-u="' + u.uid + '">' +
+            (badge ? '<span class="badge">' + badge + '</span>' : '') +
+            '<div class="nm">' + u.name + '</div>' +
+            '<div class="pt">' + u.p + '/<span class="' + (u.dmg ? 'hurt' : '') + '">' + rem(u) + '</span></div>' +
+            '<div class="kw">' + state + '</div></div>';
+    }
+
+    function unitText(u, mine) {
+        let s = '<b>' + u.name + '</b>, ' + u.p + '/' + u.t + (u.dmg ? ' with ' + u.dmg + ' damage' : '') + '. ';
+        if (u.g) s += 'A Guard: it never attacks and always blocks. ';
+        else if (!mine) s += 'It attacks every turn and blocks only when it would win. ';
+        const k = Object.values(KW).find(x => x[0] === u.kw);
+        if (k) s += u.kw + ': ' + k[1] + '. ';
+        if (u.frozen) s += 'Frozen: it cannot block now or attack on its next turn. ';
+        return s;
+    }
+
+    function infoHTML() {
+        const btn = (act, label, cls, off) =>
+            '<button data-do="' + act + '" class="' + (cls || '') + '"' + (off ? ' disabled' : '') + '>' + label + '</button>';
+        const end = btn('end', 'End turn &amp; draw', 'go');
+        if (S.phase === 'over') return '<div class="txt">The game is over.</div>';
+        if (S.phase === 'foe') return '<div class="txt">The House is playing&hellip;</div>';
+        if (S.phase === 'block') {
+            const total = S.attackers.reduce((n, id) => {
+                const a = S.foe.board.find(u => u.uid === id);
+                return n + (a && !S.blocks[id] ? a.p : 0);
+            }, 0);
+            return '<div class="txt"><b>The House attacks.</b> ' +
+                (S.pick ? 'Now tap the attacker to block.' : 'Tap one of your untapped creatures, then the attacker it should block.') +
+                ' <span class="why">Unblocked damage: ' + total + '.</span></div>' +
+                '<div class="acts">' + btn('fight', 'Resolve combat', 'go') + '</div>';
+        }
+        if (S.target) {
+            return '<div class="txt"><b>' + info(selCards(S.target)[0]).short + '.</b> Choose a target: one of the House\'s creatures, or the House itself.</div>' +
+                '<div class="acts">' + btn('cancel', 'Cancel') + '</div>';
+        }
+        const sel = S.sel;
+        if (sel && (sel.zone === 'mine' || sel.zone === 'foe')) {
+            const mine = sel.zone === 'mine';
+            const u = (mine ? S.board : S.foe.board).find(x => x.uid === sel.u);
+            if (u) {
+                const why = mine ? attackBlock(u) : '';
+                return '<div class="txt">' + unitText(u, mine) + (why ? '<span class="why">' + why + '</span>' : '') + '</div>' +
+                    '<div class="acts">' + (mine ? btn('attack', 'Attack', 'primary', !!why) : '') + end + '</div>';
+            }
+        }
+        const cards = selCards(sel);
+        if (cards.length) {
+            const i = info(cards[0]), why = castBlock(sel);
+            const wellOk = cards.length === 1 && canWell(cards[0]);
+            return '<div class="txt"><b>' + i.title + '</b>' + (cards.length > 1 ? ' and ' + (cards.length - 1) + ' more' : '') +
+                (i.cost ? ' &middot; ' + i.short + ' &middot; costs ' + i.cost : '') + '. ' + i.text +
+                (why && i.type !== 'ace' ? ' <span class="why">' + why + '</span>' : '') + '</div>' +
+                '<div class="acts">' +
+                (i.type !== 'ace' ? btn('cast', 'Cast (' + i.cost + ')', 'primary', !!why) : '') +
+                (wellOk ? btn('well', 'To Well', '') : '') + end + '</div>';
+        }
+        return '<div class="txt">' + (maxMana()
+            ? 'Move cards, cast what is uncovered, attack, then end the turn to draw.'
+            : 'Play it like Klondike. Get an Ace into a Well to start making mana.') + '</div>' +
+            '<div class="acts">' + end + '</div>';
+    }
+
+    function render() {
+        const f = S.foe, sel = S.sel, play = S.phase === 'play';
+        $('foeBar').className = 'bar' + (S.target ? ' targetable' : '');
+        $('foeBar').innerHTML = '<span class="who">The House</span>' +
+            '<span class="stat life">Life <b>' + Math.max(f.life, 0) + '</b></span>' +
+            '<span class="stat mana">Mana <b>' + Math.min(f.lv.cap, 1 + Math.floor(Math.max(S.turn - 1, 0) / f.lv.ramp)) + '</b></span>' +
+            '<span class="stat">Hand <b>' + f.hand.length + '</b></span>';
+        $('foeField').innerHTML = f.board.map(u => unitHTML(u, false)).join('');
+        $('myField').innerHTML = S.board.map(u => unitHTML(u, true)).join('');
+        $('myBar').innerHTML = '<span class="who">You</span>' +
+            '<span class="stat life">Life <b>' + Math.max(S.life, 0) + '</b></span>' +
+            '<span class="stat mana">Mana <b>' + S.mana + '</b> / ' + maxMana() + '</span>' +
+            '<span class="stat sp">Turn <b>' + S.turn + '</b></span>';
+        $('info').innerHTML = infoHTML();
+
+        const ready = s => play && !castBlock(s) ? 'ready' : '';
+        let top = '<div class="slot" data-z="stock" title="End your turn and draw">' +
+            (S.stock.length ? '<div class="card down"></div>' : (S.waste.length ? 'turn<br>over' : 'empty')) +
+            '<span class="count">' + S.stock.length + ' left</span></div>';
+        const w = S.waste[S.waste.length - 1];
+        top += '<div class="slot" data-z="waste">' +
+            (w ? cardHTML(w, '', (sel && sel.zone === 'waste' ? 'sel ' : '') + ready({ zone: 'waste' })) : '') + '</div><div></div>';
+        S.wells.forEach((well, i) => {
+            const c = well[well.length - 1];
+            top += '<div class="slot" data-z="well" data-i="' + i + '" style="color:var(--' + SCHOOLS[i].id + ')">' +
+                (c ? cardHTML(c, '', '') : glyph(SCHOOLS[i].id)) +
+                '<span class="count">' + SCHOOLS[i].name + (well.length ? ' ' + well.length : '') + '</span></div>';
+        });
+        $('top').innerHTML = top;
+
+        $('cols').innerHTML = S.cols.map((col, i) =>
+            '<div class="col" data-z="col" data-i="' + i + '">' + col.map((c, k) => {
+                let cls = sel && sel.zone === 'col' && sel.i === i && sel.k === k ? 'sel ' : '';
+                if (k === col.length - 1) cls += ready({ zone: 'col', i, k });
+                return cardHTML(c, 'data-z="card" data-i="' + i + '" data-k="' + k + '"', cls);
+            }).join('') + '</div>').join('');
+
+        $('log').innerHTML = S.log.slice(0, 40).map(l => '<div' + (l.head ? ' class="t"' : '') + '>' + l.msg + '</div>').join('');
+    }
+
+    // ---------- chrome ----------
+
+    function tick() {
+        const d = new Date();
+        $('clock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    try {
+        const lv = localStorage.getItem('fourwells.level');
+        if (lv !== null && LEVELS[+lv]) $('level').value = lv;
+    } catch (e) { /* storage is optional */ }
+    $('level').addEventListener('change', () => {
+        try { localStorage.setItem('fourwells.level', $('level').value); } catch (e) { /* optional */ }
+        newGame();
+    });
+    $('new').addEventListener('click', newGame);
+    $('again').addEventListener('click', newGame);
+    $('help').addEventListener('click', () => $('rules').showModal());
+    $('closeRules').addEventListener('click', () => $('rules').close());
+
+    // For the console and for tests.
+    window.fourWells = {
+        get state() { return S; },
+        set fast(v) { fast = v; },
+        LEVELS, info, canWell, canMove, castBlock, attackBlock, validRun, rem,
+        move, toWell, cast, attack, endTurn, newGame, render
+    };
+
+    newGame();
+    try {
+        if (!localStorage.getItem('fourwells.seen')) {
+            localStorage.setItem('fourwells.seen', '1');
+            $('rules').showModal();
+        }
+    } catch (e) { /* optional */ }
+})();
+</script>
+</body>
+</html>

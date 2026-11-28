@@ -16,7 +16,7 @@ A growing collection of creative, self-contained web clock implementations — e
 | `clocks/simulation/` | Physics, particle, and agent simulation clocks (gravity, flocking, epicycles, a chaotic double pendulum, ...) |
 | `clocks/utility/` | Countdown timers, dial/desktop clocks, pomodoro timers, and other practical tools |
 
-`games/` holds standalone games rather than clocks — currently `chasm.html`, an original cavern flyer written to the Atari 2600's hardware limits, which does tell the time, in the same pixel font it draws everything else with. Games are listed under "Other Apps" at the foot of the gallery, not among the clocks.
+`games/` holds standalone games rather than clocks — currently `chasm.html`, an original cavern flyer written to the Atari 2600's hardware limits, which does tell the time, in the same pixel font it draws everything else with. The other is `four_wells.html`, Klondike patience crossed with a duelling card game: the foundations give mana, uncovered cards can be cast as spells and creatures, and each draw from the stock gives the House a turn. Games are listed under "Other Apps" at the foot of the gallery, not among the clocks.
 
 `brain/` is Brain Explorer, a three-plane MNI152 brain viewer with eight public atlases (Harvard-Oxford, Schaefer/Yeo, FreeSurfer aseg, DKT, thalamic nuclei). Click anywhere to read every atlas's label at that point, and drop in your own NIfTI maps as overlays. It needs to be served rather than opened from disk; see [`brain/README.md`](./brain/README.md).
 
