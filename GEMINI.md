@@ -60,6 +60,16 @@ them self-contained single files like the clocks, but don't expect the
 clock-file conventions (the `_clock.html` naming, the category directories) to
 apply.
 
+`games/four_wells.html` is Four Wells, a cross between Klondike patience and a
+duelling card game, with its own schools, cards and names. The four foundations
+are Wells: each card in one is a mana a turn. An uncovered card can be cast
+instead of moved (2 to 10 are spells by school, Knaves, Queens and Kings are
+creatures), and drawing from the stock ends the turn, so the House, a scripted
+opponent with its own small deck, plays and attacks. The rules are in the page's
+Rules dialog, and the three difficulty rows are the `LEVELS` table. It shows the
+time in its header. `window.fourWells` exposes the state and the moves, which is
+how a bot can be run through it to check the balance after a rules change.
+
 `brain/` is Brain Explorer, a three-plane MNI152 viewer with eight public
 atlases, listed under "Other Apps" and not counted as a clock. Unlike the clocks
 it is not a single file: `brain/index.html` fetches its volumes and label tables
