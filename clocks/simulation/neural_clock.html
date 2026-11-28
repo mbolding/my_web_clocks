@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Oscillator Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #05080a;
+        --panel: #0b1114;
+        --rule: #1b2a30;
+        --text: #c8d8d6;
+        --bright: #eefaf6;
+        --dim: #6f8a87;
+        --green: #5dff9a;
+        --a: #ff5cc8;
+        --b: #4fd6ff;
+        --light: #ffd25a;
+        --red: #ff7a6a;
+        --mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+        --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+    body { min-height: 100vh; padding: clamp(12px, 3vw, 32px); }
+
+    main {
+        max-width: 1240px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(16px, 3vw, 36px);
+        align-items: start;
+    }
+    @media (min-width: 980px) {
+        main { grid-template-columns: minmax(0, 1.05fr) minmax(330px, 0.95fr); }
+    }
+
+    .stage { min-width: 0; }
+
+    #net { display: block; width: min(100%, 620px, 74vh); aspect-ratio: 1; margin: 0 auto; }
+    #scope { display: block; width: min(100%, 620px); height: clamp(110px, 18vw, 150px); margin: 0.6em auto 0; border: 1px solid var(--rule); border-radius: 6px; background: #070c0e; }
+
+    .readout { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0.2em 1.2em; margin-top: 0.8em; text-align: center; }
+    #time { font-family: var(--mono); font-size: clamp(34px, 6vw, 54px); color: var(--bright); letter-spacing: 0.03em; }
+    #real { font-family: var(--mono); font-size: clamp(13px, 1.5vw, 15px); color: var(--dim); }
+    #real b { color: var(--light); font-weight: 500; }
+
+    #status { text-align: center; margin: 0.4em auto 0; max-width: 40em; font-size: clamp(14px, 1.6vw, 16px); line-height: 1.5; min-height: 3em; }
+    #status b { color: var(--bright); font-weight: 500; }
+    #status .warn { color: var(--red); }
+
+    .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; margin-top: 0.8em; font-size: 15px; }
+    button {
+        font: inherit; font-size: 14.5px; color: var(--text); background: var(--panel);
+        border: 1px solid var(--rule); border-radius: 999px; padding: 0.35em 1em; cursor: pointer;
+    }
+    button:hover { border-color: var(--dim); }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+    button[aria-pressed="true"] { color: #1a1300; background: var(--light); border-color: var(--light); }
+    label.slider { display: inline-flex; align-items: center; gap: 0.6em; color: var(--dim); }
+    label.slider b { font-family: var(--mono); font-weight: 500; color: var(--bright); min-width: 4.2em; display: inline-block; }
+    input[type=range] { width: clamp(120px, 22vw, 200px); accent-color: var(--a); }
+
+    .key { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3em 1.2em; margin-top: 0.7em; font-size: 13.5px; color: var(--dim); }
+    .key i { display: inline-block; width: 0.75em; height: 0.75em; border-radius: 50%; margin-right: 0.35em; vertical-align: -0.05em; }
+
+    article { min-width: 0; }
+    h1 { margin: 0 0 0.2em; font-size: clamp(26px, 3.6vw, 36px); font-weight: 500; color: var(--bright); line-height: 1.15; }
+    .sub { margin: 0 0 1.2em; color: var(--dim); font-style: italic; }
+    h2 { margin: 1.4em 0 0.4em; font-size: clamp(18px, 2vw, 21px); font-weight: 500; color: var(--bright); }
+    article p { font-size: clamp(15px, 1.55vw, 16.5px); line-height: 1.65; margin: 0 0 0.9em; }
+    article i { color: var(--bright); }
+    .eq { font-family: var(--mono); font-size: clamp(12px, 1.3vw, 14px); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.8em 1em; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--bright); margin: 0 0 1em; }
+</style>
+</head>
+<body>
+<main>
+    <section class="stage">
+        <canvas id="net" role="img" aria-label="A network of neurons: a two-neuron oscillator in the middle drives three rings of neurons that count seconds, minutes and hours"></canvas>
+        <canvas id="scope" aria-hidden="true"></canvas>
+
+        <div class="readout">
+            <div id="time" role="timer" aria-label="The network's time">--:--:--</div>
+            <div id="real">light: <b id="realT">--:--:--</b></div>
+        </div>
+        <p id="status" aria-live="polite">&nbsp;</p>
+
+        <div class="controls">
+            <button type="button" id="light" aria-pressed="true">light on</button>
+            <label class="slider">natural period <input type="range" id="period" min="0.6" max="1.6" step="0.01" value="1.05"> <b id="periodVal">1.05 s</b></label>
+            <button type="button" id="reset">set from the clock</button>
+        </div>
+        <div class="key">
+            <span><i style="background:var(--a)"></i>neuron A</span>
+            <span><i style="background:var(--b)"></i>neuron B</span>
+            <span><i style="background:var(--light)"></i>light, once a second</span>
+            <span><i style="background:var(--green)"></i>counting neurons</span>
+        </div>
+    </section>
+
+    <article>
+        <h1>Neural oscillator clock</h1>
+        <p class="sub">a pacemaker of two neurons, three rings that count, and a light to keep them honest</p>
+
+        <p>In the middle are two neurons, <i>A</i> and <i>B</i>, that inhibit each other. Whichever is firing holds the other quiet, but firing tires it, and as it tires the other escapes and takes over. So they take turns, without any clock telling them to. Thomas Graham Brown proposed this <i>half-centre</i> circuit in 1911 for the rhythm of walking; this one uses Kiyotoshi Matsuoka's 1985 model of it, tuned to alternate about once a second.</p>
+        <div class="eq">τ·xᵢ′ = −xᵢ − b·vᵢ − w·yⱼ + s       yᵢ = max(0, xᵢ)
+2τ·vᵢ′ = −vᵢ + yᵢ                    (v is the tiredness)</div>
+        <p>Each time <i>A</i> starts a burst, it sends a beat to the outer ring of sixty neurons. Only one of them is active at a time, and each beat hands the activity on to its neighbour, like a bump moving round a ring attractor of the kind used to model head-direction cells. When the bump passes from 59 back to 0, a carry neuron passes a beat to the minute ring, and the minute ring does the same for the twelve neurons of the hour ring. The bright neuron in each ring is a hand.</p>
+
+        <h2>Light</h2>
+        <p>Left to itself, this pacemaker runs a little slow, with a natural period of 1.05 seconds. A body clock is the same: kept in the dark, the human circadian rhythm runs a little longer than 24 hours, and it is daylight, reaching the brain's suprachiasmatic nucleus, that pulls it back into step each day. Here a short pulse of light excites <i>B</i> at the start of every real second. It can't make the oscillator faster or slower, only nudge its phase, but a nudge every cycle is enough to lock it: the network then counts exactly one beat per second, a steady fraction of a second behind the light.</p>
+        <p>Turn the light off and the network free-runs: it keeps perfect order, but every beat comes a little late, and the clock falls behind, about three seconds a minute at 1.05. Turn it back on and the rhythm locks again within a few cycles, but the seconds it lost stay lost, the way jet lag fixes the rhythm before it fixes the hour. &ldquo;Set from the clock&rdquo; resets the rings. The light holds natural periods from about 0.8 to 1.35 seconds. Slower than that, it can't pull every cycle into a second and beats slip; faster, two beats fit into each second, and the network locks just as firmly, counting double.</p>
+    </article>
+</main>
+
+<script>
+(() => {
+    // --- the oscillator: Matsuoka's half-centre, integrated at 1 ms -------
+    const DT = 0.001;                  // seconds
+    const B = 2.5, W = 2.5, S = 1.0;   // adaptation, mutual inhibition, tonic drive
+    const K = 8.909;                   // measured: free period = K · τ for these b, w
+    const LIGHT_AMP = 2.5, LIGHT_LEN = 0.05;   // a 50 ms pulse onto B each second
+    const THR = 0.15;                  // A's output crossing this upward is a beat
+
+    let period = 1.05, tau = period / K;
+    let lightOn = true;
+    let changedAt = 0;                 // when the light or the period last changed
+    const x = [0.1, 0], v = [0, 0];
+    let prevA = 0;
+
+    // the counters: one active neuron in each ring
+    let secs = 0, mins = 0, hrs = 0;   // hrs 0-23
+    let lastBeatMs = 0, beats = [];    // wall-clock ms of recent beats
+    let rasterA = [], rasterB = [], spikeAccA = 0, spikeAccB = 0;
+    const trace = [];                  // [ms, yA, yB, light]
+
+    function step(ms, record) {
+        const lit = lightOn && (ms % 1000) < LIGHT_LEN * 1000;
+        const yA = Math.max(x[0], 0), yB = Math.max(x[1], 0);
+        const inA = S, inB = S + (lit ? LIGHT_AMP : 0);
+        const dxA = (-x[0] - B * v[0] - W * yB + inA) / tau;
+        const dxB = (-x[1] - B * v[1] - W * yA + inB) / tau;
+        const dvA = (-v[0] + yA) / (2 * tau);
+        const dvB = (-v[1] + yB) / (2 * tau);
+        x[0] += DT * dxA; x[1] += DT * dxB;
+        v[0] += DT * dvA; v[1] += DT * dvB;
+
+        const a = Math.max(x[0], 0), b = Math.max(x[1], 0);
+        if (prevA <= THR && a > THR) beat(ms);
+        prevA = a;
+
+        if (record) {
+            // spikes: each neuron fires at up to about 60 a second, in proportion to its output
+            spikeAccA += a * 60 * DT; spikeAccB += b * 60 * DT;
+            if (spikeAccA >= 1) { spikeAccA -= 1; rasterA.push(ms); }
+            if (spikeAccB >= 1) { spikeAccB -= 1; rasterB.push(ms); }
+            if (ms % 8 === 0) trace.push([ms, a, b, lit]);
+        }
+    }
+
+    // a beat from A: the seconds bump moves on, and carries ripple inward
+    let carryM = -1e9, carryH = -1e9;
+    function beat(ms) {
+        lastBeatMs = ms;
+        beats.push(ms);
+        secs = (secs + 1) % 60;
+        if (secs === 0) {
+            carryM = ms;
+            mins = (mins + 1) % 60;
+            if (mins === 0) { carryH = ms; hrs = (hrs + 1) % 24; }
+        }
+    }
+
+    // run the oscillator from a little before now, in step with the light,
+    // then set the rings to the second the latest beat belongs to
+    let simMs = 0;
+    function startFromClock() {
+        const now = Date.now();
+        x[0] = 0.1; x[1] = 0; v[0] = v[1] = 0; prevA = 0;
+        let ms = now - 20000;
+        while (ms < now) { step(ms, false); ms++; }
+        simMs = ms;
+        setRingsFrom(lastBeatMs || now);
+        rasterA = []; rasterB = []; trace.length = 0;   // the warm-up's beats stay, for the status
+    }
+    function setRingsFrom(ms) {
+        const d = new Date(ms);
+        secs = d.getSeconds(); mins = d.getMinutes(); hrs = d.getHours();
+    }
+
+    // --- drawing ------------------------------------------------------------
+    const net = document.getElementById('net'), ctx = net.getContext('2d');
+    const scope = document.getElementById('scope'), sctx = scope.getContext('2d');
+    let NW = 0, NH = 0, SW = 0, SH = 0;
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        NW = net.clientWidth; NH = net.clientHeight;
+        net.width = Math.round(NW * dpr); net.height = Math.round(NH * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        SW = scope.clientWidth; SH = scope.clientHeight;
+        scope.width = Math.round(SW * dpr); scope.height = Math.round(SH * dpr);
+        sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    new ResizeObserver(resize).observe(net);
+    window.addEventListener('resize', resize);
+
+    const css = getComputedStyle(document.documentElement);
+    const col = n => css.getPropertyValue(n).trim();
+    const GREEN = col('--green'), CA = col('--a'), CB = col('--b'), LIGHT = col('--light');
+
+    function ringPos(i, n, r) {
+        const t = i / n * Math.PI * 2;
+        return [NW / 2 + Math.sin(t) * r, NH / 2 - Math.cos(t) * r];
+    }
+    const recent = (arr, now, ms) => { while (arr.length && arr[0] < now - ms) arr.shift(); return arr; };
+    const glow = (t, now, ms) => Math.max(0, 1 - (now - t) / ms);
+
+    function dot(x0, y0, r, color, alpha, halo) {
+        if (halo > 0) {
+            const g = ctx.createRadialGradient(x0, y0, 0, x0, y0, r * halo);
+            g.addColorStop(0, color); g.addColorStop(1, 'transparent');
+            ctx.globalAlpha = alpha * 0.55; ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(x0, y0, r * halo, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = alpha; ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(x0, y0, r, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+
+    function drawNet(now) {
+        const R = Math.min(NW, NH) / 2;
+        ctx.clearRect(0, 0, NW, NH);
+        const rS = R * 0.9, rM = R * 0.68, rH = R * 0.47;
+        const sinceBeat = now - lastBeatMs;
+
+        // rings of neurons: dim when quiet; the active one bright, flickering as it fires
+        const rings = [[60, rS, secs, R * 0.022], [60, rM, mins, R * 0.022], [12, rH, hrs % 12, R * 0.035]];
+        for (const [n, r, active, size] of rings) {
+            ctx.strokeStyle = 'rgba(93,255,154,0.07)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(NW / 2, NH / 2, r, 0, Math.PI * 2); ctx.stroke();
+            for (let i = 0; i < n; i++) {
+                const [px, py] = ringPos(i, n, r);
+                const big = n === 60 && i % 5 === 0;
+                if (i === active) continue;
+                dot(px, py, size * (big ? 1.15 : 0.85), GREEN, big ? 0.28 : 0.16, 0);
+            }
+            const [ax, ay] = ringPos(active, n, r);
+            const flicker = 0.85 + 0.15 * Math.sin(now / 37 + n);
+            dot(ax, ay, size * 1.6, GREEN, flicker, 4);
+        }
+        // hour numerals inside the hour ring
+        ctx.fillStyle = 'rgba(200,216,214,0.45)';
+        ctx.font = `${Math.max(9, R * 0.045)}px "IBM Plex Mono", monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (let i = 0; i < 12; i++) { const [px, py] = ringPos(i, 12, rH - R * 0.085); ctx.fillText(String(i === 0 ? 12 : i), px, py); }
+
+        // the oscillator in the middle
+        const ax0 = NW / 2 - R * 0.11, bx0 = NW / 2 + R * 0.11, cy = NH / 2;
+        const a = Math.max(x[0], 0), b = Math.max(x[1], 0);
+        // mutual inhibition: round-headed connections
+        ctx.strokeStyle = 'rgba(200,216,214,0.35)'; ctx.lineWidth = Math.max(1, R * 0.006);
+        for (const [y1, s] of [[cy - R * 0.035, 1], [cy + R * 0.035, -1]]) {
+            const from = s > 0 ? ax0 : bx0, to = s > 0 ? bx0 : ax0;
+            ctx.beginPath(); ctx.moveTo(from + s * R * 0.04, y1); ctx.lineTo(to - s * R * 0.055, y1); ctx.stroke();
+            ctx.beginPath(); ctx.arc(to - s * R * 0.045, y1, R * 0.011, 0, Math.PI * 2); ctx.stroke();
+        }
+        // the light, onto B
+        const lit = lightOn && (now % 1000) < 120;
+        const lx = bx0 + R * 0.13, ly = cy - R * 0.13;
+        ctx.strokeStyle = lightOn ? 'rgba(255,210,90,0.5)' : 'rgba(255,210,90,0.12)';
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(bx0 + R * 0.04, cy - R * 0.04); ctx.stroke();
+        dot(lx, ly, R * 0.025, LIGHT, lightOn ? (lit ? 1 : 0.35) : 0.12, lit ? 4 : 0);
+        // A and B, glowing with their output
+        dot(ax0, cy, R * 0.042, CA, 0.25 + 0.75 * Math.min(1, a), 1 + 3 * Math.min(1, a));
+        dot(bx0, cy, R * 0.042, CB, 0.25 + 0.75 * Math.min(1, b), 1 + 3 * Math.min(1, b));
+        ctx.fillStyle = '#05080a'; ctx.font = `600 ${Math.max(9, R * 0.045)}px "IBM Plex Sans", sans-serif`;
+        ctx.fillText('A', ax0, cy + 1); ctx.fillText('B', bx0, cy + 1);
+
+        // the beat travelling from A out to the seconds ring, and carries inward
+        const travel = (from, to, t0, color) => {
+            const k = Math.min(1, (now - t0) / 220);
+            if (k >= 1) return;
+            const px = from[0] + (to[0] - from[0]) * k, py = from[1] + (to[1] - from[1]) * k;
+            ctx.strokeStyle = color; ctx.globalAlpha = 0.25 * (1 - k); ctx.lineWidth = Math.max(1, R * 0.004);
+            ctx.beginPath(); ctx.moveTo(from[0], from[1]); ctx.lineTo(to[0], to[1]); ctx.stroke(); ctx.globalAlpha = 1;
+            dot(px, py, R * 0.014, color, 1 - 0.5 * k, 3);
+        };
+        if (!reduceMotion.matches) {
+            travel([ax0, cy], ringPos(secs, 60, rS), lastBeatMs, CA);
+            travel(ringPos(0, 60, rS), ringPos(mins, 60, rM), carryM, GREEN);
+            travel(ringPos(0, 60, rM), ringPos(hrs % 12, 12, rH), carryH, GREEN);
+        }
+    }
+
+    function drawScope(now) {
+        sctx.clearRect(0, 0, SW, SH);
+        const span = 4000, x0 = now - span;
+        const X = ms => (ms - x0) / span * SW;
+        // seconds grid and light pulses
+        for (let s = Math.ceil(x0 / 1000) * 1000; s < now; s += 1000) {
+            sctx.fillStyle = lightOn ? 'rgba(255,210,90,0.16)' : 'rgba(255,255,255,0.05)';
+            sctx.fillRect(X(s), 0, Math.max(1, X(s + LIGHT_LEN * 1000) - X(s)), SH);
+        }
+        recent(trace, now, span + 100);
+        const plot = (idx, color, y0, h) => {
+            sctx.strokeStyle = color; sctx.lineWidth = 1.5; sctx.beginPath();
+            trace.forEach((p, i) => { const px = X(p[0]), py = y0 - Math.min(1.4, p[idx]) / 1.4 * h; i ? sctx.lineTo(px, py) : sctx.moveTo(px, py); });
+            sctx.stroke();
+        };
+        const h = SH * 0.34;
+        plot(1, CA, SH * 0.42, h);
+        plot(2, CB, SH * 0.84, h);
+        // spikes, as a raster under each trace
+        sctx.fillStyle = CA; for (const t of recent(rasterA, now, span)) sctx.fillRect(X(t), SH * 0.44, 1, SH * 0.05);
+        sctx.fillStyle = CB; for (const t of recent(rasterB, now, span)) sctx.fillRect(X(t), SH * 0.86, 1, SH * 0.05);
+        // beats
+        sctx.fillStyle = GREEN;
+        for (const t of recent(beats, now, 10000)) if (t > x0) sctx.fillRect(X(t) - 1, 0, 2, SH * 0.08);
+        sctx.fillStyle = 'rgba(200,216,214,0.55)';
+        sctx.font = '11px "IBM Plex Mono", monospace'; sctx.textAlign = 'left'; sctx.textBaseline = 'top';
+        sctx.fillText('A', 6, 4); sctx.fillText('B', 6, SH * 0.5 + 2);
+        sctx.textAlign = 'right'; sctx.fillText('last 4 s', SW - 6, 4);
+    }
+
+    // --- readouts -------------------------------------------------------------
+    const timeEl = document.getElementById('time'), realEl = document.getElementById('realT'), statusEl = document.getElementById('status');
+    const pad = n => String(n).padStart(2, '0');
+    let lastStatus = '';
+    function readouts(now) {
+        timeEl.textContent = `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+        const d = new Date(now);
+        realEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+        // the drift between the network's count and the light's, and whether it is locked
+        // compare with the second the latest beat fell in: a locked beat comes a fraction
+        // of a second after the light, and shouldn't count as a second behind meanwhile
+        const b = new Date(lastBeatMs || now);
+        const counted = hrs * 3600 + mins * 60 + secs;
+        const real = b.getHours() * 3600 + b.getMinutes() * 60 + b.getSeconds();
+        let drift = counted - real;
+        if (drift > 43200) drift -= 86400;
+        if (drift < -43200) drift += 86400;
+        const recentBeats = beats.filter(t => t > now - 8000 && t <= now - 1000);
+        const lags = recentBeats.map(t => (t % 1000) / 1000);
+        const perSec = new Map();
+        for (const t of recentBeats) perSec.set(Math.floor(t / 1000), (perSec.get(Math.floor(t / 1000)) || 0) + 1);
+        const steady = recentBeats.length >= 5 && [...perSec.values()].every(c => c === 1) && perSec.size >= 6 &&
+            (Math.max(...lags) - Math.min(...lags)) < 0.03;
+        const lag = lags.length ? lags.reduce((p, q) => p + q, 0) / lags.length : 0;
+
+        let s;
+        const rate = recentBeats.length / 7;
+        if (lightOn && steady) s = `<b>Locked to the light.</b> Each beat comes ${lag.toFixed(2)} s after the light, its phase angle of entrainment.`;
+        else if (lightOn && now - changedAt < 8000) s = `<b>Catching the light</b>: the rhythm is being pulled into step.`;
+        else if (lightOn && Math.abs(rate - 2) < 0.1) s = `<b>Locked two to one</b>: two beats fit into each second, so the network counts double.`;
+        else if (lightOn) s = `<b>The light can't hold it</b>: ${rate.toFixed(2)} beats a second, not one.`;
+        else s = `<b>Free-running in the dark</b>, a beat every ${period.toFixed(2)} s.`;
+        if (drift !== 0) s += ` <span class="warn">The network is ${Math.abs(drift)} s ${drift < 0 ? 'behind' : 'ahead'}.</span>`;
+        if (s !== lastStatus) { statusEl.innerHTML = s; lastStatus = s; }
+    }
+
+    // --- running: the simulation keeps pace with the wall clock -------------
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let lastDraw = 0;
+    function advance() {
+        const now = Date.now();
+        if (now - simMs > 3000) { startFromClock(); return now; }   // back from a hidden tab: start again
+        while (simMs < now) { step(simMs, true); simMs++; }
+        return now;
+    }
+    function frame() {
+        try {
+            const now = advance();
+            drawNet(now); drawScope(now);
+            if (now - lastDraw > 200) { readouts(now); lastDraw = now; }
+        } finally {
+            if (!reduceMotion.matches) requestAnimationFrame(frame);
+        }
+    }
+    // under reduced motion the network still runs; it is drawn once a second
+    setInterval(() => {
+        if (!reduceMotion.matches) return;
+        const now = advance();
+        drawNet(now); drawScope(now); readouts(now);
+    }, 1000);
+    reduceMotion.addEventListener('change', () => { if (!reduceMotion.matches) requestAnimationFrame(frame); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) startFromClock(); });
+
+    // --- controls -------------------------------------------------------------
+    const lightBtn = document.getElementById('light');
+    lightBtn.addEventListener('click', () => {
+        lightOn = !lightOn; changedAt = Date.now();
+        lightBtn.setAttribute('aria-pressed', String(lightOn));
+        lightBtn.textContent = lightOn ? 'light on' : 'light off';
+    });
+    const periodIn = document.getElementById('period'), periodVal = document.getElementById('periodVal');
+    periodIn.addEventListener('input', () => {
+        period = +periodIn.value; tau = period / K; changedAt = Date.now();
+        periodVal.textContent = period.toFixed(2) + ' s';
+    });
+    document.getElementById('reset').addEventListener('click', () => { setRingsFrom(lastBeatMs || Date.now()); });
+
+    resize();
+    startFromClock();
+    readouts(Date.now());
+    if (reduceMotion.matches) { const now = advance(); drawNet(now); drawScope(now); }
+    else requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
